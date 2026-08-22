@@ -49,13 +49,13 @@ export async function addFamilyMemberAction(formData: FormData) {
 
   const tempPasswordHash = crypto.randomBytes(8).toString('hex');
 
-  const [newUser] = await db.insert(users).values({
+  await db.insert(users).values({
     householdId: session.household.id,
     fullName,
     email,
     passwordHash: tempPasswordHash,
     role,
-  }).returning();
+  });
 
   // Send Invitation Email via Resend
   try {
@@ -98,7 +98,7 @@ export async function setupDemoHouseholdAction(formData: FormData) {
   const [household] = await db.insert(households).values({
     name: householdName,
     baseCurrency: 'USD',
-  }).returning();
+  } as any).returning();
 
   const [user] = await db.insert(users).values({
     householdId: household.id,
@@ -282,7 +282,7 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
   }
 }
 
-// --- AI Statement Parsing with Gemini 3.6 Flash & Retry Guard ---
+// --- AI Statement Parsing with Gemini & Retry Guard ---
 async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, delay = 5000): Promise<any> {
   try {
     return await ai.models.generateContent(params);
@@ -326,11 +326,10 @@ export async function parseStatementAction(formData: FormData) {
 
   const extractionPrompt = 'Ignore all legal disclaimers, headers, footers, and page numbers. Extract only investment assets, stock holdings, crypto positions, cash balances, or real estate line items from the provided text. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").';
 
-  // 1. Handle Pasted Text if provided
   if (pastedText) {
     try {
       const response = await generateWithRetry(ai, {
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           { text: `${extractionPrompt}\n\nHere is the pasted statement text:\n${pastedText}` },
         ],
@@ -383,7 +382,6 @@ export async function parseStatementAction(formData: FormData) {
     }
   }
 
-  // 2. Handle File Uploads
   for (const file of files) {
     if (!file || file.size === 0) continue;
     try {
@@ -392,7 +390,7 @@ export async function parseStatementAction(formData: FormData) {
       const mimeType = file.type || 'application/pdf';
 
       const response = await generateWithRetry(ai, {
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           { inlineData: { mimeType, data: buffer.toString('base64') } },
           { text: extractionPrompt },
@@ -621,7 +619,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
     rationale: rationaleVal || existing.rationale,
     nativeCurrency: (formData.get('nativeCurrency') as string) || existing.nativeCurrency,
     quantity: qtyVal || existing.quantity,
-    nativeValue: valueVal ? parseFloat(valueVal) : existing.nativeValue,
+    nativeValue: valueVal ? valueVal : existing.nativeValue, // Fixed type compatibility
     updatedAt: new Date(),
   }).where(eq(assets.id, id));
 
@@ -664,7 +662,7 @@ export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
   if (pillars.length === 0) return { success: false, error: 'At least one pillar is required.' };
 
   await db.update(households)
-    .set({ legacyPillars: JSON.stringify(pillars), updatedAt: new Date() })
+    .set({ legacyPillars: JSON.stringify(pillars), updatedAt: new Date() } as any)
     .where(eq(households.id, session.household.id));
 
   revalidatePath('/');

@@ -27,7 +27,7 @@ export default function LoginPage() {
     }
 
     if (res?.success) {
-      if (res.role === 'SUPER_ADMIN') {
+      if ((res as any).role === 'SUPER_ADMIN') {
         router.push('/admin');
       } else {
         router.push('/');

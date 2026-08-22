@@ -4,6 +4,7 @@ export const households = pgTable('households', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   baseCurrency: text('base_currency').default('USD').notNull(),
+  inviteCode: text('invite_code'), // <-- Required for household invite codes
   legacyPillars: text('legacy_pillars'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -80,7 +81,7 @@ export const documents = pgTable('documents', {
   id: uuid('id').defaultRandom().primaryKey(),
   householdId: uuid('household_id').notNull(),
   userId: uuid('user_id').notNull(),
-  assetId: uuid('asset_id'), // Optional: link to a specific asset
+  assetId: uuid('asset_id'),
   name: text('name').notNull(),
   fileUrl: text('file_url').notNull(),
   fileType: text('file_type').notNull(),

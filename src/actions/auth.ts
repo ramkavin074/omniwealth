@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('vault_user_id')?.value;
@@ -47,13 +48,13 @@ export async function addFamilyMemberAction(formData: FormData) {
 
   const tempPasswordHash = crypto.randomBytes(8).toString('hex');
 
-  const [newUser] = await db.insert(users).values({
+  await db.insert(users).values({
     householdId: session.household.id,
     fullName,
     email,
     passwordHash: tempPasswordHash,
     role,
-  }).returning();
+  });
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
@@ -74,10 +75,8 @@ export async function addFamilyMemberAction(formData: FormData) {
     </div>
   `;
 
-  // Dynamic sender: uses custom domain from .env if available, defaults to resend.dev for testing
   const senderAddress = process.env.RESEND_FROM_EMAIL || 'Global Family Vault <vault@resend.dev>';
 
- // Try sending via Resend, with a high-visibility terminal fallback
   try {
     await resend.emails.send({
       from: senderAddress,
@@ -86,15 +85,9 @@ export async function addFamilyMemberAction(formData: FormData) {
       html: emailHtml,
     });
   } catch (emailErr: any) {
-    console.error('\n======================================================');
-    console.error('⚠️ RESEND FREE-TIER RESTRICTION CAUGHT (Expected for test emails)');
-    console.error(`Attempted recipient: ${email}`);
-    console.error(`Resend API Message: ${emailErr?.message || JSON.stringify(emailErr)}`);
-    console.log('\n--- ✉️ HTML EMAIL PREVIEW FOR TESTING ---');
-    console.log(emailHtml);
-    console.log('------------------------------------------------------\n');
-    console.error('======================================================\n');
+    console.error('Resend error:', emailErr);
   }
+
   revalidatePath('/profile');
   return { success: true };
 }
@@ -127,7 +120,7 @@ export async function loginAction(formData: FormData) {
   cookieStore.set('vault_user_id', user.id, { path: '/' });
 
   revalidatePath('/');
-  return { success: true };
+  return { success: true, role: user.role };
 }
 
 export async function registerOwnerAction(formData: FormData) {
@@ -152,7 +145,7 @@ export async function registerOwnerAction(formData: FormData) {
     name: householdName,
     baseCurrency,
     inviteCode,
-  }).returning();
+  } as any).returning();
 
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -168,7 +161,7 @@ export async function registerOwnerAction(formData: FormData) {
   cookieStore.set('vault_user_id', user.id, { path: '/' });
 
   revalidatePath('/');
-  return { success: true };
+  return { success: true, role: user.role };
 }
 
 export async function registerMemberWithCodeAction(formData: FormData) {
@@ -181,7 +174,7 @@ export async function registerMemberWithCodeAction(formData: FormData) {
     return { success: false, error: 'All fields are required.' };
   }
 
-  const [household] = await db.select().from(households).where(eq(households.inviteCode, inviteCode));
+  const [household] = await db.select().from(households).where(eq((households as any).inviteCode, inviteCode));
   if (!household) {
     return { success: false, error: 'Invalid household invite code.' };
   }
@@ -205,7 +198,7 @@ export async function registerMemberWithCodeAction(formData: FormData) {
   cookieStore.set('vault_user_id', user.id, { path: '/' });
 
   revalidatePath('/');
-  return { success: true };
+  return { success: true, role: user.role };
 }
 
 export async function updatePasswordAction(formData: FormData) {
