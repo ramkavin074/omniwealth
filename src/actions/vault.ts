@@ -9,9 +9,9 @@ import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_doe5xAdY_9L2kh89GzkxeuMo9rC9YNhfp');
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
-// --- Email Helper ---
+// --- Email Helper with Plain Text & HTML Fallback ---
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
   console.log(`[Resend Debug] Attempting to send email to: ${toEmail}, Household: ${householdName}, Code: ${inviteCode}`);
   
@@ -20,6 +20,7 @@ export async function sendInviteEmail(toEmail: string, householdName: string, in
       from: 'Global Family Vault <vault@omniwealth.org>',
       to: [toEmail],
       subject: `Welcome to ${householdName} Wealth Command Center`,
+      text: `You have been invited to collaborate on the ${householdName} wealth command center. ${inviteCode ? `Your household invite code is: ${inviteCode}.` : ''} Access your wealth vault here: https://omniwealth.org/login`,
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
           <h2 style="color: #818cf8; margin-top: 0;">Global Family Vault Invitation</h2>
@@ -51,6 +52,7 @@ export async function sendInviteEmail(toEmail: string, householdName: string, in
     return { success: false, error: err };
   }
 }
+
 // --- Auth & Helper Actions ---
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
@@ -82,15 +84,12 @@ export async function addFamilyMemberAction(formData: FormData) {
   const email = formData.get('email') as string;
   const role = (formData.get('role') as string) || 'MEMBER';
 
-  console.log(`[Auth Debug] Attempting to add member: ${fullName}, Email: ${email}, Role: ${role}`);
-
   if (!fullName || !email) {
     return { success: false, error: 'Name and email are required.' };
   }
 
   const [existingUser] = await db.select().from(users).where(eq(users.email, email));
   if (existingUser) {
-    console.warn(`[Auth Debug] User with email ${email} already exists in DB.`);
     return { success: false, error: 'A user with this email already exists.' };
   }
 
@@ -106,7 +105,14 @@ export async function addFamilyMemberAction(formData: FormData) {
 
   console.log('[Auth Debug] User inserted successfully. Now calling sendInviteEmail...');
   const emailResult = await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
-  console.log('[Auth Debug] sendInviteEmail execution complete. Result:', emailResult);
+  
+  if (!emailResult.success) {
+    console.error('[Auth Debug] Email dispatch failed:', emailResult.error);
+    return { 
+      success: false, 
+      error: `User added, but email failed: ${JSON.stringify(emailResult.error)}` 
+    };
+  }
 
   revalidatePath('/profile');
   return { success: true };
