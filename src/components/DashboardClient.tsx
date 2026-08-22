@@ -59,14 +59,14 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 pb-16 relative">
-      {/* Responsive Unified Header for Laptops & Mobile */}
+      {/* Responsive Hybrid Header: Single row on laptops, stacked/scrollable on mobile */}
       <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
           
-          {/* Left Side: Brand & Navigation */}
-          <div className="flex items-center gap-6 shrink-0">
+          {/* Top Row on Mobile / Left Side on Laptop: Brand & Nav Links */}
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold shrink-0">
                 🌐
               </div>
               <div>
@@ -77,6 +77,22 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
               </div>
             </div>
 
+            {/* Mobile-Only Quick Nav & Logout */}
+            <div className="flex md:hidden items-center gap-1.5">
+              <Link href="/" className="px-2.5 py-1 bg-slate-800 text-indigo-300 rounded-lg text-xs font-semibold">
+                Dashboard
+              </Link>
+              <Link href="/profile" className="px-2.5 py-1 bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700">
+                Family
+              </Link>
+              <form action={async () => { window.location.href = '/login'; }}>
+                <button type="submit" className="p-1.5 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-lg text-xs cursor-pointer" title="Log Out">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </form>
+            </div>
+
+            {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-2 border-l border-slate-800 pl-6">
               <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-indigo-300 rounded-lg text-xs font-semibold shadow-sm">
                 <Home className="w-3.5 h-3.5" /> Dashboard
@@ -92,38 +108,43 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
             </nav>
           </div>
 
-          {/* Right Side: Clean Single-Row Action Bar for Laptops */}
-          <div className="flex items-center gap-3 shrink-0 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-            <CurrencySwitcherForm currentCurrency={baseCurrency} />
+          {/* Bottom Row on Mobile / Right Side on Laptop: Action Bar */}
+          <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none border-t md:border-t-0 border-slate-800 pt-2 md:pt-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <CurrencySwitcherForm currentCurrency={baseCurrency} />
 
-            <button 
-              onClick={async () => {
-                setIsSyncing(true);
-                await refreshLiveMarketPricesAction();
-                setIsSyncing(false);
-                window.location.reload();
-              }} 
-              disabled={isSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md disabled:opacity-50 shrink-0"
-              title="Fetch live market prices"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Prices'}</span>
-            </button>
-
-            <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
-              <Plus className="w-4 h-4" /><span>Add Asset</span>
-            </button>
-
-            <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
-            </button>
-
-            <form action={async () => { window.location.href = '/login'; }} className="shrink-0">
-              <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
-                <LogOut className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Logout</span>
+              <button 
+                onClick={async () => {
+                  setIsSyncing(true);
+                  await refreshLiveMarketPricesAction();
+                  setIsSyncing(false);
+                  window.location.reload();
+                }} 
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md disabled:opacity-50 shrink-0"
+                title="Fetch live market prices"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Prices'}</span>
               </button>
-            </form>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
+                <Plus className="w-4 h-4" /><span>Add Asset</span>
+              </button>
+
+              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
+              </button>
+
+              {/* Desktop Logout Button */}
+              <form action={async () => { window.location.href = '/login'; }} className="hidden md:block shrink-0">
+                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
+                  <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
+                </button>
+              </form>
+            </div>
           </div>
 
         </div>
