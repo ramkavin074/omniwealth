@@ -19,7 +19,13 @@ export default async function DashboardPage() {
             <p className="text-xs text-slate-400">Initialize your multi-currency family wealth command center.</p>
           </div>
 
-          <form action={setupDemoHouseholdAction} className="space-y-4">
+          <form 
+            action={async (formData) => {
+              'use server';
+              await setupDemoHouseholdAction(formData);
+            }} 
+            className="space-y-4"
+          >
             <div>
               <label className="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Your Full Name</label>
               <input name="fullName" defaultValue="Primary Owner" required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" />
