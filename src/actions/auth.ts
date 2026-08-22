@@ -9,7 +9,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
-const resend = new Resend('re_XGapgpCX_2onUWANyF388o3pCc2v5qyq4');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
