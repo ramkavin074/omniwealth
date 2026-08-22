@@ -11,6 +11,38 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_doe5xAdY_9L2kh89GzkxeuMo9rC9YNhfp');
 
+// --- Email Helper ---
+export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
+  try {
+    await resend.emails.send({
+      from: 'Global Family Vault <vault@omniwealth.org>',
+      to: [toEmail],
+      subject: `Welcome to ${householdName} Wealth Command Center`,
+      html: `
+        <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
+          <h2 style="color: #818cf8; margin-top: 0;">Global Family Vault Invitation</h2>
+          <p style="color: #cbd5e1; font-size: 14px;">
+            You have been invited to collaborate on the <strong>${householdName}</strong> wealth command center.
+          </p>
+          ${inviteCode ? `
+            <p style="color: #cbd5e1; font-size: 14px;">Your household invite code is:</p>
+            <div style="background-color: #1e293b; border: 1px solid #334155; padding: 16px; border-radius: 12px; margin: 20px 0; text-align: center;">
+              <span style="font-size: 22px; font-weight: bold; color: #38bdf8; letter-spacing: 2px;">${inviteCode}</span>
+            </div>
+          ` : ''}
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org'}/login" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;">
+            Access Wealth Vault →
+          </a>
+        </div>
+      `,
+    });
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to send invitation email:', err);
+    return { success: false, error: err };
+  }
+}
+
 // --- Auth & Helper Actions ---
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
@@ -57,34 +89,7 @@ export async function addFamilyMemberAction(formData: FormData) {
     role,
   });
 
-  // Send Invitation Email via Resend
-  try {
-    await resend.emails.send({
-      from: 'Global Family Vault <vault@resend.dev>',
-      to: [email],
-      subject: `Welcome to ${session.household.name} Wealth Command Center`,
-      html: `
-        <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
-          <h2 style="color: #818cf8; margin-top: 0;">Welcome, ${fullName}!</h2>
-          <p style="color: #cbd5e1; font-size: 14px;">
-            You have been added as a family member to the <strong>${session.household.name}</strong> on the Global Family Wealth & Legacy Command Center.
-          </p>
-          <div style="background-color: #1e293b; border: 1px solid #334155; padding: 16px; border-radius: 12px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 13px; color: #94a3b8;">Your Login Email:</p>
-            <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: bold; color: #ffffff;">${email}</p>
-          </div>
-          <p style="color: #cbd5e1; font-size: 14px;">
-            You can now log in to view consolidated assets, multi-currency balances, and legacy directives.
-          </p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;">
-            Access Wealth Vault →
-          </a>
-        </div>
-      `,
-    });
-  } catch (emailErr) {
-    console.error('Failed to send invitation email:', emailErr);
-  }
+  await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
 
   revalidatePath('/profile');
   return { success: true };
@@ -94,10 +99,12 @@ export async function setupDemoHouseholdAction(formData: FormData) {
   const fullName = (formData.get('fullName') as string) || 'Primary Owner';
   const email = (formData.get('email') as string) || 'owner@family.com';
   const householdName = (formData.get('householdName') as string) || 'Family Legacy';
+  const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
 
   const [household] = await db.insert(households).values({
     name: householdName,
     baseCurrency: 'USD',
+    inviteCode,
   } as any).returning();
 
   const [user] = await db.insert(users).values({
@@ -619,7 +626,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
     rationale: rationaleVal || existing.rationale,
     nativeCurrency: (formData.get('nativeCurrency') as string) || existing.nativeCurrency,
     quantity: qtyVal || existing.quantity,
-    nativeValue: valueVal ? valueVal : existing.nativeValue, // Fixed type compatibility
+    nativeValue: valueVal ? valueVal : existing.nativeValue,
     updatedAt: new Date(),
   }).where(eq(assets.id, id));
 
@@ -671,7 +678,6 @@ export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
 }
 
 // --- Secure Document Vault & Encryption Helpers ---
-
 function getVaultEncryptionKey(userId: string, email: string, householdId: string) {
   const serverSecret = process.env.SESSION_SECRET || 'omniwealth-secure-vault-fallback-secret';
   return crypto.scryptSync(`${userId}:${email}:${householdId}:${serverSecret}`, 'salt-omniwealth', 32);
