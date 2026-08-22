@@ -14,10 +14,9 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_doe5xAdY_9L2kh89Gzkx
 // --- Email Helper ---
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
   console.log(`[Resend Debug] Attempting to send email to: ${toEmail}, Household: ${householdName}, Code: ${inviteCode}`);
-  console.log(`[Resend Debug] RESEND_API_KEY present: ${!!process.env.RESEND_API_KEY}`);
   
   try {
-    const data = await resend.emails.send({
+    const response = await resend.emails.send({
       from: 'Global Family Vault <vault@omniwealth.org>',
       to: [toEmail],
       subject: `Welcome to ${householdName} Wealth Command Center`,
@@ -39,14 +38,19 @@ export async function sendInviteEmail(toEmail: string, householdName: string, in
         </div>
       `,
     });
-    console.log(`[Resend Debug] Email dispatched successfully response:`, data);
-    return { success: true, data };
+
+    if (response.error) {
+      console.error('[Resend Debug] Resend rejected email:', response.error);
+      return { success: false, error: response.error };
+    }
+
+    console.log('[Resend Debug] Email dispatched successfully:', response.data);
+    return { success: true, data: response.data };
   } catch (err) {
-    console.error('[Resend Debug] Failed to send invitation email with error:', err);
+    console.error('[Resend Debug] Failed to send invitation email with exception:', err);
     return { success: false, error: err };
   }
 }
-
 // --- Auth & Helper Actions ---
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
