@@ -59,72 +59,73 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 pb-16 relative">
-      {/* Sleek Responsive Command Header */}
-      <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-4 md:px-6 py-3 shadow-xl">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      {/* Sleek Two-Row Mobile-Optimized Command Header */}
+      <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-3 md:px-6 py-3 shadow-xl">
+        <div className="max-w-7xl mx-auto flex flex-col gap-2.5">
           
-          {/* Top / Left row on mobile: Brand & Nav Links */}
-          <div className="flex items-center justify-between w-full md:w-auto gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold shrink-0">
+          {/* Top Row: Brand, Nav Links & Logout Button */}
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold shrink-0 text-xs">
                 🌐
               </div>
               <div>
-                <div className="font-extrabold text-white text-xs tracking-tight truncate max-w-[120px] sm:max-w-none">
+                <div className="font-extrabold text-white text-xs tracking-tight truncate max-w-[130px] sm:max-w-none">
                   {session.household.name.replace(/ Vault$/i, '')} Vault
                 </div>
-                <div className="text-[10px] text-slate-400">Wealth Command</div>
+                <div className="text-[9px] text-slate-400">Wealth Command</div>
               </div>
             </div>
 
-            {/* Navigation Links (Visible on Mobile & Desktop) */}
-            <nav className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
-              <Link href="/" className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 text-indigo-300 rounded-lg text-xs font-semibold shadow-sm">
-                <Home className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Dashboard</span>
+            {/* Navigation & Logout always visible */}
+            <div className="flex items-center gap-1.5">
+              <Link href="/" className="px-2 py-1 bg-slate-800 text-indigo-300 rounded-lg text-xs font-semibold">
+                Dashboard
               </Link>
-              <Link href="/profile" className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium transition-colors border border-slate-700">
-                <Users className="w-3.5 h-3.5 text-indigo-400" /> <span>Family</span>
+              <Link href="/profile" className="px-2 py-1 bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700">
+                Family
               </Link>
               {session.user.role === 'SUPER_ADMIN' && (
-                <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 text-amber-300 rounded-lg text-xs font-medium border border-amber-500/20">
-                  <Shield className="w-3.5 h-3.5" /> Admin
+                <Link href="/admin" className="px-2 py-1 bg-slate-800 text-amber-300 rounded-lg text-xs font-medium border border-amber-500/20">
+                  Admin
                 </Link>
               )}
-            </nav>
+              <form action={async () => { window.location.href = '/login'; }}>
+                <button type="submit" className="p-1.5 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-lg text-xs cursor-pointer" title="Log Out">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </form>
+            </div>
           </div>
 
-          {/* Right Side / Bottom row: Action Buttons with horizontal scroll protection */}
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
-            <CurrencySwitcherForm currentCurrency={baseCurrency} />
-
-            <button 
-              onClick={async () => {
-                setIsSyncing(true);
-                await refreshLiveMarketPricesAction();
-                setIsSyncing(false);
-                window.location.reload();
-              }} 
-              disabled={isSyncing}
-              className="flex items-center gap-1 px-2.5 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md disabled:opacity-50 shrink-0"
-              title="Fetch live market stock and crypto prices"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
-            </button>
-
-            <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1 px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
-              <Plus className="w-4 h-4" /><span>Add Asset</span>
-            </button>
-
-            <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1 px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
-            </button>
-
-            <form action={async () => { window.location.href = '/login'; }} className="shrink-0">
-              <button type="submit" className="flex items-center gap-1 px-2.5 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
-                <LogOut className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Logout</span>
+          {/* Bottom Row: Financial Tools & Actions (Scrollable if needed) */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-2 shrink-0">
+              <CurrencySwitcherForm currentCurrency={baseCurrency} />
+              <button 
+                onClick={async () => {
+                  setIsSyncing(true);
+                  await refreshLiveMarketPricesAction();
+                  setIsSyncing(false);
+                  window.location.reload();
+                }} 
+                disabled={isSyncing}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                title="Fetch live market prices"
+              >
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
               </button>
-            </form>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md">
+                <Plus className="w-3.5 h-3.5" /><span>Add Asset</span>
+              </button>
+              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
+              </button>
+            </div>
           </div>
 
         </div>
