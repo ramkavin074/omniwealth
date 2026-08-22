@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { addFamilyMemberAction, deleteFamilyMemberAction, updatePasswordAction } from '@/actions/auth';
-import { updateHouseholdLegacyPillarsAction } from '@/actions/vault';
+import { updatePasswordAction } from '@/actions/auth';
+import { addFamilyMemberAction, deleteFamilyMemberAction, updateHouseholdLegacyPillarsAction } from '@/actions/vault';
 import { Users, Key, ArrowLeft, User, Plus, X, CheckCircle2, Lock, Target, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
