@@ -9,8 +9,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_doe5xAdY_9L2kh89GzkxeuMo9rC9YNhfp');
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('vault_user_id')?.value;
