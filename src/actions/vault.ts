@@ -11,7 +11,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_doe5xAdY_9L2kh89GzkxeuMo9rC9YNhfp');
 
-// --- Email Helper with Debug Logs ---
+// --- Email Helper ---
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
   console.log(`[Resend Debug] Attempting to send email to: ${toEmail}, Household: ${householdName}, Code: ${inviteCode}`);
   console.log(`[Resend Debug] RESEND_API_KEY present: ${!!process.env.RESEND_API_KEY}`);
@@ -104,6 +104,15 @@ export async function addFamilyMemberAction(formData: FormData) {
   const emailResult = await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
   console.log('[Auth Debug] sendInviteEmail execution complete. Result:', emailResult);
 
+  revalidatePath('/profile');
+  return { success: true };
+}
+
+export async function deleteFamilyMemberAction(memberId: string) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+  
+  await db.delete(users).where(and(eq(users.id, memberId), eq(users.householdId, session.household.id)));
   revalidatePath('/profile');
   return { success: true };
 }
