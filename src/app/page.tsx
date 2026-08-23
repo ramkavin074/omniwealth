@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { assets, users } from '@/db/schema';
+import { assets, users, households } from '@/db/schema';
 import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
@@ -14,7 +14,15 @@ export default async function DashboardPage() {
   }
 
   const householdId = session.household.id;
-  const baseCurrency = session.household.baseCurrency;
+
+  // Fetch the latest live household record directly from the database to ensure currency sticks
+  const householdRecord = await db
+    .select()
+    .from(households)
+    .where(eq(households.id, householdId))
+    .limit(1);
+
+  const baseCurrency = householdRecord[0]?.baseCurrency || session.household.baseCurrency || 'USD';
 
   const rawAssets = await db
     .select({
