@@ -82,7 +82,11 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   async function runOpenRouter(key: string) {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': 'https://omniwealth.org' },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${key}`, 
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org' 
+      },
       body: JSON.stringify({
         model: 'openrouter/free',
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]

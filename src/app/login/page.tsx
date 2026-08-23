@@ -100,7 +100,7 @@ export default function LoginPage() {
                   <input
                     name="familyName"
                     required
-                    placeholder="e.g. Kavin Family Vault"
+                    placeholder="e.g. Smith Family Vault"
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -151,7 +151,7 @@ export default function LoginPage() {
                 <input
                   name="fullName"
                   required
-                  placeholder="e.g. Kavin Kumar"
+                  placeholder="e.g. Alex Smith"
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
