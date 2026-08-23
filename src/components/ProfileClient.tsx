@@ -176,7 +176,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                         <input 
                           name={`pillar_name_${idx}`} 
                           defaultValue={item.name} 
-                          placeholder="e.g. Krithik Legacy" 
+                          placeholder="e.g. Next Generation Family Trust" 
                           className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-indigo-500" 
                         />
                       </div>
@@ -185,7 +185,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                         <input 
                           name={`pillar_desc_${idx}`} 
                           defaultValue={item.description} 
-                          placeholder="e.g. Krithik will get it when he turns 35" 
+                          placeholder="e.g. Disbursed upon reaching age 35 for education and housing" 
                           className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500" 
                         />
                       </div>
