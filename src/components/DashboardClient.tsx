@@ -193,12 +193,23 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
 
 function FutureIncomeMilestones() {
   const targetClaimingAge = 62;
+  const [monthlyBenefit, setMonthlyBenefit] = useState<number>(1800);
+  const [isEditing, setIsEditing] = useState(false);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <Shield className="w-5 h-5 text-indigo-400" />
-        <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones (External)</h3>
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones (External)</h3>
+        </div>
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer flex items-center gap-1"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          <span>{isEditing ? 'Done' : 'Edit Estimate'}</span>
+        </button>
       </div>
       
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -213,8 +224,21 @@ function FutureIncomeMilestones() {
         </div>
         
         <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
-          <span className="text-[10px] text-slate-400 uppercase block font-medium">Income Type</span>
-          <span className="text-xs font-mono text-amber-300 font-bold">Government Annuity</span>
+          <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
+          {isEditing ? (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
+              <input
+                type="number"
+                value={monthlyBenefit}
+                onChange={(e) => setMonthlyBenefit(parseFloat(e.target.value) || 0)}
+                className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:border-indigo-500"
+              />
+              <span className="text-xs text-slate-400">/mo</span>
+            </div>
+          ) : (
+            <span className="text-xs font-mono text-emerald-400 font-bold">${monthlyBenefit.toLocaleString()} / mo</span>
+          )}
         </div>
       </div>
     </div>
@@ -382,6 +406,7 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
                 <option value="PPF">PPF (Public Provident Fund)</option>
                 <option value="PF">PF / EPF (Employee Provident Fund)</option>
                 <option value="PENSION">Atal Pension / Pension</option>
+                <option value="SOCIAL_SECURITY">Social Security</option>
                 <option value="529">529 College</option>
                 <option value="TRUST">Trust</option>
                 <option value="REAL_ESTATE">Real Estate</option>
@@ -615,6 +640,7 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           <option value="PPF">PPF (Public Provident Fund)</option>
           <option value="PF">PF / EPF (Employee Provident Fund)</option>
           <option value="PENSION">Atal Pension / Pension</option>
+          <option value="SOCIAL_SECURITY">Social Security</option>
           <option value="529">529 College</option>
           <option value="TRUST">Trust</option>
           <option value="REAL_ESTATE">Real Estate</option>
