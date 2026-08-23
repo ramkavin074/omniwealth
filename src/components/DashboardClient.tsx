@@ -159,7 +159,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
-        {/* Dynamic Future Milestones & Directives (Only renders if relevant entries exist) */}
+        {/* Dynamic Future Milestones & Directives */}
         <FutureMilestonesAndDirectives assets={initialAssets} />
 
         {/* Institution & Account-Level Instructions Hub */}
@@ -199,35 +199,60 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
   const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
 
-  const [customValues, setCustomValues] = useState<{ [key: string]: { amount: number; editing: boolean } }>({});
+  // State to manage editable amounts and custom instructions per asset ID
+  const [customData, setCustomData] = useState<{ [key: string]: { amount: number; instruction: string; editing: boolean } }>({});
 
   if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
     return null;
   }
 
-  const getValue = (asset: any) => {
-    if (customValues[asset.id] !== undefined) {
-      return customValues[asset.id].amount;
-    }
+  const getDefaultInstruction = (category: string) => {
+    if (category === 'SOCIAL_SECURITY') return 'Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.';
+    if (category === 'PENSION') return 'Guaranteed monthly pension tier claimable via PRAN upon reaching age 60.';
+    return 'Family Claiming Instruction: Submit Form H at the designated post office or bank branch upon maturity in 2031.';
+  };
+
+  const getAmount = (asset: any) => {
+    if (customData[asset.id]?.amount !== undefined) return customData[asset.id].amount;
     return parseFloat(asset.nativeValue || '0');
   };
 
+  const getInstruction = (asset: any) => {
+    if (customData[asset.id]?.instruction !== undefined) return customData[asset.id].instruction;
+    return getDefaultInstruction(asset.accountCategory);
+  };
+
   const isEditing = (assetId: string) => {
-    return customValues[assetId]?.editing || false;
+    return customData[assetId]?.editing || false;
   };
 
   const setEditing = (assetId: string, editing: boolean) => {
-    setCustomValues(prev => ({
+    setCustomData(prev => ({
       ...prev,
-      [assetId]: { amount: prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0'), editing }
+      [assetId]: {
+        amount: prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0'),
+        instruction: prev[assetId]?.instruction ?? getDefaultInstruction(assets.find(a => a.id === assetId)?.accountCategory),
+        editing
+      }
     }));
   };
 
-  const updateAmount = (assetId: string, amount: number) => {
-    setCustomValues(prev => ({
+  const updateField = (assetId: string, field: 'amount' | 'instruction', value: any) => {
+    setCustomData(prev => ({
       ...prev,
-      [assetId]: { amount, editing: true }
+      [assetId]: {
+        amount: field === 'amount' ? value : (prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0')),
+        instruction: field === 'instruction' ? value : (prev[assetId]?.instruction ?? getDefaultInstruction(assets.find(a => a.id === assetId)?.accountCategory)),
+        editing: true
+      }
     }));
+  };
+
+  const formatVal = (val: number, currency: string) => {
+    if (currency === 'INR') {
+      return val.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+    return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
   return (
@@ -240,135 +265,168 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
       </div>
       
       <div className="space-y-3">
-        {/* Map all Social Security entries */}
-        {ssnAssets.map((asset) => (
-          <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'U.S. Social Security Benefits'}</div>
-              <div className="text-sm font-semibold text-white mt-1">
-                Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age 62</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
-                Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
-                <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
+        {ssnAssets.map((asset) => {
+          const cur = asset.nativeCurrency || 'USD';
+          return (
+            <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="w-full md:w-3/4">
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'U.S. Social Security Benefits'}</div>
+                <div className="text-sm font-semibold text-white mt-1">
+                  Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age 62</span>
+                </div>
                 {isEditing(asset.id) ? (
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
-                    <input
-                      type="number"
-                      value={getValue(asset)}
-                      onChange={(e) => updateAmount(asset.id, parseFloat(e.target.value) || 0)}
-                      className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
-                    />
-                    <span className="text-xs text-slate-400">/mo</span>
-                  </div>
+                  <textarea
+                    value={getInstruction(asset)}
+                    onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
+                    className="w-full mt-2 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-200 focus:outline-none resize-none"
+                    rows={2}
+                  />
                 ) : (
-                  <span className="text-xs font-mono text-emerald-400 font-bold">
-                    ${getValue(asset).toLocaleString()} / mo
-                  </span>
+                  <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+                    {getInstruction(asset)}
+                  </div>
                 )}
               </div>
-              <button
-                onClick={() => setEditing(asset.id, !isEditing(asset.id))}
-                className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
-                title="Edit Amount"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
+              
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
+                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
+                  {isEditing(asset.id) ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
+                      <input
+                        type="number"
+                        value={getAmount(asset)}
+                        onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
+                        className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
+                      />
+                      <span className="text-xs text-slate-400">/mo</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs font-mono text-emerald-400 font-bold">
+                      ${formatVal(getAmount(asset), cur)} / mo
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setEditing(asset.id, !isEditing(asset.id))}
+                  className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+                  title="Edit Milestone & Instructions"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
-        {/* Map all Pension entries (Supports multiple APY entries for you and your wife) */}
-        {pensionAssets.map((asset) => (
-          <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Atal Pension Yojana (APY)'}</div>
-              <div className="text-sm font-semibold text-white mt-1">
-                Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Maturity Horizon: <span className="text-emerald-400 font-mono">Age 60</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
-                Guaranteed monthly pension tier claimable via PRAN upon reaching age 60.
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
-                <span className="text-[10px] text-slate-400 uppercase block font-medium">Monthly Tier Payout</span>
+        {pensionAssets.map((asset) => {
+          const cur = asset.nativeCurrency || 'INR';
+          return (
+            <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="w-full md:w-3/4">
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Atal Pension Yojana (APY)'}</div>
+                <div className="text-sm font-semibold text-white mt-1">
+                  Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Maturity Horizon: <span className="text-emerald-400 font-mono">Age 60</span>
+                </div>
                 {isEditing(asset.id) ? (
-                  <div className="flex items-center gap-1 mt-1">
-                    <input
-                      type="number"
-                      value={getValue(asset)}
-                      onChange={(e) => updateAmount(asset.id, parseFloat(e.target.value) || 0)}
-                      className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
-                    />
-                    <span className="text-xs font-mono text-slate-400">{asset.nativeCurrency || 'INR'} /mo</span>
-                  </div>
+                  <textarea
+                    value={getInstruction(asset)}
+                    onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
+                    className="w-full mt-2 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-200 focus:outline-none resize-none"
+                    rows={2}
+                  />
                 ) : (
-                  <span className="text-xs font-mono text-emerald-400 font-bold">
-                    {getValue(asset).toLocaleString()} {asset.nativeCurrency || 'INR'} / mo
-                  </span>
+                  <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+                    {getInstruction(asset)}
+                  </div>
                 )}
               </div>
-              <button
-                onClick={() => setEditing(asset.id, !isEditing(asset.id))}
-                className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
-                title="Edit Amount"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
+              
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
+                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Monthly Tier Payout</span>
+                  {isEditing(asset.id) ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <input
+                        type="number"
+                        value={getAmount(asset)}
+                        onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
+                        className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
+                      />
+                      <span className="text-xs font-mono text-slate-400">{cur} /mo</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs font-mono text-emerald-400 font-bold">
+                      {formatVal(getAmount(asset), cur)} {cur} / mo
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setEditing(asset.id, !isEditing(asset.id))}
+                  className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+                  title="Edit Milestone & Instructions"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
-        {/* Map all PPF entries */}
-        {ppfAssets.map((asset) => (
-          <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Public Provident Fund (PPF)'}</div>
-              <div className="text-sm font-semibold text-white mt-1">
-                Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Maturity Target: <span className="text-amber-400 font-mono">Year 2031</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
-                Family Claiming Instruction: Submit Form H at the designated post office or bank branch upon maturity in 2031.
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
-                <span className="text-[10px] text-slate-400 uppercase block font-medium">Maturity Target Value</span>
+        {ppfAssets.map((asset) => {
+          const cur = asset.nativeCurrency || 'INR';
+          return (
+            <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="w-full md:w-3/4">
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Public Provident Fund (PPF)'}</div>
+                <div className="text-sm font-semibold text-white mt-1">
+                  Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Maturity Target: <span className="text-amber-400 font-mono">Year 2031</span>
+                </div>
                 {isEditing(asset.id) ? (
-                  <div className="flex items-center gap-1 mt-1">
-                    <input
-                      type="number"
-                      value={getValue(asset)}
-                      onChange={(e) => updateAmount(asset.id, parseFloat(e.target.value) || 0)}
-                      className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
-                    />
-                    <span className="text-xs font-mono text-slate-400">{asset.nativeCurrency || 'INR'}</span>
-                  </div>
+                  <textarea
+                    value={getInstruction(asset)}
+                    onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
+                    className="w-full mt-2 bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-200 focus:outline-none resize-none"
+                    rows={2}
+                  />
                 ) : (
-                  <span className="text-xs font-mono text-emerald-400 font-bold">
-                    {getValue(asset).toLocaleString()} {asset.nativeCurrency || 'INR'}
-                  </span>
+                  <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+                    {getInstruction(asset)}
+                  </div>
                 )}
               </div>
-              <button
-                onClick={() => setEditing(asset.id, !isEditing(asset.id))}
-                className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
-                title="Edit Amount"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
+              
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
+                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Maturity Target Value</span>
+                  {isEditing(asset.id) ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <input
+                        type="number"
+                        value={getAmount(asset)}
+                        onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
+                        className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
+                      />
+                      <span className="text-xs font-mono text-slate-400">{cur}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs font-mono text-emerald-400 font-bold">
+                      {formatVal(getAmount(asset), cur)} {cur}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setEditing(asset.id, !isEditing(asset.id))}
+                  className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+                  title="Edit Milestone & Instructions"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
