@@ -27,12 +27,10 @@ export default function AiSettingsCard({ initialGroq, initialOpenrouter, initial
     formData.append('openaiApiKey', openaiApiKey);
     formData.append('anthropicApiKey', anthropicApiKey);
 
-    const res = await updateAiSettingsCard(formData); // wait, call updateAiSettingsAction
-    // correction below uses updateAiSettingsAction
-    const result = await updateAiSettingsAction(formData);
+    const res = await updateAiSettingsAction(formData);
     setLoading(false);
 
-    if (result.success) {
+    if (res.success) {
       setSuccess(true);
       setGroq('');
       setOpenrouter('');
@@ -40,7 +38,7 @@ export default function AiSettingsCard({ initialGroq, initialOpenrouter, initial
       setOpenai('');
       setAnthropic('');
     } else {
-      setError(result.error || 'Failed to save settings.');
+      setError(res.error || 'Failed to save settings.');
     }
   }
 
@@ -52,7 +50,7 @@ export default function AiSettingsCard({ initialGroq, initialOpenrouter, initial
       </div>
 
       <p className="text-xs text-slate-400">
-        Configure your keys below. The vault automatically prioritizes free providers first (<strong className="text-slate-200">Groq $\rightarrow$ OpenRouter $\rightarrow$ Gemini</strong>), cascading to paid backups only if needed.
+        Configure your keys below. The vault automatically prioritizes free providers first (<strong className="text-slate-200">Groq &rarr; OpenRouter &rarr; Gemini</strong>), cascading to paid backups only if needed.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
