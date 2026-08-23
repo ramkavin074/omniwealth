@@ -106,10 +106,10 @@ export async function askPortfolioAIAction(userPrompt: string) {
       answer = data.content?.[0]?.text || 'Failed to generate response from Anthropic.';
 
     } else {
-      // Google Gemini (using official @google/genai SDK)
+      // Google Gemini (using official @google/genai SDK with gemini-3.7-flash)
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.7-flash',
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
       answer = response.text || 'Failed to generate response from Gemini.';
