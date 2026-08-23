@@ -678,21 +678,19 @@ export async function deleteAssetAction(assetId: string) {
 }
 
 export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
-  const session = await getSession(); // (or your auth session getter)
-  if (!session || !session.householdId) {
+  const session = await getSessionUserAction();
+  if (!session || !session.household?.id) {
     throw new Error("Unauthorized");
   }
 
-  // 1. Update the database
-  await prisma.household.update({
-    where: { id: session.householdId },
-    data: { baseCurrency: newCurrency },
-  });
+  await db
+    .update(households)
+    .set({ baseCurrency: newCurrency })
+    .where(eq(households.id, session.household.id));
 
-  // 2. Update the session cookie so it doesn't revert on refresh
-  session.household.baseCurrency = newCurrency;
-  await session.save(); // If using iron-session / cookie session helper
+  revalidatePath('/');
 }
+
 export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
