@@ -235,7 +235,7 @@ export async function updatePasswordAction(formData: FormData) {
 
 export async function deleteFamilyMemberAction(memberId: string) {
   const session = await getSessionUserAction();
-  if (-session) return { success: false, error: 'Unauthorized' };
+  if (!session) return { success: false, error: 'Unauthorized' }; // Fixed typo from if (-session) to if (!session)
 
   const [targetUser] = await db.select().from(users).where(eq(users.id, memberId));
   if (!targetUser) return { success: false, error: 'User not found' };
