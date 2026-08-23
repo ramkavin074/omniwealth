@@ -27,6 +27,31 @@ export async function updateAiSettingsAction(formData: FormData) {
   return { success: true };
 }
 
+// Helper: Automatic retry wrapper for overloaded Gemini models (503 / 429)
+async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 4, delay = 4000): Promise<any> {
+  try {
+    return await ai.models.generateContent(params);
+  } catch (error: any) {
+    const status = error?.status || error?.code;
+    const message = error?.message || '';
+    
+    const isRateLimitedOrOverloaded = 
+      status === 429 || 
+      status === 503 || 
+      message.includes('429') || 
+      message.includes('503') || 
+      message.includes('RESOURCE_EXHAUSTED') || 
+      message.includes('overloaded');
+
+    if (retries > 0 && isRateLimitedOrOverloaded) {
+      console.warn(`Gemini API overloaded (${status || '503'}). Retrying in ${delay}ms... (${retries} retries left)`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return generateWithRetry(ai, params, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
 // 2. Multi-Provider AI Portfolio Assistant Action
 export async function askPortfolioAIAction(userPrompt: string) {
   const session = await getSessionUserAction();
@@ -106,9 +131,9 @@ export async function askPortfolioAIAction(userPrompt: string) {
       answer = data.content?.[0]?.text || 'Failed to generate response from Anthropic.';
 
     } else {
-      // Google Gemini (using official @google/genai SDK with gemini-3.7-flash)
+      // Google Gemini with built-in retry guard for 503 / overload spikes
       const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
+      const response = await generateWithRetry(ai, {
         model: 'gemini-3.7-flash',
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
@@ -118,6 +143,6 @@ export async function askPortfolioAIAction(userPrompt: string) {
     return { success: true, answer };
   } catch (err: any) {
     console.error('AI Q&A Error:', err);
-    return { success: false, error: err.message || 'AI request failed.' };
+    return { success: false, error: err.message || 'AI request failed due to high demand. Please try again in a moment.' };
   }
 }
