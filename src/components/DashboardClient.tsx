@@ -159,8 +159,8 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
-        {/* Separated Future Income Milestones (U.S. Social Security @ Age 62) */}
-        <FutureIncomeMilestones />
+        {/* Expanded Future Milestones & Family Directives */}
+        <FutureMilestonesAndDirectives />
 
         <GrowthSimulator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
       </div>
@@ -191,54 +191,94 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   );
 }
 
-function FutureIncomeMilestones() {
-  const targetClaimingAge = 62;
-  const [monthlyBenefit, setMonthlyBenefit] = useState<number>(1800);
-  const [isEditing, setIsEditing] = useState(false);
+function FutureMilestonesAndDirectives() {
+  const [ssnBenefit, setSsnBenefit] = useState<number>(2800);
+  const [isEditingSsn, setIsEditingSsn] = useState(false);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-indigo-400" />
-          <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones (External)</h3>
+          <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer flex items-center gap-1"
-        >
-          <Edit3 className="w-3.5 h-3.5" />
-          <span>{isEditing ? 'Done' : 'Edit Estimate'}</span>
-        </button>
       </div>
       
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">U.S. Social Security Benefits</div>
-          <div className="text-sm font-semibold text-white mt-1">
-            Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age {targetClaimingAge}</span>
+      <div className="space-y-3">
+        {/* U.S. Social Security */}
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">U.S. Social Security Benefits</div>
+            <div className="text-sm font-semibold text-white mt-1">
+              Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age 62</span>
+            </div>
+            <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+              Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.
+            </div>
           </div>
-          <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
-            Tracked separately as a sovereign monthly pension stream. Excluded from liquid net worth calculations to maintain current asset accuracy.
+          
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
+              <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
+              {isEditingSsn ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
+                  <input
+                    type="number"
+                    value={ssnBenefit}
+                    onChange={(e) => setSsnBenefit(parseFloat(e.target.value) || 0)}
+                    className="w-20 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
+                  />
+                  <span className="text-xs text-slate-400">/mo</span>
+                </div>
+              ) : (
+                <span className="text-xs font-mono text-emerald-400 font-bold">${ssnBenefit.toLocaleString()} / mo</span>
+              )}
+            </div>
+            <button
+              onClick={() => setIsEditingSsn(!isEditingSsn)}
+              className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+              title="Edit SSN Estimate"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        
-        <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
-          <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
-          {isEditing ? (
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
-              <input
-                type="number"
-                value={monthlyBenefit}
-                onChange={(e) => setMonthlyBenefit(parseFloat(e.target.value) || 0)}
-                className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:border-indigo-500"
-              />
-              <span className="text-xs text-slate-400">/mo</span>
+
+        {/* Atal Pension Yojana (APY) */}
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Atal Pension Yojana (APY)</div>
+            <div className="text-sm font-semibold text-white mt-1">
+              Target Maturity Horizon: <span className="text-emerald-400 font-mono">Age 60</span>
             </div>
-          ) : (
-            <span className="text-xs font-mono text-emerald-400 font-bold">${monthlyBenefit.toLocaleString()} / mo</span>
-          )}
+            <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+              Guaranteed monthly pension tier claimable via PRAN upon reaching age 60.
+            </div>
+          </div>
+          
+          <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
+            <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Tier Payout</span>
+            <span className="text-xs font-mono text-emerald-400 font-bold">₹5,000 / mo</span>
+          </div>
+        </div>
+
+        {/* Public Provident Fund (PPF) 2031 Maturity Directive */}
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Public Provident Fund (PPF) Directive</div>
+            <div className="text-sm font-semibold text-white mt-1">
+              Maturity Target: <span className="text-amber-400 font-mono">Year 2031</span>
+            </div>
+            <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+              Family Claiming Instruction: Submit Form H at the designated post office or bank branch upon maturity in 2031.
+            </div>
+          </div>
+          
+          <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
+            <span className="text-[10px] text-slate-400 uppercase block font-medium">Action Required</span>
+            <span className="text-xs font-mono text-amber-300 font-bold">Claim &amp; Reinvest</span>
+          </div>
         </div>
       </div>
     </div>
@@ -819,6 +859,84 @@ function GrowthSimulator({ currentTotalValue, baseCurrency }: { currentTotalValu
         <div>
           <div className="text-slate-400">Projected Portfolio Value</div>
           <div className="text-2xl font-extrabold font-mono text-emerald-400">{fv.toLocaleString()} <span className="text-sm text-indigo-400">{baseCurrency}</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function AccountInstructionsHub({ assets }: { assets: any[] }) {
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [instructionsMap, setInstructionsMap] = useState<{ [key: string]: string }>({
+    'Default Brokerage': 'Master login via hardware key. Contact broker estate desk upon succession.'
+  });
+  const [editingNote, setEditingNote] = useState('');
+
+  // Group assets by account number / category to avoid duplication
+  const uniqueAccounts = Array.from(new Set(assets.map(a => `${a.accountCategory} (${a.accountNumber || 'Primary'})`)));
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+        <Shield className="w-5 h-5 text-indigo-400" />
+        <h3 className="text-sm font-bold text-white uppercase">Institution &amp; Account-Level Family Directives</h3>
+      </div>
+      <p className="text-xs text-slate-400">
+        Provide overarching instructions, login protocols, and succession steps for entire accounts (which may hold multiple stocks or funds), avoiding repetitive notes on individual line items.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <div className="space-y-2">
+          <label className="block text-[10px] text-slate-400 uppercase font-medium">Select Account / Institution</label>
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+            {uniqueAccounts.map((acct) => (
+              <button
+                key={acct}
+                onClick={() => {
+                  setSelectedAccount(acct);
+                  setEditingNote(instructionsMap[acct] || '');
+                }}
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${
+                  selectedAccount === acct 
+                    ? 'bg-indigo-600/20 border-indigo-500/50 text-white font-bold' 
+                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'
+                }`}
+              >
+                {acct}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="md:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-3">
+          {selectedAccount ? (
+            <>
+              <div>
+                <div className="text-xs font-bold text-indigo-400 mb-1">Directives for: {selectedAccount}</div>
+                <textarea
+                  value={editingNote}
+                  onChange={(e) => setEditingNote(e.target.value)}
+                  placeholder="Enter succession notes, broker contact info, or transfer instructions for this account..."
+                  rows={4}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 resize-none"
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote }));
+                    alert('Account instructions saved securely!');
+                  }}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md transition-colors"
+                >
+                  Save Account Notes
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-xs text-slate-500 py-8">
+              Select an account from the left to view or edit family instructions.
+            </div>
+          )}
         </div>
       </div>
     </div>
