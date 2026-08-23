@@ -11,16 +11,22 @@ export const households = pgTable('households', {
 });
 
 export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  householdId: uuid('household_id').notNull(),
+  id: uuid('id').primaryKey().defaultRandom(),
+  householdId: uuid('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   fullName: text('full_name').notNull(),
-  role: text('role').default('MEMBER').notNull(),
+  role: text('role').notNull().default('MEMBER'), // OWNER, ADMIN, MEMBER, VIEWER
+  
+  // AI Provider Settings & Multi-Keys
+  aiProvider: text('ai_provider').default('gemini'),
+  aiApiKey: text('ai_api_key'),
+  geminiApiKey: text('gemini_api_key'),
+  openaiApiKey: text('openai_api_key'),
+  anthropicApiKey: text('anthropic_api_key'),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-aiProvider: text('ai_provider').default('gemini'), // 'gemini' | 'openai' | 'anthropic'
-  aiApiKey: text('ai_api_key')                 // User's personal encrypted/raw key
 });
 
 export const portfolios = pgTable('portfolios', {
