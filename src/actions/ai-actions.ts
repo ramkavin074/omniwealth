@@ -65,106 +65,131 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   let answer = '';
   let providerUsed = '';
 
-  // --- HELPER EXECUTION FUNCTIONS ---
-  async function runGroq(key: string) {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-      })
-    });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content;
+  // --- HELPER EXECUTION FUNCTIONS (Guaranteed string return) ---
+  async function runGroq(key: string): Promise<string> {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+        })
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    } catch {
+      return '';
+    }
   }
 
-  async function runOpenRouter(key: string) {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${key}`, 
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org' 
-      },
-      body: JSON.stringify({
-        model: 'openrouter/free',
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-      })
-    });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content;
+  async function runOpenRouter(key: string): Promise<string> {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${key}`, 
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org' 
+        },
+        body: JSON.stringify({
+          model: 'openrouter/free',
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+        })
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    } catch {
+      return '';
+    }
   }
 
-  async function runGemini(key: string) {
-    const ai = new GoogleGenAI({ apiKey: key });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
-    });
-    return response.text;
+  async function runGemini(key: string): Promise<string> {
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
+      });
+      return response.text || '';
+    } catch {
+      return '';
+    }
   }
 
-  async function runOpenAI(key: string) {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-      })
-    });
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content;
+  async function runOpenAI(key: string): Promise<string> {
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
+        })
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    } catch {
+      return '';
+    }
   }
 
-  async function runClaude(key: string) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      })
-    });
-    const data = await res.json();
-    return data.content?.[0]?.text;
+  async function runClaude(key: string): Promise<string> {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+      const data = await res.json();
+      return data.content?.[0]?.text || '';
+    } catch {
+      return '';
+    }
   }
 
   // --- FORCED PROVIDER OR AUTO CASCADE ---
   if (forcedProvider === 'groq' && groqKey) {
     answer = await runGroq(groqKey);
-    providerUsed = 'Groq (Llama 3.3)';
+    if (answer) providerUsed = 'Groq (Llama 3.3)';
   } else if (forcedProvider === 'openrouter' && openrouterKey) {
     answer = await runOpenRouter(openrouterKey);
-    providerUsed = 'OpenRouter (Free Router)';
+    if (answer) providerUsed = 'OpenRouter (Free Router)';
   } else if (forcedProvider === 'gemini' && geminiKey) {
     answer = await runGemini(geminiKey);
-    providerUsed = 'Google Gemini (3.6 Flash)';
+    if (answer) providerUsed = 'Google Gemini (3.6 Flash)';
   } else if (forcedProvider === 'openai' && openaiKey) {
     answer = await runOpenAI(openaiKey);
-    providerUsed = 'OpenAI (GPT-4o-mini)';
+    if (answer) providerUsed = 'OpenAI (GPT-4o-mini)';
   } else if (forcedProvider === 'anthropic' && anthropicKey) {
     answer = await runClaude(anthropicKey);
-    providerUsed = 'Anthropic Claude';
+    if (answer) providerUsed = 'Anthropic Claude';
   } else {
     // --- AUTO FREE-FIRST CASCADE ---
     if (groqKey && !answer) {
-      try { answer = await runGroq(groqKey); if (answer) providerUsed = 'Groq (Llama 3.3)'; } catch {}
+      answer = await runGroq(groqKey);
+      if (answer) providerUsed = 'Groq (Llama 3.3)';
     }
     if (openrouterKey && !answer) {
-      try { answer = await runOpenRouter(openrouterKey); if (answer) providerUsed = 'OpenRouter (Free Router)'; } catch {}
+      answer = await runOpenRouter(openrouterKey);
+      if (answer) providerUsed = 'OpenRouter (Free Router)';
     }
     if (geminiKey && !answer) {
-      try { answer = await runGemini(geminiKey); if (answer) providerUsed = 'Google Gemini (3.6 Flash)'; } catch {}
+      answer = await runGemini(geminiKey);
+      if (answer) providerUsed = 'Google Gemini (3.6 Flash)';
     }
     if (openaiKey && !answer) {
-      try { answer = await runOpenAI(openaiKey); if (answer) providerUsed = 'OpenAI (GPT-4o-mini)'; } catch {}
+      answer = await runOpenAI(openaiKey);
+      if (answer) providerUsed = 'OpenAI (GPT-4o-mini)';
     }
     if (anthropicKey && !answer) {
-      try { answer = await runClaude(anthropicKey); if (answer) providerUsed = 'Anthropic Claude'; } catch {}
+      answer = await runClaude(anthropicKey);
+      if (answer) providerUsed = 'Anthropic Claude';
     }
   }
 
