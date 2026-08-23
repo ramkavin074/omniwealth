@@ -60,7 +60,7 @@ export default function PortfolioAIChat() {
           <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
             {messages.map((m, idx) => (
               <div key={idx} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-2xl leading-relaxed ${
+                <div className={`max-w-[85%] p-3 rounded-2xl leading-relaxed whitespace-pre-line ${
                   m.sender === 'user' 
                     ? 'bg-indigo-600 text-white rounded-br-none' 
                     : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none'

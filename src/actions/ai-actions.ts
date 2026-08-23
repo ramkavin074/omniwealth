@@ -68,7 +68,11 @@ export async function askPortfolioAIAction(userPrompt: string) {
   Here is the household's current portfolio summary (Total Net Worth: ${Math.round(totalVal)} ${session.household.baseCurrency}):
   ${JSON.stringify(portfolioSummary, null, 2)}
   
-  Answer the user's question accurately based strictly on this data. Keep explanations crystal clear, friendly, and structured.`;
+  CRITICAL FORMATTING INSTRUCTIONS FOR THE CHAT WINDOW:
+  - NEVER use LaTeX math tags, backslashes, or formulas (like $$ or \\text or \\mathbf).
+  - Use clean Markdown only: short paragraphs, bullet points (*), and bold text (**).
+  - Keep numbers clean and readable (e.g., $77,805 USD).
+  - Keep answers concise, direct, and structured for a small chat screen.`;
 
   let answer = '';
   let success = false;
@@ -86,7 +90,7 @@ export async function askPortfolioAIAction(userPrompt: string) {
         success = true;
       }
     } catch (err: any) {
-      console.warn('Gemini failed or overloaded (503/429), trying fallback provider...', err?.message || err);
+      console.warn('Gemini failed or overloaded, trying fallback provider...', err?.message || err);
     }
   }
 
