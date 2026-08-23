@@ -19,6 +19,8 @@ export const users = pgTable('users', {
   role: text('role').default('MEMBER').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+aiProvider: text('ai_provider').default('gemini'), // 'gemini' | 'openai' | 'anthropic'
+  aiApiKey: text('ai_api_key')                 // User's personal encrypted/raw key
 });
 
 export const portfolios = pgTable('portfolios', {

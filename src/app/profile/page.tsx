@@ -3,6 +3,7 @@ import { households, users, documents } from '@/db/schema';
 import { getSessionUserAction } from '@/actions/auth';
 import { eq, count } from 'drizzle-orm';
 import ProfileClient from '@/components/ProfileClient';
+import AiSettingsCard from '@/components/AiSettingsCard';
 import Link from 'next/link';
 
 export default async function ProfilePage() {
@@ -53,6 +54,12 @@ export default async function ProfilePage() {
             Open Vault →
           </Link>
         </div>
+
+        {/* Personal AI Provider & Key Settings (BYOK) */}
+        <AiSettingsCard 
+          initialProvider={session.user.aiProvider || 'gemini'} 
+          initialHasKey={!!session.user.aiApiKey} 
+        />
 
         {/* Existing Profile & Family Members Manager */}
         <ProfileClient 
