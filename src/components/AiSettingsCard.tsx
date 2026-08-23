@@ -1,98 +1,122 @@
 'use client';
 
 import { useState } from 'react';
-import { askPortfolioAIAction } from '@/actions/ai-actions';
-import { MessageSquare, Send, Sparkles, X } from 'lucide-react';
+import { updateAiSettingsAction } from '@/actions/ai-actions';
+import { Cpu, CheckCircle2 } from 'lucide-react';
 
-export default function PortfolioAIChat() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+interface AiSettingsCardProps {
+  initialGroq?: boolean;
+  initialOpenrouter?: boolean;
+  initialGemini?: boolean;
+  initialOpenai?: boolean;
+  initialAnthropic?: boolean;
+}
+
+export default function AiSettingsCard({ 
+  initialGroq, 
+  initialOpenrouter, 
+  initialGemini, 
+  initialOpenai, 
+  initialAnthropic 
+}: AiSettingsCardProps) {
+  const [groqApiKey, setGroq] = useState('');
+  const [openrouterApiKey, setOpenrouter] = useState('');
+  const [geminiApiKey, setGemini] = useState('');
+  const [openaiApiKey, setOpenai] = useState('');
+  const [anthropicApiKey, setAnthropic] = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<{ sender: 'user' | 'ai'; text: string }[]>([
-    { sender: 'ai', text: "Hello! I'm your family wealth assistant. Ask me anything about our net worth, assets, or retirement plans." }
-  ]);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  async function handleSend(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!prompt.trim() || loading) return;
-
-    const userText = prompt.trim();
-    setPrompt('');
-    setMessages(prev => [...prev, { sender: 'user', text: userText }]);
     setLoading(true);
+    setError('');
+    setSuccess(false);
 
-    const res = await askPortfolioAIAction(userText);
+    const formData = new FormData();
+    formData.append('groqApiKey', groqApiKey);
+    formData.append('openrouterApiKey', openrouterApiKey);
+    formData.append('geminiApiKey', geminiApiKey);
+    formData.append('openaiApiKey', openaiApiKey);
+    formData.append('anthropicApiKey', anthropicApiKey);
+
+    const res = await updateAiSettingsAction(formData);
     setLoading(false);
 
     if (res.success) {
-      setMessages(prev => [...prev, { sender: 'ai', text: res.answer || 'No response generated.' }]);
+      setSuccess(true);
+      setGroq('');
+      setOpenrouter('');
+      setGemini('');
+      setOpenai('');
+      setAnthropic('');
     } else {
-      setMessages(prev => [...prev, { sender: 'ai', text: `Error: ${res.error}` }]);
+      setError(res.error || 'Failed to save settings.');
     }
   }
 
   return (
-    <>
-      {/* Floating Trigger Button */}
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 z-50 transition-transform hover:scale-105"
-      >
-        <Sparkles className="w-5 h-5 text-indigo-200" />
-        <span className="text-xs font-bold hidden sm:inline">Ask Wealth AI</span>
-      </button>
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+        <Cpu className="w-5 h-5 text-indigo-400" />
+        <h3 className="text-sm font-bold text-white uppercase">Multi-AI Free-First Cascade Settings (BYOK)</h3>
+      </div>
 
-      {/* Chat Drawer */}
-      {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 max-w-[90vw] h-[500px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
-          {/* Header */}
-          <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">Family Wealth Assistant</span>
-            </div>
-            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+      <p className="text-xs text-slate-400">
+        Configure your keys below. The vault automatically prioritizes free providers first (<strong className="text-slate-200">Groq &rarr; OpenRouter &rarr; Gemini</strong>), cascading to paid backups only if needed.
+      </p>
 
-          {/* Messages Body */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-            {messages.map((m, idx) => (
-              <div key={idx} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] p-3 rounded-2xl leading-relaxed whitespace-pre-line ${
-                  m.sender === 'user' 
-                    ? 'bg-indigo-600 text-white rounded-br-none' 
-                    : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none'
-                }`}>
-                  {m.text}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-slate-950 border border-slate-800 text-slate-400 p-3 rounded-2xl animate-pulse">
-                  Analyzing portfolio...
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer Input */}
-          <form onSubmit={handleSend} className="p-3 bg-slate-950 border-t border-slate-800 flex gap-2">
-            <input 
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Ask about assets, retirement, etc..."
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-            />
-            <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-xl">
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            1. Groq API Key (Free Tier - Ultra Fast Llama) {initialGroq && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input type="password" value={groqApiKey} onChange={e => setGroq(e.target.value)} placeholder="gsk_..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" />
+          <p className="text-[10px] text-slate-500 mt-1">Get a free key at console.groq.com (No credit card required)</p>
         </div>
-      )}
-    </>
+
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            2. OpenRouter API Key (Free Models Router) {initialOpenrouter && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input type="password" value={openrouterApiKey} onChange={e => setOpenrouter(e.target.value)} placeholder="sk-or-..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" />
+          <p className="text-[10px] text-slate-500 mt-1">Get a free key at openrouter.ai (Access to rotating free models)</p>
+        </div>
+
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            3. Google Gemini API Key (Free Tier) {initialGemini && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input type="password" value={geminiApiKey} onChange={e => setGemini(e.target.value)} placeholder="AIza..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" />
+          <p className="text-[10px] text-slate-500 mt-1">Get a free key at aistudio.google.com</p>
+        </div>
+
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            4. OpenAI API Key (Paid Backup) {initialOpenai && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input type="password" value={openaiApiKey} onChange={e => setOpenai(e.target.value)} placeholder="sk-..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" />
+        </div>
+
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            5. Anthropic Claude API Key (Paid Backup) {initialAnthropic && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input type="password" value={anthropicApiKey} onChange={e => setAnthropic(e.target.value)} placeholder="sk-ant-..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" />
+        </div>
+
+        {error && <p className="text-rose-400">{error}</p>}
+        {success && (
+          <div className="flex items-center gap-1.5 text-emerald-400">
+            <CheckCircle2 className="w-4 h-4" /> Free-first cascade keys saved successfully!
+          </div>
+        )}
+
+        <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+          {loading ? 'Saving Keys...' : 'Save AI Keys & Cascade Order'}
+        </button>
+      </form>
+    </div>
   );
 }

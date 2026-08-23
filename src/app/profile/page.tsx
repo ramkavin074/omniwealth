@@ -16,6 +16,12 @@ export default async function ProfilePage() {
     );
   }
 
+  // Fetch fresh user record to safely check configured API keys
+  const [currentUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, session.user.id));
+
   const familyMembers = await db
     .select()
     .from(users)
@@ -55,13 +61,13 @@ export default async function ProfilePage() {
           </Link>
         </div>
 
-        {/* Multi-AI Failover Settings Card */}
+        {/* Multi-AI Free-First Cascade Settings Card */}
         <AiSettingsCard 
-          initialGroq={!!session.user.groqApiKey}
-  initialOpenrouter={!!session.user.openrouterApiKey}
-  initialGemini={!!session.user.geminiApiKey} 
-  initialOpenai={!!session.user.openaiApiKey} 
-  initialAnthropic={!!session.user.anthropicApiKey}
+          initialGroq={!!currentUser?.groqApiKey}
+          initialOpenrouter={!!currentUser?.openrouterApiKey}
+          initialGemini={!!currentUser?.geminiApiKey} 
+          initialOpenai={!!currentUser?.openaiApiKey} 
+          initialAnthropic={!!currentUser?.anthropicApiKey} 
         />
 
         {/* Profile & Family Members Manager */}
