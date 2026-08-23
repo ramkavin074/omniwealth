@@ -42,17 +42,23 @@ export default function StatementUploadModal() {
     setError('');
     setSuccessMsg('');
 
-    const formData = new FormData(e.currentTarget);
-    const res = await parseStatementAction(formData);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const res = await parseStatementAction(formData);
 
-    if (res?.success) {
-      setSuccessMsg(`Successfully extracted ${res.count} items from your statements/text! Review below.`);
-      (e.target as HTMLFormElement).reset();
-      loadDraftsAndMembers();
-    } else {
-      setError(res?.error || 'Failed to parse statements or text');
+      if (res?.success) {
+        setSuccessMsg(`Successfully extracted ${res.count} items from your statements/text! Review below.`);
+        (e.target as HTMLFormElement).reset();
+        loadDraftsAndMembers();
+      } else {
+        setError(res?.error || 'Failed to parse statements or text');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred during parsing.');
+    } finally {
+      // Guarantees the loading spinner and overlay always dismiss
+      setUploading(false);
     }
-    setUploading(false);
   }
 
   async function handleApprove(draftId: string) {
@@ -66,14 +72,19 @@ export default function StatementUploadModal() {
 
   async function handleApproveAll() {
     setUploading(true);
-    const res = await approveAllDraftLineItemsAction(bulkUserId || undefined);
-    if (res?.success) {
-      setSuccessMsg(`Successfully approved all ${res.count} items into your global vault!`);
-      loadDraftsAndMembers();
-    } else {
-      setError('Failed to approve all items.');
+    try {
+      const res = await approveAllDraftLineItemsAction(bulkUserId || undefined);
+      if (res?.success) {
+        setSuccessMsg(`Successfully approved all ${res.count} items into your global vault!`);
+        loadDraftsAndMembers();
+      } else {
+        setError('Failed to approve all items.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to approve items.');
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   }
 
   async function handleReject(draftId: string) {

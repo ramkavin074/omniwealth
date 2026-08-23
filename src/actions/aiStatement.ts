@@ -12,9 +12,9 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 3, dela
   try {
     return await ai.models.generateContent(params);
   } catch (error: any) {
-    const isOverloaded = error?.status === 503 || error?.code === 503 || error?.message?.includes('503');
+    const isOverloaded = error?.status === 503 || error?.code === 503 || error?.message?.includes('503') || error?.status === 429 || error?.code === 429;
     if (retries > 0 && isOverloaded) {
-      console.warn(`Gemini API overloaded (503). Retrying in ${delay}ms...`);
+      console.warn(`Gemini API overloaded/rate-limited. Retrying in ${delay}ms...`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return generateWithRetry(ai, params, retries - 1, delay * 2);
     }
@@ -26,25 +26,23 @@ export async function parseStatementAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  const files = formData.getAll('files') as File[];
-  if (!files || files.length === 0) return { success: false, error: 'No files uploaded' };
-
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return { success: false, error: 'GEMINI_API_KEY is not configured in .env' };
 
   const ai = new GoogleGenAI({ apiKey });
+  const files = formData.getAll('files') as File[];
+  const pastedText = formData.get('pastedText') as string;
 
-  const processingPromises = files.map(async (file) => {
+  let totalCount = 0;
+  const basePrompt = 'Extract all investment assets, stock holdings, crypto positions, cash balances, or real estate line items. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").';
+
+  // 1. Handle Pasted Text if provided
+  if (pastedText && pastedText.trim().length > 0) {
     try {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const mimeType = file.type || 'application/pdf';
-
       const response = await generateWithRetry(ai, {
-        model: 'gemini-3.7-flash',
+        model: 'gemini-3.6-flash',
         contents: [
-          { inlineData: { mimeType, data: buffer.toString('base64') } },
-          { text: 'Extract all investment assets, stock holdings, crypto positions, cash balances, or real estate line items. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").' },
+          { text: `${basePrompt}\n\nHere is the pasted statement text:\n${pastedText}` }
         ],
         config: {
           responseMimeType: 'application/json',
@@ -71,8 +69,6 @@ export async function parseStatementAction(formData: FormData) {
       });
 
       const parsedItems = JSON.parse(response.text || '[]');
-      let count = 0;
-
       for (const item of parsedItems) {
         await db.insert(draftLineItems).values({
           householdId: session.household.id,
@@ -86,20 +82,95 @@ export async function parseStatementAction(formData: FormData) {
           quantity: item.quantity ? item.quantity.toString() : '1',
           pricePerUnit: item.pricePerUnit ? item.pricePerUnit.toString() : item.totalNativeValue.toString(),
           totalNativeValue: item.totalNativeValue.toString(),
-          nativeCurrency: item.nativeCurrency || 'USD',
+          nativeCurrency: item.nativeCurrency || session.household.baseCurrency || 'USD',
           status: 'PENDING',
         });
-        count++;
+        totalCount++;
       }
-      return count;
     } catch (err: any) {
-      console.error(`Error parsing file ${file.name}:`, err);
-      return 0;
+      console.error('Error parsing pasted text:', err);
+      return { success: false, error: err.message || 'Failed to parse pasted text' };
     }
-  });
+  }
 
-  const results = await Promise.all(processingPromises);
-  const totalCount = results.reduce((acc, curr) => acc + curr, 0);
+  // 2. Handle Files if provided
+  if (files && files.length > 0 && files[0].size > 0) {
+    const processingPromises = files.map(async (file) => {
+      if (file.size === 0) return 0;
+      try {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const mimeType = file.type || 'application/pdf';
+
+        const response = await generateWithRetry(ai, {
+          model: 'gemini-3.6-flash',
+          contents: [
+            { inlineData: { mimeType, data: buffer.toString('base64') } },
+            { text: basePrompt },
+          ],
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  assetName: { type: Type.STRING },
+                  ticker: { type: Type.STRING },
+                  assetType: { type: Type.STRING },
+                  accountCategory: { type: Type.STRING },
+                  accountNumber: { type: Type.STRING },
+                  rationale: { type: Type.STRING },
+                  quantity: { type: Type.STRING },
+                  pricePerUnit: { type: Type.STRING },
+                  totalNativeValue: { type: Type.STRING },
+                  nativeCurrency: { type: Type.STRING },
+                },
+                required: ['assetName', 'assetType', 'totalNativeValue', 'nativeCurrency'],
+              },
+            },
+          },
+        });
+
+        const parsedItems = JSON.parse(response.text || '[]');
+        let fileCount = 0;
+
+        for (const item of parsedItems) {
+          await db.insert(draftLineItems).values({
+            householdId: session.household.id,
+            userId: session.user.id,
+            assetName: item.assetName,
+            ticker: item.ticker || null,
+            assetType: item.assetType || 'OTHER',
+            accountCategory: item.accountCategory || 'INDIVIDUAL',
+            accountNumber: item.accountNumber || 'DEFAULT',
+            rationale: item.rationale || 'General Long-Term Growth',
+            quantity: item.quantity ? item.quantity.toString() : '1',
+            pricePerUnit: item.pricePerUnit ? item.pricePerUnit.toString() : item.totalNativeValue.toString(),
+            totalNativeValue: item.totalNativeValue.toString(),
+            nativeCurrency: item.nativeCurrency || session.household.baseCurrency || 'USD',
+            status: 'PENDING',
+          });
+          fileCount++;
+        }
+        return fileCount;
+      } catch (err: any) {
+        console.error(`Error parsing file ${file.name}:`, err);
+        throw err;
+      }
+    });
+
+    try {
+      const results = await Promise.all(processingPromises);
+      totalCount += results.reduce((acc, curr) => acc + curr, 0);
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to parse uploaded files' };
+    }
+  }
+
+  if (totalCount === 0 && !pastedText && (!files || files.length === 0 || files[0].size === 0)) {
+    return { success: false, error: 'No files or text provided for analysis.' };
+  }
 
   revalidatePath('/');
   return { success: true, count: totalCount };
