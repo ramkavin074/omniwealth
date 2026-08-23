@@ -159,10 +159,10 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
-        {/* Conditional Future Milestones & Directives (Appears only when relevant assets exist) */}
+        {/* Dynamic Future Milestones & Directives (Lists multiple entries per category) */}
         <FutureMilestonesAndDirectives assets={initialAssets} />
 
-        {/* Conditional Account-Level Instructions Hub (Appears only when accounts exist) */}
+        {/* Account-Level Instructions Hub */}
         <AccountInstructionsHub assets={initialAssets} />
 
         <GrowthSimulator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
@@ -195,14 +195,11 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
 }
 
 function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
-  const [ssnBenefit, setSsnBenefit] = useState<number>(2800);
-  const [isEditingSsn, setIsEditingSsn] = useState(false);
+  const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
+  const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
+  const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
 
-  const hasSocialSecurity = assets.some(a => a.accountCategory === 'SOCIAL_SECURITY');
-  const hasPension = assets.some(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
-  const hasPpf = assets.some(a => a.accountCategory === 'PPF');
-
-  if (!hasSocialSecurity && !hasPension && !hasPpf) {
+  if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
     return null;
   }
 
@@ -216,53 +213,35 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
       </div>
       
       <div className="space-y-3">
-        {hasSocialSecurity && (
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Map all Social Security entries */}
+        {ssnAssets.map((asset) => (
+          <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">U.S. Social Security Benefits</div>
+              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'U.S. Social Security Benefits'}</div>
               <div className="text-sm font-semibold text-white mt-1">
-                Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age 62</span>
+                Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age 62</span>
               </div>
               <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
                 Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.
               </div>
             </div>
             
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
-                <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
-                {isEditingSsn ? (
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
-                    <input
-                      type="number"
-                      value={ssnBenefit}
-                      onChange={(e) => setSsnBenefit(parseFloat(e.target.value) || 0)}
-                      className="w-20 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
-                    />
-                    <span className="text-xs text-slate-400">/mo</span>
-                  </div>
-                ) : (
-                  <span className="text-xs font-mono text-emerald-400 font-bold">${ssnBenefit.toLocaleString()} / mo</span>
-                )}
-              </div>
-              <button
-                onClick={() => setIsEditingSsn(!isEditingSsn)}
-                className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
-                title="Edit SSN Estimate"
-              >
-                <Edit3 className="w-4 h-4" />
-              </button>
+            <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
+              <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">
+                ${parseFloat(asset.nativeValue || '0').toLocaleString()} / mo
+              </span>
             </div>
           </div>
-        )}
+        ))}
 
-        {hasPension && (
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Map all Pension entries (supports multiple APY entries for you and your wife) */}
+        {pensionAssets.map((asset) => (
+          <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Atal Pension Yojana (APY)</div>
+              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Atal Pension Yojana (APY)'}</div>
               <div className="text-sm font-semibold text-white mt-1">
-                Target Maturity Horizon: <span className="text-emerald-400 font-mono">Age 60</span>
+                Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Maturity Horizon: <span className="text-emerald-400 font-mono">Age 60</span>
               </div>
               <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
                 Guaranteed monthly pension tier claimable via PRAN upon reaching age 60.
@@ -270,18 +249,21 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
             </div>
             
             <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Tier Payout</span>
-              <span className="text-xs font-mono text-emerald-400 font-bold">₹5,000 / mo</span>
+              <span className="text-[10px] text-slate-400 uppercase block font-medium">Monthly Tier Payout</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">
+                {parseFloat(asset.nativeValue || '0').toLocaleString()} {asset.nativeCurrency || 'INR'} / mo
+              </span>
             </div>
           </div>
-        )}
+        ))}
 
-        {hasPpf && (
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {/* Map all PPF entries */}
+        {ppfAssets.map((asset) => (
+          <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Public Provident Fund (PPF) Directive</div>
+              <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Public Provident Fund (PPF)'}</div>
               <div className="text-sm font-semibold text-white mt-1">
-                Maturity Target: <span className="text-amber-400 font-mono">Year 2031</span>
+                Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Maturity Target: <span className="text-amber-400 font-mono">Year 2031</span>
               </div>
               <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
                 Family Claiming Instruction: Submit Form H at the designated post office or bank branch upon maturity in 2031.
@@ -289,11 +271,13 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
             </div>
             
             <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase block font-medium">Action Required</span>
-              <span className="text-xs font-mono text-amber-300 font-bold">Claim &amp; Reinvest</span>
+              <span className="text-[10px] text-slate-400 uppercase block font-medium">Maturity Target Value</span>
+              <span className="text-xs font-mono text-emerald-400 font-bold">
+                {parseFloat(asset.nativeValue || '0').toLocaleString()} {asset.nativeCurrency || 'INR'}
+              </span>
             </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
