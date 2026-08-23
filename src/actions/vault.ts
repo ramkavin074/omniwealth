@@ -368,7 +368,7 @@ export async function parseStatementAction(formData: FormData) {
   if (pastedText) {
     try {
       const response = await generateWithRetry(ai, {
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [
           { text: `${extractionPrompt}\n\nHere is the pasted statement text:\n${pastedText}` },
         ],
