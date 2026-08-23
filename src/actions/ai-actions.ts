@@ -7,7 +7,7 @@ import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
 import { GoogleGenAI } from '@google/genai';
 import { revalidatePath } from 'next/cache';
 
-// 1. Save User's AI Keys (Free & Paid Providers)
+// 1. Save User's AI Multi-Provider Keys
 export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
@@ -18,15 +18,17 @@ export async function updateAiSettingsAction(formData: FormData) {
   const openaiApiKey = (formData.get('openaiApiKey') as string || '').trim();
   const anthropicApiKey = (formData.get('anthropicApiKey') as string || '').trim();
 
+  const updateData: Record<string, any> = { updatedAt: new Date() };
+
+  // Only update fields if the user provided new values
+  if (groqApiKey) updateData.groqApiKey = groqApiKey;
+  if (openrouterApiKey) updateData.openrouterApiKey = openrouterApiKey;
+  if (geminiApiKey) updateData.geminiApiKey = geminiApiKey;
+  if (openaiApiKey) updateData.openaiApiKey = openaiApiKey;
+  if (anthropicApiKey) updateData.anthropicApiKey = anthropicApiKey;
+
   await db.update(users)
-    .set({ 
-      groqApiKey: groqApiKey || null,
-      openrouterApiKey: openrouterApiKey || null,
-      geminiApiKey: geminiApiKey || null, 
-      openaiApiKey: openaiApiKey || null,
-      anthropicApiKey: anthropicApiKey || null,
-      updatedAt: new Date() 
-    } as any)
+    .set(updateData as any)
     .where(eq(users.id, session.user.id));
 
   revalidatePath('/profile');
@@ -40,7 +42,7 @@ export async function askPortfolioAIAction(userPrompt: string) {
 
   const [currentUser] = await db.select().from(users).where(eq(users.id, session.user.id));
   
-  // Retrieve all configured keys (with environment fallbacks if available)
+  // Retrieve all configured keys (with environment variable fallbacks)
   const groqKey = currentUser?.groqApiKey || process.env.GROQ_API_KEY;
   const openrouterKey = currentUser?.openrouterApiKey || process.env.OPENROUTER_API_KEY;
   const geminiKey = currentUser?.geminiApiKey || process.env.GEMINI_API_KEY;
@@ -106,11 +108,11 @@ export async function askPortfolioAIAction(userPrompt: string) {
         success = true;
       }
     } catch (err: any) {
-      console.warn('Groq failed, trying next free provider...', err?.message || err);
+      console.warn('Groq failed, trying next provider...', err?.message || err);
     }
   }
 
-  // --- PRIORITY 2: OpenRouter (Free Router - Automatically picks zero-cost models) ---
+  // --- PRIORITY 2: OpenRouter (Free Router - Free Models) ---
   if (openrouterKey && !success) {
     try {
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -135,16 +137,16 @@ export async function askPortfolioAIAction(userPrompt: string) {
         success = true;
       }
     } catch (err: any) {
-      console.warn('OpenRouter failed, trying next free provider...', err?.message || err);
+      console.warn('OpenRouter failed, trying next provider...', err?.message || err);
     }
   }
 
-  // --- PRIORITY 3: Google Gemini (Free Tier - Gemini 3.7 Flash) ---
+  // --- PRIORITY 3: Google Gemini (Gemini 3.6 Flash) ---
   if (geminiKey && !success) {
     try {
       const ai = new GoogleGenAI({ apiKey: geminiKey });
       const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
+        model: 'gemini-3.6-flash',
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
       if (response.text) {

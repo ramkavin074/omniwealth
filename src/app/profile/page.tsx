@@ -16,7 +16,7 @@ export default async function ProfilePage() {
     );
   }
 
-  // Fetch fresh user record to safely check configured API keys
+  // Fetch fresh user record from DB to verify saved API keys
   const [currentUser] = await db
     .select()
     .from(users)
