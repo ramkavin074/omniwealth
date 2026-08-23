@@ -98,7 +98,7 @@ export default function LoginPage() {
                 <div className="relative">
                   <Building className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                   <input
-                    name="familyName"
+                    name="householdName"
                     required
                     placeholder="e.g. Smith Family Vault"
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
