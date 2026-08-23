@@ -327,13 +327,25 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
             <div>
               <label className="block text-[10px] text-slate-400 mb-1">Asset Type</label>
               <select name="assetType" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
-                <option value="STOCK">Stock</option><option value="CRYPTO">Crypto</option><option value="CASH">Cash</option><option value="REAL_ESTATE">Real Estate</option><option value="OTHER">Other</option>
+                <option value="STOCK">Stock</option>
+                <option value="CRYPTO">Crypto</option>
+                <option value="CASH">Cash</option>
+                <option value="HSA">HSA</option>
+                <option value="REAL_ESTATE">Real Estate</option>
+                <option value="OTHER">Other</option>
               </select>
             </div>
             <div>
               <label className="block text-[10px] text-slate-400 mb-1">Account Category</label>
               <select name="accountCategory" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
-                <option value="INDIVIDUAL">Individual</option><option value="IRA">Traditional IRA</option><option value="ROTH_IRA">Roth IRA</option><option value="401K">401(k)</option><option value="529">529 College</option><option value="TRUST">Trust</option>
+                <option value="INDIVIDUAL">Individual</option>
+                <option value="IRA">Traditional IRA</option>
+                <option value="ROTH_IRA">Roth IRA</option>
+                <option value="401K">401(k)</option>
+                <option value="HSA">HSA</option>
+                <option value="529">529 College</option>
+                <option value="TRUST">Trust</option>
+                <option value="REAL_ESTATE">Real Estate</option>
               </select>
             </div>
           </div>
@@ -555,7 +567,16 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-900 text-xs">
         <select value={usr} onChange={(e) => setUsr(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white">{members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}</select>
-        <select value={cat} onChange={(e) => setCat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white"><option value="INDIVIDUAL">Individual</option><option value="IRA">Traditional IRA</option><option value="ROTH_IRA">Roth IRA</option><option value="401K">401(k)</option><option value="529">529 College</option><option value="TRUST">Trust</option></select>
+        <select value={cat} onChange={(e) => setCat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white">
+          <option value="INDIVIDUAL">Individual</option>
+          <option value="IRA">Traditional IRA</option>
+          <option value="ROTH_IRA">Roth IRA</option>
+          <option value="401K">401(k)</option>
+          <option value="HSA">HSA</option>
+          <option value="529">529 College</option>
+          <option value="TRUST">Trust</option>
+          <option value="REAL_ESTATE">Real Estate</option>
+        </select>
         <input value={acct} onChange={(e) => setAcct(e.target.value)} placeholder="Acct #" className="bg-slate-900 border border-slate-800 rounded p-1 text-white font-mono" />
         <select value={rat} onChange={(e) => setRat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white cursor-pointer">
           {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
