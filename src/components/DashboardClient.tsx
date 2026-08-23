@@ -199,7 +199,6 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
   const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
 
-  // State to manage editable amounts and custom instructions per asset ID
   const [customData, setCustomData] = useState<{ [key: string]: { amount: number; instruction: string; editing: boolean } }>({});
 
   if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
@@ -926,13 +925,16 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
 
   const totalNetWorth = assets.reduce((s, a) => s + parseFloat(a.nativeValue || '0'), 0);
 
+  // Category subtotals sorted from highest to lowest value
   const categorySubtotals: { [key: string]: number } = {};
   assets.forEach((a) => {
     const rawCat = a.accountCategory || 'INDIVIDUAL';
     const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
     categorySubtotals[label] = (categorySubtotals[label] || 0) + parseFloat(a.nativeValue || '0');
   });
+  const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
+  // Family member map sorted from highest to lowest total, with internal assets sorted highest to lowest
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const name = a.user?.fullName || 'Family General';
@@ -940,7 +942,12 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
     memberMap[name].total += parseFloat(a.nativeValue || '0');
     memberMap[name].assets.push(a);
   });
+  Object.keys(memberMap).forEach(name => {
+    memberMap[name].assets.sort((a, b) => parseFloat(b.nativeValue || '0') - parseFloat(a.nativeValue || '0'));
+  });
+  const sortedMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
 
+  // Purpose map sorted from highest to lowest total, with internal assets sorted highest to lowest
   const purposeMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
@@ -948,6 +955,10 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
     purposeMap[p].total += parseFloat(a.nativeValue || '0');
     purposeMap[p].assets.push(a);
   });
+  Object.keys(purposeMap).forEach(p => {
+    purposeMap[p].assets.sort((a, b) => parseFloat(b.nativeValue || '0') - parseFloat(a.nativeValue || '0'));
+  });
+  const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
   return (
     <div className="space-y-6">
@@ -963,7 +974,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {Object.entries(categorySubtotals).map(([cat, val]) => (
+            {sortedCategories.map(([cat, val]) => (
               <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs">
                 <span className="text-slate-400 uppercase text-[10px] block">{cat}</span>
                 <span className="font-mono text-emerald-400 font-bold">{val.toLocaleString()} {baseCurrency}</span>
@@ -977,7 +988,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
           <div className="space-y-3">
-            {Object.entries(memberMap).map(([name, data]) => (
+            {sortedMembers.map(([name, data]) => (
               <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
                 <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer">
                   <div><div className="font-bold text-white text-sm">{name}</div><div className="text-xs text-slate-400">{data.assets.length} holding(s)</div></div>
@@ -1016,7 +1027,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
           <div className="space-y-3">
-            {Object.entries(purposeMap).map(([purposeName, data]) => {
+            {sortedPurposes.map(([purposeName, data]) => {
               const matchedPillar = legacyPillars.find(p => p.name === purposeName);
               const description = matchedPillar?.description;
 
