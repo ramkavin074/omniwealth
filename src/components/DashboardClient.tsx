@@ -330,6 +330,8 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
                 <option value="STOCK">Stock</option>
                 <option value="CRYPTO">Crypto</option>
                 <option value="CASH">Cash</option>
+                <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
+                <option value="PENSION">Pension Scheme</option>
                 <option value="HSA">HSA</option>
                 <option value="REAL_ESTATE">Real Estate</option>
                 <option value="OTHER">Other</option>
@@ -343,6 +345,9 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
                 <option value="ROTH_IRA">Roth IRA</option>
                 <option value="401K">401(k)</option>
                 <option value="HSA">HSA</option>
+                <option value="PPF">PPF (Public Provident Fund)</option>
+                <option value="PF">PF / EPF (Employee Provident Fund)</option>
+                <option value="PENSION">Atal Pension / Pension</option>
                 <option value="529">529 College</option>
                 <option value="TRUST">Trust</option>
                 <option value="REAL_ESTATE">Real Estate</option>
@@ -573,6 +578,9 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           <option value="ROTH_IRA">Roth IRA</option>
           <option value="401K">401(k)</option>
           <option value="HSA">HSA</option>
+          <option value="PPF">PPF (Public Provident Fund)</option>
+          <option value="PF">PF / EPF (Employee Provident Fund)</option>
+          <option value="PENSION">Atal Pension / Pension</option>
           <option value="529">529 College</option>
           <option value="TRUST">Trust</option>
           <option value="REAL_ESTATE">Real Estate</option>
