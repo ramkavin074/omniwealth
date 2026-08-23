@@ -158,6 +158,10 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+        
+        {/* Separated Future Income Milestones (U.S. Social Security @ Age 62) */}
+        <FutureIncomeMilestones />
+
         <GrowthSimulator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
       </div>
 
@@ -184,6 +188,36 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
         ))}
       </select>
     </form>
+  );
+}
+
+function FutureIncomeMilestones() {
+  const targetClaimingAge = 62;
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+        <Shield className="w-5 h-5 text-indigo-400" />
+        <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones (External)</h3>
+      </div>
+      
+      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">U.S. Social Security Benefits</div>
+          <div className="text-sm font-semibold text-white mt-1">
+            Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age {targetClaimingAge}</span>
+          </div>
+          <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
+            Tracked separately as a sovereign monthly pension stream. Excluded from liquid net worth calculations to maintain current asset accuracy.
+          </div>
+        </div>
+        
+        <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right shrink-0">
+          <span className="text-[10px] text-slate-400 uppercase block font-medium">Income Type</span>
+          <span className="text-xs font-mono text-amber-300 font-bold">Government Annuity</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -331,7 +365,7 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
                 <option value="CRYPTO">Crypto</option>
                 <option value="CASH">Cash</option>
                 <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
-                <option value="PENSION">Pension Scheme</option>
+                <option value="PENSION">Atal Pension / Pension</option>
                 <option value="HSA">HSA</option>
                 <option value="REAL_ESTATE">Real Estate</option>
                 <option value="OTHER">Other</option>
@@ -666,8 +700,8 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
                           <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
                             <input name="name" defaultValue={asset.name} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" />
                             <div className="grid grid-cols-2 gap-2">
-                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="bg-slate-950 border border-slate-800 rounded p-1 text-white font-mono" />
-                              <select name="rationale" defaultValue={asset.rationale} className="bg-slate-950 border border-slate-800 rounded p-1 text-white cursor-pointer">
+                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white font-mono" />
+                              <select name="rationale" defaultValue={asset.rationale} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white cursor-pointer">
                                 {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                               </select>
                             </div>
