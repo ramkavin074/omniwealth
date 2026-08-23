@@ -92,8 +92,10 @@ export default function AddAssetModal() {
                     <option value="IRA">Traditional IRA</option>
                     <option value="ROTH_IRA">Roth IRA</option>
                     <option value="401K">401(k) / Employer Plan</option>
+                    <option value="HSA">Health Savings Account (HSA)</option>
                     <option value="529">529 College Savings</option>
                     <option value="TRUST">Family Trust</option>
+                    <option value="REAL_ESTATE">Real Estate Property</option>
                   </select>
                 </div>
               </div>
@@ -103,7 +105,7 @@ export default function AddAssetModal() {
                 <input
                   name="name"
                   required
-                  placeholder="e.g. Vanguard S&P 500 Index or Mortgage Loan"
+                  placeholder="e.g. Primary Residence or Vanguard S&P 500"
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -126,6 +128,7 @@ export default function AddAssetModal() {
                   >
                     <option value="STOCK">Stock / Equity</option>
                     <option value="CRYPTO">Cryptocurrency</option>
+                    <option value="HSA">Health Savings Account (HSA)</option>
                     <option value="REAL_ESTATE">Real Estate</option>
                     <option value="CASH">Cash &amp; Bank</option>
                     <option value="LIABILITY">Liability / Mortgage / Loan</option>
