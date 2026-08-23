@@ -34,7 +34,7 @@ export async function parseStatementAction(formData: FormData) {
   const pastedText = formData.get('pastedText') as string;
 
   let totalCount = 0;
-  const basePrompt = 'Extract all investment assets, stock holdings, crypto positions, cash balances, or real estate line items. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").';
+  const basePrompt = 'Extract all investment assets, stock holdings, crypto positions, cash balances, or real estate line items. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth"). Ensure you extract the exact quantity or number of shares if applicable.';
 
   // 1. Handle Pasted Text if provided
   if (pastedText && pastedText.trim().length > 0) {
@@ -193,6 +193,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   const finalCategory = selectedCategory || draft.accountCategory || 'INDIVIDUAL';
   const finalAccountNumber = selectedAccountNumber || draft.accountNumber || 'DEFAULT';
   const finalRationale = selectedRationale || draft.rationale || 'General Long-Term Growth';
+  const assetQuantity = draft.quantity ? draft.quantity.toString() : '1';
 
   let [existingAsset] = draft.ticker
     ? await db.select().from(assets).where(and(eq(assets.userId, targetUserId), eq(assets.accountNumber, finalAccountNumber), eq(assets.ticker, draft.ticker)))
@@ -206,7 +207,13 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   let targetAssetId: string;
 
   if (existingAsset) {
-    await db.update(assets).set({ nativeValue: draft.totalNativeValue, accountCategory: finalCategory, rationale: finalRationale, updatedAt: new Date() }).where(eq(assets.id, existingAsset.id));
+    await db.update(assets).set({ 
+      quantity: assetQuantity,
+      nativeValue: draft.totalNativeValue, 
+      accountCategory: finalCategory, 
+      rationale: finalRationale, 
+      updatedAt: new Date() 
+    }).where(eq(assets.id, existingAsset.id));
     targetAssetId = existingAsset.id;
   } else {
     let [portfolio] = await db.select().from(portfolios).where(eq(portfolios.userId, targetUserId));
@@ -225,6 +232,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
       rationale: finalRationale,
       nativeCurrency: draft.nativeCurrency,
       nativeValue: draft.totalNativeValue,
+      quantity: assetQuantity,
     }).returning();
     targetAssetId = newAsset.id;
   }
@@ -232,7 +240,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   await db.insert(transactions).values({
     assetId: targetAssetId,
     type: 'STATEMENT_IMPORT',
-    quantity: draft.quantity || '1',
+    quantity: assetQuantity,
     nativePrice: draft.pricePerUnit || draft.totalNativeValue,
     nativeCurrency: draft.nativeCurrency,
     fxRateToBaseOnDate: fxRate.toFixed(6),
