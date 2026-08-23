@@ -57,9 +57,11 @@ export default async function ProfilePage() {
 
         {/* Multi-AI Failover Settings Card */}
         <AiSettingsCard 
-          initialGemini={!!session.user.geminiApiKey} 
-          initialOpenai={!!session.user.openaiApiKey} 
-          initialAnthropic={!!session.user.anthropicApiKey} 
+          initialGroq={!!session.user.groqApiKey}
+  initialOpenrouter={!!session.user.openrouterApiKey}
+  initialGemini={!!session.user.geminiApiKey} 
+  initialOpenai={!!session.user.openaiApiKey} 
+  initialAnthropic={!!session.user.anthropicApiKey}
         />
 
         {/* Profile & Family Members Manager */}

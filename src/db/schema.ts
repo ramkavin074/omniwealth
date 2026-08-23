@@ -24,6 +24,8 @@ export const users = pgTable('users', {
   geminiApiKey: text('gemini_api_key'),
   openaiApiKey: text('openai_api_key'),
   anthropicApiKey: text('anthropic_api_key'),
+groqApiKey: text('groq_api_key'),
+  openrouterApiKey: text('openrouter_api_key'),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -7,17 +7,21 @@ import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
 import { GoogleGenAI } from '@google/genai';
 import { revalidatePath } from 'next/cache';
 
-// 1. Save User's AI Multi-Provider Backup Keys
+// 1. Save User's AI Keys (Free & Paid Providers)
 export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
+  const groqApiKey = (formData.get('groqApiKey') as string || '').trim();
+  const openrouterApiKey = (formData.get('openrouterApiKey') as string || '').trim();
   const geminiApiKey = (formData.get('geminiApiKey') as string || '').trim();
   const openaiApiKey = (formData.get('openaiApiKey') as string || '').trim();
   const anthropicApiKey = (formData.get('anthropicApiKey') as string || '').trim();
 
   await db.update(users)
     .set({ 
+      groqApiKey: groqApiKey || null,
+      openrouterApiKey: openrouterApiKey || null,
       geminiApiKey: geminiApiKey || null, 
       openaiApiKey: openaiApiKey || null,
       anthropicApiKey: anthropicApiKey || null,
@@ -29,20 +33,22 @@ export async function updateAiSettingsAction(formData: FormData) {
   return { success: true };
 }
 
-// 2. Multi-Provider Automatic Failover AI Portfolio Assistant Action
+// 2. Free-First Priority Cascade AI Portfolio Assistant Action
 export async function askPortfolioAIAction(userPrompt: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  // Fetch user's custom API keys with environment fallback
   const [currentUser] = await db.select().from(users).where(eq(users.id, session.user.id));
   
+  // Retrieve all configured keys (with environment fallbacks if available)
+  const groqKey = currentUser?.groqApiKey || process.env.GROQ_API_KEY;
+  const openrouterKey = currentUser?.openrouterApiKey || process.env.OPENROUTER_API_KEY;
   const geminiKey = currentUser?.geminiApiKey || process.env.GEMINI_API_KEY;
   const openaiKey = currentUser?.openaiApiKey || process.env.OPENAI_API_KEY;
   const anthropicKey = currentUser?.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
 
-  if (!geminiKey && !openaiKey && !anthropicKey) {
-    return { success: false, error: 'Please configure at least one AI API key in your Profile settings.' };
+  if (!groqKey && !openrouterKey && !geminiKey && !openaiKey && !anthropicKey) {
+    return { success: false, error: 'Please configure at least one free or paid AI API key in your Profile settings.' };
   }
 
   // Gather live household portfolio context
@@ -64,12 +70,12 @@ export async function askPortfolioAIAction(userPrompt: string) {
     };
   }));
 
-  const systemPrompt = `You are a warm, reassuring, plain-English family wealth assistant helping family members who are not finance-savvy understand their wealth and legacy setup. 
+  const systemPrompt = `You are a warm, reassuring, plain-English family wealth assistant helping family members understand their wealth and legacy setup. 
   Here is the household's current portfolio summary (Total Net Worth: ${Math.round(totalVal)} ${session.household.baseCurrency}):
   ${JSON.stringify(portfolioSummary, null, 2)}
   
   CRITICAL FORMATTING INSTRUCTIONS FOR THE CHAT WINDOW:
-  - NEVER use LaTeX math tags, backslashes, or formulas (like $$ or \\text or \\mathbf).
+  - NEVER use LaTeX math tags, backslashes, or formulas (like $$ or text).
   - Use clean Markdown only: short paragraphs, bullet points (*), and bold text (**).
   - Keep numbers clean and readable (e.g., $77,805 USD).
   - Keep answers concise, direct, and structured for a small chat screen.`;
@@ -77,7 +83,63 @@ export async function askPortfolioAIAction(userPrompt: string) {
   let answer = '';
   let success = false;
 
-  // --- ATTEMPT 1: Google Gemini (gemini-3.7-flash) ---
+  // --- PRIORITY 1: Groq (Free Tier - Ultra-Fast Llama 3.3) ---
+  if (groqKey && !success) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) {
+        answer = data.choices[0].message.content;
+        success = true;
+      }
+    } catch (err: any) {
+      console.warn('Groq failed, trying next free provider...', err?.message || err);
+    }
+  }
+
+  // --- PRIORITY 2: OpenRouter (Free Router - Automatically picks zero-cost models) ---
+  if (openrouterKey && !success) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openrouterKey}`,
+          'HTTP-Referer': 'https://omniwealth.org',
+          'X-Title': 'OmniWealth'
+        },
+        body: JSON.stringify({
+          model: 'openrouter/free',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) {
+        answer = data.choices[0].message.content;
+        success = true;
+      }
+    } catch (err: any) {
+      console.warn('OpenRouter failed, trying next free provider...', err?.message || err);
+    }
+  }
+
+  // --- PRIORITY 3: Google Gemini (Free Tier - Gemini 3.7 Flash) ---
   if (geminiKey && !success) {
     try {
       const ai = new GoogleGenAI({ apiKey: geminiKey });
@@ -90,11 +152,11 @@ export async function askPortfolioAIAction(userPrompt: string) {
         success = true;
       }
     } catch (err: any) {
-      console.warn('Gemini failed or overloaded, trying fallback provider...', err?.message || err);
+      console.warn('Gemini failed, trying paid backups...', err?.message || err);
     }
   }
 
-  // --- ATTEMPT 2: OpenAI (gpt-4o-mini) ---
+  // --- PRIORITY 4: OpenAI (Paid Backup - gpt-4o-mini) ---
   if (openaiKey && !success) {
     try {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -117,11 +179,11 @@ export async function askPortfolioAIAction(userPrompt: string) {
         success = true;
       }
     } catch (err: any) {
-      console.warn('OpenAI fallback failed, trying next...', err?.message || err);
+      console.warn('OpenAI backup failed...', err?.message || err);
     }
   }
 
-  // --- ATTEMPT 3: Anthropic Claude (claude-3-5-sonnet-20241022) ---
+  // --- PRIORITY 5: Anthropic Claude (Paid Backup - Claude 3.5 Sonnet) ---
   if (anthropicKey && !success) {
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -144,12 +206,12 @@ export async function askPortfolioAIAction(userPrompt: string) {
         success = true;
       }
     } catch (err: any) {
-      console.warn('Anthropic fallback failed...', err?.message || err);
+      console.warn('Anthropic backup failed...', err?.message || err);
     }
   }
 
   if (!success) {
-    return { success: false, error: 'All configured AI providers are currently experiencing heavy traffic or errors. Please try again shortly.' };
+    return { success: false, error: 'All configured AI providers (Groq, OpenRouter, Gemini, OpenAI, Claude) are currently unavailable. Please check your keys or try again shortly.' };
   }
 
   return { success: true, answer };
