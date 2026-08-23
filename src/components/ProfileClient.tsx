@@ -97,16 +97,16 @@ export default function ProfileClient({ session, initialFamilyMembers, household
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 pb-16">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        {/* Header with User-Friendly Back Button */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-800 gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/" className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition-colors text-xs font-medium shadow-sm"
+            >
               <ArrowLeft className="w-4 h-4" />
+              <span>Back to Dashboard</span>
             </Link>
-            <div>
-              <h1 className="text-xl font-bold text-white">Profile &amp; Family Management</h1>
-              <p className="text-xs text-slate-400">View account details, customize legacy pillars, and manage members.</p>
-            </div>
           </div>
           <button 
             onClick={() => setIsOpen(true)}
@@ -114,6 +114,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           >
             <Plus className="w-4 h-4" /> Add Family Member
           </button>
+        </div>
+
+        <div>
+          <h1 className="text-xl font-bold text-white">Profile &amp; Family Management</h1>
+          <p className="text-xs text-slate-400 mt-1">View account details, customize legacy pillars, and manage members.</p>
         </div>
 
         {success && (
