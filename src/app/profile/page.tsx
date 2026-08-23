@@ -55,13 +55,14 @@ export default async function ProfilePage() {
           </Link>
         </div>
 
-        {/* Personal AI Provider & Key Settings (BYOK) */}
+        {/* Multi-AI Failover Settings Card */}
         <AiSettingsCard 
-          initialProvider={session.user.aiProvider || 'gemini'} 
-          initialHasKey={!!session.user.aiApiKey} 
+          initialGemini={!!session.user.geminiApiKey} 
+          initialOpenai={!!session.user.openaiApiKey} 
+          initialAnthropic={!!session.user.anthropicApiKey} 
         />
 
-        {/* Existing Profile & Family Members Manager */}
+        {/* Profile & Family Members Manager */}
         <ProfileClient 
           session={session} 
           initialFamilyMembers={familyMembers} 

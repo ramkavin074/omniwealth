@@ -7,18 +7,20 @@ import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
 import { GoogleGenAI } from '@google/genai';
 import { revalidatePath } from 'next/cache';
 
-// 1. Save User's AI Key & Provider Preference
+// 1. Save User's AI Multi-Provider Backup Keys
 export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  const aiProvider = (formData.get('aiProvider') as string) || 'gemini';
-  const aiApiKey = (formData.get('aiApiKey') as string || '').trim();
+  const geminiApiKey = (formData.get('geminiApiKey') as string || '').trim();
+  const openaiApiKey = (formData.get('openaiApiKey') as string || '').trim();
+  const anthropicApiKey = (formData.get('anthropicApiKey') as string || '').trim();
 
   await db.update(users)
     .set({ 
-      aiProvider, 
-      aiApiKey: aiApiKey || null, 
+      geminiApiKey: geminiApiKey || null, 
+      openaiApiKey: openaiApiKey || null,
+      anthropicApiKey: anthropicApiKey || null,
       updatedAt: new Date() 
     } as any)
     .where(eq(users.id, session.user.id));
@@ -27,43 +29,20 @@ export async function updateAiSettingsAction(formData: FormData) {
   return { success: true };
 }
 
-// Helper: Automatic retry wrapper for overloaded Gemini models (503 / 429)
-async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 4, delay = 4000): Promise<any> {
-  try {
-    return await ai.models.generateContent(params);
-  } catch (error: any) {
-    const status = error?.status || error?.code;
-    const message = error?.message || '';
-    
-    const isRateLimitedOrOverloaded = 
-      status === 429 || 
-      status === 503 || 
-      message.includes('429') || 
-      message.includes('503') || 
-      message.includes('RESOURCE_EXHAUSTED') || 
-      message.includes('overloaded');
-
-    if (retries > 0 && isRateLimitedOrOverloaded) {
-      console.warn(`Gemini API overloaded (${status || '503'}). Retrying in ${delay}ms... (${retries} retries left)`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      return generateWithRetry(ai, params, retries - 1, delay * 2);
-    }
-    throw error;
-  }
-}
-
-// 2. Multi-Provider AI Portfolio Assistant Action
+// 2. Multi-Provider Automatic Failover AI Portfolio Assistant Action
 export async function askPortfolioAIAction(userPrompt: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  // Fetch user's custom API key settings
+  // Fetch user's custom API keys with environment fallback
   const [currentUser] = await db.select().from(users).where(eq(users.id, session.user.id));
-  const provider = currentUser?.aiProvider || 'gemini';
-  const apiKey = currentUser?.aiApiKey || process.env.GEMINI_API_KEY;
+  
+  const geminiKey = currentUser?.geminiApiKey || process.env.GEMINI_API_KEY;
+  const openaiKey = currentUser?.openaiApiKey || process.env.OPENAI_API_KEY;
+  const anthropicKey = currentUser?.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
 
-  if (!apiKey) {
-    return { success: false, error: 'No API key found. Please configure your personal AI key in your Profile settings.' };
+  if (!geminiKey && !openaiKey && !anthropicKey) {
+    return { success: false, error: 'Please configure at least one AI API key in your Profile settings.' };
   }
 
   // Gather live household portfolio context
@@ -91,15 +70,34 @@ export async function askPortfolioAIAction(userPrompt: string) {
   
   Answer the user's question accurately based strictly on this data. Keep explanations crystal clear, friendly, and structured.`;
 
-  try {
-    let answer = '';
+  let answer = '';
+  let success = false;
 
-    if (provider === 'openai') {
+  // --- ATTEMPT 1: Google Gemini (gemini-3.7-flash) ---
+  if (geminiKey && !success) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: geminiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.7-flash',
+        contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
+      });
+      if (response.text) {
+        answer = response.text;
+        success = true;
+      }
+    } catch (err: any) {
+      console.warn('Gemini failed or overloaded (503/429), trying fallback provider...', err?.message || err);
+    }
+  }
+
+  // --- ATTEMPT 2: OpenAI (gpt-4o-mini) ---
+  if (openaiKey && !success) {
+    try {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${openaiKey}`
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
@@ -110,14 +108,23 @@ export async function askPortfolioAIAction(userPrompt: string) {
         })
       });
       const data = await res.json();
-      answer = data.choices?.[0]?.message?.content || 'Failed to generate response from OpenAI.';
+      if (data.choices?.[0]?.message?.content) {
+        answer = data.choices[0].message.content;
+        success = true;
+      }
+    } catch (err: any) {
+      console.warn('OpenAI fallback failed, trying next...', err?.message || err);
+    }
+  }
 
-    } else if (provider === 'anthropic') {
+  // --- ATTEMPT 3: Anthropic Claude (claude-3-5-sonnet-20241022) ---
+  if (anthropicKey && !success) {
+    try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          'x-api-key': anthropicKey,
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
@@ -128,21 +135,18 @@ export async function askPortfolioAIAction(userPrompt: string) {
         })
       });
       const data = await res.json();
-      answer = data.content?.[0]?.text || 'Failed to generate response from Anthropic.';
-
-    } else {
-      // Google Gemini with built-in retry guard for 503 / overload spikes
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await generateWithRetry(ai, {
-        model: 'gemini-3.7-flash',
-        contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
-      });
-      answer = response.text || 'Failed to generate response from Gemini.';
+      if (data.content?.[0]?.text) {
+        answer = data.content[0].text;
+        success = true;
+      }
+    } catch (err: any) {
+      console.warn('Anthropic fallback failed...', err?.message || err);
     }
-
-    return { success: true, answer };
-  } catch (err: any) {
-    console.error('AI Q&A Error:', err);
-    return { success: false, error: err.message || 'AI request failed due to high demand. Please try again in a moment.' };
   }
+
+  if (!success) {
+    return { success: false, error: 'All configured AI providers are currently experiencing heavy traffic or errors. Please try again shortly.' };
+  }
+
+  return { success: true, answer };
 }

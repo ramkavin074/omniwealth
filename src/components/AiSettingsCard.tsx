@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { updateAiSettingsAction } from '@/actions/ai-actions';
 import { Cpu, Key, CheckCircle2 } from 'lucide-react';
 
-export default function AiSettingsCard({ initialProvider, initialHasKey }: { initialProvider: string; initialHasKey: boolean }) {
-  const [provider, setProvider] = useState(initialProvider || 'gemini');
-  const [apiKey, setApiKey] = useState('');
+export default function AiSettingsCard({ initialGemini, initialOpenai, initialAnthropic }: { initialGemini?: boolean; initialOpenai?: boolean; initialAnthropic?: boolean }) {
+  const [geminiApiKey, setGemini] = useState('');
+  const [openaiApiKey, setOpenai] = useState('');
+  const [anthropicApiKey, setAnthropic] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -18,17 +19,20 @@ export default function AiSettingsCard({ initialProvider, initialHasKey }: { ini
     setSuccess(false);
 
     const formData = new FormData();
-    formData.append('aiProvider', provider);
-    formData.append('aiApiKey', apiKey);
+    formData.append('geminiApiKey', geminiApiKey);
+    formData.append('openaiApiKey', openaiApiKey);
+    formData.append('anthropicApiKey', anthropicApiKey);
 
     const res = await updateAiSettingsAction(formData);
     setLoading(false);
 
     if (res.success) {
       setSuccess(true);
-      setApiKey('');
+      setGemini('');
+      setOpenai('');
+      setAnthropic('');
     } else {
-      setError(res.error || 'Failed to save settings.');
+      setError(res.error || 'Failed to save backup keys.');
     }
   }
 
@@ -36,56 +40,66 @@ export default function AiSettingsCard({ initialProvider, initialHasKey }: { ini
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
         <Cpu className="w-5 h-5 text-indigo-400" />
-        <h3 className="text-sm font-bold text-white uppercase">Personal AI Assistant Settings (BYOK)</h3>
+        <h3 className="text-sm font-bold text-white uppercase">Multi-AI Failover &amp; Backup Keys (BYOK)</h3>
       </div>
 
       <p className="text-xs text-slate-400">
-        Plug in your own AI API key to power statement parsing and portfolio Q&amp;A. This keeps costs free for the app and ensures total privacy under your own account.
+        Configure your personal API keys below. If Google Gemini experiences high demand (503 error), your vault will automatically cascade to OpenAI or Claude seamlessly.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">AI Provider</label>
-          <select 
-            value={provider} 
-            onChange={(e) => setProvider(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-          >
-            <option value="gemini">Google Gemini (Free tier available at Google AI Studio)</option>
-            <option value="openai">OpenAI (ChatGPT)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            {initialHasKey ? 'Update API Key (Leave blank to keep existing)' : 'API Key'}
+          <label className="block font-semibold text-slate-300 mb-1">
+            Google Gemini API Key {initialGemini && <span className="text-emerald-400 font-normal">(Configured)</span>}
           </label>
-          <div className="relative">
-            <Key className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-            <input 
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Paste your personal API key here..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-3 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
-            />
-          </div>
+          <input 
+            type="password" 
+            value={geminiApiKey} 
+            onChange={e => setGemini(e.target.value)} 
+            placeholder="AIza..." 
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" 
+          />
         </div>
 
-        {error && <p className="text-xs text-rose-400">{error}</p>}
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            OpenAI API Key {initialOpenai && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input 
+            type="password" 
+            value={openaiApiKey} 
+            onChange={e => setOpenai(e.target.value)} 
+            placeholder="sk-..." 
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" 
+          />
+        </div>
+
+        <div>
+          <label className="block font-semibold text-slate-300 mb-1">
+            Anthropic Claude API Key {initialAnthropic && <span className="text-emerald-400 font-normal">(Configured)</span>}
+          </label>
+          <input 
+            type="password" 
+            value={anthropicApiKey} 
+            onChange={e => setAnthropic(e.target.value)} 
+            placeholder="sk-ant-..." 
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono focus:outline-none focus:border-indigo-500" 
+          />
+        </div>
+
+        {error && <p className="text-rose-400 text-xs">{error}</p>}
         {success && (
           <div className="flex items-center gap-1.5 text-xs text-emerald-400">
-            <CheckCircle2 className="w-4 h-4" /> AI settings saved successfully!
+            <CheckCircle2 className="w-4 h-4" /> AI backup keys saved successfully!
           </div>
         )}
 
         <button 
           type="submit" 
-          disabled={loading}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+          disabled={loading} 
+          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20"
         >
-          {loading ? 'Saving...' : 'Save AI Settings'}
+          {loading ? 'Saving Keys...' : 'Save AI Backup Keys'}
         </button>
       </form>
     </div>
