@@ -25,7 +25,7 @@ export default function PortfolioAIChat() {
     setLoading(false);
 
     if (res.success) {
-      setMessages(prev => [...prev, { sender: 'ai', text: res.answer }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: res.answer || 'No response generated.' }]);
     } else {
       setMessages(prev => [...prev, { sender: 'ai', text: `Error: ${res.error}` }]);
     }
