@@ -1,6 +1,7 @@
 import { fetchHouseholdDocumentsAction, getSessionUserAction } from '@/actions/vault';
 import DocumentVaultSection from '@/components/DocumentVaultSection';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function VaultPageRoute() {
   const session = await getSessionUserAction();
@@ -22,12 +23,12 @@ export default async function VaultPageRoute() {
               AES-256-GCM encrypted family office storage for statements, deeds, and tax records.
             </p>
           </div>
-          <a
-            href="/"
+          <Link
+            href="/profile"
             className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
           >
-            ← Back to Dashboard
-          </a>
+            ← Back to Profile
+          </Link>
         </div>
 
         <DocumentVaultSection initialDocuments={documents} />
