@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
@@ -180,12 +181,27 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 }
 
 function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   return (
     <form action={async (formData) => {
-      await updateHouseholdBaseCurrencyAction(formData.get('currency') as string);
+      const newCurrency = formData.get('currency') as string;
+      await updateHouseholdBaseCurrencyAction(newCurrency);
+      startTransition(() => {
+        router.refresh();
+      });
     }} className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0">
       <Coins className="w-3.5 h-3.5 text-indigo-400" />
-      <select name="currency" defaultValue={currentCurrency} onChange={(e) => e.target.form?.requestSubmit()} className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer">
+      <select 
+        name="currency" 
+        value={currentCurrency} 
+        onChange={(e) => {
+          e.target.form?.requestSubmit();
+        }} 
+        disabled={isPending}
+        className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+      >
         {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF'].map((c) => (
           <option key={c} value={c}>{c}</option>
         ))}
@@ -1076,7 +1092,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
 
 function GrowthSimulator({ currentTotalValue, baseCurrency }: { currentTotalValue: number; baseCurrency: string }) {
   const [returnRate, setReturnRate] = useState(7);
-  const [years, setYears] = useState(10);
+  const [years, zSetYears] = useState(10);
   const [monthly, setMonthly] = useState(500);
 
   const r = returnRate / 100 / 12;
@@ -1088,7 +1104,7 @@ function GrowthSimulator({ currentTotalValue, baseCurrency }: { currentTotalValu
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Calculator className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Future Wealth &amp; Growth Simulation</h3></div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-xs">
         <div><label className="block text-slate-400 mb-1">Return ({returnRate}%)</label><input type="range" min="1" max="20" step="0.5" value={returnRate} onChange={(e) => setReturnRate(parseFloat(e.target.value))} className="w-full accent-indigo-500" /></div>
-        <div><label className="block text-slate-400 mb-1">Horizon ({years} Yrs)</label><input type="range" min="1" max="40" value={years} onChange={(e) => setYears(parseInt(e.target.value))} className="w-full accent-indigo-500" /></div>
+        <div><label className="block text-slate-400 mb-1">Horizon ({years} Yrs)</label><input type="range" min="1" max="40" value={years} onChange={(e) => zSetYears(parseInt(e.target.value))} className="w-full accent-indigo-500" /></div>
         <div><label className="block text-slate-400 mb-1">Monthly Addition</label><input type="number" value={monthly} onChange={(e) => setMonthly(parseFloat(e.target.value) || 0)} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-white font-mono" /></div>
       </div>
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex justify-between items-center text-xs">
