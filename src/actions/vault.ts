@@ -429,7 +429,7 @@ export async function parseStatementAction(formData: FormData) {
       const mimeType = file.type || 'application/pdf';
 
       const response = await generateWithRetry(ai, {
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.7-flash',
         contents: [
           { inlineData: { mimeType, data: buffer.toString('base64') } },
           { text: extractionPrompt },
