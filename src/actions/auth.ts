@@ -33,9 +33,9 @@ export async function addFamilyMemberAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  const fullName = formData.get('fullName') as string;
-  const email = formData.get('email') as string;
-  const role = (formData.get('role') as string) || 'MEMBER';
+  const fullName = (formData.get('fullName') as string || '').trim();
+  const email = (formData.get('email') as string || '').trim();
+  const role = (formData.get('role') as string || 'MEMBER').trim();
 
   if (!fullName || !email) {
     return { success: false, error: 'Name and email are required.' };
@@ -93,8 +93,8 @@ export async function addFamilyMemberAction(formData: FormData) {
 }
 
 export async function loginAction(formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const email = (formData.get('email') as string || '').trim();
+  const password = (formData.get('password') as string || '').trim();
 
   if (!email || !password) {
     return { success: false, error: 'Please enter both email and password.' };
@@ -124,11 +124,20 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function registerOwnerAction(formData: FormData) {
-  const fullName = formData.get('fullName') as string;
-  const householdName = formData.get('householdName') as string;
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const baseCurrency = (formData.get('baseCurrency') as string) || 'USD';
+  const fullName = (formData.get('fullName') as string || '').trim();
+  const householdName = (formData.get('householdName') as string || '').trim();
+  const email = (formData.get('email') as string || '').trim();
+  const password = (formData.get('password') as string || '').trim();
+  const baseCurrency = (formData.get('baseCurrency') as string || 'USD').trim();
+
+  // Terminal inspection log to see exactly what arrives from the form
+  console.log('--- REGISTER OWNER DEBUG PAYLOAD ---', {
+    fullName: `"${fullName}"`,
+    householdName: `"${householdName}"`,
+    email: `"${email}"`,
+    passwordLength: password.length,
+    baseCurrency: `"${baseCurrency}"`
+  });
 
   if (!fullName || !householdName || !email || !password) {
     return { success: false, error: 'All fields are required.' };
@@ -165,10 +174,10 @@ export async function registerOwnerAction(formData: FormData) {
 }
 
 export async function registerMemberWithCodeAction(formData: FormData) {
-  const fullName = formData.get('fullName') as string;
-  const inviteCode = formData.get('inviteCode') as string;
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const fullName = (formData.get('fullName') as string || '').trim();
+  const inviteCode = (formData.get('inviteCode') as string || '').trim();
+  const email = (formData.get('email') as string || '').trim();
+  const password = (formData.get('password') as string || '').trim();
 
   if (!fullName || !inviteCode || !email || !password) {
     return { success: false, error: 'All fields are required.' };
@@ -205,8 +214,8 @@ export async function updatePasswordAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  const currentPassword = formData.get('currentPassword') as string;
-  const newPassword = formData.get('newPassword') as string;
+  const currentPassword = (formData.get('currentPassword') as string || '').trim();
+  const newPassword = (formData.get('newPassword') as string || '').trim();
 
   if (!currentPassword || !newPassword) {
     return { success: false, error: 'Please fill in both current and new passwords.' };
