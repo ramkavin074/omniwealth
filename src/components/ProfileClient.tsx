@@ -115,23 +115,30 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
   return (
     <div className="space-y-6">
-      {/* Header with User-Friendly Back Button */}
+      {/* Header with Back Button and Quick Action Buttons */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-800 gap-4">
-        <div className="flex items-center gap-3">
-          <Link 
-            href="/" 
-            className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition-colors text-xs font-medium shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
-          </Link>
-        </div>
-        <button 
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md"
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition-colors text-xs font-medium shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Add Family Member
-        </button>
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Dashboard</span>
+        </Link>
+
+        <div className="flex items-center gap-2.5">
+          <Link 
+            href="/vault" 
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 hover:text-white font-semibold text-xs rounded-xl transition-colors shadow-md"
+          >
+            <Lock className="w-4 h-4 text-indigo-400" /> Document Vault
+          </Link>
+          <button 
+            onClick={() => setIsOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md"
+          >
+            <Plus className="w-4 h-4" /> Add Family Member
+          </button>
+        </div>
       </div>
 
       <div>
