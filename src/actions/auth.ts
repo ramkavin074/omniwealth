@@ -1,210 +1,255 @@
-'use client';
+'use server';
 
-import React, { useState } from 'react';
-import { registerOwnerAction, registerMemberWithCodeAction, loginAction } from '@/actions/auth';
-import { useRouter } from 'next/navigation';
-import { Cpu, Users, Lock, Mail, Building, Key } from 'lucide-react';
+import { db } from '@/db';
+import { households, users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { Resend } from 'resend';
 
-export default function LoginPage() {
-  const [tab, setTab] = useState<'signin' | 'register' | 'invite'>('signin');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    const formData = new FormData(e.currentTarget);
+export async function getSessionUserAction() {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get('vault_user_id')?.value;
+  if (!userId) return null;
 
-    let res;
-    if (tab === 'signin') {
-      res = await loginAction(formData);
-    } else if (tab === 'register') {
-      res = await registerOwnerAction(formData);
-    } else {
-      res = await registerMemberWithCodeAction(formData);
-    }
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  if (!user) return null;
 
-    if (res?.success) {
-      if ((res as any).role === 'SUPER_ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/');
-      }
-    } else {
-      setError(res?.error || 'Authentication failed');
-      setLoading(false);
-    }
+  const [household] = await db.select().from(households).where(eq(households.id, user.householdId));
+  return { user, household };
+}
+
+export async function fetchFamilyMembersAction() {
+  const session = await getSessionUserAction();
+  if (!session) return [];
+  return await db.select().from(users).where(eq(users.householdId, session.household.id));
+}
+
+export async function addFamilyMemberAction(formData: FormData) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const fullName = formData.get('fullName') as string;
+  const email = formData.get('email') as string;
+  const role = (formData.get('role') as string) || 'MEMBER';
+
+  if (!fullName || !email) {
+    return { success: false, error: 'Name and email are required.' };
   }
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/20">
-            <Cpu className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white">OmniWealth Engine</h1>
-            <p className="text-xs text-slate-400">Multi-Currency Family Portal</p>
-          </div>
-        </div>
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+  if (existingUser) {
+    return { success: false, error: 'A user with this email already exists.' };
+  }
 
-        {/* Tab Switcher */}
-        <div className="grid grid-cols-3 bg-slate-950 p-1 rounded-lg mb-6 border border-slate-800 text-[11px]">
-          <button
-            type="button"
-            onClick={() => { setTab('signin'); setError(''); }}
-            className={`py-1.5 font-semibold rounded transition-colors cursor-pointer ${
-              tab === 'signin' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setTab('register'); setError(''); }}
-            className={`py-1.5 font-semibold rounded transition-colors cursor-pointer ${
-              tab === 'register' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            New Household
-          </button>
-          <button
-            type="button"
-            onClick={() => { setTab('invite'); setError(''); }}
-            className={`py-1.5 font-semibold rounded transition-colors cursor-pointer ${
-              tab === 'invite' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Join Code
-          </button>
-        </div>
+  const tempPasswordHash = crypto.randomBytes(8).toString('hex');
 
-        {error ? (
-          <div className="text-xs text-rose-400 bg-rose-950/50 border border-rose-800 p-2.5 rounded-lg mb-4">
-            {error}
-          </div>
-        ) : null}
+  await db.insert(users).values({
+    householdId: session.household.id,
+    fullName,
+    email,
+    passwordHash: tempPasswordHash,
+    role,
+  });
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {tab === 'register' && (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Family / Household Name
-                </label>
-                <div className="relative">
-                  <Building className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    name="householdName"
-                    required
-                    placeholder="e.g. Smith Family Vault"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Household Base Currency
-                </label>
-                <select
-                  name="baseCurrency"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="INR">INR (₹)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                  <option value="JPY">JPY (¥)</option>
-                  <option value="CAD">CAD ($)</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {tab === 'invite' && (
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
-                Household Invite Code
-              </label>
-              <div className="relative">
-                <Key className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                <input
-                  name="inviteCode"
-                  required
-                  placeholder="e.g. FAM-X92B4A"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 font-mono tracking-wider focus:outline-none focus:border-indigo-500 uppercase"
-                />
-              </div>
-            </div>
-          )}
-
-          {(tab === 'register' || tab === 'invite') && (
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
-                Your Full Name
-              </label>
-              <div className="relative">
-                <Users className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                <input
-                  name="fullName"
-                  required
-                  placeholder="e.g. Alex Smith"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              <input
-                name="email"
-                type="email"
-                required
-                placeholder="user@family.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-              <input
-                name="password"
-                type="password"
-                required
-                placeholder="••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg cursor-pointer transition-colors disabled:opacity-50 mt-2 shadow-lg shadow-indigo-600/20"
-          >
-            {loading
-              ? 'Authenticating...'
-              : tab === 'signin'
-              ? 'Sign In'
-              : tab === 'register'
-              ? 'Create Household'
-              : 'Join Household'}
-          </button>
-        </form>
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
+      <h2 style="color: #818cf8; margin-top: 0;">Welcome, ${fullName}!</h2>
+      <p style="color: #cbd5e1; font-size: 14px;">
+        You have been added as a family member to the <strong>${session.household.name}</strong> on the Global Family Wealth & Legacy Command Center.
+      </p>
+      <div style="background-color: #1e293b; border: 1px solid #334155; padding: 16px; border-radius: 12px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Your Login Email:</p>
+        <p style="margin: 4px 0 0 0; font-size: 15px; font-weight: bold; color: #ffffff;">${email}</p>
       </div>
+      <p style="color: #cbd5e1; font-size: 14px;">
+        You can now log in to view consolidated assets, multi-currency balances, and legacy directives.
+      </p>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;">
+        Access Wealth Vault →
+      </a>
     </div>
-  );
+  `;
+
+  const senderAddress = process.env.RESEND_FROM_EMAIL || 'Global Family Vault <vault@resend.dev>';
+
+  try {
+    await resend.emails.send({
+      from: senderAddress,
+      to: [email],
+      subject: `Welcome to ${session.household.name} Wealth Command Center`,
+      html: emailHtml,
+    });
+  } catch (emailErr: any) {
+    console.error('Resend error:', emailErr);
+  }
+
+  revalidatePath('/profile');
+  return { success: true };
+}
+
+export async function loginAction(formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!email || !password) {
+    return { success: false, error: 'Please enter both email and password.' };
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  if (!user) {
+    return { success: false, error: 'No account found with this email.' };
+  }
+
+  let isValid = false;
+  if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
+    isValid = await bcrypt.compare(password, user.passwordHash);
+  } else {
+    isValid = user.passwordHash === password;
+  }
+
+  if (!isValid) {
+    return { success: false, error: 'Incorrect password.' };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set('vault_user_id', user.id, { path: '/' });
+
+  revalidatePath('/');
+  return { success: true, role: user.role };
+}
+
+export async function registerOwnerAction(formData: FormData) {
+  const fullName = formData.get('fullName') as string;
+  const householdName = formData.get('householdName') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const baseCurrency = (formData.get('baseCurrency') as string) || 'USD';
+
+  if (!fullName || !householdName || !email || !password) {
+    return { success: false, error: 'All fields are required.' };
+  }
+
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+  if (existingUser) {
+    return { success: false, error: 'An account with this email already exists.' };
+  }
+
+  const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+
+  const [household] = await db.insert(households).values({
+    name: householdName,
+    baseCurrency,
+    inviteCode,
+  } as any).returning();
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const [user] = await db.insert(users).values({
+    householdId: household.id,
+    email,
+    passwordHash,
+    fullName,
+    role: 'OWNER',
+  }).returning();
+
+  const cookieStore = await cookies();
+  cookieStore.set('vault_user_id', user.id, { path: '/' });
+
+  revalidatePath('/');
+  return { success: true, role: user.role };
+}
+
+export async function registerMemberWithCodeAction(formData: FormData) {
+  const fullName = formData.get('fullName') as string;
+  const inviteCode = formData.get('inviteCode') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!fullName || !inviteCode || !email || !password) {
+    return { success: false, error: 'All fields are required.' };
+  }
+
+  const [household] = await db.select().from(households).where(eq((households as any).inviteCode, inviteCode));
+  if (!household) {
+    return { success: false, error: 'Invalid household invite code.' };
+  }
+
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+  if (existingUser) {
+    return { success: false, error: 'An account with this email already exists.' };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const [user] = await db.insert(users).values({
+    householdId: household.id,
+    email,
+    passwordHash,
+    fullName,
+    role: 'MEMBER',
+  }).returning();
+
+  const cookieStore = await cookies();
+  cookieStore.set('vault_user_id', user.id, { path: '/' });
+
+  revalidatePath('/');
+  return { success: true, role: user.role };
+}
+
+export async function updatePasswordAction(formData: FormData) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const currentPassword = formData.get('currentPassword') as string;
+  const newPassword = formData.get('newPassword') as string;
+
+  if (!currentPassword || !newPassword) {
+    return { success: false, error: 'Please fill in both current and new passwords.' };
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.id, session.user.id));
+  if (!user) return { success: false, error: 'User not found.' };
+
+  let isValid = false;
+  if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
+    isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  } else {
+    isValid = user.passwordHash === currentPassword;
+  }
+
+  if (!isValid) {
+    return { success: false, error: 'Incorrect current password.' };
+  }
+
+  const newPasswordHash = await bcrypt.hash(newPassword, 10);
+  await db.update(users).set({ passwordHash: newPasswordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+
+  revalidatePath('/profile');
+  return { success: true };
+}
+
+export async function deleteFamilyMemberAction(memberId: string) {
+  const session = await getSessionUserAction();
+  if (-session) return { success: false, error: 'Unauthorized' };
+
+  const [targetUser] = await db.select().from(users).where(eq(users.id, memberId));
+  if (!targetUser) return { success: false, error: 'User not found' };
+
+  if (targetUser.id === session.user.id) {
+    return { success: false, error: 'You cannot remove your own account from the household.' };
+  }
+
+  if (targetUser.householdId !== session.household.id) {
+    return { success: false, error: 'Unauthorized action.' };
+  }
+
+  await db.delete(users).where(eq(users.id, memberId));
+
+  revalidatePath('/profile');
+  return { success: true };
 }
