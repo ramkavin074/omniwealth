@@ -102,7 +102,17 @@ export default function StatementUploadModal() {
 
       {isOpen && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto relative">
+            
+            {/* Active Processing Loading Overlay */}
+            {uploading && (
+              <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6">
+                <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-white font-bold text-sm">Processing Statement with Gemini AI...</div>
+                <div className="text-slate-400 text-xs max-w-sm">Reading document tables, extracting tickers, and calculating asset values. This will just take a moment.</div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <Cpu className="w-5 h-5 text-indigo-400" />
