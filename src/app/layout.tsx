@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global Family Vault | OmniWealth",
+  title: "OmniWealth | Global Family Vault",
   description: "Global Family Wealth Command Center",
   manifest: "/manifest.json",
   icons: {
