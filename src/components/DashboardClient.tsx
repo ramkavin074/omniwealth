@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
@@ -66,8 +67,14 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
           <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold shrink-0">
-                🌐
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 shadow-sm bg-slate-800">
+                <Image
+                  src="/omniwealth.jpg"
+                  alt="OmniWealth Studio"
+                  fill
+                  className="object-cover"
+                  priority
+                />
               </div>
               <div>
                 <div className="font-extrabold text-white text-xs tracking-tight">
@@ -160,12 +167,8 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
-        {/* Dynamic Future Milestones & Directives */}
         <FutureMilestonesAndDirectives assets={initialAssets} />
-
-        {/* Institution & Account-Level Instructions Hub */}
         <AccountInstructionsHub assets={initialAssets} />
-
         <GrowthSimulator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
       </div>
 
@@ -568,7 +571,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
               const val = item?.value || 0;
               const heightPct = Math.round((val / maxValue) * 100);
               const tooltipText = `${item?.month || ''}: ${val.toLocaleString()} ${baseCurrency}`;
-               
+              
               return (
                 <div 
                   key={idx} 
@@ -941,7 +944,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
 
   const totalNetWorth = assets.reduce((s, a) => s + parseFloat(a.nativeValue || '0'), 0);
 
-  // Category subtotals sorted from highest to lowest value
   const categorySubtotals: { [key: string]: number } = {};
   assets.forEach((a) => {
     const rawCat = a.accountCategory || 'INDIVIDUAL';
@@ -950,7 +952,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   });
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
-  // Family member map sorted from highest to lowest total, with internal assets sorted highest to lowest
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const name = a.user?.fullName || 'Family General';
@@ -963,7 +964,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   });
   const sortedMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
 
-  // Purpose map sorted from highest to lowest total, with internal assets sorted highest to lowest
   const purposeMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
