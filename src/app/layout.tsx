@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   title: "Global Family Vault | OmniWealth",
   description: "Global Family Wealth Command Center",
   manifest: "/manifest.json",
+  icons: {
+    icon: { url: "/omniwealth.jpg", type: "image/jpeg" },
+    apple: { url: "/omniwealth.jpg", type: "image/jpeg" },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
