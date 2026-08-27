@@ -46,7 +46,17 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string): numb
   return (amount * rateFrom) / rateTo;
 }
 
-export default function DashboardClient({ session, initialAssets, baseCurrency }: { session: any; initialAssets: any[]; baseCurrency: string }) {
+export default function DashboardClient({ 
+  session, 
+  initialAssets, 
+  baseCurrency, 
+  initialDocuments = [] 
+}: { 
+  session: any; 
+  initialAssets: any[]; 
+  baseCurrency: string; 
+  initialDocuments?: any[]; 
+}) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
