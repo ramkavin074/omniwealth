@@ -46,6 +46,7 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string): numb
   const rateTo = FX_RATES[toCurr] || 1;
   return (amount * rateFrom) / rateTo;
 }
+
 interface DashboardClientProps {
   session: any;
   initialAssets: any[];
@@ -59,19 +60,8 @@ export default function DashboardClient({
   baseCurrency, 
   initialDocuments = [] 
 }: DashboardClientProps) {
-
-export default function DashboardClient({ 
-  session, 
-  initialAssets, 
-  baseCurrency, 
-  initialDocuments = [] 
-}: { 
-  session: any; 
-  initialAssets: any[]; 
-  baseCurrency: string; 
-  initialDocuments?: any[]; 
-}) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives'>('wealth');
+  // ... rest of your component code follows here
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
