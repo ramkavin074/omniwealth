@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { updatePasswordAction } from '@/actions/auth';
 import { addFamilyMemberAction, deleteFamilyMemberAction, updateHouseholdLegacyPillarsAction } from '@/actions/vault';
-import { Users, ArrowLeft, User, Plus, X, CheckCircle2, Lock, Target, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
+import { Users, User, Plus, X, CheckCircle2, Lock, Target, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileClientProps {
@@ -115,15 +115,12 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
   return (
     <div className="space-y-6">
-      {/* Header with Back Button and Quick Action Buttons */}
+      {/* Header with Page Title and Quick Action Buttons */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-800 gap-4">
-        <Link 
-          href="/" 
-          className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition-colors text-xs font-medium shadow-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
-        </Link>
+        <div>
+          <h1 className="text-xl font-bold text-white">Profile &amp; Family Management</h1>
+          <p className="text-xs text-slate-400 mt-1">View account details, customize legacy pillars, and manage members.</p>
+        </div>
 
         <div className="flex items-center gap-2.5">
           <Link 
@@ -139,11 +136,6 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             <Plus className="w-4 h-4" /> Add Family Member
           </button>
         </div>
-      </div>
-
-      <div>
-        <h1 className="text-xl font-bold text-white">Profile &amp; Family Management</h1>
-        <p className="text-xs text-slate-400 mt-1">View account details, customize legacy pillars, and manage members.</p>
       </div>
 
       {success && (
