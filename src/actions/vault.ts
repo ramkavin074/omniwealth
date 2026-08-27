@@ -643,7 +643,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
     name: nameVal || existing.name,
     ticker: formData.get('ticker') !== null ? (formData.get('ticker') as string) || null : existing.ticker,
     assetType: assetTypeVal,
-    accountCategory: (formData.get('accountCategory'] as string) || existing.accountCategory,
+    accountCategory: (formData.get('accountCategory') as string) || existing.accountCategory,
     accountNumber: (formData.get('accountNumber') as string) || existing.accountNumber,
     rationale: rationaleVal || existing.rationale,
     nativeCurrency: (formData.get('nativeCurrency') as string) || existing.nativeCurrency,
