@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const session = await getSessionUserAction();
 
@@ -15,14 +17,21 @@ export default async function DashboardPage() {
 
   const householdId = session.household.id;
 
-  // Fetch the latest live household record directly from the database to ensure currency sticks
+  // Fetch the latest live household record directly from the database to ensure currency & retirement settings stick
   const householdRecord = await db
     .select()
     .from(households)
     .where(eq(households.id, householdId))
     .limit(1);
 
-  const baseCurrency = householdRecord[0]?.baseCurrency || session.household.baseCurrency || 'USD';
+  const freshHousehold = householdRecord[0] || session.household;
+  const baseCurrency = freshHousehold.baseCurrency || 'USD';
+
+  // Inject fresh household database record into session so retirement targets load instantly on save
+  const updatedSession = {
+    ...session,
+    household: freshHousehold,
+  };
 
   const rawAssets = await db
     .select({
@@ -50,7 +59,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient 
-      session={session} 
+      session={updatedSession} 
       initialAssets={convertedAssets} 
       baseCurrency={baseCurrency} 
     />

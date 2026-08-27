@@ -25,7 +25,6 @@ const COUNTRIES: { [key: string]: CountryConfig } = {
   Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000 },
 };
 
-// FX Rate Table relative to USD
 const FX_RATES: { [key: string]: number } = {
   USD: 1,
   EUR: 1.08,
@@ -62,16 +61,15 @@ export default function RetirementCalculator({
   const [selectedCountryKey, setSelectedCountryKey] = useState<string>(initialCountry in COUNTRIES ? initialCountry : 'US');
   const country = COUNTRIES[selectedCountryKey] || COUNTRIES['US'];
 
-  // Convert incoming base currency liquid wealth to the selected country's currency
   const convertedInitialSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, country.currency));
 
-  const [currentAge, setCurrentAge] = useState(initialCurrentAge);
-  const [retirementAge, setRetirementAge] = useState(initialRetirementAge);
-  const [currentSavings, setCurrentSavings] = useState(convertedInitialSavings);
-  const [monthlyContribution, setMonthlyContribution] = useState(country.defaultContribution);
-  const [returnRate, setReturnRate] = useState(7);
-  const [desiredAnnualIncome, setDesiredAnnualIncome] = useState(initialDesiredIncome ?? country.defaultIncome);
-  const [inflationRate, setInflationRate] = useState(country.defaultInflation);
+  const [currentAge, setCurrentAge] = useState<number | ''>(initialCurrentAge);
+  const [retirementAge, setRetirementAge] = useState<number | ''>(initialRetirementAge);
+  const [currentSavings, setCurrentSavings] = useState<number | ''>(convertedInitialSavings);
+  const [monthlyContribution, setMonthlyContribution] = useState<number | ''>(country.defaultContribution);
+  const [returnRate, setReturnRate] = useState<number | ''>(7);
+  const [desiredAnnualIncome, setDesiredAnnualIncome] = useState<number | ''>(initialDesiredIncome ?? country.defaultIncome);
+  const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
   
   const [isPending, startTransition] = useTransition();
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -83,18 +81,18 @@ export default function RetirementCalculator({
       setInflationRate(cfg.defaultInflation);
       setDesiredAnnualIncome(cfg.defaultIncome);
       setMonthlyContribution(cfg.defaultContribution);
-      // Auto-convert current savings when switching country dropdown
       const newSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, cfg.currency));
       setCurrentSavings(newSavings);
     }
   };
 
   const handleSavePreferences = () => {
+    if (currentAge === '' || retirementAge === '' || desiredAnnualIncome === '') return;
     startTransition(async () => {
       const res = await updateRetirementPreferencesAction({
-        currentAge,
-        retirementAge,
-        desiredIncome: desiredAnnualIncome,
+        currentAge: Number(currentAge),
+        retirementAge: Number(retirementAge),
+        desiredIncome: Number(desiredAnnualIncome),
         country: selectedCountryKey,
       });
       if (res.success) {
@@ -104,20 +102,26 @@ export default function RetirementCalculator({
     });
   };
 
-  // Calculations
-  const yearsToRetirement = Math.max(0, retirementAge - currentAge);
-  const totalMonths = yearsToRetirement * 12;
-  const monthlyRate = returnRate / 100 / 12;
+  // Calculations (fallback to 0 if empty)
+  const cAge = currentAge === '' ? 0 : currentAge;
+  const rAge = retirementAge === '' ? 0 : retirementAge;
+  const cSavings = currentSavings === '' ? 0 : currentSavings;
+  const mContrib = monthlyContribution === '' ? 0 : monthlyContribution;
+  const rRate = returnRate === '' ? 0 : returnRate;
+  const dIncome = desiredAnnualIncome === '' ? 0 : desiredAnnualIncome;
 
-  const fvCurrent = currentSavings * Math.pow(1 + monthlyRate, totalMonths);
+  const yearsToRetirement = Math.max(0, rAge - cAge);
+  const totalMonths = yearsToRetirement * 12;
+  const monthlyRate = rRate / 100 / 12;
+
+  const fvCurrent = cSavings * Math.pow(1 + monthlyRate, totalMonths);
   const fvContributions = monthlyRate > 0 
-    ? monthlyContribution * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate)
-    : monthlyContribution * totalMonths;
+    ? mContrib * ((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate)
+    : mContrib * totalMonths;
   
   const projectedNestEgg = Math.round(fvCurrent + fvContributions);
 
-  // Target Nest Egg based on regional Safe Withdrawal Rule
-  const targetNestEgg = desiredAnnualIncome / country.swr;
+  const targetNestEgg = dIncome / country.swr;
   const fundingPercentage = targetNestEgg > 0 ? Math.min(Math.round((projectedNestEgg / targetNestEgg) * 100), 250) : 0;
   const isFullyFunded = projectedNestEgg >= targetNestEgg;
 
@@ -130,7 +134,6 @@ export default function RetirementCalculator({
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Country Dropdown Selector */}
           <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
             <span className="text-[10px] text-slate-400 uppercase font-medium">Region:</span>
             <select
@@ -146,7 +149,6 @@ export default function RetirementCalculator({
             </select>
           </div>
 
-          {/* Save Targets Button */}
           <button
             onClick={handleSavePreferences}
             disabled={isPending}
@@ -158,23 +160,22 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      {/* Input Controls Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
         <div>
-          <label className="block text-slate-400 mb-1">Current Age ({currentAge} yrs)</label>
+          <label className="block text-slate-400 mb-1">Current Age ({cAge} yrs)</label>
           <input 
             type="number" 
             value={currentAge} 
-            onChange={(e) => setCurrentAge(parseInt(e.target.value) || 0)} 
+            onChange={(e) => setCurrentAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">Target Retirement Age ({retirementAge} yrs)</label>
+          <label className="block text-slate-400 mb-1">Target Retirement Age ({rAge} yrs)</label>
           <input 
             type="number" 
             value={retirementAge} 
-            onChange={(e) => setRetirementAge(parseInt(e.target.value) || 0)} 
+            onChange={(e) => setRetirementAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
           />
         </div>
@@ -183,7 +184,7 @@ export default function RetirementCalculator({
           <input 
             type="number" 
             value={currentSavings} 
-            onChange={(e) => setCurrentSavings(parseFloat(e.target.value) || 0)} 
+            onChange={(e) => setCurrentSavings(e.target.value === '' ? '' : parseFloat(e.target.value))} 
             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-indigo-500" 
           />
         </div>
@@ -192,7 +193,7 @@ export default function RetirementCalculator({
           <input 
             type="number" 
             value={monthlyContribution} 
-            onChange={(e) => setMonthlyContribution(parseFloat(e.target.value) || 0)} 
+            onChange={(e) => setMonthlyContribution(e.target.value === '' ? '' : parseFloat(e.target.value))} 
             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
           />
         </div>
@@ -201,19 +202,19 @@ export default function RetirementCalculator({
           <input 
             type="number" 
             value={desiredAnnualIncome} 
-            onChange={(e) => setDesiredAnnualIncome(parseFloat(e.target.value) || 0)} 
+            onChange={(e) => setDesiredAnnualIncome(e.target.value === '' ? '' : parseFloat(e.target.value))} 
             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">Expected Return ({returnRate}%) &amp; Inflation ({inflationRate}%)</label>
+          <label className="block text-slate-400 mb-1">Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)</label>
           <div className="flex gap-2 mt-1">
             <input 
               type="range" 
               min="1" 
               max="15" 
               step="0.5" 
-              value={returnRate} 
+              value={rRate} 
               onChange={(e) => setReturnRate(parseFloat(e.target.value))} 
               className="w-1/2 accent-indigo-500 cursor-pointer" 
               title="Return Rate"
@@ -223,7 +224,7 @@ export default function RetirementCalculator({
               min="0" 
               max="10" 
               step="0.5" 
-              value={inflationRate} 
+              value={inflationRate === '' ? 0 : inflationRate} 
               onChange={(e) => setInflationRate(parseFloat(e.target.value))} 
               className="w-1/2 accent-rose-500 cursor-pointer" 
               title="Inflation Rate"
@@ -232,11 +233,10 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      {/* Results & Progress Breakdown */}
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {retirementAge}</span>
+            <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {rAge}</span>
             <div className="text-2xl font-extrabold font-mono text-emerald-400 mt-0.5">
               {country.symbol}{projectedNestEgg.toLocaleString()}
             </div>
@@ -257,7 +257,6 @@ export default function RetirementCalculator({
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800">
           <div 
             style={{ width: `${Math.min(fundingPercentage, 100)}%` }} 
@@ -265,7 +264,6 @@ export default function RetirementCalculator({
           />
         </div>
 
-        {/* Verdict Box */}
         <div className="flex items-start gap-3 pt-2 text-xs text-slate-300">
           {isFullyFunded ? (
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
