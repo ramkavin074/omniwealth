@@ -23,7 +23,7 @@ import {
 import { 
   Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, HelpCircle, Lock, BookOpen 
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -51,6 +51,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'about' | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
@@ -103,166 +104,189 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20">
-      {/* TOP HEADER */}
-      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-lg">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex items-center justify-between w-full md:w-auto gap-4">
-            <div className="flex items-center gap-3">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800">
-                <Image src="/omniwealth.jpg" alt="OmniWealth Studio" fill className="object-cover" priority />
-              </div>
-              <div>
-                <div className="font-bold text-white text-xs tracking-tight">
-                  {session.household.name.replace(/ Vault$/i, '')} Vault
+    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between">
+      <div>
+        {/* TOP HEADER */}
+        <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-lg">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex items-center justify-between w-full md:w-auto gap-4">
+              <div className="flex items-center gap-3">
+                <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800">
+                  <Image src="/omniwealth.jpg" alt="OmniWealth Studio" fill className="object-cover" priority />
                 </div>
-                <div className="text-[10px] text-slate-400">Wealth Command Center</div>
+                <div>
+                  <div className="font-bold text-white text-xs tracking-tight">
+                    {session.household.name.replace(/ Vault$/i, '')} Vault
+                  </div>
+                  <div className="text-[10px] text-slate-400">Wealth Command Center</div>
+                </div>
+              </div>
+
+              <nav className="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-4">
+                <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
+                  <Settings className="w-3.5 h-3.5 text-indigo-400" /> Household &amp; Settings
+                </Link>
+                {session.user.role === 'SUPER_ADMIN' && (
+                  <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">
+                    <Shield className="w-3.5 h-3.5" /> Admin
+                  </Link>
+                )}
+              </nav>
+            </div>
+
+            <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none border-t md:border-t-0 border-slate-800 pt-2 md:pt-0">
+              <div className="flex items-center gap-2 shrink-0">
+                <CurrencySwitcherForm currentCurrency={baseCurrency} />
+
+                <button 
+                  onClick={async () => {
+                    setIsSyncing(true);
+                    await refreshLiveMarketPricesAction();
+                    setIsSyncing(false);
+                    window.location.reload();
+                  }} 
+                  disabled={isSyncing}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Prices'}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
+                  <Plus className="w-4 h-4" /><span>Add Asset</span>
+                </button>
+
+                <button onClick={() => setIsAddLiabilityOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
+                  <CreditCard className="w-4 h-4" /><span>Add Liability</span>
+                </button>
+
+                <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
+                </button>
+
+                <form action={async () => { window.location.href = '/login'; }} className="hidden md:block shrink-0">
+                  <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
+                    <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
+                  </button>
+                </form>
               </div>
             </div>
-
-            <nav className="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-4">
-              <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
-                <Settings className="w-3.5 h-3.5 text-indigo-400" /> Household &amp; Settings
-              </Link>
-              {session.user.role === 'SUPER_ADMIN' && (
-                <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">
-                  <Shield className="w-3.5 h-3.5" /> Admin
-                </Link>
-              )}
-            </nav>
           </div>
+        </header>
 
-          <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none border-t md:border-t-0 border-slate-800 pt-2 md:pt-0">
-            <div className="flex items-center gap-2 shrink-0">
-              <CurrencySwitcherForm currentCurrency={baseCurrency} />
-
-              <button 
-                onClick={async () => {
-                  setIsSyncing(true);
-                  await refreshLiveMarketPricesAction();
-                  setIsSyncing(false);
-                  window.location.reload();
-                }} 
-                disabled={isSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Prices'}</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
-                <Plus className="w-4 h-4" /><span>Add Asset</span>
-              </button>
-
-              <button onClick={() => setIsAddLiabilityOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
-                <CreditCard className="w-4 h-4" /><span>Add Liability</span>
-              </button>
-
-              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
-              </button>
-
-              <form action={async () => { window.location.href = '/login'; }} className="hidden md:block shrink-0">
-                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
-                  <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* MAIN CONTAINER */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
-        
-        {/* PILL TAB BAR */}
-        <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto shadow-md">
-          <button
-            onClick={() => setActiveTab('wealth')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-              activeTab === 'wealth'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Wallet className="w-4 h-4" /> Wealth &amp; Assets
-          </button>
+        {/* MAIN CONTAINER */}
+        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
           
-          <button
-            onClick={() => setActiveTab('liabilities')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-              activeTab === 'liabilities'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
-          </button>
+          {/* PILL TAB BAR */}
+          <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto shadow-md">
+            <button
+              onClick={() => setActiveTab('wealth')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                activeTab === 'wealth'
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Wallet className="w-4 h-4" /> Wealth &amp; Assets
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('liabilities')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                activeTab === 'liabilities'
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
+            </button>
 
-          <button
-            onClick={() => setActiveTab('retirement')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-              activeTab === 'retirement'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Target className="w-4 h-4" /> Retirement &amp; Planning
-          </button>
+            <button
+              onClick={() => setActiveTab('retirement')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                activeTab === 'retirement'
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Target className="w-4 h-4" /> Retirement &amp; Planning
+            </button>
 
-          <button
-            onClick={() => setActiveTab('directives')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-              activeTab === 'directives'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Shield className="w-4 h-4" /> Directives &amp; Vault
-          </button>
-        </div>
+            <button
+              onClick={() => setActiveTab('directives')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                activeTab === 'directives'
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Shield className="w-4 h-4" /> Directives &amp; Vault
+            </button>
+          </div>
 
-        {/* TAB CONTENTS */}
-        <div className="space-y-6">
-          {activeTab === 'wealth' && (
-            <div className="space-y-6 animate-fadeIn">
-              <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} />
-              <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
-              <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
-              <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
-            </div>
-          )}
+          {/* TAB CONTENTS */}
+          <div className="space-y-6">
+            {activeTab === 'wealth' && (
+              <div className="space-y-6 animate-fadeIn">
+                <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} />
+                <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
+                <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
+                <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+              </div>
+            )}
 
-          {activeTab === 'liabilities' && (
-            <div className="space-y-6 animate-fadeIn">
-              <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} onAddLiability={() => setIsAddLiabilityOpen(true)} />
-            </div>
-          )}
+            {activeTab === 'liabilities' && (
+              <div className="space-y-6 animate-fadeIn">
+                <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} onAddLiability={() => setIsAddLiabilityOpen(true)} />
+              </div>
+            )}
 
-          {activeTab === 'retirement' && (
-            <div className="space-y-6 animate-fadeIn">
-              <RetirementCalculator 
-                currentTotalValue={totalLiquidWealth} 
-                baseCurrency={baseCurrency}
-                initialCurrentAge={session.household.currentAge ?? 35}
-                initialRetirementAge={session.household.retirementAge ?? 65}
-                initialDesiredIncome={session.household.desiredIncome ? parseFloat(session.household.desiredIncome) : undefined}
-                initialCountry={session.household.retirementCountry ?? 'US'}
-              />
-            </div>
-          )}
+            {activeTab === 'retirement' && (
+              <div className="space-y-6 animate-fadeIn">
+                <RetirementCalculator 
+                  currentTotalValue={totalLiquidWealth} 
+                  baseCurrency={baseCurrency}
+                  initialCurrentAge={session.household.currentAge ?? 35}
+                  initialRetirementAge={session.household.retirementAge ?? 65}
+                  initialDesiredIncome={session.household.desiredIncome ? parseFloat(session.household.desiredIncome) : undefined}
+                  initialCountry={session.household.retirementCountry ?? 'US'}
+                />
+              </div>
+            )}
 
-          {activeTab === 'directives' && (
-            <div className="space-y-6 animate-fadeIn">
-              <FutureMilestonesAndDirectives assets={initialAssets} />
-              <AccountInstructionsHub assets={initialAssets} />
-            </div>
-          )}
+            {activeTab === 'directives' && (
+              <div className="space-y-6 animate-fadeIn">
+                <FutureMilestonesAndDirectives assets={initialAssets} />
+                <AccountInstructionsHub assets={initialAssets} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* PROFESSIONAL COPYRIGHT & LEGAL FOOTER */}
+      <footer className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-20 pt-8 border-t border-slate-800 text-slate-400 text-xs flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="text-center md:text-left space-y-1">
+          <div>&copy; 2026 OmniWealth. All rights reserved.</div>
+          <div className="text-[10px] text-slate-500 max-w-xl">
+            Disclaimer: OmniWealth is a global family asset command and tracking platform for informational purposes only and does not constitute professional financial, tax, or legal advice.
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-4 font-medium text-slate-300">
+          <button onClick={() => setActiveModal('about')} className="hover:text-indigo-400 transition-colors cursor-pointer">About</button>
+          <span>•</span>
+          <button onClick={() => setActiveModal('faq')} className="hover:text-indigo-400 transition-colors cursor-pointer">FAQ</button>
+          <span>•</span>
+          <button onClick={() => setActiveModal('privacy')} className="hover:text-indigo-400 transition-colors cursor-pointer">Privacy Policy</button>
+          <span>•</span>
+          <button onClick={() => setActiveModal('terms')} className="hover:text-indigo-400 transition-colors cursor-pointer">Terms of Service</button>
+        </div>
+      </footer>
+
+      {/* MODALS */}
       {isAddAssetOpen && (
         <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} isLiability={false} />
       )}
@@ -273,6 +297,10 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
       {isAiReaderOpen && (
         <StatementUploadModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAiReaderOpen(false)} />
+      )}
+
+      {activeModal && (
+        <LegalInfoModal type={activeModal} onClose={() => setActiveModal(null)} />
       )}
     </main>
   );
@@ -702,7 +730,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
    
   assets.forEach((a) => {
     let t = (a.assetType || 'OTHER').toUpperCase().trim();
-    if (t === 'LIABILITY' || t === 'DEBT') return; // exclude liabilities from asset allocation bars
+    if (t === 'LIABILITY' || t === 'DEBT') return;
     if (t === 'EQUITY') t = 'EQUITIES';
     const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency);
     typeMap[t] = (typeMap[t] || 0) + val;
@@ -1072,7 +1100,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   assets.forEach((a) => {
     const type = (a.assetType || '').toUpperCase();
     const cat = (a.accountCategory || '').toUpperCase();
-    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return; // handle in liability section
+    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
 
     const name = a.user?.fullName || 'Family General';
     if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
@@ -1184,6 +1212,68 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
               </div>
             );
           })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
+  const titles = {
+    about: 'About OmniWealth',
+    faq: 'Frequently Asked Questions (FAQ)',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-y-auto my-auto text-slate-200 text-xs space-y-4">
+        <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h2 className="text-base font-bold text-white">{titles[type]}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
+        </div>
+
+        {type === 'about' && (
+          <div className="space-y-3 leading-relaxed text-slate-300">
+            <p><strong>OmniWealth</strong> is a next-generation Global Family Wealth Command Center designed to help multi-generational households unify cross-border assets, track live foreign exchange rates, and manage generational legacy directives in one secure place.</p>
+            <p>Our platform combines automated multi-currency engines with AI statement intelligence and encrypted document vaults, ensuring your family command center remains organized, transparent, and secure.</p>
+          </div>
+        )}
+
+        {type === 'faq' && (
+          <div className="space-y-4 text-slate-300">
+            <div>
+              <div className="font-bold text-white mb-1">Q: How are live currency exchange rates updated?</div>
+              <p className="text-slate-400">A: OmniWealth fetches real-time fiat exchange rates via Frankfurt API and crypto prices via CoinGecko, with reliable fallback static rates.</p>
+            </div>
+            <div>
+              <div className="font-bold text-white mb-1">Q: Is my document vault secure?</div>
+              <p className="text-slate-400">A: Yes, all uploaded files and sensitive statements are encrypted at rest using AES-256 encryption tied to your household security context.</p>
+            </div>
+            <div>
+              <div className="font-bold text-white mb-1">Q: How does the AI Statement Reader work?</div>
+              <p className="text-slate-400">A: Our integrated Gemini AI model parses uploaded PDFs or pasted holdings, instantly extracting tickers, asset classes, and values into a review locker for your approval.</p>
+            </div>
+          </div>
+        )}
+
+        {type === 'privacy' && (
+          <div className="space-y-3 leading-relaxed text-slate-300">
+            <p>Your privacy is paramount. OmniWealth stores your data in encrypted database columns and secure cryptographic vaults. We never sell, share, or monetize family financial data or asset holdings.</p>
+            <p>You retain full ownership of your data and can export or delete family member records and uploaded documents at any time from your Household settings.</p>
+          </div>
+        )}
+
+        {type === 'terms' && (
+          <div className="space-y-3 leading-relaxed text-slate-300">
+            <p>By accessing and using OmniWealth, you agree to use the platform solely for personal family wealth tracking and estate organization.</p>
+            <p>OmniWealth is provided &ldquo;as is&rdquo; without warranties of any kind. Calculations, currency conversions, and AI-extracted values should be verified independently before making significant financial or estate decisions.</p>
+          </div>
+        )}
+
+        <div className="flex justify-end pt-3 border-t border-slate-800">
+          <button onClick={onClose} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold cursor-pointer">Close</button>
         </div>
       </div>
     </div>
