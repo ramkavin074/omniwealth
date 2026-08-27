@@ -11,7 +11,8 @@ import {
   deleteAssetAction, 
   updateHouseholdBaseCurrencyAction, 
   fetchNetWorthTrendAction,
-  refreshLiveMarketPricesAction 
+  refreshLiveMarketPricesAction,
+  logoutAction 
 } from '@/actions/vault';
 import { 
   parseStatementAction, 
@@ -171,15 +172,25 @@ export default function DashboardClient({
               <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
               </button>
-              <form action={async () => { window.location.href = '/login'; }}>
+              <form action={logoutAction}>
                 <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
                   <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
                 </button>
               </form>
             </div>
 
-            {/* Mobile Hamburger Button */}
+            {/* Mobile Actions: Direct Logout Button + Hamburger Button */}
             <div className="flex md:hidden items-center gap-2">
+              <form action={logoutAction}>
+                <button 
+                  type="submit" 
+                  className="p-2 bg-slate-800 border border-slate-700 text-rose-400 hover:bg-rose-950/60 rounded-xl cursor-pointer shadow-sm flex items-center justify-center"
+                  title="Logout"
+                  aria-label="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </form>
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-xl cursor-pointer"
@@ -220,8 +231,8 @@ export default function DashboardClient({
                     <Shield className="w-3.5 h-3.5" /> Admin
                   </Link>
                 )}
-                <form action={async () => { window.location.href = '/login'; }} className="col-span-2">
-                  <button type="submit" className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/60 text-rose-400 text-xs font-semibold rounded-xl border border-rose-900/50">
+                <form action={logoutAction} className="col-span-2">
+                  <button type="submit" className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/60 text-rose-400 text-xs font-semibold rounded-xl border border-rose-900/50 cursor-pointer">
                     <LogOut className="w-3.5 h-3.5" /> Logout
                   </button>
                 </form>
