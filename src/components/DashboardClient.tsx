@@ -23,7 +23,7 @@ import {
 import { 
   Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings 
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,6 +49,7 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string): numb
 export default function DashboardClient({ session, initialAssets, baseCurrency }: { session: any; initialAssets: any[]; baseCurrency: string }) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
+  const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
@@ -66,7 +67,14 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   const getAssetBaseValue = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
     const curr = asset.nativeCurrency || 'USD';
-    return convertCurrency(val, curr, baseCurrency);
+    const baseVal = convertCurrency(val, curr, baseCurrency);
+    const type = (asset.assetType || '').toUpperCase();
+    const cat = (asset.accountCategory || '').toUpperCase();
+    
+    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') {
+      return -Math.abs(baseVal);
+    }
+    return Math.abs(baseVal);
   };
 
   const totalNetWorth = initialAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
@@ -74,7 +82,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   const liquidAssets = initialAssets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const category = (a.accountCategory || '').toUpperCase();
-    return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY';
+    return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY' && type !== 'LIABILITY';
   });
   const totalLiquidWealth = liquidAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
 
@@ -114,7 +122,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
             <nav className="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-4">
               <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
-                <Users className="w-3.5 h-3.5 text-indigo-400" /> Family
+                <Settings className="w-3.5 h-3.5 text-indigo-400" /> Household &amp; Settings
               </Link>
               {session.user.role === 'SUPER_ADMIN' && (
                 <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">
@@ -144,16 +152,20 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
+              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
                 <Plus className="w-4 h-4" /><span>Add Asset</span>
               </button>
 
-              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
+              <button onClick={() => setIsAddLiabilityOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
+                <CreditCard className="w-4 h-4" /><span>Add Liability</span>
+              </button>
+
+              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
               </button>
 
               <form action={async () => { window.location.href = '/login'; }} className="hidden md:block shrink-0">
-                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm">
+                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
                   <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
                 </button>
               </form>
@@ -165,7 +177,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
       {/* MAIN CONTAINER */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
         
-        {/* INTUITIVE PILL TAB BAR (Right under header) */}
+        {/* PILL TAB BAR */}
         <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto shadow-md">
           <button
             onClick={() => setActiveTab('wealth')}
@@ -225,7 +237,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
           {activeTab === 'liabilities' && (
             <div className="space-y-6 animate-fadeIn">
-              <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} />
+              <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} onAddLiability={() => setIsAddLiabilityOpen(true)} />
             </div>
           )}
 
@@ -252,7 +264,11 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
       </div>
 
       {isAddAssetOpen && (
-        <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} />
+        <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} isLiability={false} />
+      )}
+
+      {isAddLiabilityOpen && (
+        <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddLiabilityOpen(false)} isLiability={true} />
       )}
 
       {isAiReaderOpen && (
@@ -263,16 +279,25 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 }
 
 function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
-  const getBaseVal = (valStr: string, curr: string) => {
-    return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency);
+  const getBaseVal = (asset: any) => {
+    const val = parseFloat(asset.nativeValue || '0');
+    const curr = asset.nativeCurrency || 'USD';
+    const baseVal = convertCurrency(val, curr, baseCurrency);
+    const type = (asset.assetType || '').toUpperCase();
+    const cat = (asset.accountCategory || '').toUpperCase();
+    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') {
+      return -Math.abs(baseVal);
+    }
+    return Math.abs(baseVal);
   };
-  const totalNetWorth = assets.reduce((s, a) => s + getBaseVal(a.nativeValue, a.nativeCurrency), 0);
+
+  const totalNetWorth = assets.reduce((s, a) => s + getBaseVal(a), 0);
 
   const categorySubtotals: { [key: string]: number } = {};
   assets.forEach((a) => {
     const rawCat = a.accountCategory || 'INDIVIDUAL';
     const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
-    categorySubtotals[label] = (categorySubtotals[label] || 0) + getBaseVal(a.nativeValue, a.nativeCurrency);
+    categorySubtotals[label] = (categorySubtotals[label] || 0) + getBaseVal(a);
   });
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
@@ -292,7 +317,9 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
           {sortedCategories.map(([cat, val]) => (
             <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs shadow-inner">
               <span className="text-slate-400 uppercase text-[10px] block font-medium">{cat}</span>
-              <span className="font-mono text-emerald-400 font-bold">{Math.round(val).toLocaleString()} {baseCurrency}</span>
+              <span className={`font-mono font-bold ${val < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {Math.round(val).toLocaleString()} {baseCurrency}
+              </span>
             </div>
           ))}
         </div>
@@ -301,22 +328,61 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
   );
 }
 
-function LiabilitiesManagementSection({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
+function LiabilitiesManagementSection({ assets, baseCurrency, onAddLiability }: { assets: any[]; baseCurrency: string; onAddLiability: () => void }) {
+  const liabilities = assets.filter(a => {
+    const type = (a.assetType || '').toUpperCase();
+    const cat = (a.accountCategory || '').toUpperCase();
+    return type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT';
+  });
+
+  const getBaseVal = (asset: any) => {
+    const val = parseFloat(asset.nativeValue || '0');
+    const curr = asset.nativeCurrency || 'USD';
+    return convertCurrency(val, curr, baseCurrency);
+  };
+
+  const totalLiabilities = liabilities.reduce((s, a) => s + getBaseVal(a), 0);
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-indigo-400" />
+          <CreditCard className="w-5 h-5 text-rose-400" />
           <h3 className="text-sm font-bold text-white uppercase">Liabilities &amp; Debt Tracking</h3>
         </div>
-        <span className="text-xs text-slate-400 font-mono">Gross Assets vs Liabilities</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-rose-400 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
+          <button onClick={onAddLiability} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg cursor-pointer">
+            + Add Liability
+          </button>
+        </div>
       </div>
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-3">
-        <div className="text-slate-300 font-bold text-sm">No active liabilities logged yet</div>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">
-          Log mortgages, cross-border loans, or credit lines to automatically compute your true Net Worth in {baseCurrency}.
-        </p>
-      </div>
+
+      {liabilities.length === 0 ? (
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-3">
+          <div className="text-slate-300 font-bold text-sm">No active liabilities logged yet</div>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Log mortgages, cross-border loans, or credit lines using the button above to automatically subtract from your net worth in {baseCurrency}.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {liabilities.map((item) => (
+            <div key={item.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex justify-between items-center">
+              <div>
+                <div className="font-bold text-white text-sm">{item.name}</div>
+                <div className="text-xs text-slate-400">Owner: {item.user?.fullName || 'Family Member'} | Category: {item.accountCategory}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-rose-400 font-bold">-{Math.round(getBaseVal(item)).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
+                <button onClick={async () => { await deleteAssetAction(item.id); }} className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -636,6 +702,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
    
   assets.forEach((a) => {
     let t = (a.assetType || 'OTHER').toUpperCase().trim();
+    if (t === 'LIABILITY' || t === 'DEBT') return; // exclude liabilities from asset allocation bars
     if (t === 'EQUITY') t = 'EQUITIES';
     const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency);
     typeMap[t] = (typeMap[t] || 0) + val;
@@ -644,6 +711,8 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
   const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500', 'bg-rose-500'];
 
+  const positiveNetWorth = Math.max(totalNetWorth, 1);
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
@@ -651,17 +720,17 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
         <h3 className="text-sm font-bold text-white uppercase">Asset Class Allocation</h3>
       </div>
 
-      {totalNetWorth === 0 ? (
+      {sortedEntries.length === 0 ? (
         <div className="text-center py-6 text-slate-500 text-xs">No assets available for allocation view.</div>
       ) : (
         <div className="space-y-4">
           <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
             {sortedEntries.map(([type, val], idx) => {
-              const pct = (val / totalNetWorth) * 100;
+              const pct = (val / positiveNetWorth) * 100;
               return (
                 <div 
                   key={type} 
-                  style={{ width: `${pct}%` }} 
+                  style={{ width: `${Math.max(pct, 2)}%` }} 
                   className={`${colors[idx % colors.length]} transition-all duration-500`}
                   title={`${type}: ${pct.toFixed(1)}%`}
                 />
@@ -671,7 +740,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
             {sortedEntries.map(([type, val], idx) => {
-              const pct = totalNetWorth > 0 ? ((val / totalNetWorth) * 100).toFixed(1) : '0';
+              const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
               return (
                 <div key={type} className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-1">
                   <div className="flex items-center gap-2">
@@ -690,55 +759,64 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
   );
 }
 
-function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { name: string; description: string }[]; members: any[]; onClose: () => void }) {
+function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legacyPillars: { name: string; description: string }[]; members: any[]; onClose: () => void; isLiability: boolean }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl my-auto">
         <div className="flex justify-between items-center pb-3 mb-4 border-b border-slate-800">
-          <h2 className="text-base font-bold text-white">Add Asset Manually</h2>
+          <h2 className="text-base font-bold text-white">{isLiability ? 'Add Liability / Debt' : 'Add Asset Manually'}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
-        <form action={async (fd) => { await addAssetAction(fd); onClose(); }} className="space-y-4">
+        <form action={async (fd) => { 
+          if (isLiability) {
+            fd.set('assetType', 'LIABILITY');
+            fd.set('accountCategory', 'LIABILITY');
+          }
+          await addAssetAction(fd); 
+          onClose(); 
+        }} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-[10px] text-slate-400 mb-1">Asset Name</label><input name="name" required placeholder="e.g. Apple Stock" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white" /></div>
-            <div><label className="block text-[10px] text-slate-400 mb-1">Ticker</label><input name="ticker" placeholder="AAPL or XAU" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-[10px] text-slate-400 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage / Car Loan' : 'e.g. Apple Stock'} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white" /></div>
+            <div><label className="block text-[10px] text-slate-400 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] text-slate-400 mb-1">Asset Type</label>
-              <select name="assetType" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
-                <option value="STOCK">Stock</option>
-                <option value="CRYPTO">Crypto</option>
-                <option value="COMMODITY">Commodity / Gold</option>
-                <option value="CASH">Cash</option>
-                <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
-                <option value="PENSION">Pension</option>
-                <option value="HSA">HSA</option>
-                <option value="REAL_ESTATE">Real Estate</option>
-                <option value="OTHER">Other</option>
-              </select>
+          {!isLiability && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Asset Type</label>
+                <select name="assetType" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
+                  <option value="STOCK">Stock</option>
+                  <option value="CRYPTO">Crypto</option>
+                  <option value="COMMODITY">Commodity / Gold</option>
+                  <option value="CASH">Cash</option>
+                  <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
+                  <option value="PENSION">Pension</option>
+                  <option value="HSA">HSA</option>
+                  <option value="REAL_ESTATE">Real Estate</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Account Category</label>
+                <select name="accountCategory" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
+                  <option value="INDIVIDUAL">Individual</option>
+                  <option value="IRA">Traditional IRA</option>
+                  <option value="ROTH_IRA">Roth IRA</option>
+                  <option value="401K">401(k)</option>
+                  <option value="HSA">HSA</option>
+                  <option value="PPF">PPF</option>
+                  <option value="PF">PF / EPF</option>
+                  <option value="PENSION">Pension</option>
+                  <option value="SOCIAL_SECURITY">Social Security</option>
+                  <option value="529">529 College</option>
+                  <option value="TRUST">Trust</option>
+                  <option value="REAL_ESTATE">Real Estate</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-[10px] text-slate-400 mb-1">Account Category</label>
-              <select name="accountCategory" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
-                <option value="INDIVIDUAL">Individual</option>
-                <option value="IRA">Traditional IRA</option>
-                <option value="ROTH_IRA">Roth IRA</option>
-                <option value="401K">401(k)</option>
-                <option value="HSA">HSA</option>
-                <option value="PPF">PPF</option>
-                <option value="PF">PF / EPF</option>
-                <option value="PENSION">Pension</option>
-                <option value="SOCIAL_SECURITY">Social Security</option>
-                <option value="529">529 College</option>
-                <option value="TRUST">Trust</option>
-                <option value="REAL_ESTATE">Real Estate</option>
-              </select>
-            </div>
-          </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="block text-[10px] text-slate-400 mb-1">Quantity / Shares</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
-            <div><label className="block text-[10px] text-slate-400 mb-1">Total Value</label><input name="nativeValue" type="number" step="any" required placeholder="10000" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-[10px] text-slate-400 mb-1">Quantity</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-[10px] text-slate-400 mb-1">{isLiability ? 'Debt Amount' : 'Total Value'}</label><input name="nativeValue" type="number" step="any" required placeholder="10000" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
             <div><label className="block text-[10px] text-slate-400 mb-1">Currency</label><input name="nativeCurrency" defaultValue="USD" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -750,19 +828,23 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
               </select>
             </div>
           </div>
-          <div>
-            <label className="block text-[10px] text-slate-400 mb-1">Strategic Rationale &amp; Legacy Pillar</label>
-            <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white cursor-pointer">
-              {legacyPillars.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!isLiability && (
+            <div>
+              <label className="block text-[10px] text-slate-400 mb-1">Strategic Rationale &amp; Legacy Pillar</label>
+              <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white cursor-pointer">
+                {legacyPillars.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-3">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs cursor-pointer">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold cursor-pointer">Save Asset</button>
+            <button type="submit" className={`px-4 py-2 text-white rounded-lg text-xs font-semibold cursor-pointer ${isLiability ? 'bg-rose-600 hover:bg-rose-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}>
+              {isLiability ? 'Save Liability' : 'Save Asset'}
+            </button>
           </div>
         </form>
       </div>
@@ -988,6 +1070,10 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
 
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
+    const type = (a.assetType || '').toUpperCase();
+    const cat = (a.accountCategory || '').toUpperCase();
+    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return; // handle in liability section
+
     const name = a.user?.fullName || 'Family General';
     if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
     memberMap[name].total += getBaseVal(a.nativeValue, a.nativeCurrency);
@@ -1000,6 +1086,10 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
 
   const purposeMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
+    const type = (a.assetType || '').toUpperCase();
+    const cat = (a.accountCategory || '').toUpperCase();
+    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
+
     const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
     if (!purposeMap[p]) purposeMap[p] = { total: 0, assets: [] };
     purposeMap[p].total += getBaseVal(a.nativeValue, a.nativeCurrency);
