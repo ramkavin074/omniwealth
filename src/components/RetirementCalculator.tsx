@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { Target, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { Target, ShieldCheck, AlertCircle, Save, Check } from 'lucide-react';
+import { updateRetirementPreferencesAction } from '@/actions/vault';
 
 interface CountryConfig {
   name: string;
   currency: string;
   symbol: string;
   defaultInflation: number;
-  swr: number; // Safe Withdrawal Rate multiplier baseline
+  swr: number;
   defaultIncome: number;
   defaultContribution: number;
 }
@@ -16,7 +17,7 @@ interface CountryConfig {
 const COUNTRIES: { [key: string]: CountryConfig } = {
   US: { name: 'United States', currency: 'USD', symbol: '$', defaultInflation: 2.5, swr: 0.04, defaultIncome: 60000, defaultContribution: 1500 },
   UK: { name: 'United Kingdom', currency: 'GBP', symbol: '£', defaultInflation: 2.5, swr: 0.035, defaultIncome: 45000, defaultContribution: 1200 },
-  EU: { name: 'Eurozone (Germany/France)', currency: 'EUR', symbol: '€', defaultInflation: 2.2, swr: 0.035, defaultIncome: 50000, defaultContribution: 1250 },
+  EU: { name: 'Eurozone', currency: 'EUR', symbol: '€', defaultInflation: 2.2, swr: 0.035, defaultIncome: 50000, defaultContribution: 1250 },
   India: { name: 'India', currency: 'INR', symbol: '₹', defaultInflation: 6.0, swr: 0.0325, defaultIncome: 1200000, defaultContribution: 25000 },
   Canada: { name: 'Canada', currency: 'CAD', symbol: 'CA$', defaultInflation: 2.3, swr: 0.04, defaultIncome: 75000, defaultContribution: 1800 },
   Australia: { name: 'Australia', currency: 'AUD', symbol: 'A$', defaultInflation: 2.8, swr: 0.0375, defaultIncome: 80000, defaultContribution: 2000 },
@@ -24,17 +25,32 @@ const COUNTRIES: { [key: string]: CountryConfig } = {
   Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000 },
 };
 
-export default function RetirementCalculator({ currentTotalValue = 100000, baseCurrency = 'USD' }: { currentTotalValue?: number; baseCurrency?: string }) {
-  const [selectedCountryKey, setSelectedCountryKey] = useState<string>('US');
+export default function RetirementCalculator({ 
+  currentTotalValue = 100000, 
+  initialCurrentAge = 35,
+  initialRetirementAge = 65,
+  initialDesiredIncome,
+  initialCountry = 'US'
+}: { 
+  currentTotalValue?: number; 
+  initialCurrentAge?: number;
+  initialRetirementAge?: number;
+  initialDesiredIncome?: number;
+  initialCountry?: string;
+}) {
+  const [selectedCountryKey, setSelectedCountryKey] = useState<string>(initialCountry in COUNTRIES ? initialCountry : 'US');
   const country = COUNTRIES[selectedCountryKey] || COUNTRIES['US'];
 
-  const [currentAge, setCurrentAge] = useState(35);
-  const [retirementAge, setRetirementAge] = useState(65);
+  const [currentAge, setCurrentAge] = useState(initialCurrentAge);
+  const [retirementAge, setRetirementAge] = useState(initialRetirementAge);
   const [currentSavings, setCurrentSavings] = useState(currentTotalValue);
   const [monthlyContribution, setMonthlyContribution] = useState(country.defaultContribution);
   const [returnRate, setReturnRate] = useState(7);
-  const [desiredAnnualIncome, setDesiredAnnualIncome] = useState(country.defaultIncome);
+  const [desiredAnnualIncome, setDesiredAnnualIncome] = useState(initialDesiredIncome ?? country.defaultIncome);
   const [inflationRate, setInflationRate] = useState(country.defaultInflation);
+  
+  const [isPending, startTransition] = useTransition();
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleCountryChange = (key: string) => {
     setSelectedCountryKey(key);
@@ -44,6 +60,21 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
       setDesiredAnnualIncome(cfg.defaultIncome);
       setMonthlyContribution(cfg.defaultContribution);
     }
+  };
+
+  const handleSavePreferences = () => {
+    startTransition(async () => {
+      const res = await updateRetirementPreferencesAction({
+        currentAge,
+        retirementAge,
+        desiredIncome: desiredAnnualIncome,
+        country: selectedCountryKey,
+      });
+      if (res.success) {
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 3000);
+      }
+    });
   };
 
   // Calculations
@@ -71,20 +102,32 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           <h3 className="text-sm font-bold text-white uppercase">Retirement Readiness &amp; Regional SWR Simulator</h3>
         </div>
         
-        {/* Country Dropdown Selector */}
-        <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-          <span className="text-[10px] text-slate-400 uppercase font-medium">Region:</span>
-          <select
-            value={selectedCountryKey}
-            onChange={(e) => handleCountryChange(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer"
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Country Dropdown Selector */}
+          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <span className="text-[10px] text-slate-400 uppercase font-medium">Region:</span>
+            <select
+              value={selectedCountryKey}
+              onChange={(e) => handleCountryChange(e.target.value)}
+              className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer"
+            >
+              {Object.entries(COUNTRIES).map(([key, cfg]) => (
+                <option key={key} value={key}>
+                  {cfg.name} ({cfg.currency})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Save Targets Button */}
+          <button
+            onClick={handleSavePreferences}
+            disabled={isPending}
+            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-md"
           >
-            {Object.entries(COUNTRIES).map(([key, cfg]) => (
-              <option key={key} value={key}>
-                {cfg.name} ({cfg.currency})
-              </option>
-            ))}
-          </select>
+            {savedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Save className="w-3.5 h-3.5" />}
+            <span>{savedSuccess ? 'Saved!' : 'Save Targets'}</span>
+          </button>
         </div>
       </div>
 
@@ -180,9 +223,9 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
             </div>
           </div>
           <div className="text-left md:text-right">
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">Readiness Score</span>
-            <div className={`text-xl font-bold font-mono ${fundingPercentage >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>
-              {fundingPercentage}% Funded
+            <span className="text-[10px] uppercase text-slate-400 font-medium block">Readiness Status</span>
+            <div className={`text-xl font-bold font-mono ${fundingPercentage >= 100 ? 'text-emerald-400' : 'text-indigo-400'}`}>
+              {fundingPercentage >= 100 ? '🎉 Goal Achieved!' : `🚀 ${100 - fundingPercentage}% away`}
             </div>
           </div>
         </div>
@@ -200,12 +243,12 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           {isFullyFunded ? (
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
           )}
           <p>
             {isFullyFunded 
               ? `Your family is fully on track under the ${country.name} economic parameters (${(country.swr * 100).toFixed(2)}% Safe Withdrawal Rate model).`
-              : `Your family currently has a funding gap for the ${country.name} region. Adjusting your savings rate or target retirement age will help bridge the gap based on local inflation and market realities.`
+              : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
             }
           </p>
         </div>
