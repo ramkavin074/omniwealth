@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Calculator } from 'lucide-react';
 
-export function GrowthSimulator({ currentTotalValue, baseCurrency }: { currentTotalValue: number; baseCurrency: string }) {
+export default function GrowthSimulator({ currentTotalValue, baseCurrency }: { currentTotalValue: number; baseCurrency: string }) {
   const [returnRate, setReturnRate] = useState(7);
   const [inflationRate, setInflationRate] = useState(2.5);
   const [years, zSetYears] = useState(10);
