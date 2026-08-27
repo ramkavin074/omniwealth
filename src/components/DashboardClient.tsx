@@ -166,10 +166,10 @@ export default function DashboardClient({
                 <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
               </button>
               <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
-                <Plus className="w-4 h-4" /><span>Asset</span>
+                <Plus className="w-4 h-4" /><span>Add Asset</span>
               </button>
               <button onClick={() => setIsAddLiabilityOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
-                <CreditCard className="w-4 h-4" /><span>Liability</span>
+                <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
               <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
