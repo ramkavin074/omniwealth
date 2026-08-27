@@ -301,7 +301,7 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
   );
 }
 
-function LiabilitiesManagementSection({ baseCurrency }: { baseCurrency: string }) {
+function LiabilitiesManagementSection({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
