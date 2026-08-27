@@ -8,6 +8,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { Resend } from 'resend';
+import { redirect } from 'next/navigation'; // <-- Add this line
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
