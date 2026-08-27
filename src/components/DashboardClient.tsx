@@ -23,7 +23,7 @@ import {
 import { 
   Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, HelpCircle, Lock, BookOpen 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, HelpCircle, Lock, BookOpen, Menu 
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -46,13 +46,24 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string): numb
   return (amount * rateFrom) / rateTo;
 }
 
-export default function DashboardClient({ session, initialAssets, baseCurrency }: { session: any; initialAssets: any[]; baseCurrency: string }) {
+export default function DashboardClient({ 
+  session, 
+  initialAssets, 
+  baseCurrency, 
+  initialDocuments = [] 
+}: { 
+  session: any; 
+  initialAssets: any[]; 
+  baseCurrency: string; 
+  initialDocuments?: any[]; 
+}) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'about' | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
@@ -106,20 +117,20 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between">
       <div>
-        {/* TOP HEADER */}
-        <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-lg">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex items-center justify-between w-full md:w-auto gap-4">
-              {/* CLICKABLE LOGO/HOME REDIRECT */}
-              <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+        {/* RESPONSIVE TOP HEADER */}
+        <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            {/* Left: Logo & Household Name + Desktop Nav */}
+            <div className="flex items-center gap-4 min-w-0">
+              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
                 <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800 group-hover:border-indigo-400 transition-colors">
                   <Image src="/omniwealth.jpg" alt="OmniWealth Studio" fill className="object-cover" priority />
                 </div>
-                <div>
-                  <div className="font-bold text-white text-xs tracking-tight group-hover:text-indigo-300 transition-colors">
+                <div className="min-w-0">
+                  <div className="font-bold text-white text-xs tracking-tight truncate group-hover:text-indigo-300 transition-colors">
                     {session.household.name.replace(/ Vault$/i, '')} Vault
                   </div>
-                  <div className="text-[10px] text-slate-400">Wealth Command Center</div>
+                  <div className="text-[10px] text-slate-400 truncate">Command Center</div>
                 </div>
               </Link>
 
@@ -135,46 +146,88 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
               </nav>
             </div>
 
-            <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none border-t md:border-t-0 border-slate-800 pt-2 md:pt-0">
-              <div className="flex items-center gap-2 shrink-0">
-                <CurrencySwitcherForm currentCurrency={baseCurrency} />
+            {/* Desktop Actions (Hidden on mobile) */}
+            <div className="hidden md:flex items-center gap-2.5 shrink-0">
+              <CurrencySwitcherForm currentCurrency={baseCurrency} />
+              <button 
+                onClick={async () => {
+                  setIsSyncing(true);
+                  await refreshLiveMarketPricesAction();
+                  setIsSyncing(false);
+                  window.location.reload();
+                }} 
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
+              </button>
+              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
+                <Plus className="w-4 h-4" /><span>Asset</span>
+              </button>
+              <button onClick={() => setIsAddLiabilityOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
+                <CreditCard className="w-4 h-4" /><span>Liability</span>
+              </button>
+              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
+              </button>
+              <form action={async () => { window.location.href = '/login'; }}>
+                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
+                  <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
+                </button>
+              </form>
+            </div>
 
-                <button 
-                  onClick={async () => {
-                    setIsSyncing(true);
-                    await refreshLiveMarketPricesAction();
-                    setIsSyncing(false);
-                    window.location.reload();
-                  }} 
-                  disabled={isSyncing}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Prices'}</span>
+            {/* Mobile Hamburger Button */}
+            <div className="flex md:hidden items-center gap-2">
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-xl cursor-pointer"
+                aria-label="Toggle Menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Dropdown Drawer */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-3 pt-3 border-t border-slate-800 space-y-2.5 animate-fadeIn">
+              <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <span className="text-xs text-slate-400 font-medium">Base Currency:</span>
+                <CurrencySwitcherForm currentCurrency={baseCurrency} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-indigo-600 text-white font-semibold text-xs rounded-xl">
+                  <Plus className="w-4 h-4" /> Add Asset
+                </button>
+                <button onClick={() => { setIsAddLiabilityOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-rose-600 text-white font-semibold text-xs rounded-xl">
+                  <CreditCard className="w-4 h-4" /> Add Liability
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
-                  <Plus className="w-4 h-4" /><span>Add Asset</span>
-                </button>
+              <button onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-800 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl">
+                <Sparkles className="w-4 h-4 text-indigo-400" /> AI Statement Reader
+              </button>
 
-                <button onClick={() => setIsAddLiabilityOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
-                  <CreditCard className="w-4 h-4" /><span>Add Liability</span>
-                </button>
-
-                <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
-                </button>
-
-                <form action={async () => { window.location.href = '/login'; }} className="hidden md:block shrink-0">
-                  <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
-                    <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700">
+                  <Settings className="w-3.5 h-3.5 text-indigo-400" /> Household &amp; Settings
+                </Link>
+                {session.user.role === 'SUPER_ADMIN' && (
+                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/20">
+                    <Shield className="w-3.5 h-3.5" /> Admin
+                  </Link>
+                )}
+                <form action={async () => { window.location.href = '/login'; }} className="col-span-2">
+                  <button type="submit" className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/60 text-rose-400 text-xs font-semibold rounded-xl border border-rose-900/50">
+                    <LogOut className="w-3.5 h-3.5" /> Logout
                   </button>
                 </form>
               </div>
             </div>
-          </div>
+          )}
         </header>
 
         {/* MAIN CONTAINER */}
@@ -261,6 +314,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
               <div className="space-y-6 animate-fadeIn">
                 <FutureMilestonesAndDirectives assets={initialAssets} />
                 <AccountInstructionsHub assets={initialAssets} />
+                <SecureDocumentsVault documents={initialDocuments} />
               </div>
             )}
           </div>
@@ -353,6 +407,53 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+        <Lock className="w-5 h-5 text-indigo-400" />
+        <h3 className="text-sm font-bold text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
+      </div>
+      <p className="text-xs text-slate-400">
+        Securely stored legal wills, trust deeds, property deeds, and financial statements protected with AES-256 encryption.
+      </p>
+
+      {documents.length === 0 ? (
+        <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-2">
+          <div className="text-slate-300 font-bold text-sm">No documents uploaded to vault yet</div>
+          <p className="text-xs text-slate-500">Upload statements or legal documents via the AI Reader or household settings.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {documents.map((doc) => (
+            <div key={doc.id} className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 bg-indigo-600/10 border border-indigo-500/20 rounded-lg text-indigo-400 shrink-0">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-white text-xs truncate">{doc.name}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    {doc.fileType || 'PDF'} {doc.fileSize ? `• ${doc.fileSize}` : ''} • {new Date(doc.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+              <a 
+                href={doc.fileUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700"
+              >
+                View
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
