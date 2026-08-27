@@ -73,6 +73,9 @@ export default function RetirementCalculator({
   const [desiredAnnualIncome, setDesiredAnnualIncome] = useState<number | ''>(initialDesiredIncome ?? country.defaultIncome);
   const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
   
+  // New State for Additional Future Horizon Years (default to 0)
+  const [additionalYears, setAdditionalYears] = useState<number>(0);
+  
   const [isPending, startTransition] = useTransition();
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -111,8 +114,12 @@ export default function RetirementCalculator({
   const rRate = returnRate === '' ? 0 : returnRate;
   const dIncome = desiredAnnualIncome === '' ? 0 : desiredAnnualIncome;
 
-  const yearsToRetirement = Math.max(0, rAge - cAge);
-  const totalMonths = yearsToRetirement * 12;
+  // Total Years = Base retirement timeline + Additional future simulation years
+  const baseYearsToRetirement = Math.max(0, rAge - cAge);
+  const totalYearsToRetirement = baseYearsToRetirement + additionalYears;
+  const effectiveRetirementAge = rAge + additionalYears;
+
+  const totalMonths = totalYearsToRetirement * 12;
   const monthlyRate = rRate / 100 / 12;
 
   const fvCurrent = cSavings * Math.pow(1 + monthlyRate, totalMonths);
@@ -211,7 +218,9 @@ export default function RetirementCalculator({
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)</label>
+          <label className="block text-slate-400 mb-1">
+            Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)
+          </label>
           <div className="flex gap-2 mt-1">
             <input 
               type="range" 
@@ -235,12 +244,41 @@ export default function RetirementCalculator({
             />
           </div>
         </div>
+
+        {/* New Additional Future Horizon Slider */}
+        <div className="md:col-span-2 lg:col-span-3 bg-slate-950 border border-slate-800 rounded-xl p-3">
+          <div className="flex justify-between items-center mb-1">
+            <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">
+              Additional Future Simulation Horizon (+{additionalYears} Years)
+            </label>
+            <span className="text-xs font-mono font-bold text-indigo-400">
+              Retiring at Age {effectiveRetirementAge}
+            </span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="20" 
+            step="1" 
+            value={additionalYears} 
+            onChange={(e) => setAdditionalYears(parseInt(e.target.value) || 0)} 
+            className="w-full accent-indigo-500 cursor-pointer" 
+            title="Additional Future Horizon Years"
+          />
+          <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+            <span>0 yrs (At Target Age {rAge})</span>
+            <span>+10 yrs</span>
+            <span>+20 yrs (Age {rAge + 20})</span>
+          </div>
+        </div>
       </div>
 
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-5">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {rAge}</span>
+            <span className="text-[10px] uppercase text-slate-400 font-medium block">
+              Projected Nest Egg at Age {effectiveRetirementAge}
+            </span>
             <div className="text-2xl font-extrabold font-mono text-emerald-400 mt-0.5">
               {country.symbol}{projectedNestEgg.toLocaleString()}
             </div>
@@ -299,7 +337,7 @@ export default function RetirementCalculator({
           )}
           <p>
             {isFullyFunded 
-              ? `Your family is fully on track under the ${country.name} economic parameters. Beyond securing your target retirement corpus, you are projected to have an excess surplus of ${country.symbol}${surplusAmount.toLocaleString()} left over.`
+              ? `Your family is fully on track under the ${country.name} economic parameters. Delaying or extending your horizon by ${additionalYears} years brings your effective retirement age to ${effectiveRetirementAge}, yielding an excess surplus of ${country.symbol}${surplusAmount.toLocaleString()}.`
               : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
             }
           </p>
