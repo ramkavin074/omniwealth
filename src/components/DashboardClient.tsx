@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import GrowthSimulator from '@/components/GrowthSimulator';
 import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
@@ -662,7 +663,7 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
         <form action={async (fd) => { await addAssetAction(fd); onClose(); }} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-[10px] text-slate-400 mb-1">Asset Name</label><input name="name" required placeholder="e.g. Apple Stock" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white" /></div>
-            <div><label className="block text-[10px] text-slate-400 mb-1">Ticker</label><input name="ticker" placeholder="AAPL or BTC" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-[10px] text-slate-400 mb-1">Ticker</label><input name="ticker" placeholder="AAPL or XAU" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -670,6 +671,7 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
               <select name="assetType" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
                 <option value="STOCK">Stock</option>
                 <option value="CRYPTO">Crypto</option>
+                <option value="COMMODITY">Commodity / Gold</option>
                 <option value="CASH">Cash</option>
                 <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
                 <option value="PENSION">Atal Pension / Pension</option>
@@ -1084,33 +1086,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
               );
             })}
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GrowthSimulator({ currentTotalValue, baseCurrency }: { currentTotalValue: number; baseCurrency: string }) {
-  const [returnRate, setReturnRate] = useState(7);
-  const [years, zSetYears] = useState(10);
-  const [monthly, setMonthly] = useState(500);
-
-  const r = returnRate / 100 / 12;
-  const n = years * 12;
-  const fv = Math.round(currentTotalValue * Math.pow(1 + r, n) + (r > 0 ? monthly * ((Math.pow(1 + r, n) - 1) / r) : monthly * n));
-
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Calculator className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Future Wealth &amp; Growth Simulation</h3></div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-xs">
-        <div><label className="block text-slate-400 mb-1">Return ({returnRate}%)</label><input type="range" min="1" max="20" step="0.5" value={returnRate} onChange={(e) => setReturnRate(parseFloat(e.target.value))} className="w-full accent-indigo-500" /></div>
-        <div><label className="block text-slate-400 mb-1">Horizon ({years} Yrs)</label><input type="range" min="1" max="40" value={years} onChange={(e) => zSetYears(parseInt(e.target.value))} className="w-full accent-indigo-500" /></div>
-        <div><label className="block text-slate-400 mb-1">Monthly Addition</label><input type="number" value={monthly} onChange={(e) => setMonthly(parseFloat(e.target.value) || 0)} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-white font-mono" /></div>
-      </div>
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex justify-between items-center text-xs">
-        <div>
-          <div className="text-slate-400">Projected Portfolio Value</div>
-          <div className="text-2xl font-extrabold font-mono text-emerald-400">{fv.toLocaleString()} <span className="text-sm text-indigo-400">{baseCurrency}</span></div>
         </div>
       </div>
     </div>
