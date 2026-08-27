@@ -78,8 +78,6 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   });
   const totalLiquidWealth = liquidAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
 
-  const firstName = session?.user?.fullName ? session.user.fullName.split(' ')[0] : 'User';
-
   let legacyPillars: { name: string; description: string }[] = [];
   try {
     legacyPillars = JSON.parse(session?.household?.legacyPillars || '[]');
@@ -309,7 +307,7 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
   );
 }
 
-function LiabilitiesManagementSection({ assets, baseCurrency }: { baseCurrency: string }) {
+function LiabilitiesManagementSection({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
