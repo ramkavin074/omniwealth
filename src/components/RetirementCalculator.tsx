@@ -72,8 +72,6 @@ export default function RetirementCalculator({
   const [returnRate, setReturnRate] = useState<number | ''>(7);
   const [desiredAnnualIncome, setDesiredAnnualIncome] = useState<number | ''>(initialDesiredIncome ?? country.defaultIncome);
   const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
-  
-  // New State for Additional Future Horizon Years (default to 0)
   const [additionalYears, setAdditionalYears] = useState<number>(0);
   
   const [isPending, startTransition] = useTransition();
@@ -114,7 +112,6 @@ export default function RetirementCalculator({
   const rRate = returnRate === '' ? 0 : returnRate;
   const dIncome = desiredAnnualIncome === '' ? 0 : desiredAnnualIncome;
 
-  // Total Years = Base retirement timeline + Additional future simulation years
   const baseYearsToRetirement = Math.max(0, rAge - cAge);
   const totalYearsToRetirement = baseYearsToRetirement + additionalYears;
   const effectiveRetirementAge = rAge + additionalYears;
@@ -218,9 +215,7 @@ export default function RetirementCalculator({
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">
-            Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)
-          </label>
+          <label className="block text-slate-400 mb-1">Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)</label>
           <div className="flex gap-2 mt-1">
             <input 
               type="range" 
@@ -245,7 +240,6 @@ export default function RetirementCalculator({
           </div>
         </div>
 
-        {/* New Additional Future Horizon Slider */}
         <div className="md:col-span-2 lg:col-span-3 bg-slate-950 border border-slate-800 rounded-xl p-3">
           <div className="flex justify-between items-center mb-1">
             <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">
@@ -276,9 +270,7 @@ export default function RetirementCalculator({
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-5">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">
-              Projected Nest Egg at Age {effectiveRetirementAge}
-            </span>
+            <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {effectiveRetirementAge}</span>
             <div className="text-2xl font-extrabold font-mono text-emerald-400 mt-0.5">
               {country.symbol}{projectedNestEgg.toLocaleString()}
             </div>

@@ -11,10 +11,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
-// --- Email Helper with Plain Text & HTML Fallback ---
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
-  console.log(`[Resend Debug] Attempting to send email to: ${toEmail}, Household: ${householdName}, Code: ${inviteCode}`);
-  
   try {
     const response = await resend.emails.send({
       from: 'Global Family Vault <vault@omniwealth.org>',
@@ -41,19 +38,14 @@ export async function sendInviteEmail(toEmail: string, householdName: string, in
     });
 
     if (response.error) {
-      console.error('[Resend Debug] Resend rejected email:', response.error);
       return { success: false, error: response.error };
     }
-
-    console.log('[Resend Debug] Email dispatched successfully:', response.data);
     return { success: true, data: response.data };
   } catch (err) {
-    console.error('[Resend Debug] Failed to send invitation email with exception:', err);
     return { success: false, error: err };
   }
 }
 
-// --- Auth & Helper Actions ---
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('vault_user_id')?.value;
@@ -144,23 +136,22 @@ export async function setupDemoHouseholdAction(formData: FormData) {
   return { success: true };
 }
 
-// --- Automated Live FX Rate Engine via Frankfurter API ---
+// --- Automated Live FX Rate Engine via Frankfurter API with Static Fallback ---
 export async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
   if (fromCurrency === toCurrency) return 1;
 
   try {
     const res = await fetch(`https://api.frankfurter.app/latest?from=${fromCurrency}&to=${toCurrency}`, {
-      next: { revalidate: 3600 } // Cache live rate for 1 hour
+      next: { revalidate: 3600 }
     });
     const data = await res.json();
     if (data?.rates && data.rates[toCurrency]) {
       return data.rates[toCurrency];
     }
   } catch (err) {
-    console.warn(`Live FX fetch failed for ${fromCurrency} -> ${toCurrency}, using fallback rates.`, err);
+    console.warn(`Live FX fetch failed for ${fromCurrency} -> ${toCurrency}, using fallback rates.`);
   }
 
-  // Fallback static rates if API is unreachable
   const rates: { [key: string]: number } = {
     USD: 1,
     EUR: 1.08,
@@ -175,7 +166,6 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string):
   return (rates[fromCurrency] || 1) / (rates[toCurrency] || 1);
 }
 
-// --- Live Market Price Sync Engine ---
 export async function refreshLiveMarketPricesAction() {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
@@ -239,7 +229,6 @@ export async function refreshLiveMarketPricesAction() {
   return { success: true, updatedCount };
 }
 
-// --- Automatic Historical Net Worth Trend Engine ---
 export async function fetchNetWorthTrendAction(range: string = '6m') {
   try {
     const session = await getSessionUserAction();
@@ -321,12 +310,10 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
 
     return results;
   } catch (err) {
-    console.error('Error fetching trend data:', err);
     return [];
   }
 }
 
-// --- AI Statement Parsing with Gemini & Retry Guard ---
 async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, delay = 5000): Promise<any> {
   try {
     return await ai.models.generateContent(params);
@@ -343,7 +330,6 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, dela
       message.includes('overloaded');
 
     if (retries > 0 && isRateLimitedOrOverloaded) {
-      console.warn(`Gemini API rate-limited or overloaded (${status || 'Limit'}). Retrying in ${delay}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return generateWithRetry(ai, params, retries - 1, delay * 2);
     }
@@ -368,7 +354,7 @@ export async function parseStatementAction(formData: FormData) {
   const ai = new GoogleGenAI({ apiKey });
   let totalCount = 0;
 
-  const extractionPrompt = 'Ignore all legal disclaimers, headers, footers, and page numbers. Extract only investment assets, stock holdings, crypto positions, cash balances, or real estate line items from the provided text. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP, CNY). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").';
+  const extractionPrompt = 'Extract only investment assets, stock holdings, crypto positions, cash balances, or real estate line items from the provided text. Detect native currency (USD, EUR, INR, GBP, CNY, etc.).';
 
   if (pastedText) {
     try {
@@ -421,7 +407,6 @@ export async function parseStatementAction(formData: FormData) {
         totalCount++;
       }
     } catch (err: any) {
-      console.error('Error parsing pasted statement text:', err);
       return { success: false, error: err.message || 'Failed to parse pasted text' };
     }
   }
@@ -658,7 +643,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
     name: nameVal || existing.name,
     ticker: formData.get('ticker') !== null ? (formData.get('ticker') as string) || null : existing.ticker,
     assetType: assetTypeVal,
-    accountCategory: (formData.get('accountCategory') as string) || existing.accountCategory,
+    accountCategory: (formData.get('accountCategory'] as string) || existing.accountCategory,
     accountNumber: (formData.get('accountNumber') as string) || existing.accountNumber,
     rationale: rationaleVal || existing.rationale,
     nativeCurrency: (formData.get('nativeCurrency') as string) || existing.nativeCurrency,
@@ -696,30 +681,6 @@ export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
   revalidatePath('/');
 }
 
-export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
-
-  const pillars = [];
-  for (let i = 0; i < 4; i++) {
-    const name = (formData.get(`pillar_name_${i}`) as string || '').trim();
-    const description = (formData.get(`pillar_desc_${i}`) as string || '').trim();
-    if (name) {
-      pillars.push({ name, description });
-    }
-  }
-
-  if (pillars.length === 0) return { success: false, error: 'At least one pillar is required.' };
-
-  await db.update(households)
-    .set({ legacyPillars: JSON.stringify(pillars), updatedAt: new Date() } as any)
-    .where(eq(households.id, session.household.id));
-
-  revalidatePath('/');
-  revalidatePath('/profile');
-  return { success: true };
-}
-
 export async function updateRetirementPreferencesAction(data: {
   currentAge: number;
   retirementAge: number;
@@ -746,120 +707,6 @@ export async function updateRetirementPreferencesAction(data: {
     revalidatePath('/');
     return { success: true };
   } catch (error) {
-    console.error('Failed to update retirement preferences:', error);
     return { success: false, error: 'Failed to save settings' };
   }
-}
-
-// --- Secure Document Vault & Encryption Helpers ---
-function getVaultEncryptionKey(userId: string, email: string, householdId: string) {
-  const serverSecret = process.env.SESSION_SECRET || 'omniwealth-secure-vault-fallback-secret';
-  return crypto.scryptSync(`${userId}:${email}:${householdId}:${serverSecret}`, 'salt-omniwealth', 32);
-}
-
-function encryptFileBuffer(buffer: Buffer, userId: string, email: string, householdId: string): string {
-  const iv = crypto.randomBytes(16);
-  const key = getVaultEncryptionKey(userId, email, householdId);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-   
-  const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
-  const tag = cipher.getAuthTag();
-
-  return Buffer.concat([iv, tag, encrypted]).toString('base64');
-}
-
-function decryptFileBuffer(encryptedBase64: string, userId: string, email: string, householdId: string): Buffer {
-  const data = Buffer.from(encryptedBase64, 'base64');
-  const iv = data.subarray(0, 16);
-  const tag = data.subarray(16, 32);
-  const encrypted = data.subarray(32);
-
-  const key = getVaultEncryptionKey(userId, email, householdId);
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(tag);
-
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
-}
-
-export async function fetchHouseholdDocumentsAction() {
-  const session = await getSessionUserAction();
-  if (!session) return [];
-  return await db
-    .select()
-    .from(documents)
-    .where(eq(documents.householdId, session.household.id))
-    .orderBy(documents.createdAt);
-}
-
-export async function uploadDocumentAction(formData: FormData) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
-
-  const file = formData.get('file') as File;
-  const name = (formData.get('name') as string) || file?.name || 'Untitled Document';
-  const assetId = (formData.get('assetId') as string) || null;
-
-  if (!file) return { success: false, error: 'No file provided' };
-
-  try {
-    const bytes = await file.arrayBuffer();
-    const rawBuffer = Buffer.from(bytes);
-
-    const encryptedBase64Payload = encryptFileBuffer(
-      rawBuffer, 
-      session.user.id, 
-      session.user.email, 
-      session.household.id
-    );
-
-    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-
-    await db.insert(documents).values({
-      householdId: session.household.id,
-      userId: session.user.id,
-      assetId: assetId || null,
-      name,
-      fileUrl: encryptedBase64Payload,
-      fileType: file.type || 'application/pdf',
-      fileSize: fileSizeMB,
-    });
-
-    revalidatePath('/vault');
-    return { success: true };
-  } catch (err: any) {
-    console.error('Error uploading and encrypting document:', err);
-    return { success: false, error: err.message || 'Encryption/Upload failed' };
-  }
-}
-
-export async function fetchDocumentDownloadUrlAction(documentId: string) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
-
-  const [doc] = await db.select().from(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
-  if (!doc) return { success: false, error: 'Document not found' };
-
-  try {
-    const decryptedBuffer = decryptFileBuffer(
-      doc.fileUrl,
-      session.user.id,
-      session.user.email,
-      session.household.id
-    );
-
-    const dataUri = `data:${doc.fileType};base64,${decryptedBuffer.toString('base64')}`;
-    return { success: true, dataUri, name: doc.name, fileType: doc.fileType };
-  } catch (err) {
-    console.error('Failed to decrypt document:', err);
-    return { success: false, error: 'Decryption failed. Security context mismatch.' };
-  }
-}
-
-export async function deleteDocumentAction(documentId: string) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
-
-  await db.delete(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
-  revalidatePath('/vault');
-  return { success: true };
 }

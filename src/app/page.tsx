@@ -9,15 +9,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const session = await getSessionUserAction();
-
-  // If not logged in, redirect straight to your login portal page
   if (!session) {
     redirect('/login');
   }
 
   const householdId = session.household.id;
 
-  // Fetch the latest live household record directly from the database to ensure currency & retirement settings stick
   const householdRecord = await db
     .select()
     .from(households)
@@ -27,7 +24,6 @@ export default async function DashboardPage() {
   const freshHousehold = householdRecord[0] || session.household;
   const baseCurrency = freshHousehold.baseCurrency || 'USD';
 
-  // Inject fresh household database record into session so retirement targets load instantly on save
   const updatedSession = {
     ...session,
     household: freshHousehold,
