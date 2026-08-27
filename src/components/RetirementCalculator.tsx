@@ -3,34 +3,48 @@
 import { useState } from 'react';
 import { Target, ShieldCheck, AlertCircle } from 'lucide-react';
 
+interface CountryConfig {
+  name: string;
+  currency: string;
+  symbol: string;
+  defaultInflation: number;
+  swr: number; // Safe Withdrawal Rate multiplier baseline
+  defaultIncome: number;
+  defaultContribution: number;
+}
+
+const COUNTRIES: { [key: string]: CountryConfig } = {
+  US: { name: 'United States', currency: 'USD', symbol: '$', defaultInflation: 2.5, swr: 0.04, defaultIncome: 60000, defaultContribution: 1500 },
+  UK: { name: 'United Kingdom', currency: 'GBP', symbol: '£', defaultInflation: 2.5, swr: 0.035, defaultIncome: 45000, defaultContribution: 1200 },
+  EU: { name: 'Eurozone (Germany/France)', currency: 'EUR', symbol: '€', defaultInflation: 2.2, swr: 0.035, defaultIncome: 50000, defaultContribution: 1250 },
+  India: { name: 'India', currency: 'INR', symbol: '₹', defaultInflation: 6.0, swr: 0.0325, defaultIncome: 1200000, defaultContribution: 25000 },
+  Canada: { name: 'Canada', currency: 'CAD', symbol: 'CA$', defaultInflation: 2.3, swr: 0.04, defaultIncome: 75000, defaultContribution: 1800 },
+  Australia: { name: 'Australia', currency: 'AUD', symbol: 'A$', defaultInflation: 2.8, swr: 0.0375, defaultIncome: 80000, defaultContribution: 2000 },
+  Switzerland: { name: 'Switzerland', currency: 'CHF', symbol: 'CHF ', defaultInflation: 1.5, swr: 0.035, defaultIncome: 90000, defaultContribution: 2000 },
+  Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000 },
+};
+
 export default function RetirementCalculator({ currentTotalValue = 100000, baseCurrency = 'USD' }: { currentTotalValue?: number; baseCurrency?: string }) {
-  const [country, setCountry] = useState<'US' | 'India'>('US');
+  const [selectedCountryKey, setSelectedCountryKey] = useState<string>('US');
+  const country = COUNTRIES[selectedCountryKey] || COUNTRIES['US'];
+
   const [currentAge, setCurrentAge] = useState(35);
   const [retirementAge, setRetirementAge] = useState(65);
   const [currentSavings, setCurrentSavings] = useState(currentTotalValue);
-  const [monthlyContribution, setMonthlyContribution] = useState(country === 'India' ? 25000 : 1500);
+  const [monthlyContribution, setMonthlyContribution] = useState(country.defaultContribution);
   const [returnRate, setReturnRate] = useState(7);
-  const [desiredAnnualIncome, setDesiredAnnualIncome] = useState(country === 'India' ? 1200000 : 60000);
-  
-  // Region-specific defaults: US uses ~4% SWR, India uses ~3.25% SWR due to higher inflation
-  const safeWithdrawalRate = country === 'US' ? 0.04 : 0.0325;
-  const defaultInflation = country === 'US' ? 2.5 : 6.0;
-  const [inflationRate, setInflationRate] = useState(defaultInflation);
+  const [desiredAnnualIncome, setDesiredAnnualIncome] = useState(country.defaultIncome);
+  const [inflationRate, setInflationRate] = useState(country.defaultInflation);
 
-  const handleCountryChange = (newCountry: 'US' | 'India') => {
-    setCountry(newCountry);
-    if (newCountry === 'India') {
-      setInflationRate(6.0);
-      setDesiredAnnualIncome(1200000); // 12 Lakhs INR
-      setMonthlyContribution(25000);
-    } else {
-      setInflationRate(2.5);
-      setDesiredAnnualIncome(60000); // 60k USD
-      setMonthlyContribution(1500);
+  const handleCountryChange = (key: string) => {
+    setSelectedCountryKey(key);
+    const cfg = COUNTRIES[key];
+    if (cfg) {
+      setInflationRate(cfg.defaultInflation);
+      setDesiredAnnualIncome(cfg.defaultIncome);
+      setMonthlyContribution(cfg.defaultContribution);
     }
   };
-
-  const currencySymbol = country === 'US' ? '$' : '₹';
 
   // Calculations
   const yearsToRetirement = Math.max(0, retirementAge - currentAge);
@@ -45,7 +59,7 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
   const projectedNestEgg = Math.round(fvCurrent + fvContributions);
 
   // Target Nest Egg based on regional Safe Withdrawal Rule
-  const targetNestEgg = desiredAnnualIncome / safeWithdrawalRate;
+  const targetNestEgg = desiredAnnualIncome / country.swr;
   const fundingPercentage = targetNestEgg > 0 ? Math.min(Math.round((projectedNestEgg / targetNestEgg) * 100), 250) : 0;
   const isFullyFunded = projectedNestEgg >= targetNestEgg;
 
@@ -57,24 +71,20 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           <h3 className="text-sm font-bold text-white uppercase">Retirement Readiness &amp; Regional SWR Simulator</h3>
         </div>
         
-        {/* Country Selector Toggle */}
-        <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1">
-          <button
-            onClick={() => handleCountryChange('US')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-              country === 'US' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+        {/* Country Dropdown Selector */}
+        <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+          <span className="text-[10px] text-slate-400 uppercase font-medium">Region:</span>
+          <select
+            value={selectedCountryKey}
+            onChange={(e) => handleCountryChange(e.target.value)}
+            className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer"
           >
-            🇺🇸 United States (4% Rule)
-          </button>
-          <button
-            onClick={() => handleCountryChange('India')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-              country === 'India' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🇮🇳 India (3%–3.5% Rule)
-          </button>
+            {Object.entries(COUNTRIES).map(([key, cfg]) => (
+              <option key={key} value={key}>
+                {cfg.name} ({cfg.currency})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -99,7 +109,7 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">Current Liquid Savings ({currencySymbol})</label>
+          <label className="block text-slate-400 mb-1">Current Liquid Savings ({country.symbol})</label>
           <input 
             type="number" 
             value={currentSavings} 
@@ -108,7 +118,7 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">Monthly Contribution ({currencySymbol})</label>
+          <label className="block text-slate-400 mb-1">Monthly Contribution ({country.symbol})</label>
           <input 
             type="number" 
             value={monthlyContribution} 
@@ -117,7 +127,7 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           />
         </div>
         <div>
-          <label className="block text-slate-400 mb-1">Desired Annual Income ({currencySymbol})</label>
+          <label className="block text-slate-400 mb-1">Desired Annual Income ({country.symbol})</label>
           <input 
             type="number" 
             value={desiredAnnualIncome} 
@@ -158,15 +168,15 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           <div>
             <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {retirementAge}</span>
             <div className="text-2xl font-extrabold font-mono text-emerald-400 mt-0.5">
-              {currencySymbol}{projectedNestEgg.toLocaleString()}
+              {country.symbol}{projectedNestEgg.toLocaleString()}
             </div>
           </div>
           <div>
             <span className="text-[10px] uppercase text-slate-400 font-medium block">
-              Target Capital Needed ({country === 'US' ? '4% Rule / 25x' : '3.25% Rule / ~31x'})
+              Target Capital Needed ({(country.swr * 100).toFixed(2)}% Rule)
             </span>
             <div className="text-2xl font-extrabold font-mono text-white mt-0.5">
-              {currencySymbol}{targetNestEgg.toLocaleString()}
+              {country.symbol}{targetNestEgg.toLocaleString()}
             </div>
           </div>
           <div className="text-left md:text-right">
@@ -194,8 +204,8 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           )}
           <p>
             {isFullyFunded 
-              ? `Your family is fully on track under the ${country === 'US' ? 'US 4% safe withdrawal model' : 'conservative Indian 3.25% SWR model (accounting for higher baseline inflation)'}.`
-              : `Your family currently has a funding gap for the ${country} economic model. Because of India's higher historical CPI inflation (~6%), a safer withdrawal rate of ~3% to 3.25% requires a larger corpus multiplier (~30x–33x annual expenses) compared to the standard US 25x rule.`
+              ? `Your family is fully on track under the ${country.name} economic parameters (${(country.swr * 100).toFixed(2)}% Safe Withdrawal Rate model).`
+              : `Your family currently has a funding gap for the ${country.name} region. Adjusting your savings rate or target retirement age will help bridge the gap based on local inflation and market realities.`
             }
           </p>
         </div>
