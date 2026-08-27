@@ -95,34 +95,29 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-16 relative">
-      <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-xl">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
+    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20">
+      {/* TOP HEADER */}
+      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-lg">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <div className="flex items-center gap-3">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 shadow-sm bg-slate-800">
-                <Image
-                  src="/omniwealth.jpg"
-                  alt="OmniWealth Studio"
-                  fill
-                  className="object-cover"
-                  priority
-                />
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800">
+                <Image src="/omniwealth.jpg" alt="OmniWealth Studio" fill className="object-cover" priority />
               </div>
               <div>
-                <div className="font-extrabold text-white text-xs tracking-tight">
+                <div className="font-bold text-white text-xs tracking-tight">
                   {session.household.name.replace(/ Vault$/i, '')} Vault
                 </div>
-                <div className="text-[10px] text-slate-400">Wealth Command</div>
+                <div className="text-[10px] text-slate-400">Wealth Command Center</div>
               </div>
             </div>
 
             <nav className="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-4">
-              <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800/60 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
+              <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
                 <Users className="w-3.5 h-3.5 text-indigo-400" /> Family
               </Link>
               {session.user.role === 'SUPER_ADMIN' && (
-                <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800/60 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">
+                <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">
                   <Shield className="w-3.5 h-3.5" /> Admin
                 </Link>
               )}
@@ -141,8 +136,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
                   window.location.reload();
                 }} 
                 disabled={isSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md disabled:opacity-50 shrink-0"
-                title="Fetch live market prices"
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Prices'}</span>
@@ -150,16 +144,16 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
+              <button onClick={() => setIsAddAssetOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
                 <Plus className="w-4 h-4" /><span>Add Asset</span>
               </button>
 
-              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-lg transition-colors cursor-pointer shadow-md shrink-0">
+              <button onClick={() => setIsAiReaderOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md shrink-0">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
               </button>
 
               <form action={async () => { window.location.href = '/login'; }} className="hidden md:block shrink-0">
-                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
+                <button type="submit" className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm">
                   <LogOut className="w-3.5 h-3.5" /> <span>Logout</span>
                 </button>
               </form>
@@ -168,18 +162,17 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         </div>
       </header>
 
-      {/* PERSISTENT GLOBAL NET WORTH HEADER (Pins across all tabs) */}
-      <div className="max-w-7xl mx-auto px-4 md:px-10 pt-6">
-        <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} />
-
-        {/* CREDIT KARMA STYLE CATEGORICAL NAVIGATION TABS */}
-        <div className="flex items-center gap-2 border-b border-slate-800 my-6 overflow-x-auto scrollbar-none">
+      {/* MAIN CONTAINER */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
+        
+        {/* INTUITIVE PILL TAB BAR (Right under header) */}
+        <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto shadow-md">
           <button
             onClick={() => setActiveTab('wealth')}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
               activeTab === 'wealth'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <Wallet className="w-4 h-4" /> Wealth &amp; Assets
@@ -187,10 +180,10 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
           
           <button
             onClick={() => setActiveTab('liabilities')}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
               activeTab === 'liabilities'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
@@ -198,10 +191,10 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
           <button
             onClick={() => setActiveTab('retirement')}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
               activeTab === 'retirement'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <Target className="w-4 h-4" /> Retirement &amp; Planning
@@ -209,20 +202,21 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
           <button
             onClick={() => setActiveTab('directives')}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
               activeTab === 'directives'
-                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <Shield className="w-4 h-4" /> Directives &amp; Vault
           </button>
         </div>
 
-        {/* TAB CONTENT SECTIONS */}
-        <div className="space-y-8">
+        {/* TAB CONTENTS */}
+        <div className="space-y-6">
           {activeTab === 'wealth' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-6 animate-fadeIn">
+              <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} />
               <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
               <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
               <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
@@ -230,13 +224,13 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
           )}
 
           {activeTab === 'liabilities' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-6 animate-fadeIn">
               <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} />
             </div>
           )}
 
           {activeTab === 'retirement' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-6 animate-fadeIn">
               <RetirementCalculator 
                 currentTotalValue={totalLiquidWealth} 
                 baseCurrency={baseCurrency}
@@ -249,7 +243,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
           )}
 
           {activeTab === 'directives' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-6 animate-fadeIn">
               <FutureMilestonesAndDirectives assets={initialAssets} />
               <AccountInstructionsHub assets={initialAssets} />
             </div>
@@ -283,21 +277,21 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+    <div className="bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-xs uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-1.5">
-            <Wallet className="w-4 h-4" /> Global Household Net Worth (Live Pinned)
+            <Wallet className="w-4 h-4" /> Global Household Net Worth
           </span>
-          <div className="text-3xl font-extrabold font-mono text-white mt-1">
-            {Math.round(totalNetWorth).toLocaleString()} <span className="text-indigo-400 text-lg">{baseCurrency}</span>
+          <div className="text-4xl font-extrabold font-mono text-white mt-1">
+            {Math.round(totalNetWorth).toLocaleString()} <span className="text-indigo-400 text-lg font-sans">{baseCurrency}</span>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
           {sortedCategories.map(([cat, val]) => (
-            <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs">
-              <span className="text-slate-400 uppercase text-[10px] block">{cat}</span>
+            <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs shadow-inner">
+              <span className="text-slate-400 uppercase text-[10px] block font-medium">{cat}</span>
               <span className="font-mono text-emerald-400 font-bold">{Math.round(val).toLocaleString()} {baseCurrency}</span>
             </div>
           ))}
@@ -307,7 +301,7 @@ function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any
   );
 }
 
-function LiabilitiesManagementSection({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
+function LiabilitiesManagementSection({ baseCurrency }: { baseCurrency: string }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -320,7 +314,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency }: { assets: any[];
       <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-3">
         <div className="text-slate-300 font-bold text-sm">No active liabilities logged yet</div>
         <p className="text-xs text-slate-400 max-w-md mx-auto">
-          Log mortgages, cross-border loans, or credit lines to automatically compute your true Net Worth (Gross Assets minus Liabilities).
+          Log mortgages, cross-border loans, or credit lines to automatically compute your true Net Worth in {baseCurrency}.
         </p>
       </div>
     </div>
@@ -347,13 +341,13 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0">
+    <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0 shadow-sm">
       <Coins className="w-3.5 h-3.5 text-indigo-400" />
       <select 
         value={selectedCurrency} 
         onChange={handleCurrencyChange} 
         disabled={isPending}
-        className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+        className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
         {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
           <option key={c} value={c}>{c}</option>
