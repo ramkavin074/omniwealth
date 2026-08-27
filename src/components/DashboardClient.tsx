@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import GrowthSimulator from '@/components/GrowthSimulator';
+import RetirementCalculator from '@/components/RetirementCalculator';
 import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
@@ -168,6 +169,9 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
+        {/* Country-Aware Client Retirement Readiness Calculator */}
+        <RetirementCalculator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
+
         <FutureMilestonesAndDirectives assets={initialAssets} />
         <AccountInstructionsHub assets={initialAssets} />
         <GrowthSimulator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
