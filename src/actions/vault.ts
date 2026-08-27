@@ -845,3 +845,8 @@ export async function deleteDocumentAction(documentId: string) {
   revalidatePath('/vault');
   return { success: true };
 }
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete('vault_user_id');
+  redirect('/login');
+}
