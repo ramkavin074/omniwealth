@@ -227,30 +227,30 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
 function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
   const router = useRouter();
+  const [selectedCurrency, setSelectedCurrency] = useState(currentCurrency);
   const [isPending, startTransition] = useTransition();
-  const [optimisticCurrency, setOptimisticCurrency] = useState(currentCurrency);
 
   // Keep local state in sync if server prop updates
   useEffect(() => {
-    setOptimisticCurrency(currentCurrency);
+    setSelectedCurrency(currentCurrency);
   }, [currentCurrency]);
 
-  return (
-    <form action={async (formData) => {
-      const newCurrency = formData.get('currency') as string;
+  const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCurrency = e.target.value;
+    setSelectedCurrency(newCurrency); // Instant UI feedback
+
+    startTransition(async () => {
       await updateHouseholdBaseCurrencyAction(newCurrency);
-      startTransition(() => {
-        router.refresh();
-      });
-    }} className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0">
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0">
       <Coins className="w-3.5 h-3.5 text-indigo-400" />
       <select 
-        name="currency" 
-        value={optimisticCurrency} 
-        onChange={(e) => {
-          setOptimisticCurrency(e.target.value); // Update UI instantly
-          e.target.form?.requestSubmit();        // Trigger server update in background
-        }} 
+        value={selectedCurrency} 
+        onChange={handleCurrencyChange} 
         disabled={isPending}
         className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
@@ -258,7 +258,7 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
           <option key={c} value={c}>{c}</option>
         ))}
       </select>
-    </form>
+    </div>
   );
 }
 function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
