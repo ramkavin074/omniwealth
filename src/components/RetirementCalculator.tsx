@@ -27,12 +27,14 @@ const COUNTRIES: { [key: string]: CountryConfig } = {
 
 export default function RetirementCalculator({ 
   currentTotalValue = 100000, 
+  baseCurrency = 'USD',
   initialCurrentAge = 35,
   initialRetirementAge = 65,
   initialDesiredIncome,
   initialCountry = 'US'
 }: { 
   currentTotalValue?: number; 
+  baseCurrency?: string;
   initialCurrentAge?: number;
   initialRetirementAge?: number;
   initialDesiredIncome?: number;
