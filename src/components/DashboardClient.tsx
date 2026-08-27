@@ -71,7 +71,7 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
 
-  // ... (keep the rest of your existing component code below this)  useEffect(() => {
+  useEffect(() => {
     fetchFamilyMembersAction().then(setMembers);
   }, []);
 
