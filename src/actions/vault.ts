@@ -681,6 +681,30 @@ export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
   revalidatePath('/');
 }
 
+export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const pillars = [];
+  for (let i = 0; i < 4; i++) {
+    const name = (formData.get(`pillar_name_${i}`) as string || '').trim();
+    const description = (formData.get(`pillar_desc_${i}`) as string || '').trim();
+    if (name) {
+      pillars.push({ name, description });
+    }
+  }
+
+  if (pillars.length === 0) return { success: false, error: 'At least one pillar is required.' };
+
+  await db.update(households)
+    .set({ legacyPillars: JSON.stringify(pillars), updatedAt: new Date() } as any)
+    .where(eq(households.id, session.household.id));
+
+  revalidatePath('/');
+  revalidatePath('/profile');
+  return { success: true };
+}
+
 export async function updateRetirementPreferencesAction(data: {
   currentAge: number;
   retirementAge: number;
@@ -709,4 +733,115 @@ export async function updateRetirementPreferencesAction(data: {
   } catch (error) {
     return { success: false, error: 'Failed to save settings' };
   }
+}
+
+// --- Secure Document Vault & Encryption Helpers ---
+function getVaultEncryptionKey(userId: string, email: string, householdId: string) {
+  const serverSecret = process.env.SESSION_SECRET || 'omniwealth-secure-vault-fallback-secret';
+  return crypto.scryptSync(`${userId}:${email}:${householdId}:${serverSecret}`, 'salt-omniwealth', 32);
+}
+
+function encryptFileBuffer(buffer: Buffer, userId: string, email: string, householdId: string): string {
+  const iv = crypto.randomBytes(16);
+  const key = getVaultEncryptionKey(userId, email, householdId);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+   
+  const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  return Buffer.concat([iv, tag, encrypted]).toString('base64');
+}
+
+function decryptFileBuffer(encryptedBase64: string, userId: string, email: string, householdId: string): Buffer {
+  const data = Buffer.from(encryptedBase64, 'base64');
+  const iv = data.subarray(0, 16);
+  const tag = data.subarray(16, 32);
+  const encrypted = data.subarray(32);
+
+  const key = getVaultEncryptionKey(userId, email, householdId);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+}
+
+export async function fetchHouseholdDocumentsAction() {
+  const session = await getSessionUserAction();
+  if (!session) return [];
+  return await db
+    .select()
+    .from(documents)
+    .where(eq(documents.householdId, session.household.id))
+    .orderBy(documents.createdAt);
+}
+
+export async function uploadDocumentAction(formData: FormData) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const file = formData.get('file') as File;
+  const name = (formData.get('name') as string) || file?.name || 'Untitled Document';
+  const assetId = (formData.get('assetId') as string) || null;
+
+  if (!file) return { success: false, error: 'No file provided' };
+
+  try {
+    const bytes = await file.arrayBuffer();
+    const rawBuffer = Buffer.from(bytes);
+
+    const encryptedBase64Payload = encryptFileBuffer(
+      rawBuffer, 
+      session.user.id, 
+      session.user.email, 
+      session.household.id
+    );
+
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+    await db.insert(documents).values({
+      householdId: session.household.id,
+      userId: session.user.id,
+      assetId: assetId || null,
+      name,
+      fileUrl: encryptedBase64Payload,
+      fileType: file.type || 'application/pdf',
+      fileSize: fileSizeMB,
+    });
+
+    revalidatePath('/vault');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Encryption/Upload failed' };
+  }
+}
+
+export async function fetchDocumentDownloadUrlAction(documentId: string) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const [doc] = await db.select().from(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
+  if (!doc) return { success: false, error: 'Document not found' };
+
+  try {
+    const decryptedBuffer = decryptFileBuffer(
+      doc.fileUrl,
+      session.user.id,
+      session.user.email,
+      session.household.id
+    );
+
+    const dataUri = `data:${doc.fileType};base64,${decryptedBuffer.toString('base64')}`;
+    return { success: true, dataUri, name: doc.name, fileType: doc.fileType };
+  } catch (err) {
+    return { success: false, error: 'Decryption failed. Security context mismatch.' };
+  }
+}
+
+export async function deleteDocumentAction(documentId: string) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  await db.delete(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
+  revalidatePath('/vault');
+  return { success: true };
 }
