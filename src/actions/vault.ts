@@ -827,3 +827,33 @@ export async function deleteDocumentAction(documentId: string) {
   revalidatePath('/vault');
   return { success: true };
 }
+export async function updateRetirementPreferencesAction(data: {
+  currentAge: number;
+  retirementAge: number;
+  desiredIncome: number;
+  country: string;
+}) {
+  const session = await getSessionUserAction();
+  if (!session || !session.household?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    await db
+      .update(households)
+      .set({
+        currentAge: data.currentAge,
+        retirementAge: data.retirementAge,
+        desiredIncome: data.desiredIncome.toString(),
+        retirementCountry: data.country,
+        updatedAt: new Date(),
+      })
+      .where(eq(households.id, session.household.id));
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update retirement preferences:', error);
+    return { success: false, error: 'Failed to save settings' };
+  }
+}

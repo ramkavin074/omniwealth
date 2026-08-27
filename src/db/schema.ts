@@ -1,11 +1,18 @@
-import { pgTable, uuid, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 
 export const households = pgTable('households', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   baseCurrency: text('base_currency').default('USD').notNull(),
-  inviteCode: text('invite_code'), // <-- Required for household invite codes
+  inviteCode: text('invite_code'),
   legacyPillars: text('legacy_pillars'),
+
+  // Permanent Retirement Planning Settings
+  currentAge: integer('current_age').default(35).notNull(),
+  retirementAge: integer('retirement_age').default(65).notNull(),
+  desiredIncome: text('desired_income').default('60000').notNull(),
+  retirementCountry: text('retirement_country').default('US').notNull(),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -18,13 +25,12 @@ export const users = pgTable('users', {
   fullName: text('full_name').notNull(),
   role: text('role').notNull().default('MEMBER'), // OWNER, ADMIN, MEMBER, VIEWER
   
-  // AI Provider Settings & Multi-Keys
   aiProvider: text('ai_provider').default('gemini'),
   aiApiKey: text('ai_api_key'),
   geminiApiKey: text('gemini_api_key'),
   openaiApiKey: text('openai_api_key'),
   anthropicApiKey: text('anthropic_api_key'),
-groqApiKey: text('groq_api_key'),
+  groqApiKey: text('groq_api_key'),
   openrouterApiKey: text('openrouter_api_key'),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
