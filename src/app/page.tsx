@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { assets, users, households } from '@/db/schema';
-import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
+import { getSessionUserAction, getExchangeRate, fetchHouseholdDocumentsAction } from '@/actions/vault';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
@@ -53,11 +53,14 @@ export default async function DashboardPage() {
     })
   );
 
+  const documents = await fetchHouseholdDocumentsAction();
+
   return (
     <DashboardClient 
       session={updatedSession} 
       initialAssets={convertedAssets} 
       baseCurrency={baseCurrency} 
+      initialDocuments={documents}
     />
   );
 }
