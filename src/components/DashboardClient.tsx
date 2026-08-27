@@ -28,6 +28,25 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+// FX Rate Table relative to USD for multi-currency conversion
+const FX_RATES: { [key: string]: number } = {
+  USD: 1,
+  EUR: 1.08,
+  GBP: 1.28,
+  CAD: 0.74,
+  AUD: 0.65,
+  INR: 0.012,
+  JPY: 0.0067,
+  CHF: 1.12,
+};
+
+function convertCurrency(amount: number, fromCurr: string, toCurr: string): number {
+  if (fromCurr === toCurr) return amount;
+  const rateFrom = FX_RATES[fromCurr] || 1;
+  const rateTo = FX_RATES[toCurr] || 1;
+  return (amount * rateFrom) / rateTo;
+}
+
 export default function DashboardClient({ session, initialAssets, baseCurrency }: { session: any; initialAssets: any[]; baseCurrency: string }) {
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
@@ -44,7 +63,24 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
     fetchNetWorthTrendAction(timeRange).then(setTrendData);
   }, [timeRange]);
 
-  const totalNetWorth = initialAssets.reduce((s, a) => s + parseFloat(a.nativeValue || '0'), 0);
+  // Helper to convert any asset's native value into the household base currency
+  const getAssetBaseValue = (asset: any) => {
+    const val = parseFloat(asset.nativeValue || '0');
+    const curr = asset.nativeCurrency || 'USD';
+    return convertCurrency(val, curr, baseCurrency);
+  };
+
+  // 1. Total Net Worth across all currencies converted to baseCurrency
+  const totalNetWorth = initialAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
+
+  // 2. Total Liquid Wealth (excluding Real Estate and Social Security streams)
+  const liquidAssets = initialAssets.filter(a => {
+    const type = (a.assetType || '').toUpperCase();
+    const category = (a.accountCategory || '').toUpperCase();
+    return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY' && category !== 'REAL_ESTATE';
+  });
+  const totalLiquidWealth = liquidAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
+
   const firstName = session?.user?.fullName ? session.user.fullName.split(' ')[0] : 'User';
 
   let legacyPillars: { name: string; description: string }[] = [];
@@ -169,8 +205,15 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
-        {/* Country-Aware Client Retirement Readiness Calculator */}
-        <RetirementCalculator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
+        {/* Retirement Readiness Calculator auto-populated with totalLiquidWealth */}
+        <RetirementCalculator 
+          currentTotalValue={totalLiquidWealth} 
+          baseCurrency={baseCurrency}
+          initialCurrentAge={session.household.currentAge ?? 35}
+          initialRetirementAge={session.household.retirementAge ?? 65}
+          initialDesiredIncome={session.household.desiredIncome ? parseFloat(session.household.desiredIncome) : undefined}
+          initialCountry={session.household.retirementCountry ?? 'US'}
+        />
 
         <FutureMilestonesAndDirectives assets={initialAssets} />
         <AccountInstructionsHub assets={initialAssets} />
@@ -604,7 +647,8 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
   assets.forEach((a) => {
     let t = (a.assetType || 'OTHER').toUpperCase().trim();
     if (t === 'EQUITY') t = 'EQUITIES';
-    typeMap[t] = (typeMap[t] || 0) + parseFloat(a.nativeValue || '0');
+    const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency);
+    typeMap[t] = (typeMap[t] || 0) + val;
   });
 
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
@@ -644,7 +688,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { as
                     <span className={`w-2.5 h-2.5 rounded-full ${colors[idx % colors.length]}`} />
                     <span className="text-[11px] font-bold text-slate-300 uppercase truncate">{type}</span>
                   </div>
-                  <div className="font-mono text-xs text-emerald-400 font-semibold">{val.toLocaleString()} {baseCurrency}</div>
+                  <div className="font-mono text-xs text-emerald-400 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
                   <div className="text-[10px] text-slate-500 font-mono">{pct}% of portfolio</div>
                 </div>
               );
@@ -948,13 +992,18 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   const [expP, setExpP] = useState<{ [key: string]: boolean }>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const totalNetWorth = assets.reduce((s, a) => s + parseFloat(a.nativeValue || '0'), 0);
+  // Helper for FX conversion
+  const getBaseVal = (valStr: string, curr: string) => {
+    return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency);
+  };
+
+  const totalNetWorth = assets.reduce((s, a) => s + getBaseVal(a.nativeValue, a.nativeCurrency), 0);
 
   const categorySubtotals: { [key: string]: number } = {};
   assets.forEach((a) => {
     const rawCat = a.accountCategory || 'INDIVIDUAL';
     const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
-    categorySubtotals[label] = (categorySubtotals[label] || 0) + parseFloat(a.nativeValue || '0');
+    categorySubtotals[label] = (categorySubtotals[label] || 0) + getBaseVal(a.nativeValue, a.nativeCurrency);
   });
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
@@ -962,11 +1011,11 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   assets.forEach((a) => {
     const name = a.user?.fullName || 'Family General';
     if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
-    memberMap[name].total += parseFloat(a.nativeValue || '0');
+    memberMap[name].total += getBaseVal(a.nativeValue, a.nativeCurrency);
     memberMap[name].assets.push(a);
   });
   Object.keys(memberMap).forEach(name => {
-    memberMap[name].assets.sort((a, b) => parseFloat(b.nativeValue || '0') - parseFloat(a.nativeValue || '0'));
+    memberMap[name].assets.sort((a, b) => getBaseVal(b.nativeValue, b.nativeCurrency) - getBaseVal(a.nativeValue, a.nativeCurrency));
   });
   const sortedMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
 
@@ -974,11 +1023,11 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   assets.forEach((a) => {
     const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
     if (!purposeMap[p]) purposeMap[p] = { total: 0, assets: [] };
-    purposeMap[p].total += parseFloat(a.nativeValue || '0');
+    purposeMap[p].total += getBaseVal(a.nativeValue, a.nativeCurrency);
     purposeMap[p].assets.push(a);
   });
   Object.keys(purposeMap).forEach(p => {
-    purposeMap[p].assets.sort((a, b) => parseFloat(b.nativeValue || '0') - parseFloat(a.nativeValue || '0'));
+    purposeMap[p].assets.sort((a, b) => getBaseVal(b.nativeValue, b.nativeCurrency) - getBaseVal(a.nativeValue, a.nativeCurrency));
   });
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
@@ -991,7 +1040,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
               <Wallet className="w-4 h-4" /> Global Household Net Worth
             </span>
             <div className="text-3xl font-extrabold font-mono text-white mt-1">
-              {totalNetWorth.toLocaleString()} <span className="text-indigo-400 text-lg">{baseCurrency}</span>
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-indigo-400 text-lg">{baseCurrency}</span>
             </div>
           </div>
 
@@ -999,7 +1048,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
             {sortedCategories.map(([cat, val]) => (
               <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs">
                 <span className="text-slate-400 uppercase text-[10px] block">{cat}</span>
-                <span className="font-mono text-emerald-400 font-bold">{val.toLocaleString()} {baseCurrency}</span>
+                <span className="font-mono text-emerald-400 font-bold">{Math.round(val).toLocaleString()} {baseCurrency}</span>
               </div>
             ))}
           </div>
@@ -1014,7 +1063,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
               <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
                 <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer">
                   <div><div className="font-bold text-white text-sm">{name}</div><div className="text-xs text-slate-400">{data.assets.length} holding(s)</div></div>
-                  <div className="flex items-center gap-3"><span className="font-mono text-emerald-400 font-semibold">{data.total.toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
+                  <div className="flex items-center gap-3"><span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
                 </button>
                 {expM[name] && (
                   <div className="border-t border-slate-900 p-4 space-y-2 bg-slate-950/80">
@@ -1034,7 +1083,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
                         ) : (
                           <>
                             <div><span className="font-bold text-white">{asset.name}</span> <span className="text-[10px] text-indigo-300">({asset.accountCategory})</span></div>
-                            <div className="flex items-center gap-2"><span className="font-mono text-emerald-400 font-semibold">{parseFloat(asset.nativeValue || '0').toLocaleString()} {baseCurrency}</span><button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button><button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button></div>
+                            <div className="flex items-center gap-2"><span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(asset.nativeValue, asset.nativeCurrency)).toLocaleString()} {baseCurrency}</span><button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button><button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button></div>
                           </>
                         )}
                       </div>
@@ -1063,7 +1112,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
                       <div className="text-xs text-slate-400">{data.assets.length} account(s)</div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-emerald-400 font-semibold">{data.total.toLocaleString()} {baseCurrency}</span>
+                      <span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                       {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     </div>
                   </button>
@@ -1081,7 +1130,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
                       {data.assets.map(a => (
                         <div key={a.id} className="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
                           <span className="font-bold text-white">{a.name}</span>
-                          <span className="font-mono text-emerald-400 font-semibold">{parseFloat(a.nativeValue || '0').toLocaleString()} {baseCurrency}</span>
+                          <span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(a.nativeValue, a.nativeCurrency)).toLocaleString()} {baseCurrency}</span>
                         </div>
                       ))}
                     </div>

@@ -25,6 +25,25 @@ const COUNTRIES: { [key: string]: CountryConfig } = {
   Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000 },
 };
 
+// FX Rate Table relative to USD
+const FX_RATES: { [key: string]: number } = {
+  USD: 1,
+  EUR: 1.08,
+  GBP: 1.28,
+  CAD: 0.74,
+  AUD: 0.65,
+  INR: 0.012,
+  JPY: 0.0067,
+  CHF: 1.12,
+};
+
+function convertCurrency(amount: number, fromCurr: string, toCurr: string): number {
+  if (fromCurr === toCurr) return amount;
+  const rateFrom = FX_RATES[fromCurr] || 1;
+  const rateTo = FX_RATES[toCurr] || 1;
+  return (amount * rateFrom) / rateTo;
+}
+
 export default function RetirementCalculator({ 
   currentTotalValue = 100000, 
   baseCurrency = 'USD',
@@ -43,9 +62,12 @@ export default function RetirementCalculator({
   const [selectedCountryKey, setSelectedCountryKey] = useState<string>(initialCountry in COUNTRIES ? initialCountry : 'US');
   const country = COUNTRIES[selectedCountryKey] || COUNTRIES['US'];
 
+  // Convert incoming base currency liquid wealth to the selected country's currency
+  const convertedInitialSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, country.currency));
+
   const [currentAge, setCurrentAge] = useState(initialCurrentAge);
   const [retirementAge, setRetirementAge] = useState(initialRetirementAge);
-  const [currentSavings, setCurrentSavings] = useState(currentTotalValue);
+  const [currentSavings, setCurrentSavings] = useState(convertedInitialSavings);
   const [monthlyContribution, setMonthlyContribution] = useState(country.defaultContribution);
   const [returnRate, setReturnRate] = useState(7);
   const [desiredAnnualIncome, setDesiredAnnualIncome] = useState(initialDesiredIncome ?? country.defaultIncome);
@@ -61,6 +83,9 @@ export default function RetirementCalculator({
       setInflationRate(cfg.defaultInflation);
       setDesiredAnnualIncome(cfg.defaultIncome);
       setMonthlyContribution(cfg.defaultContribution);
+      // Auto-convert current savings when switching country dropdown
+      const newSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, cfg.currency));
+      setCurrentSavings(newSavings);
     }
   };
 
