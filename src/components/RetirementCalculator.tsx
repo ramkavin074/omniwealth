@@ -21,7 +21,7 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
     setCountry(newCountry);
     if (newCountry === 'India') {
       setInflationRate(6.0);
-      setDesiredAnnualIncome(1200000); // e.g. 12 Lakhs INR
+      setDesiredAnnualIncome(1200000); // 12 Lakhs INR
       setMonthlyContribution(25000);
     } else {
       setInflationRate(2.5);
@@ -185,7 +185,7 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           />
         </div>
 
-        {/* Advisory Verdict Box */}
+        {/* Verdict Box */}
         <div className="flex items-start gap-3 pt-2 text-xs text-slate-300">
           {isFullyFunded ? (
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -194,8 +194,8 @@ export default function RetirementCalculator({ currentTotalValue = 100000, baseC
           )}
           <p>
             {isFullyFunded 
-              ? `Client is fully on track under the ${country === 'US' ? 'US 4% safe withdrawal model' : 'conservative Indian 3.25% SWR model (accounting for higher baseline inflation)'}.`
-              : `There is a funding gap for the ${country} economic model. Because of India's higher historical CPI inflation (~6%), a safer withdrawal rate of ~3% to 3.25% requires a larger corpus multiplier (~30x–33x annual expenses) compared to the standard US 25x rule.`
+              ? `Your family is fully on track under the ${country === 'US' ? 'US 4% safe withdrawal model' : 'conservative Indian 3.25% SWR model (accounting for higher baseline inflation)'}.`
+              : `Your family currently has a funding gap for the ${country} economic model. Because of India's higher historical CPI inflation (~6%), a safer withdrawal rate of ~3% to 3.25% requires a larger corpus multiplier (~30x–33x annual expenses) compared to the standard US 25x rule.`
             }
           </p>
         </div>
