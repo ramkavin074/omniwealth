@@ -46,6 +46,19 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string): numb
   const rateTo = FX_RATES[toCurr] || 1;
   return (amount * rateFrom) / rateTo;
 }
+interface DashboardClientProps {
+  session: any;
+  initialAssets: any[];
+  baseCurrency: string;
+  initialDocuments?: any[];
+}
+
+export default function DashboardClient({ 
+  session, 
+  initialAssets, 
+  baseCurrency, 
+  initialDocuments = [] 
+}: DashboardClientProps) {
 
 export default function DashboardClient({ 
   session, 
