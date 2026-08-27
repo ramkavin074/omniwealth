@@ -23,7 +23,7 @@ import {
 import { 
   Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard 
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -47,6 +47,7 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string): numb
 }
 
 export default function DashboardClient({ session, initialAssets, baseCurrency }: { session: any; initialAssets: any[]; baseCurrency: string }) {
+  const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -73,7 +74,7 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
   const liquidAssets = initialAssets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const category = (a.accountCategory || '').toUpperCase();
-    return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY' && category !== 'REAL_ESTATE';
+    return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY';
   });
   const totalLiquidWealth = liquidAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
 
@@ -118,41 +119,10 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
               </div>
             </div>
 
-            <div className="flex md:hidden items-center gap-1.5">
-              <Link href="/" className="px-2.5 py-1 bg-slate-800 text-indigo-300 rounded-lg text-xs font-semibold">
-                Dashboard
-              </Link>
-              <Link href="/profile" className="px-2.5 py-1 bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700">
-                Family
-              </Link>
-              <form action={async () => { window.location.href = '/login'; }}>
-                <button type="submit" className="p-1.5 bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-lg text-xs cursor-pointer" title="Log Out">
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </form>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-1 border-l border-slate-800 pl-6">
-              <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-indigo-300 rounded-lg text-xs font-semibold shadow-sm">
-                <Home className="w-3.5 h-3.5" /> Dashboard
-              </Link>
-
-              {/* Wealth Dropdown */}
-              <div className="relative group">
-                <button className="flex items-center gap-1 px-3 py-1.5 hover:bg-slate-800/60 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors cursor-pointer">
-                  <Wallet className="w-3.5 h-3.5 text-indigo-400" /> Wealth <ChevronDown className="w-3 h-3 text-slate-400" />
-                </button>
-                <div className="absolute top-full left-0 mt-1 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 hidden group-hover:block z-50">
-                  <button onClick={() => setIsAddAssetOpen(true)} className="w-full text-left px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">Add New Asset</button>
-                  <button onClick={() => setIsAiReaderOpen(true)} className="w-full text-left px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">AI Statement Reader</button>
-                </div>
-              </div>
-
-              {/* Family Link */}
+            <nav className="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-4">
               <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800/60 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
                 <Users className="w-3.5 h-3.5 text-indigo-400" /> Family
               </Link>
-
               {session.user.role === 'SUPER_ADMIN' && (
                 <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800/60 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">
                   <Shield className="w-3.5 h-3.5" /> Admin
@@ -200,32 +170,93 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-10 pt-8 space-y-8">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-900">
-          <div>
-            <h1 className="text-lg font-bold text-white">Welcome back, {firstName} 👋</h1>
-            <p className="text-xs text-slate-400">Here is your consolidated family wealth and asset overview.</p>
-          </div>
-          <span className="hidden sm:inline-block text-[11px] font-mono px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-indigo-300">
-            Role: {session.user.role}
-          </span>
+      {/* PERSISTENT GLOBAL NET WORTH HEADER (Pins across all tabs) */}
+      <div className="max-w-7xl mx-auto px-4 md:px-10 pt-6">
+        <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} />
+
+        {/* CREDIT KARMA STYLE CATEGORICAL NAVIGATION TABS */}
+        <div className="flex items-center gap-2 border-b border-slate-800 my-6 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab('wealth')}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+              activeTab === 'wealth'
+                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <Wallet className="w-4 h-4" /> Wealth &amp; Assets
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('liabilities')}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+              activeTab === 'liabilities'
+                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
+          </button>
+
+          <button
+            onClick={() => setActiveTab('retirement')}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+              activeTab === 'retirement'
+                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <Target className="w-4 h-4" /> Retirement &amp; Planning
+          </button>
+
+          <button
+            onClick={() => setActiveTab('directives')}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer shrink-0 ${
+              activeTab === 'directives'
+                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10 rounded-t-xl'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <Shield className="w-4 h-4" /> Directives &amp; Vault
+          </button>
         </div>
 
-        <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
-        <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
-        <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
-        
-        <RetirementCalculator 
-          currentTotalValue={totalLiquidWealth} 
-          baseCurrency={baseCurrency}
-          initialCurrentAge={session.household.currentAge ?? 35}
-          initialRetirementAge={session.household.retirementAge ?? 65}
-          initialDesiredIncome={session.household.desiredIncome ? parseFloat(session.household.desiredIncome) : undefined}
-          initialCountry={session.household.retirementCountry ?? 'US'}
-        />
+        {/* TAB CONTENT SECTIONS */}
+        <div className="space-y-8">
+          {activeTab === 'wealth' && (
+            <div className="space-y-8 animate-fadeIn">
+              <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
+              <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
+              <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+            </div>
+          )}
 
-        <FutureMilestonesAndDirectives assets={initialAssets} />
-        <AccountInstructionsHub assets={initialAssets} />
+          {activeTab === 'liabilities' && (
+            <div className="space-y-8 animate-fadeIn">
+              <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} />
+            </div>
+          )}
+
+          {activeTab === 'retirement' && (
+            <div className="space-y-8 animate-fadeIn">
+              <RetirementCalculator 
+                currentTotalValue={totalLiquidWealth} 
+                baseCurrency={baseCurrency}
+                initialCurrentAge={session.household.currentAge ?? 35}
+                initialRetirementAge={session.household.retirementAge ?? 65}
+                initialDesiredIncome={session.household.desiredIncome ? parseFloat(session.household.desiredIncome) : undefined}
+                initialCountry={session.household.retirementCountry ?? 'US'}
+              />
+            </div>
+          )}
+
+          {activeTab === 'directives' && (
+            <div className="space-y-8 animate-fadeIn">
+              <FutureMilestonesAndDirectives assets={initialAssets} />
+              <AccountInstructionsHub assets={initialAssets} />
+            </div>
+          )}
+        </div>
       </div>
 
       {isAddAssetOpen && (
@@ -236,6 +267,65 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <StatementUploadModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAiReaderOpen(false)} />
       )}
     </main>
+  );
+}
+
+function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
+  const getBaseVal = (valStr: string, curr: string) => {
+    return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency);
+  };
+  const totalNetWorth = assets.reduce((s, a) => s + getBaseVal(a.nativeValue, a.nativeCurrency), 0);
+
+  const categorySubtotals: { [key: string]: number } = {};
+  assets.forEach((a) => {
+    const rawCat = a.accountCategory || 'INDIVIDUAL';
+    const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
+    categorySubtotals[label] = (categorySubtotals[label] || 0) + getBaseVal(a.nativeValue, a.nativeCurrency);
+  });
+  const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span className="text-xs uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-1.5">
+            <Wallet className="w-4 h-4" /> Global Household Net Worth (Live Pinned)
+          </span>
+          <div className="text-3xl font-extrabold font-mono text-white mt-1">
+            {Math.round(totalNetWorth).toLocaleString()} <span className="text-indigo-400 text-lg">{baseCurrency}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {sortedCategories.map(([cat, val]) => (
+            <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs">
+              <span className="text-slate-400 uppercase text-[10px] block">{cat}</span>
+              <span className="font-mono text-emerald-400 font-bold">{Math.round(val).toLocaleString()} {baseCurrency}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LiabilitiesManagementSection({ assets, baseCurrency }: { baseCurrency: string }) {
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-sm font-bold text-white uppercase">Liabilities &amp; Debt Tracking</h3>
+        </div>
+        <span className="text-xs text-slate-400 font-mono">Gross Assets vs Liabilities</span>
+      </div>
+      <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-3">
+        <div className="text-slate-300 font-bold text-sm">No active liabilities logged yet</div>
+        <p className="text-xs text-slate-400 max-w-md mx-auto">
+          Log mortgages, cross-border loans, or credit lines to automatically compute your true Net Worth (Gross Assets minus Liabilities).
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -283,13 +373,23 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const [customData, setCustomData] = useState<{ [key: string]: { amount: number; instruction: string; editing: boolean } }>({});
 
   if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
-    return null;
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+          <Shield className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+        </div>
+        <div className="text-center py-8 text-xs text-slate-500">
+          No pension, provident fund, or social security assets logged yet. Add them to view milestones.
+        </div>
+      </div>
+    );
   }
 
   const getDefaultInstruction = (category: string) => {
     if (category === 'SOCIAL_SECURITY') return 'Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.';
-    if (category === 'PENSION') return 'Guaranteed monthly pension tier claimable via PRAN upon reaching age 60.';
-    return 'Family Claiming Instruction: Submit Form H at the designated post office or bank branch upon maturity.';
+    if (category === 'PENSION') return 'Guaranteed monthly pension tier claimable upon reaching maturity.';
+    return 'Family Claiming Instruction: Submit forms at the designated branch upon maturity.';
   };
 
   const getAmount = (asset: any) => {
@@ -328,13 +428,6 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     }));
   };
 
-  const formatVal = (val: number, currency: string) => {
-    if (currency === 'INR' || currency === 'CNY') {
-      return val.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-    }
-    return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  };
-
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -345,14 +438,14 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
       </div>
       
       <div className="space-y-3">
-        {ssnAssets.map((asset) => {
+        {ssnAssets.concat(pensionAssets, ppfAssets).map((asset) => {
           const cur = asset.nativeCurrency || 'USD';
           return (
             <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="w-full md:w-3/4">
-                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'U.S. Social Security Benefits'}</div>
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
                 <div className="text-sm font-semibold text-white mt-1">
-                  Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Claiming Horizon: <span className="text-emerald-400 font-mono">Age 62</span>
+                  Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
                 </div>
                 {isEditing(asset.id) ? (
                   <textarea
@@ -370,21 +463,20 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
               
               <div className="flex items-center gap-3 shrink-0">
                 <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
-                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Est. Monthly Payout</span>
+                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
                   {isEditing(asset.id) ? (
                     <div className="flex items-center gap-1 mt-1">
-                      <span className="text-xs font-mono text-emerald-400 font-bold">$</span>
                       <input
                         type="number"
                         value={getAmount(asset)}
                         onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
                         className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
                       />
-                      <span className="text-xs text-slate-400">/mo</span>
+                      <span className="text-xs text-slate-400">{cur}</span>
                     </div>
                   ) : (
                     <span className="text-xs font-mono text-emerald-400 font-bold">
-                      ${formatVal(getAmount(asset), cur)} / mo
+                      {getAmount(asset).toLocaleString()} {cur}
                     </span>
                   )}
                 </div>
@@ -902,16 +994,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
     return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency);
   };
 
-  const totalNetWorth = assets.reduce((s, a) => s + getBaseVal(a.nativeValue, a.nativeCurrency), 0);
-
-  const categorySubtotals: { [key: string]: number } = {};
-  assets.forEach((a) => {
-    const rawCat = a.accountCategory || 'INDIVIDUAL';
-    const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
-    categorySubtotals[label] = (categorySubtotals[label] || 0) + getBaseVal(a.nativeValue, a.nativeCurrency);
-  });
-  const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
-
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const name = a.user?.fullName || 'Family General';
@@ -937,113 +1019,89 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950/50 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <span className="text-xs uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-1.5">
-              <Wallet className="w-4 h-4" /> Global Household Net Worth
-            </span>
-            <div className="text-3xl font-extrabold font-mono text-white mt-1">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-indigo-400 text-lg">{baseCurrency}</span>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
+        <div className="space-y-3">
+          {sortedMembers.map(([name, data]) => (
+            <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+              <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer">
+                <div><div className="font-bold text-white text-sm">{name}</div><div className="text-xs text-slate-400">{data.assets.length} holding(s)</div></div>
+                <div className="flex items-center gap-3"><span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
+              </button>
+              {expM[name] && (
+                <div className="border-t border-slate-900 p-4 space-y-2 bg-slate-950/80">
+                  {data.assets.map((asset) => (
+                    <div key={asset.id} className="bg-slate-900/70 border border-slate-800 p-3 rounded-lg text-xs flex justify-between items-center">
+                      {editingId === asset.id ? (
+                        <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
+                          <input name="name" defaultValue={asset.name} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" />
+                          <div className="grid grid-cols-2 gap-2">
+                            <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white font-mono" />
+                            <select name="rationale" defaultValue={asset.rationale} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white cursor-pointer">
+                              {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                            </select>
+                          </div>
+                          <div className="flex justify-end gap-1"><button type="button" onClick={() => setEditingId(null)} className="p-1 bg-slate-800 rounded text-slate-300"><X className="w-3 h-3" /></button><button type="submit" className="p-1 bg-emerald-600 rounded text-white"><Check className="w-3 h-3" /></button></div>
+                        </form>
+                      ) : (
+                        <>
+                          <div><span className="font-bold text-white">{asset.name}</span> <span className="text-[10px] text-indigo-300">({asset.accountCategory})</span></div>
+                          <div className="flex items-center gap-2"><span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(asset.nativeValue, asset.nativeCurrency)).toLocaleString()} {baseCurrency}</span><button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button><button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button></div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {sortedCategories.map(([cat, val]) => (
-              <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-xl text-xs">
-                <span className="text-slate-400 uppercase text-[10px] block">{cat}</span>
-                <span className="font-mono text-emerald-400 font-bold">{Math.round(val).toLocaleString()} {baseCurrency}</span>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
-          <div className="space-y-3">
-            {sortedMembers.map(([name, data]) => (
-              <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
-                <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer">
-                  <div><div className="font-bold text-white text-sm">{name}</div><div className="text-xs text-slate-400">{data.assets.length} holding(s)</div></div>
-                  <div className="flex items-center gap-3"><span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
+        <div className="space-y-3">
+          {sortedPurposes.map(([purposeName, data]) => {
+            const matchedPillar = legacyPillars.find(p => p.name === purposeName);
+            const description = matchedPillar?.description;
+
+            return (
+              <div key={purposeName} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+                <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer">
+                  <div>
+                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span>{purposeName}
+                    </div>
+                    <div className="text-xs text-slate-400">{data.assets.length} account(s)</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </div>
                 </button>
-                {expM[name] && (
-                  <div className="border-t border-slate-900 p-4 space-y-2 bg-slate-950/80">
-                    {data.assets.map((asset) => (
-                      <div key={asset.id} className="bg-slate-900/70 border border-slate-800 p-3 rounded-lg text-xs flex justify-between items-center">
-                        {editingId === asset.id ? (
-                          <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
-                            <input name="name" defaultValue={asset.name} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" />
-                            <div className="grid grid-cols-2 gap-2">
-                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white font-mono" />
-                              <select name="rationale" defaultValue={asset.rationale} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white cursor-pointer">
-                                {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                              </select>
-                            </div>
-                            <div className="flex justify-end gap-1"><button type="button" onClick={() => setEditingId(null)} className="p-1 bg-slate-800 rounded text-slate-300"><X className="w-3 h-3" /></button><button type="submit" className="p-1 bg-emerald-600 rounded text-white"><Check className="w-3 h-3" /></button></div>
-                          </form>
-                        ) : (
-                          <>
-                            <div><span className="font-bold text-white">{asset.name}</span> <span className="text-[10px] text-indigo-300">({asset.accountCategory})</span></div>
-                            <div className="flex items-center gap-2"><span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(asset.nativeValue, asset.nativeCurrency)).toLocaleString()} {baseCurrency}</span><button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button><button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button></div>
-                          </>
-                        )}
+                {expP[purposeName] && (
+                  <div className="border-t border-slate-900 p-4 space-y-3 bg-slate-950/80 text-xs">
+                    {description && (
+                      <div className="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 text-slate-200 space-y-1">
+                        <div className="flex items-center gap-1.5 text-indigo-400 font-bold mb-1">
+                          <FileText className="w-3.5 h-3.5" />
+                          <span className="uppercase text-[10px]">Legacy Directive:</span>
+                        </div>
+                        <p className="text-slate-200 font-medium">{description}</p>
+                      </div>
+                    )}
+                    {data.assets.map(a => (
+                      <div key={a.id} className="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                        <span className="font-bold text-white">{a.name}</span>
+                        <span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(a.nativeValue, a.nativeCurrency)).toLocaleString()} {baseCurrency}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
-          <div className="space-y-3">
-            {sortedPurposes.map(([purposeName, data]) => {
-              const matchedPillar = legacyPillars.find(p => p.name === purposeName);
-              const description = matchedPillar?.description;
-
-              return (
-                <div key={purposeName} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
-                  <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer">
-                    <div>
-                      <div className="font-bold text-white text-sm flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-indigo-500"></span>{purposeName}
-                      </div>
-                      <div className="text-xs text-slate-400">{data.assets.length} account(s)</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
-                      {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                    </div>
-                  </button>
-                  {expP[purposeName] && (
-                    <div className="border-t border-slate-900 p-4 space-y-3 bg-slate-950/80 text-xs">
-                      {description && (
-                        <div className="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 text-slate-200 space-y-1">
-                          <div className="flex items-center gap-1.5 text-indigo-400 font-bold mb-1">
-                            <FileText className="w-3.5 h-3.5" />
-                            <span className="uppercase text-[10px]">Legacy Directive:</span>
-                          </div>
-                          <p className="text-slate-200 font-medium">{description}</p>
-                        </div>
-                      )}
-                      {data.assets.map(a => (
-                        <div key={a.id} className="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-                          <span className="font-bold text-white">{a.name}</span>
-                          <span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(a.nativeValue, a.nativeCurrency)).toLocaleString()} {baseCurrency}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>
