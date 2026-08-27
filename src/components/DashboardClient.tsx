@@ -110,17 +110,18 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-4 md:px-8 py-3.5 shadow-lg">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex items-center justify-between w-full md:w-auto gap-4">
-              <div className="flex items-center gap-3">
-                <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800">
+              {/* CLICKABLE LOGO/HOME REDIRECT */}
+              <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+                <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800 group-hover:border-indigo-400 transition-colors">
                   <Image src="/omniwealth.jpg" alt="OmniWealth Studio" fill className="object-cover" priority />
                 </div>
                 <div>
-                  <div className="font-bold text-white text-xs tracking-tight">
+                  <div className="font-bold text-white text-xs tracking-tight group-hover:text-indigo-300 transition-colors">
                     {session.household.name.replace(/ Vault$/i, '')} Vault
                   </div>
                   <div className="text-[10px] text-slate-400">Wealth Command Center</div>
                 </div>
-              </div>
+              </Link>
 
               <nav className="hidden md:flex items-center gap-1.5 border-l border-slate-800 pl-4">
                 <Link href="/profile" className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
