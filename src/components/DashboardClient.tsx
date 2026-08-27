@@ -228,6 +228,12 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [optimisticCurrency, setOptimisticCurrency] = useState(currentCurrency);
+
+  // Keep local state in sync if server prop updates
+  useEffect(() => {
+    setOptimisticCurrency(currentCurrency);
+  }, [currentCurrency]);
 
   return (
     <form action={async (formData) => {
@@ -240,9 +246,10 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
       <Coins className="w-3.5 h-3.5 text-indigo-400" />
       <select 
         name="currency" 
-        value={currentCurrency} 
+        value={optimisticCurrency} 
         onChange={(e) => {
-          e.target.form?.requestSubmit();
+          setOptimisticCurrency(e.target.value); // Update UI instantly
+          e.target.form?.requestSubmit();        // Trigger server update in background
         }} 
         disabled={isPending}
         className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
@@ -254,7 +261,6 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
     </form>
   );
 }
-
 function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
