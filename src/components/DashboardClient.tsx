@@ -61,7 +61,6 @@ export default function DashboardClient({
   initialDocuments = [] 
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives'>('wealth');
-  // ... rest of your component code follows here
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
@@ -72,7 +71,7 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
 
-  useEffect(() => {
+  // ... (keep the rest of your existing component code below this)  useEffect(() => {
     fetchFamilyMembersAction().then(setMembers);
   }, []);
 
