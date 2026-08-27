@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Target, ShieldCheck, AlertCircle, Save, Check } from 'lucide-react';
+import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp } from 'lucide-react';
 import { updateRetirementPreferencesAction } from '@/actions/vault';
 
 interface CountryConfig {
@@ -18,6 +18,7 @@ const COUNTRIES: { [key: string]: CountryConfig } = {
   US: { name: 'United States', currency: 'USD', symbol: '$', defaultInflation: 2.5, swr: 0.04, defaultIncome: 60000, defaultContribution: 1500 },
   UK: { name: 'United Kingdom', currency: 'GBP', symbol: '£', defaultInflation: 2.5, swr: 0.035, defaultIncome: 45000, defaultContribution: 1200 },
   EU: { name: 'Eurozone', currency: 'EUR', symbol: '€', defaultInflation: 2.2, swr: 0.035, defaultIncome: 50000, defaultContribution: 1250 },
+  China: { name: 'China', currency: 'CNY', symbol: '¥', defaultInflation: 2.3, swr: 0.035, defaultIncome: 350000, defaultContribution: 8000 },
   India: { name: 'India', currency: 'INR', symbol: '₹', defaultInflation: 6.0, swr: 0.0325, defaultIncome: 1200000, defaultContribution: 25000 },
   Canada: { name: 'Canada', currency: 'CAD', symbol: 'CA$', defaultInflation: 2.3, swr: 0.04, defaultIncome: 75000, defaultContribution: 1800 },
   Australia: { name: 'Australia', currency: 'AUD', symbol: 'A$', defaultInflation: 2.8, swr: 0.0375, defaultIncome: 80000, defaultContribution: 2000 },
@@ -34,6 +35,7 @@ const FX_RATES: { [key: string]: number } = {
   INR: 0.012,
   JPY: 0.0067,
   CHF: 1.12,
+  CNY: 0.149,
 };
 
 function convertCurrency(amount: number, fromCurr: string, toCurr: string): number {
@@ -102,7 +104,6 @@ export default function RetirementCalculator({
     });
   };
 
-  // Calculations (fallback to 0 if empty)
   const cAge = currentAge === '' ? 0 : currentAge;
   const rAge = retirementAge === '' ? 0 : retirementAge;
   const cSavings = currentSavings === '' ? 0 : currentSavings;
@@ -124,6 +125,9 @@ export default function RetirementCalculator({
   const targetNestEgg = dIncome / country.swr;
   const fundingPercentage = targetNestEgg > 0 ? Math.min(Math.round((projectedNestEgg / targetNestEgg) * 100), 250) : 0;
   const isFullyFunded = projectedNestEgg >= targetNestEgg;
+
+  const surplusAmount = Math.max(0, projectedNestEgg - targetNestEgg);
+  const surplusPercentage = targetNestEgg > 0 ? Math.min(Math.round((surplusAmount / targetNestEgg) * 100), 150) : 0;
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
@@ -233,7 +237,7 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-4">
+      <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-5">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {rAge}</span>
@@ -257,12 +261,35 @@ export default function RetirementCalculator({
           </div>
         </div>
 
-        <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800">
-          <div 
-            style={{ width: `${Math.min(fundingPercentage, 100)}%` }} 
-            className={`h-full transition-all duration-500 ${fundingPercentage >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-amber-500'}`}
-          />
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[11px] font-mono text-slate-400">
+            <span>Retirement Target Funding Progress</span>
+            <span>{fundingPercentage}%</span>
+          </div>
+          <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800">
+            <div 
+              style={{ width: `${Math.min(fundingPercentage, 100)}%` }} 
+              className={`h-full transition-all duration-500 ${fundingPercentage >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-amber-500'}`}
+            />
+          </div>
         </div>
+
+        {isFullyFunded && surplusAmount > 0 && (
+          <div className="space-y-1.5 pt-2 border-t border-slate-900">
+            <div className="flex justify-between text-[11px] font-mono text-cyan-400">
+              <span className="flex items-center gap-1">
+                <TrendingUp className="w-3.5 h-3.5" /> Surplus / Generational Wealth Leftover (Beyond Target)
+              </span>
+              <span>{country.symbol}{surplusAmount.toLocaleString()}</span>
+            </div>
+            <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+              <div 
+                style={{ width: `${Math.min(surplusPercentage, 100)}%` }} 
+                className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex items-start gap-3 pt-2 text-xs text-slate-300">
           {isFullyFunded ? (
@@ -272,7 +299,7 @@ export default function RetirementCalculator({
           )}
           <p>
             {isFullyFunded 
-              ? `Your family is fully on track under the ${country.name} economic parameters (${(country.swr * 100).toFixed(2)}% Safe Withdrawal Rate model).`
+              ? `Your family is fully on track under the ${country.name} economic parameters. Beyond securing your target retirement corpus, you are projected to have an excess surplus of ${country.symbol}${surplusAmount.toLocaleString()} left over.`
               : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
             }
           </p>

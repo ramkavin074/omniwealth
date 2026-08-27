@@ -3,7 +3,6 @@
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import GrowthSimulator from '@/components/GrowthSimulator';
 import RetirementCalculator from '@/components/RetirementCalculator';
 import { 
   fetchFamilyMembersAction, 
@@ -22,13 +21,12 @@ import {
   rejectDraftLineItemAction 
 } from '@/actions/aiStatement';
 import { 
-  Globe, User, Home, Plus, Sparkles, X, Check, CheckCheck, 
+  Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, Calculator, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp 
 } from 'lucide-react';
 import Link from 'next/link';
 
-// FX Rate Table relative to USD for multi-currency conversion
 const FX_RATES: { [key: string]: number } = {
   USD: 1,
   EUR: 1.08,
@@ -38,6 +36,7 @@ const FX_RATES: { [key: string]: number } = {
   INR: 0.012,
   JPY: 0.0067,
   CHF: 1.12,
+  CNY: 0.149,
 };
 
 function convertCurrency(amount: number, fromCurr: string, toCurr: string): number {
@@ -63,17 +62,14 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
     fetchNetWorthTrendAction(timeRange).then(setTrendData);
   }, [timeRange]);
 
-  // Helper to convert any asset's native value into the household base currency
   const getAssetBaseValue = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
     const curr = asset.nativeCurrency || 'USD';
     return convertCurrency(val, curr, baseCurrency);
   };
 
-  // 1. Total Net Worth across all currencies converted to baseCurrency
   const totalNetWorth = initialAssets.reduce((s, a) => s + getAssetBaseValue(a), 0);
 
-  // 2. Total Liquid Wealth (excluding Real Estate and Social Security streams)
   const liquidAssets = initialAssets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const category = (a.accountCategory || '').toUpperCase();
@@ -205,7 +201,6 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
         <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
         <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
         
-        {/* Retirement Readiness Calculator auto-populated with totalLiquidWealth */}
         <RetirementCalculator 
           currentTotalValue={totalLiquidWealth} 
           baseCurrency={baseCurrency}
@@ -217,7 +212,6 @@ export default function DashboardClient({ session, initialAssets, baseCurrency }
 
         <FutureMilestonesAndDirectives assets={initialAssets} />
         <AccountInstructionsHub assets={initialAssets} />
-        <GrowthSimulator currentTotalValue={totalNetWorth} baseCurrency={baseCurrency} />
       </div>
 
       {isAddAssetOpen && (
@@ -253,7 +247,7 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
         disabled={isPending}
         className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
-        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF'].map((c) => (
+        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
           <option key={c} value={c}>{c}</option>
         ))}
       </select>
@@ -315,7 +309,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   };
 
   const formatVal = (val: number, currency: string) => {
-    if (currency === 'INR') {
+    if (currency === 'INR' || currency === 'CNY') {
       return val.toLocaleString('en-IN', { maximumFractionDigits: 2 });
     }
     return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -391,7 +385,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
           return (
             <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="w-full md:w-3/4">
-                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Atal Pension Yojana (APY)'}</div>
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Pension Plan'}</div>
                 <div className="text-sm font-semibold text-white mt-1">
                   Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Target Maturity Horizon: <span className="text-emerald-400 font-mono">Age 60</span>
                 </div>
@@ -445,7 +439,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
           return (
             <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="w-full md:w-3/4">
-                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Public Provident Fund (PPF)'}</div>
+                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Provident Fund'}</div>
                 <div className="text-sm font-semibold text-white mt-1">
                   Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span> | Maturity Target: <span className="text-amber-400 font-mono">Year 2031</span>
                 </div>
@@ -722,7 +716,7 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
                 <option value="COMMODITY">Commodity / Gold</option>
                 <option value="CASH">Cash</option>
                 <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
-                <option value="PENSION">Atal Pension / Pension</option>
+                <option value="PENSION">Pension</option>
                 <option value="HSA">HSA</option>
                 <option value="REAL_ESTATE">Real Estate</option>
                 <option value="OTHER">Other</option>
@@ -736,9 +730,9 @@ function AddAssetModal({ legacyPillars, members, onClose }: { legacyPillars: { n
                 <option value="ROTH_IRA">Roth IRA</option>
                 <option value="401K">401(k)</option>
                 <option value="HSA">HSA</option>
-                <option value="PPF">PPF (Public Provident Fund)</option>
-                <option value="PF">PF / EPF (Employee Provident Fund)</option>
-                <option value="PENSION">Atal Pension / Pension</option>
+                <option value="PPF">PPF</option>
+                <option value="PF">PF / EPF</option>
+                <option value="PENSION">Pension</option>
                 <option value="SOCIAL_SECURITY">Social Security</option>
                 <option value="529">529 College</option>
                 <option value="TRUST">Trust</option>
@@ -970,9 +964,9 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           <option value="ROTH_IRA">Roth IRA</option>
           <option value="401K">401(k)</option>
           <option value="HSA">HSA</option>
-          <option value="PPF">PPF (Public Provident Fund)</option>
-          <option value="PF">PF / EPF (Employee Provident Fund)</option>
-          <option value="PENSION">Atal Pension / Pension</option>
+          <option value="PPF">PPF</option>
+          <option value="PF">PF / EPF</option>
+          <option value="PENSION">Pension</option>
           <option value="SOCIAL_SECURITY">Social Security</option>
           <option value="529">529 College</option>
           <option value="TRUST">Trust</option>
@@ -992,7 +986,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { asset
   const [expP, setExpP] = useState<{ [key: string]: boolean }>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Helper for FX conversion
   const getBaseVal = (valStr: string, curr: string) => {
     return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency);
   };

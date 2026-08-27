@@ -73,12 +73,8 @@ export async function fetchFamilyMembersAction() {
 }
 
 export async function addFamilyMemberAction(formData: FormData) {
-  console.log('[Auth Debug] addFamilyMemberAction triggered');
   const session = await getSessionUserAction();
-  if (!session) {
-    console.warn('[Auth Debug] addFamilyMemberAction failed: Unauthorized');
-    return { success: false, error: 'Unauthorized' };
-  }
+  if (!session) return { success: false, error: 'Unauthorized' };
 
   const fullName = formData.get('fullName') as string;
   const email = formData.get('email') as string;
@@ -103,15 +99,9 @@ export async function addFamilyMemberAction(formData: FormData) {
     role,
   });
 
-  console.log('[Auth Debug] User inserted successfully. Now calling sendInviteEmail...');
   const emailResult = await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
-  
   if (!emailResult.success) {
-    console.error('[Auth Debug] Email dispatch failed:', emailResult.error);
-    return { 
-      success: false, 
-      error: `User added, but email failed: ${JSON.stringify(emailResult.error)}` 
-    };
+    return { success: false, error: `User added, but email failed: ${JSON.stringify(emailResult.error)}` };
   }
 
   revalidatePath('/profile');
@@ -154,9 +144,23 @@ export async function setupDemoHouseholdAction(formData: FormData) {
   return { success: true };
 }
 
-// FX Rate Engine
+// --- Automated Live FX Rate Engine via Frankfurter API ---
 export async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
   if (fromCurrency === toCurrency) return 1;
+
+  try {
+    const res = await fetch(`https://api.frankfurter.app/latest?from=${fromCurrency}&to=${toCurrency}`, {
+      next: { revalidate: 3600 } // Cache live rate for 1 hour
+    });
+    const data = await res.json();
+    if (data?.rates && data.rates[toCurrency]) {
+      return data.rates[toCurrency];
+    }
+  } catch (err) {
+    console.warn(`Live FX fetch failed for ${fromCurrency} -> ${toCurrency}, using fallback rates.`, err);
+  }
+
+  // Fallback static rates if API is unreachable
   const rates: { [key: string]: number } = {
     USD: 1,
     EUR: 1.08,
@@ -166,6 +170,7 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string):
     INR: 0.012,
     JPY: 0.0067,
     CHF: 1.12,
+    CNY: 0.149,
   };
   return (rates[fromCurrency] || 1) / (rates[toCurrency] || 1);
 }
@@ -181,7 +186,7 @@ export async function refreshLiveMarketPricesAction() {
     .where(eq(assets.householdId, session.household.id));
 
   let updatedCount = 0;
-  const fiatTickers = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'USDT_FIAT'];
+  const fiatTickers = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY', 'USDT_FIAT'];
 
   for (const asset of householdAssets) {
     const assetType = (asset.assetType || '').toUpperCase().trim();
@@ -363,7 +368,7 @@ export async function parseStatementAction(formData: FormData) {
   const ai = new GoogleGenAI({ apiKey });
   let totalCount = 0;
 
-  const extractionPrompt = 'Ignore all legal disclaimers, headers, footers, and page numbers. Extract only investment assets, stock holdings, crypto positions, cash balances, or real estate line items from the provided text. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").';
+  const extractionPrompt = 'Ignore all legal disclaimers, headers, footers, and page numbers. Extract only investment assets, stock holdings, crypto positions, cash balances, or real estate line items from the provided text. Normalize account number to last 4 digits (e.g. "4321" or "DEFAULT"). Detect account category (INDIVIDUAL, IRA, ROTH_IRA, 401K, 529, TRUST; default to INDIVIDUAL). Detect native currency (e.g. USD, EUR, INR, GBP, CNY). Determine a brief strategic rationale or legacy purpose for the account (default to "General Long-Term Growth").';
 
   if (pastedText) {
     try {
@@ -715,6 +720,37 @@ export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
   return { success: true };
 }
 
+export async function updateRetirementPreferencesAction(data: {
+  currentAge: number;
+  retirementAge: number;
+  desiredIncome: number;
+  country: string;
+}) {
+  const session = await getSessionUserAction();
+  if (!session || !session.household?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    await db
+      .update(households)
+      .set({
+        currentAge: data.currentAge,
+        retirementAge: data.retirementAge,
+        desiredIncome: data.desiredIncome.toString(),
+        retirementCountry: data.country,
+        updatedAt: new Date(),
+      })
+      .where(eq(households.id, session.household.id));
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update retirement preferences:', error);
+    return { success: false, error: 'Failed to save settings' };
+  }
+}
+
 // --- Secure Document Vault & Encryption Helpers ---
 function getVaultEncryptionKey(userId: string, email: string, householdId: string) {
   const serverSecret = process.env.SESSION_SECRET || 'omniwealth-secure-vault-fallback-secret';
@@ -826,34 +862,4 @@ export async function deleteDocumentAction(documentId: string) {
   await db.delete(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
   revalidatePath('/vault');
   return { success: true };
-}
-export async function updateRetirementPreferencesAction(data: {
-  currentAge: number;
-  retirementAge: number;
-  desiredIncome: number;
-  country: string;
-}) {
-  const session = await getSessionUserAction();
-  if (!session || !session.household?.id) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
-  try {
-    await db
-      .update(households)
-      .set({
-        currentAge: data.currentAge,
-        retirementAge: data.retirementAge,
-        desiredIncome: data.desiredIncome.toString(),
-        retirementCountry: data.country,
-        updatedAt: new Date(),
-      })
-      .where(eq(households.id, session.household.id));
-
-    revalidatePath('/');
-    return { success: true };
-  } catch (error) {
-    console.error('Failed to update retirement preferences:', error);
-    return { success: false, error: 'Failed to save settings' };
-  }
 }
