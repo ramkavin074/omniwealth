@@ -926,18 +926,38 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const safeData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
-  const maxValue = safeData.length > 0 ? Math.max(...safeData.map(d => d.value), 1) : 1;
-
-  // Helper to format large numbers compactly for bar labels
+  
+  // Format large numbers compactly for labels
   const formatCompactValue = (val: number) => {
-    if (val >= 1_000_000) {
-      return `${(val / 1_000_000).toFixed(2)}M`;
-    }
-    if (val >= 1_000) {
-      return `${(val / 1_000).toFixed(0)}k`;
-    }
+    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
+    if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
     return val.toString();
   };
+
+  // SVG dimensions
+  const width = 700;
+  const height = 180;
+  const padding = 30;
+
+  const values = safeData.map(d => d.value);
+  const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
+  const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
+  const range = maxVal - minVal || 1;
+
+  // Calculate SVG points
+  const points = safeData.map((d, idx) => {
+    const x = safeData.length === 1 ? width / 2 : padding + (idx / (safeData.length - 1)) * (width - padding * 2);
+    const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
+    return { x, y, ...d };
+  });
+
+  const pathString = points.reduce((acc, pt, idx) => {
+    return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+  }, '');
+
+  const areaString = points.length > 0 
+    ? `${pathString} L ${points[points.length - 1].x} ${height - 10} L ${points[0].x} ${height - 10} Z`
+    : '';
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
@@ -967,42 +987,67 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
         </div>
       </div>
 
-      <div className="pt-8 pb-2 px-2 border-b border-slate-800/80">
+      <div className="pt-4 pb-2 px-1 border-b border-slate-800/80">
         {safeData.length === 0 ? (
           <div className="h-52 flex items-center justify-center text-xs text-slate-500 font-mono">
             Loading timeline data...
           </div>
         ) : (
-          <div className="h-52 flex items-end justify-between gap-2 overflow-x-auto pb-1">
-            {safeData.map((item, idx) => {
-              const val = item?.value || 0;
-              const heightPct = Math.round((val / maxValue) * 100);
-              const tooltipText = `${item?.month || ''}: ${val.toLocaleString()} ${baseCurrency}`;
-              
-              return (
-                <div 
-                  key={idx} 
-                  title={tooltipText}
-                  className="flex-1 min-w-[40px] flex flex-col items-center gap-1.5 h-full justify-end group cursor-pointer"
-                >
-                  <span className="text-[9px] font-mono text-slate-300 group-hover:text-emerald-400 transition-colors whitespace-nowrap font-semibold">
-                    {formatCompactValue(val)}
-                  </span>
-                  <div 
-                    style={{ height: `${Math.max(heightPct, 10)}%` }}
-                    className="w-full max-w-[42px] bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-lg transition-all duration-300 group-hover:from-indigo-400 group-hover:to-emerald-400 shadow-md"
-                  />
-                  <span className="text-[9px] font-mono text-slate-400 truncate max-w-full pt-1">{item?.month || ''}</span>
-                </div>
-              );
-            })}
+          <div className="relative w-full overflow-x-auto">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
+              <defs>
+                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Area fill under the line */}
+              <path d={areaString} fill="url(#areaGradient)" />
+
+              {/* Main Trend Line */}
+              <path d={pathString} fill="none" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+              {/* Data points, value labels on top, and months below */}
+              {points.map((pt, idx) => {
+                const tooltipText = `${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`;
+                return (
+                  <g key={idx} className="group cursor-pointer">
+                    {/* Hover target circle */}
+                    <circle cx={pt.x} cy={pt.y} r="6" className="fill-slate-900 stroke-indigo-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
+                    
+                    {/* Value label on top of each point */}
+                    <text 
+                      x={pt.x} 
+                      y={pt.y - 12} 
+                      textAnchor="middle" 
+                      className="text-[10px] font-mono fill-slate-300 group-hover:fill-emerald-400 font-semibold transition-colors"
+                    >
+                      {formatCompactValue(pt.value)}
+                    </text>
+
+                    {/* Month label at the bottom */}
+                    <text 
+                      x={pt.x} 
+                      y={height - 2} 
+                      textAnchor="middle" 
+                      className="text-[9px] font-mono fill-slate-500"
+                    >
+                      {pt.month}
+                    </text>
+
+                    {/* Native tooltip */}
+                    <title>{tooltipText}</title>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         )}
       </div>
     </div>
   );
 }
-
 function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth, liveRates }: { assets: any[]; baseCurrency: string; totalNetWorth: number; liveRates: { [key: string]: number } }) {
   const typeMap: { [key: string]: number } = {};
    
