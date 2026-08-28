@@ -928,6 +928,17 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
   const safeData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const maxValue = safeData.length > 0 ? Math.max(...safeData.map(d => d.value), 1) : 1;
 
+  // Helper to format large numbers compactly for bar labels
+  const formatCompactValue = (val: number) => {
+    if (val >= 1_000_000) {
+      return `${(val / 1_000_000).toFixed(2)}M`;
+    }
+    if (val >= 1_000) {
+      return `${(val / 1_000).toFixed(0)}k`;
+    }
+    return val.toString();
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
@@ -956,13 +967,13 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
         </div>
       </div>
 
-      <div className="pt-6 pb-2 px-2 border-b border-slate-800/80">
+      <div className="pt-8 pb-2 px-2 border-b border-slate-800/80">
         {safeData.length === 0 ? (
-          <div className="h-48 flex items-center justify-center text-xs text-slate-500 font-mono">
+          <div className="h-52 flex items-center justify-center text-xs text-slate-500 font-mono">
             Loading timeline data...
           </div>
         ) : (
-          <div className="h-48 flex items-end justify-between gap-1.5 overflow-x-auto pb-1">
+          <div className="h-52 flex items-end justify-between gap-2 overflow-x-auto pb-1">
             {safeData.map((item, idx) => {
               const val = item?.value || 0;
               const heightPct = Math.round((val / maxValue) * 100);
@@ -972,13 +983,16 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
                 <div 
                   key={idx} 
                   title={tooltipText}
-                  className="flex-1 min-w-[32px] flex flex-col items-center gap-2 h-full justify-end group cursor-pointer"
+                  className="flex-1 min-w-[40px] flex flex-col items-center gap-1.5 h-full justify-end group cursor-pointer"
                 >
+                  <span className="text-[9px] font-mono text-slate-300 group-hover:text-emerald-400 transition-colors whitespace-nowrap font-semibold">
+                    {formatCompactValue(val)}
+                  </span>
                   <div 
-                    style={{ height: `${Math.max(heightPct, 6)}%` }}
-                    className="w-full max-w-[40px] bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-lg transition-all duration-300 group-hover:from-indigo-400 group-hover:to-emerald-400 shadow-md"
+                    style={{ height: `${Math.max(heightPct, 10)}%` }}
+                    className="w-full max-w-[42px] bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-lg transition-all duration-300 group-hover:from-indigo-400 group-hover:to-emerald-400 shadow-md"
                   />
-                  <span className="text-[9px] font-mono text-slate-400 truncate max-w-full">{item?.month || ''}</span>
+                  <span className="text-[9px] font-mono text-slate-400 truncate max-w-full pt-1">{item?.month || ''}</span>
                 </div>
               );
             })}
