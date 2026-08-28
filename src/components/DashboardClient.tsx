@@ -28,7 +28,7 @@ import {
 import { 
   Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, Lock, Menu, TrendingUp, Calendar 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, Lock, Menu, TrendingUp, Calendar, ArrowRight 
 } from 'lucide-react';
 
 const FX_RATES: { [key: string]: number } = {
@@ -70,7 +70,6 @@ export default function DashboardClient({
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'about' | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
@@ -99,12 +98,8 @@ export default function DashboardClient({
         }
       }
     };
-
     App.addListener('appUrlOpen', handleUrlOpen);
-
-    return () => {
-      App.removeAllListeners();
-    };
+    return () => { App.removeAllListeners(); };
   }, []);
 
   const getAssetBaseValue = (asset: any) => {
@@ -121,7 +116,6 @@ export default function DashboardClient({
   };
 
   const totalNetWorth = initialAssets.reduce((s: number, a: any) => s + getAssetBaseValue(a), 0);
-
   const liquidAssets = initialAssets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const category = (a.accountCategory || '').toUpperCase();
@@ -132,7 +126,7 @@ export default function DashboardClient({
   let legacyPillars: { name: string; description: string }[] = [];
   try {
     legacyPillars = JSON.parse(session?.household?.legacyPillars || '[]');
-  } catch (e) {
+  } catch {
     legacyPillars = [
       { name: 'Core Growth & Accumulation', description: '' },
       { name: 'Retirement & Income Preservation', description: '' },
@@ -146,10 +140,10 @@ export default function DashboardClient({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between">
+    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
       <div>
         {/* ========================================================= */}
-        {/* CONSOLIDATED RESPONSIVE HEADER & HERO SUMMARY             */}
+        {/* UNIFIED HEADER & MOBILE CARD STACK                        */}
         {/* ========================================================= */}
         <UnifiedHeaderAndSummary
           session={session}
@@ -160,6 +154,7 @@ export default function DashboardClient({
           onOpenAddAsset={() => setIsAddAssetOpen(true)}
           onOpenLiability={() => setIsAddLiabilityOpen(true)}
           onOpenAiReader={() => setIsAiReaderOpen(true)}
+          onSelectTab={(tab: any) => setActiveTab(tab)}
         />
 
         {/* ========================================================= */}
@@ -168,87 +163,87 @@ export default function DashboardClient({
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
             <div 
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
               onClick={() => setIsMobileMenuOpen(false)} 
             />
 
-            <div className="relative w-4/5 max-w-xs bg-slate-900 text-white h-full shadow-2xl z-10 flex flex-col p-6 space-y-6 border-r border-slate-800">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <span className="text-indigo-400">Omni</span>Wealth Menu
+            <div className="relative w-4/5 max-w-xs bg-slate-900 text-white h-full shadow-2xl z-10 flex flex-col justify-between p-6 border-r border-slate-800">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs">OW</div>
+                    <span className="font-bold text-sm tracking-wide text-indigo-200">OmniWealth</span>
+                  </div>
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 cursor-pointer text-slate-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
+
+                <nav className="flex flex-col space-y-1.5">
+                  <button 
+                    onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} 
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                  >
+                    <Home className="w-4 h-4 text-indigo-300" />
+                    <span>Home / Portfolio</span>
+                  </button>
+
+                  <button 
+                    onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} 
+                    className="flex items-center justify-between py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-800 text-slate-300 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3.5">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      <span>AI Statement Reader</span>
+                    </div>
+                    <span className="bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow">NEW</span>
+                  </button>
+
+                  <button 
+                    onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} 
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                  >
+                    <CreditCard className="w-4 h-4 text-rose-400" />
+                    <span>Liabilities &amp; Debt</span>
+                  </button>
+
+                  <button 
+                    onClick={() => { setActiveTab('retirement'); setIsMobileMenuOpen(false); }} 
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                  >
+                    <Target className="w-4 h-4 text-emerald-400" />
+                    <span>Retirement &amp; Planning</span>
+                  </button>
+
+                  <button 
+                    onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} 
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                  >
+                    <Shield className="w-4 h-4 text-cyan-400" />
+                    <span>Directives &amp; Vault</span>
+                  </button>
+
+                  <button 
+                    onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} 
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                  >
+                    <TrendingUp className="w-4 h-4 text-teal-400" />
+                    <span>Intelligence Feed</span>
+                  </button>
+                </nav>
               </div>
 
-              <nav className="flex flex-col space-y-2.5">
-                <button 
-                  onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} 
-                  className={`flex items-center space-x-4 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer ${activeTab === 'wealth' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
-                >
-                  <Home className="w-4 h-4" />
-                  <span>Home / Wealth</span>
-                </button>
-
-                <button 
-                  onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} 
-                  className={`flex items-center space-x-4 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer ${activeTab === 'liabilities' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Liabilities &amp; Debt</span>
-                </button>
-
-                <button 
-                  onClick={() => { setActiveTab('retirement'); setIsMobileMenuOpen(false); }} 
-                  className={`flex items-center justify-between py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer ${activeTab === 'retirement' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <Target className="w-4 h-4" />
-                    <span>Retirement &amp; Planning</span>
-                  </div>
-                  <span className="bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded">NEW</span>
-                </button>
-
-                <button 
-                  onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} 
-                  className={`flex items-center space-x-4 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer ${activeTab === 'directives' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span>Directives &amp; Vault</span>
-                </button>
-
-                <button 
-                  onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} 
-                  className={`flex items-center space-x-4 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer ${activeTab === 'feed' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Intelligence Feed</span>
-                </button>
-              </nav>
-
-              <div className="pt-4 border-t border-slate-800 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white font-semibold text-xs rounded-xl cursor-pointer">
-                    <Plus className="w-3.5 h-3.5" /> Asset
-                  </button>
-                  <button onClick={() => { setIsAddLiabilityOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-600 text-white font-semibold text-xs rounded-xl cursor-pointer">
-                    <CreditCard className="w-3.5 h-3.5" /> Liability
-                  </button>
-                </div>
-                <button onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl cursor-pointer">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> AI Statement Reader
-                </button>
-                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700">
-                  <Settings className="w-3.5 h-3.5 text-indigo-400" /> Household &amp; Settings
+              <div className="pt-4 border-t border-slate-800 space-y-2.5">
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700">
+                  <span className="flex items-center gap-2"><Settings className="w-3.5 h-3.5 text-indigo-400" /> Household Settings</span>
                 </Link>
                 {session.user.role === 'SUPER_ADMIN' && (
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/20">
-                    <Shield className="w-3.5 h-3.5" /> Admin Portal
+                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/20">
+                    <span className="flex items-center gap-2"><Shield className="w-3.5 h-3.5" /> Admin Portal</span>
                   </Link>
                 )}
-                <form action={logoutAction} className="pt-2">
-                  <button type="submit" className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-950/60 text-rose-400 text-xs font-semibold rounded-xl border border-rose-900/50 cursor-pointer">
+                <form action={logoutAction} className="pt-1">
+                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-950/60 text-rose-400 text-xs font-semibold rounded-xl border border-rose-900/50 hover:bg-rose-900/50 cursor-pointer">
                     <LogOut className="w-3.5 h-3.5" /> Logout
                   </button>
                 </form>
@@ -262,48 +257,19 @@ export default function DashboardClient({
           {/* DESKTOP TAB NAVIGATION BAR                                */}
           {/* ========================================================= */}
           <div className="hidden md:flex bg-slate-900 border border-slate-800 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-md">
-            <button
-              onClick={() => setActiveTab('wealth')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
+            <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
             </button>
-            
-            <button
-              onClick={() => setActiveTab('liabilities')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'liabilities' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
+            <button onClick={() => setActiveTab('liabilities')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'liabilities' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
             </button>
-
-            <button
-              onClick={() => setActiveTab('retirement')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'retirement' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
+            <button onClick={() => setActiveTab('retirement')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'retirement' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Target className="w-4 h-4" /> Retirement &amp; Planning
             </button>
-
-            <button
-              onClick={() => setActiveTab('directives')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'directives' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
+            <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Shield className="w-4 h-4" /> Directives &amp; Vault
             </button>
-
-            <button
-              onClick={() => setActiveTab('feed')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
+            <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Sparkles className="w-4 h-4 text-indigo-300" /> Intelligence Feed
             </button>
           </div>
@@ -392,9 +358,24 @@ export default function DashboardClient({
 }
 
 // ========================================================= //
-// UNIFIED RESPONSIVE HEADER & SUMMARY COMPONENT               //
+// UNIFIED RESPONSIVE HEADER & MOBILE STACKED CARDS            //
 // ========================================================= //
-function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
+function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader, onSelectTab }: any) {
+  const router = useRouter();
+  const [isRefreshing, startRefreshTransition] = useTransition();
+
+  const handleRefreshPrices = () => {
+    startRefreshTransition(async () => {
+      try {
+        await refreshLiveMarketPricesAction();
+        await fetchLiveExchangeRatesAction();
+        router.refresh();
+      } catch (err) {
+        console.error('Failed to refresh live market prices:', err);
+      }
+    });
+  };
+
   const getBaseVal = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
     const curr = asset.nativeCurrency || 'USD';
@@ -421,21 +402,21 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
 
   return (
     <div className="space-y-4">
-      {/* Responsive Header Bar */}
+      {/* Top Header Bar */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button 
               onClick={onOpenMenu} 
-              className="md:hidden p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-xl cursor-pointer"
+              className="md:hidden p-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-xl cursor-pointer hover:bg-slate-700 transition"
               aria-label="Open Menu"
             >
               <Menu className="w-5 h-5" />
             </button>
 
             <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800">
-                <Image src="/omniwealth.jpg" alt="OmniWealth" fill className="object-cover" priority />
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800 flex items-center justify-center font-bold text-indigo-400 text-xs">
+                OW
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-white text-xs md:text-sm tracking-tight truncate">
@@ -446,9 +427,10 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <CurrencySwitcherForm currentCurrency={baseCurrency} />
             
+            {/* Desktop Quick Actions & Profile Controls */}
             <div className="hidden md:flex items-center gap-2">
               <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-md">
                 <Plus className="w-4 h-4" /><span>Add Asset</span>
@@ -459,24 +441,96 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition cursor-pointer shadow-md">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
               </button>
+
+              {/* Refresh Live Prices Button */}
+              <button 
+                onClick={handleRefreshPrices} 
+                disabled={isRefreshing}
+                title="Refresh Live Market Prices & Exchange Rates" 
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white rounded-xl border border-indigo-500/30 transition cursor-pointer disabled:opacity-50 shadow-md"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+
+              <div className="h-5 w-[1px] bg-slate-800 mx-1" />
+
+              {/* Desktop Settings Link */}
+              <Link href="/profile" title="Household Settings" className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition cursor-pointer">
+                <Settings className="w-4 h-4" />
+              </Link>
+
+              {/* Desktop Admin Portal (if Super Admin) */}
+              {session.user.role === 'SUPER_ADMIN' && (
+                <Link href="/admin" title="Admin Portal" className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 rounded-xl border border-amber-500/30 transition cursor-pointer">
+                  <Shield className="w-4 h-4" />
+                </Link>
+              )}
+
+              {/* Desktop Logout Button */}
+              <form action={logoutAction}>
+                <button type="submit" title="Logout" className="p-2 bg-rose-950/60 hover:bg-rose-900/60 text-rose-400 hover:text-rose-300 rounded-xl border border-rose-900/50 transition cursor-pointer">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </form>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Streamlined Hero Stack */}
-      <div className="block md:hidden px-4 space-y-3 pt-2">
+      {/* ========================================================= */}
+      {/* MOBILE STACKED CARDS                                      */}
+      {/* ========================================================= */}
+      <div className="block md:hidden px-4 space-y-3 pt-3">
+        {/* 1. Welcome Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between">
           <div className="min-w-0">
             <h1 className="text-sm font-bold text-white truncate">Welcome, {userName}</h1>
             <p className="text-xs text-slate-400 mt-0.5">Multi-currency global tracking active</p>
           </div>
-          <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shrink-0">
-            Secure
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={handleRefreshPrices} 
+              disabled={isRefreshing}
+              title="Refresh Live Market Prices" 
+              className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">
+              SECURE
+            </span>
+          </div>
         </div>
 
-        <div className="bg-gradient-to-r from-teal-700 to-emerald-800 rounded-2xl p-5 shadow-xl relative overflow-hidden border border-emerald-500/20">
+        {/* 2. AI Reader / Featured Action Card */}
+        <div 
+          onClick={onOpenAiReader}
+          className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 rounded-2xl p-5 shadow-xl relative overflow-hidden border border-indigo-500/30 cursor-pointer active:scale-[0.99] transition-all"
+        >
+          <div className="flex justify-between items-start mb-1">
+            <div className="p-2 bg-slate-950/60 rounded-xl border border-indigo-500/20 text-indigo-300 inline-block">
+              <Sparkles className="w-5 h-5 text-indigo-400" />
+            </div>
+            <span className="bg-amber-400 text-black text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wider uppercase">
+              NEW
+            </span>
+          </div>
+          <div className="text-white font-extrabold text-base tracking-tight mt-2">
+            AI Statement Reader &amp; Parser
+          </div>
+          <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+            Instantly upload PDF statements or paste text to extract portfolio holdings with Gemini AI.
+          </p>
+          <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold text-white transition shadow">
+            <span>Start Parsing</span> <ArrowRight className="w-3.5 h-3.5" />
+          </div>
+        </div>
+
+        {/* 3. View Portfolio / Net Worth Card */}
+        <div 
+          onClick={() => onSelectTab('wealth')}
+          className="bg-gradient-to-r from-teal-700 to-emerald-800 rounded-2xl p-5 shadow-xl relative overflow-hidden border border-emerald-500/20 cursor-pointer active:scale-[0.99] transition-all"
+        >
           <div className="flex justify-between items-start">
             <span className="text-xs uppercase tracking-wider text-emerald-100 font-semibold">Global Net Worth</span>
             <span className="bg-emerald-400 text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow">LIVE</span>
@@ -485,6 +539,23 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             {Math.round(totalNetWorth).toLocaleString()} <span className="text-sm font-sans font-normal text-emerald-200">{baseCurrency}</span>
           </div>
           <p className="text-xs text-emerald-200 mt-1">{initialAssets.length} active holdings tracked</p>
+        </div>
+
+        {/* 4. Liabilities & Debt Card */}
+        <div 
+          onClick={() => onSelectTab('liabilities')}
+          className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between cursor-pointer hover:bg-slate-800/80 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-rose-950/50 border border-rose-900/50 text-rose-400 rounded-xl">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-white text-xs">Liabilities &amp; Debt Tracking</div>
+              <p className="text-[10px] text-slate-400">Manage mortgages &amp; loans</p>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-500" />
         </div>
       </div>
 
@@ -533,11 +604,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     const updated = [...dismissedIds, id];
     setDismissedIds(updated);
     if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated));
-      } catch (err) {
-        console.error('Failed to save dismissed feed state', err);
-      }
+      try { localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated)); } catch {}
     }
   };
 
@@ -546,19 +613,17 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
   const previousVal = safeData[safeData.length - 2]?.value || currentVal;
   const growthAmount = currentVal - previousVal;
   const growthPercent = previousVal > 0 ? (growthAmount / previousVal) * 100 : 0;
-
   const isGrowthRealistic = growthAmount > 0 && growthAmount <= currentVal && growthPercent <= 100;
   const milestoneAssets = assets.filter(a => ['SOCIAL_SECURITY', 'PENSION', 'PPF'].includes(a.accountCategory));
 
   const feedItems = [];
-
   if (isGrowthRealistic) {
     feedItems.push({
       id: 'perf-growth',
       type: 'success',
       icon: <TrendingUp className="w-4 h-4 text-emerald-400" />,
       title: 'Portfolio Progress Update',
-      message: `Great job! Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month. Keep up the momentum!`,
+      message: `Great job! Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
       badge: 'Performance',
       border: 'border-emerald-500/30 bg-emerald-950/20',
     });
@@ -570,7 +635,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       type: 'milestone',
       icon: <Calendar className="w-4 h-4 text-indigo-400" />,
       title: `Future Income Stream: ${asset.name}`,
-      message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}. Ensure succession directives are updated.`,
+      message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
       badge: 'Milestone',
       border: 'border-indigo-500/30 bg-indigo-950/20',
     });
@@ -597,16 +662,6 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       border: 'border-slate-800 bg-slate-950',
     });
   }
-
-  feedItems.push({
-    id: 'tax-notice',
-    type: 'notice',
-    icon: <Coins className="w-4 h-4 text-cyan-400" />,
-    title: 'Multi-Currency Base Alignment',
-    message: `All asset evaluations are dynamically normalized to your active base currency (${baseCurrency}) using live FX conversion engines.`,
-    badge: 'System Notice',
-    border: 'border-slate-800 bg-slate-950',
-  });
 
   const activeFeedItems = feedItems.filter(item => !dismissedIds.includes(item.id));
 
@@ -644,12 +699,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
                   <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
                 </div>
               </div>
-              <button
-                onClick={() => handleDismiss(item.id)}
-                className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
-                title="Dismiss Card"
-                aria-label="Dismiss Card"
-              >
+              <button onClick={() => handleDismiss(item.id)} className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-slate-800 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -691,12 +741,7 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
                   </div>
                 </div>
               </div>
-              <a 
-                href={doc.fileUrl} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700"
-              >
+              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700">
                 View
               </a>
             </div>
@@ -720,7 +765,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
     return convertCurrency(val, curr, baseCurrency, liveRates);
   };
 
-  const totalLiabilities = liabilities.reduce((s, a) => s + getBaseVal(a), 0);
+  const totalLiabilities = liabilities.reduce((s: number, a: any) => s + getBaseVal(a), 0);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
@@ -771,14 +816,11 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   const [selectedCurrency, setSelectedCurrency] = useState(currentCurrency);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    setSelectedCurrency(currentCurrency);
-  }, [currentCurrency]);
+  useEffect(() => { setSelectedCurrency(currentCurrency); }, [currentCurrency]);
 
   const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCurrency = e.target.value;
     setSelectedCurrency(newCurrency);
-
     startTransition(async () => {
       await updateHouseholdBaseCurrencyAction(newCurrency);
       router.refresh();
@@ -786,16 +828,16 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0 shadow-sm">
+    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0 shadow-sm">
       <Coins className="w-3.5 h-3.5 text-indigo-400" />
       <select 
         value={selectedCurrency} 
         onChange={handleCurrencyChange} 
         disabled={isPending}
-        className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+        className="bg-transparent border-0 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
         {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
-          <option key={c} value={c}>{c}</option>
+          <option key={c} value={c} className="bg-slate-900 text-white">{c}</option>
         ))}
       </select>
     </div>
@@ -806,7 +848,6 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
   const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
-
   const [customData, setCustomData] = useState<{ [key: string]: { amount: number; instruction: string; editing: boolean } }>({});
 
   if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
@@ -829,19 +870,9 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     return 'Family Claiming Instruction: Submit forms at the designated branch upon maturity.';
   };
 
-  const getAmount = (asset: any) => {
-    if (customData[asset.id]?.amount !== undefined) return customData[asset.id].amount;
-    return parseFloat(asset.nativeValue || '0');
-  };
-
-  const getInstruction = (asset: any) => {
-    if (customData[asset.id]?.instruction !== undefined) return customData[asset.id].instruction;
-    return getDefaultInstruction(asset.accountCategory);
-  };
-
-  const isEditing = (assetId: string) => {
-    return customData[assetId]?.editing || false;
-  };
+  const getAmount = (asset: any) => customData[asset.id]?.amount !== undefined ? customData[asset.id].amount : parseFloat(asset.nativeValue || '0');
+  const getInstruction = (asset: any) => customData[asset.id]?.instruction !== undefined ? customData[asset.id].instruction : getDefaultInstruction(asset.accountCategory);
+  const isEditing = (assetId: string) => customData[assetId]?.editing || false;
 
   const setEditing = (assetId: string, editing: boolean) => {
     setCustomData(prev => ({
@@ -873,7 +904,6 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
           <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
       </div>
-       
       <div className="space-y-3">
         {ssnAssets.concat(pensionAssets, ppfAssets).map((asset) => {
           const cur = asset.nativeCurrency || 'USD';
@@ -892,12 +922,9 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                     rows={2}
                   />
                 ) : (
-                  <div className="text-xs text-slate-400 mt-0.5 max-w-xl">
-                    {getInstruction(asset)}
-                  </div>
+                  <div className="text-xs text-slate-400 mt-0.5 max-w-xl">{getInstruction(asset)}</div>
                 )}
               </div>
-               
               <div className="flex items-center gap-3 shrink-0">
                 <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-left md:text-right">
                   <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
@@ -912,16 +939,10 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                       <span className="text-xs text-slate-400">{cur}</span>
                     </div>
                   ) : (
-                    <span className="text-xs font-mono text-emerald-400 font-bold">
-                      {getAmount(asset).toLocaleString()} {cur}
-                    </span>
+                    <span className="text-xs font-mono text-emerald-400 font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
                   )}
                 </div>
-                <button
-                  onClick={() => setEditing(asset.id, !isEditing(asset.id))}
-                  className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
-                  title="Edit Milestone & Instructions"
-                >
+                <button onClick={() => setEditing(asset.id, !isEditing(asset.id))} className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer">
                   <Edit3 className="w-4 h-4" />
                 </button>
               </div>
@@ -937,7 +958,6 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [instructionsMap, setInstructionsMap] = useState<{ [key: string]: string }>({});
   const [editingNote, setEditingNote] = useState('');
-
   const uniqueAccounts = Array.from(new Set(assets.map(a => `${a.accountCategory} (${a.accountNumber || 'Primary'})`)));
 
   if (uniqueAccounts.length === 0) return null;
@@ -948,10 +968,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
         <Shield className="w-5 h-5 text-indigo-400" />
         <h3 className="text-sm font-bold text-white uppercase">Institution &amp; Account-Level Family Directives</h3>
       </div>
-      <p className="text-xs text-slate-400">
-        Write overarching login protocols, broker contact details, and succession steps for entire accounts holding multiple stocks or funds.
-      </p>
-
+      <p className="text-xs text-slate-400">Write overarching login protocols, broker contact details, and succession steps for entire accounts.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
         <div className="space-y-2">
           <label className="block text-[10px] text-slate-400 uppercase font-medium">Select Account / Institution</label>
@@ -959,22 +976,14 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
             {uniqueAccounts.map((acct) => (
               <button
                 key={acct}
-                onClick={() => {
-                  setSelectedAccount(acct);
-                  setEditingNote(instructionsMap[acct] || '');
-                }}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${
-                  selectedAccount === acct 
-                    ? 'bg-indigo-600/20 border-indigo-500/50 text-white font-bold' 
-                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'
-                }`}
+                onClick={() => { setSelectedAccount(acct); setEditingNote(instructionsMap[acct] || ''); }}
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-indigo-600/20 border-indigo-500/50 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'}`}
               >
                 {acct}
               </button>
             ))}
           </div>
         </div>
-
         <div className="md:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-3">
           {selectedAccount ? (
             <>
@@ -990,10 +999,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
               </div>
               <div className="flex justify-end">
                 <button
-                  onClick={() => {
-                    setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote }));
-                    alert('Account instructions saved!');
-                  }}
+                  onClick={() => { setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote })); alert('Account instructions saved!'); }}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md transition-colors"
                 >
                   Save Account Notes
@@ -1001,9 +1007,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-xs text-slate-500 py-8">
-              Select an account from the left to view or edit master family instructions.
-            </div>
+            <div className="flex items-center justify-center h-full text-xs text-slate-500 py-8">Select an account from the left to view or edit master family instructions.</div>
           )}
         </div>
       </div>
@@ -1013,44 +1017,29 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
-   
   const getOptimizedData = (data: any[]) => {
     if (data.length <= 12) return data;
-    const targetMaxPoints = 10; 
-    const step = Math.ceil(data.length / targetMaxPoints);
+    const step = Math.ceil(data.length / 10);
     return data.filter((item, idx) => idx % step === 0 || idx === data.length - 1);
   };
-
   const safeData = getOptimizedData(rawData);
-
   const formatCompactValue = (val: number) => {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
     return val.toString();
   };
-
-  const width = 700;
-  const height = 180;
-  const padding = 40;
-
+  const width = 700; const height = 180; const padding = 40;
   const values = safeData.map(d => d.value);
   const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
   const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
   const range = maxVal - minVal || 1;
-
   const points = safeData.map((d, idx) => {
     const x = safeData.length === 1 ? width / 2 : padding + (idx / (safeData.length - 1)) * (width - padding * 2);
     const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
     return { x, y, ...d };
   });
-
-  const pathString = points.reduce((acc, pt, idx) => {
-    return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
-  }, '');
-
-  const areaString = points.length > 0 
-    ? `${pathString} L ${points[points.length - 1].x} ${height - 10} L ${points[0].x} ${height - 10} Z`
-    : '';
+  const pathString = points.reduce((acc, pt, idx) => idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`, '');
+  const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 10} L ${points[0].x} ${height - 10} Z` : '';
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
@@ -1059,14 +1048,9 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
           <Globe className="w-5 h-5 text-indigo-400" />
           <h3 className="text-sm font-bold text-white uppercase">Historical Net Worth Trend</h3>
         </div>
-
         <div className="flex items-center gap-2">
           <span className="text-[10px] uppercase text-slate-400 font-medium">Timeline:</span>
-          <select 
-            value={timeRange} 
-            onChange={(e) => setTimeRange(e.target.value)} 
-            className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer"
-          >
+          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer">
             <option value="1m">Last 1 Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
@@ -1079,12 +1063,9 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
           </select>
         </div>
       </div>
-
       <div className="pt-4 pb-2 px-1 border-b border-slate-800/80">
         {safeData.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-xs text-slate-500 font-mono">
-            Loading timeline data...
-          </div>
+          <div className="h-52 flex items-center justify-center text-xs text-slate-500 font-mono">Loading timeline data...</div>
         ) : (
           <div className="relative w-full overflow-hidden rounded-xl">
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
@@ -1094,35 +1075,16 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
                   <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
-
               <path d={areaString} fill="url(#areaGradient)" />
               <path d={pathString} fill="none" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-
-              {points.map((pt, idx) => {
-                const tooltipText = `${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`;
-                return (
-                  <g key={idx} className="group cursor-pointer">
-                    <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-indigo-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
-                    <text 
-                      x={pt.x} 
-                      y={pt.y - 12} 
-                      textAnchor="middle" 
-                      className="text-[10px] font-mono fill-slate-300 group-hover:fill-emerald-400 font-semibold transition-colors"
-                    >
-                      {formatCompactValue(pt.value)}
-                    </text>
-                    <text 
-                      x={pt.x} 
-                      y={height - 5} 
-                      textAnchor="middle" 
-                      className="text-[9px] font-mono fill-slate-400"
-                    >
-                      {pt.month}
-                    </text>
-                    <title>{tooltipText}</title>
-                  </g>
-                );
-              })}
+              {points.map((pt, idx) => (
+                <g key={idx} className="group cursor-pointer">
+                  <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-indigo-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
+                  <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-300 group-hover:fill-emerald-400 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
+                  <text x={pt.x} y={height - 5} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">{pt.month}</text>
+                  <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
+                </g>
+              ))}
             </svg>
           </div>
         )}
@@ -1133,7 +1095,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
 
 function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth, liveRates }: { assets: any[]; baseCurrency: string; totalNetWorth: number; liveRates: { [key: string]: number } }) {
   const typeMap: { [key: string]: number } = {};
-   
   assets.forEach((a) => {
     let t = (a.assetType || 'OTHER').toUpperCase().trim();
     if (t === 'LIABILITY' || t === 'DEBT') return;
@@ -1141,10 +1102,8 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth, liveRa
     const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
     typeMap[t] = (typeMap[t] || 0) + val;
   });
-
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
   const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500', 'bg-rose-500'];
-
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
@@ -1153,7 +1112,6 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth, liveRa
         <PieChart className="w-5 h-5 text-indigo-400" />
         <h3 className="text-sm font-bold text-white uppercase">Asset Class Allocation</h3>
       </div>
-
       {sortedEntries.length === 0 ? (
         <div className="text-center py-6 text-slate-500 text-xs">No assets available for allocation view.</div>
       ) : (
@@ -1161,17 +1119,9 @@ function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth, liveRa
           <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
             {sortedEntries.map(([type, val], idx) => {
               const pct = (val / positiveNetWorth) * 100;
-              return (
-                <div 
-                  key={type} 
-                  style={{ width: `${Math.max(pct, 2)}%` }} 
-                  className={`${colors[idx % colors.length]} transition-all duration-500`}
-                  title={`${type}: ${pct.toFixed(1)}%`}
-                />
-              );
+              return <div key={type} style={{ width: `${Math.max(pct, 2)}%` }} className={`${colors[idx % colors.length]} transition-all duration-500`} title={`${type}: ${pct.toFixed(1)}%`} />;
             })}
           </div>
-
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
             {sortedEntries.map(([type, val], idx) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
@@ -1201,16 +1151,13 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
           <h2 className="text-base font-bold text-white">{isLiability ? 'Add Liability / Debt' : 'Add Asset Manually'}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
-        <form action={async (fd) => { 
-          if (isLiability) {
-            fd.set('assetType', 'LIABILITY');
-            fd.set('accountCategory', 'LIABILITY');
-          }
-          await addAssetAction(fd); 
-          onClose(); 
+        <form action={async (fd) => {
+          if (isLiability) { fd.set('assetType', 'LIABILITY'); fd.set('accountCategory', 'LIABILITY'); }
+          await addAssetAction(fd);
+          onClose();
         }} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-[10px] text-slate-400 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage / Car Loan' : 'e.g. Apple Stock'} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white" /></div>
+            <div><label className="block text-[10px] text-slate-400 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage' : 'e.g. Apple Stock'} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white" /></div>
             <div><label className="block text-[10px] text-slate-400 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
           </div>
           {!isLiability && (
@@ -1222,7 +1169,7 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
                   <option value="CRYPTO">Crypto</option>
                   <option value="COMMODITY">Commodity / Gold</option>
                   <option value="CASH">Cash</option>
-                  <option value="FIXED_INCOME">Fixed Income / PF / PPF</option>
+                  <option value="FIXED_INCOME">Fixed Income / PPF</option>
                   <option value="PENSION">Pension</option>
                   <option value="HSA">HSA</option>
                   <option value="REAL_ESTATE">Real Estate</option>
@@ -1266,11 +1213,7 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
             <div>
               <label className="block text-[10px] text-slate-400 mb-1">Strategic Rationale &amp; Legacy Pillar</label>
               <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white cursor-pointer">
-                {legacyPillars.map((p) => (
-                  <option key={p.name} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
+                {legacyPillars.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
               </select>
             </div>
           )}
@@ -1297,55 +1240,39 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
     try {
       const data = await fetchDraftLineItemsAction();
       setDrafts(data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   useEffect(() => { loadData(); }, []);
-
-  useEffect(() => {
-    if (members.length > 0 && !bulkUser) {
-      setBulkUser(members[0].id);
-    }
-  }, [members]);
+  useEffect(() => { if (members.length > 0 && !bulkUser) { setBulkUser(members[0].id); } }, [members]);
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setUploading(true);
     setError('');
     setSuccessMsg('');
-
     try {
       const formData = new FormData(e.currentTarget);
       const res = await parseStatementAction(formData);
-
       if (res?.success) {
         setSuccessMsg(`Successfully extracted ${res.count} items! Review below.`);
         (e.target as HTMLFormElement).reset();
         await loadData();
-      } else {
-        setError(res?.error || 'Failed to parse statements or text.');
-      }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
-    } finally {
-      setUploading(false);
-    }
+      } else { setError(res?.error || 'Failed to parse statements or text.'); }
+    } catch (err: any) { setError(err.message || 'An unexpected error occurred.'); }
+    finally { setUploading(false); }
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto my-auto relative">
-        
         {uploading && (
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6">
             <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
             <div className="text-white font-bold text-sm">Processing Statement with Gemini AI...</div>
-            <div className="text-slate-400 text-xs max-w-sm">Reading document tables, extracting tickers, and calculating asset values. This will just take a moment.</div>
+            <div className="text-slate-400 text-xs max-w-sm">Reading document tables, extracting tickers, and calculating asset values.</div>
           </div>
         )}
-
         <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <Cpu className="w-5 h-5 text-indigo-400" />
@@ -1353,10 +1280,8 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
-
         {error && <div className="text-xs text-rose-400 bg-rose-950/50 border border-rose-800 p-2.5 rounded-lg mb-4">{error}</div>}
         {successMsg && <div className="text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 p-2.5 rounded-lg mb-4">{successMsg}</div>}
-
         <form onSubmit={handleUpload} className="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between">
@@ -1364,84 +1289,43 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
                 <FileUp className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Upload PDF or Image Statements</span>
               </label>
-              <input 
-                name="files" 
-                type="file" 
-                multiple 
-                accept=".pdf,image/*" 
-                className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white cursor-pointer" 
-              />
+              <input name="files" type="file" multiple accept=".pdf,image/*" className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white cursor-pointer" />
             </div>
-
             <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2">
                 <ClipboardPaste className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Or Paste Statement Text / Holdings</span>
               </label>
-              <textarea
-                name="pastedText"
-                rows={3}
-                placeholder="Paste account holdings, table rows, or statement text here..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
-              />
+              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none" />
             </div>
           </div>
-
           <div className="flex justify-end pt-2 border-t border-slate-900">
-            <button 
-              type="submit" 
-              disabled={uploading} 
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-md transition-colors flex items-center gap-2"
-            >
+            <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-md transition-colors flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5" />
               <span>{uploading ? 'Analyzing with Gemini...' : 'Extract & Parse with AI'}</span>
             </button>
           </div>
         </form>
-
         <div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 pb-2 border-b border-slate-800 gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Pending Extracted Items ({drafts.length})</h3>
             {drafts.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-slate-400 uppercase font-medium">Assign Owner For All:</span>
-                <select 
-                  value={bulkUser} 
-                  onChange={(e) => setBulkUser(e.target.value)} 
-                  className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-xs text-white cursor-pointer font-medium"
-                >
+                <select value={bulkUser} onChange={(e) => setBulkUser(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-xs text-white cursor-pointer font-medium">
                   {members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
-                <button 
-                  onClick={async () => { 
-                    setUploading(true); 
-                    try {
-                      await approveAllDraftLineItemsAction(bulkUser); 
-                      await loadData(); 
-                      setSuccessMsg("Successfully approved all pending items!");
-                    } catch(err: any) {
-                      setError("Failed to approve items.");
-                    } finally {
-                      setUploading(false);
-                    }
-                  }} 
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md"
-                >
+                <button onClick={async () => { setUploading(true); try { await approveAllDraftLineItemsAction(bulkUser); await loadData(); setSuccessMsg("Successfully approved all pending items!"); } catch { setError("Failed to approve items."); } finally { setUploading(false); } }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md">
                   <CheckCheck className="w-4 h-4" /><span>Approve All Pending</span>
                 </button>
               </div>
             )}
           </div>
-
           {drafts.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">
-              No pending items. Upload statements or paste text above!
-            </div>
+            <div className="text-center py-12 text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">No pending items. Upload statements or paste text above!</div>
           ) : (
             <div className="space-y-3">
-              {drafts.map((item) => (
-                <DraftItemRow key={item.id} item={item} members={members} legacyPillars={legacyPillars} onRefresh={loadData} />
-              ))}
+              {drafts.map((item) => <DraftItemRow key={item.id} item={item} members={members} legacyPillars={legacyPillars} onRefresh={loadData} />)}
             </div>
           )}
         </div>
@@ -1498,16 +1382,13 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   const [expP, setExpP] = useState<{ [key: string]: boolean }>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const getBaseVal = (valStr: string, curr: string) => {
-    return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency, liveRates);
-  };
+  const getBaseVal = (valStr: string, curr: string) => convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency, liveRates);
 
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const type = (a.assetType || '').toUpperCase();
     const cat = (a.accountCategory || '').toUpperCase();
     if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
-
     const name = a.user?.fullName || 'Family General';
     if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
     memberMap[name].total += getBaseVal(a.nativeValue, a.nativeCurrency);
@@ -1523,7 +1404,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
     const type = (a.assetType || '').toUpperCase();
     const cat = (a.accountCategory || '').toUpperCase();
     if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
-
     const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
     if (!purposeMap[p]) purposeMap[p] = { total: 0, assets: [] };
     purposeMap[p].total += getBaseVal(a.nativeValue, a.nativeCurrency);
@@ -1581,7 +1461,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
           {sortedPurposes.map(([purposeName, data]) => {
             const matchedPillar = legacyPillars.find(p => p.name === purposeName);
             const description = matchedPillar?.description;
-
             return (
               <div key={purposeName} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden min-w-0">
                 <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer min-w-0">
@@ -1625,13 +1504,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 }
 
 function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
-  const titles = {
-    about: 'About OmniWealth',
-    faq: 'Frequently Asked Questions (FAQ)',
-    privacy: 'Privacy Policy',
-    terms: 'Terms of Service',
-  };
-
+  const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-y-auto my-auto text-slate-200 text-xs space-y-4">
@@ -1639,45 +1512,19 @@ function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' |
           <h2 className="text-base font-bold text-white">{titles[type]}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
-
         {type === 'about' && (
           <div className="space-y-3 leading-relaxed text-slate-300">
             <p><strong>OmniWealth</strong> is a next-generation Global Family Wealth Command Center designed to help multi-generational households unify cross-border assets, track live foreign exchange rates, and manage generational legacy directives in one secure place.</p>
-            <p>Our platform combines automated multi-currency engines with AI statement intelligence and encrypted document vaults, ensuring your family command center remains organized, transparent, and secure.</p>
           </div>
         )}
-
         {type === 'faq' && (
           <div className="space-y-4 text-slate-300">
-            <div>
-              <div className="font-bold text-white mb-1">Q: How are live currency exchange rates updated?</div>
-              <p className="text-slate-400">A: OmniWealth fetches real-time fiat exchange rates via Frankfurt API and crypto prices via CoinGecko, with reliable fallback static rates.</p>
-            </div>
-            <div>
-              <div className="font-bold text-white mb-1">Q: Is my document vault secure?</div>
-              <p className="text-slate-400">A: Yes, all uploaded files and sensitive statements are encrypted at rest using AES-256 encryption tied to your household security context.</p>
-            </div>
-            <div>
-              <div className="font-bold text-white mb-1">Q: How does the AI Statement Reader work?</div>
-              <p className="text-slate-400">A: Our integrated Gemini AI model parses uploaded PDFs or pasted holdings, instantly extracting tickers, asset classes, and values into a review locker for your approval.</p>
-            </div>
+            <div><div className="font-bold text-white mb-1">Q: How are live currency exchange rates updated?</div><p className="text-slate-400">A: OmniWealth fetches real-time fiat exchange rates via Frankfurt API and crypto prices via CoinGecko.</p></div>
+            <div><div className="font-bold text-white mb-1">Q: Is my document vault secure?</div><p className="text-slate-400">A: Yes, all uploaded files and sensitive statements are encrypted at rest using AES-256 encryption.</p></div>
           </div>
         )}
-
-        {type === 'privacy' && (
-          <div className="space-y-3 leading-relaxed text-slate-300">
-            <p>Your privacy is paramount. OmniWealth stores your data in encrypted database columns and secure cryptographic vaults. We never sell, share, or monetize family financial data or asset holdings.</p>
-            <p>You retain full ownership of your data and can export or delete family member records and uploaded documents at any time from your Household settings.</p>
-          </div>
-        )}
-
-        {type === 'terms' && (
-          <div className="space-y-3 leading-relaxed text-slate-300">
-            <p>By accessing and using OmniWealth, you agree to use the platform solely for personal family wealth tracking and estate organization.</p>
-            <p>OmniWealth is provided &ldquo;as is&rdquo; without warranties of any kind. Calculations, currency conversions, and AI-extracted values should be verified independently before making significant financial or estate decisions.</p>
-          </div>
-        )}
-
+        {type === 'privacy' && (<div className="space-y-3 text-slate-300"><p>Your privacy is paramount. OmniWealth stores your data in encrypted database columns and secure cryptographic vaults.</p></div>)}
+        {type === 'terms' && (<div className="space-y-3 text-slate-300"><p>By accessing and using OmniWealth, you agree to use the platform solely for personal family wealth tracking.</p></div>)}
         <div className="flex justify-end pt-3 border-t border-slate-800">
           <button onClick={onClose} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold cursor-pointer">Close</button>
         </div>
