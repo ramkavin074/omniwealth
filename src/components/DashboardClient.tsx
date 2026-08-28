@@ -894,8 +894,9 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 }
 
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
-  const safeData = Array.isArray(trendData) ? trendData : [];
-  const maxValue = safeData.length > 0 ? Math.max(...safeData.map(d => d?.value || 1), 1) : 1;
+  // Filter out corrupted or zero-value historical anomalies
+  const safeData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
+  const maxValue = safeData.length > 0 ? Math.max(...safeData.map(d => d.value), 1) : 1;
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
@@ -928,7 +929,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
       <div className="pt-6 pb-2 px-2 border-b border-slate-800/80">
         {safeData.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-xs text-slate-500 font-mono">
-            Loading timeline data...
+            No valid historical trend data available yet.
           </div>
         ) : (
           <div className="h-48 flex items-end justify-between gap-1.5 overflow-x-auto pb-1">
@@ -957,7 +958,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     </div>
   );
 }
-
 function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { assets: any[]; baseCurrency: string; totalNetWorth: number }) {
   const typeMap: { [key: string]: number } = {};
    
