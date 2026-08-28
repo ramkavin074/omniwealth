@@ -1,4 +1,16 @@
-function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { assets: any[]; trendData: { month: string; value: number }[]; baseCurrency: string; documents: any[] }) {
+'use client';
+
+import { useState } from 'react';
+import { Sparkles, TrendingUp, Lock, Calendar, Coins, X } from 'lucide-react';
+
+interface IntelligenceFeedProps {
+  assets: any[];
+  trendData: { month: string; value: number }[];
+  baseCurrency: string;
+  documents: any[];
+}
+
+export default function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: IntelligenceFeedProps) {
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
   const safeData = Array.isArray(trendData) ? trendData : [];
@@ -7,14 +19,12 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
   const growthAmount = currentVal - previousVal;
   const growthPercent = previousVal > 0 ? (growthAmount / previousVal) * 100 : 0;
 
-  // Sanity check: Ensure growth is mathematically realistic (growth amount cannot exceed current net worth, and % must be within reasonable bounds)
   const isGrowthRealistic = growthAmount > 0 && growthAmount <= currentVal && growthPercent <= 100;
 
   const milestoneAssets = assets.filter(a => ['SOCIAL_SECURITY', 'PENSION', 'PPF'].includes(a.accountCategory));
 
   const feedItems = [];
 
-  // Only show performance celebration if math is realistic and positive
   if (isGrowthRealistic) {
     feedItems.push({
       id: 'perf-growth',
@@ -108,7 +118,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
                 </div>
               </div>
               <button
-                onClick={() => setDismissedIds(prev => [...prev, item.id])}
+                onClick={() => setDismissedIds((prev: string[]) => [...prev, item.id])}
                 className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
                 title="Dismiss Card"
                 aria-label="Dismiss Card"
