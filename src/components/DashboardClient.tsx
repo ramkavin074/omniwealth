@@ -199,20 +199,20 @@ export default function DashboardClient({
           <div className="block md:hidden px-4 pt-3">
             <button 
               onClick={() => setIsAiReaderOpen(true)}
-              className="w-full bg-gradient-to-r from-teal-950/80 via-slate-900 to-slate-900 border border-teal-500/30 rounded-2xl p-4 shadow-md flex items-center justify-between text-left cursor-pointer group"
+              className="w-full bg-gradient-to-r from-slate-900 via-slate-900 to-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between text-left cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-teal-600/30 rounded-xl text-teal-300 border border-teal-500/40 shrink-0">
+                <div className="p-2.5 bg-slate-800 rounded-xl text-slate-300 border border-slate-700 shrink-0">
                   <Sparkles className="w-4 h-4 text-amber-400" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-sm text-white flex items-center gap-1.5">
                     AI Statement Reader <span className="bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow">NEW</span>
                   </div>
-                  <div className="text-xs text-slate-300 truncate">Upload PDF statements or paste holdings instantly</div>
+                  <div className="text-xs text-slate-400 truncate">Upload PDF statements or paste holdings instantly</div>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-teal-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         )}
@@ -231,10 +231,10 @@ export default function DashboardClient({
               <div className="space-y-6">
                 <div className="flex justify-between items-center pb-4 border-b border-slate-800">
                   <div className="flex items-center gap-2.5">
-                    <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-teal-500/30 shrink-0 bg-slate-800">
+                    <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-slate-700 shrink-0 bg-slate-800">
                       <Image src="/omniwealth.jpg" alt="OmniWealth" width={28} height={28} className="object-cover w-full h-full" />
                     </div>
-                    <span className="font-bold text-sm tracking-wide text-teal-200">OmniWealth</span>
+                    <span className="font-bold text-sm tracking-wide text-white">OmniWealth</span>
                   </div>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer">
                     <X className="w-5 h-5" />
@@ -262,7 +262,7 @@ export default function DashboardClient({
                     onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} 
                     className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <Home className="w-4 h-4 text-teal-300" />
+                    <Home className="w-4 h-4 text-slate-400" />
                     <span>Home / Portfolio</span>
                   </button>
 
@@ -281,7 +281,7 @@ export default function DashboardClient({
                     onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} 
                     className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <CreditCard className="w-4 h-4 text-rose-400" />
+                    <CreditCard className="w-4 h-4 text-slate-400" />
                     <span>Liabilities &amp; Debt</span>
                   </button>
 
@@ -289,7 +289,7 @@ export default function DashboardClient({
                     onClick={() => { setActiveTab('retirement'); setIsMobileMenuOpen(false); }} 
                     className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <Target className="w-4 h-4 text-emerald-400" />
+                    <Target className="w-4 h-4 text-slate-400" />
                     <span>Retirement &amp; Planning</span>
                   </button>
 
@@ -297,7 +297,7 @@ export default function DashboardClient({
                     onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} 
                     className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <Shield className="w-4 h-4 text-cyan-400" />
+                    <Shield className="w-4 h-4 text-slate-400" />
                     <span>Directives &amp; Vault</span>
                   </button>
 
@@ -305,7 +305,7 @@ export default function DashboardClient({
                     onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} 
                     className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <TrendingUp className="w-4 h-4 text-teal-400" />
+                    <TrendingUp className="w-4 h-4 text-slate-400" />
                     <span>Intelligence Feed</span>
                   </button>
                 </nav>
@@ -313,7 +313,7 @@ export default function DashboardClient({
 
               <div className="pt-4 border-t border-slate-800 space-y-2.5">
                 <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700">
-                  <span className="flex items-center gap-2"><Settings className="w-4 h-4 text-teal-400" /> Household Settings</span>
+                  <span className="flex items-center gap-2"><Settings className="w-4 h-4 text-slate-400" /> Household Settings</span>
                 </Link>
                 {session.user.role === 'SUPER_ADMIN' && (
                   <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-sm font-semibold rounded-xl border border-amber-500/20">
@@ -348,7 +348,7 @@ export default function DashboardClient({
               <Shield className="w-4 h-4" /> Directives &amp; Vault
             </button>
             <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
-              <Sparkles className="w-4 h-4 text-teal-300" /> Intelligence Feed
+              <Sparkles className="w-4 h-4 text-slate-400" /> Intelligence Feed
             </button>
           </div>
 
@@ -406,13 +406,13 @@ export default function DashboardClient({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-4 font-medium text-slate-300">
-          <button onClick={() => setActiveModal('about')} className="hover:text-teal-400 transition-colors cursor-pointer">About</button>
+          <button onClick={() => setActiveModal('about')} className="hover:text-slate-100 transition-colors cursor-pointer">About</button>
           <span>•</span>
-          <button onClick={() => setActiveModal('faq')} className="hover:text-teal-400 transition-colors cursor-pointer">FAQ</button>
+          <button onClick={() => setActiveModal('faq')} className="hover:text-slate-100 transition-colors cursor-pointer">FAQ</button>
           <span>•</span>
-          <button onClick={() => setActiveModal('privacy')} className="hover:text-teal-400 transition-colors cursor-pointer">Privacy Policy</button>
+          <button onClick={() => setActiveModal('privacy')} className="hover:text-slate-100 transition-colors cursor-pointer">Privacy Policy</button>
           <span>•</span>
-          <button onClick={() => setActiveModal('terms')} className="hover:text-teal-400 transition-colors cursor-pointer">Terms of Service</button>
+          <button onClick={() => setActiveModal('terms')} className="hover:text-slate-100 transition-colors cursor-pointer">Terms of Service</button>
         </div>
       </footer>
 
@@ -480,7 +480,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             </button>
 
             <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-teal-500/30 shrink-0 bg-slate-800 flex items-center justify-center">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-700 shrink-0 bg-slate-800 flex items-center justify-center">
                 <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
               </div>
               <div className="min-w-0">
@@ -503,7 +503,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-md">
                 <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
-              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-semibold text-sm rounded-xl transition cursor-pointer shadow-md">
+              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer shadow-md">
                 <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
               </button>
 
@@ -512,7 +512,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                 onClick={handleRefreshPrices} 
                 disabled={isRefreshing}
                 title="Refresh Live Market Prices & Exchange Rates" 
-                className="p-2 bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white rounded-xl border border-teal-500/30 transition cursor-pointer disabled:opacity-50 shadow-md"
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition cursor-pointer disabled:opacity-50 shadow-md"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
@@ -550,7 +550,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
           <div className="min-w-0">
             <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold block">Global Net Worth</span>
             <div className="text-xl font-black font-mono text-amber-400 truncate">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-emerald-400">{baseCurrency}</span>
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-300">{baseCurrency}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -558,7 +558,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               onClick={handleRefreshPrices} 
               disabled={isRefreshing}
               title="Refresh Live Market Prices" 
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 cursor-pointer disabled:opacity-50"
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -568,13 +568,13 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
 
       {/* Desktop Persistent Summary Bar */}
       <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8">
-        <div className="bg-gradient-to-br from-slate-900 via-teal-950/30 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex justify-between items-center">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex justify-between items-center">
           <div>
-            <span className="text-xs uppercase tracking-wider text-teal-400 font-semibold flex items-center gap-1.5">
-              <Wallet className="w-4 h-4" /> Global Household Net Worth
+            <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+              <Wallet className="w-4 h-4 text-slate-400" /> Global Household Net Worth
             </span>
             <div className="text-4xl font-extrabold font-mono text-amber-400 mt-1">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-400 text-lg font-sans">{baseCurrency}</span>
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-slate-300 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
@@ -582,7 +582,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             {sortedCategories.map(([cat, val]) => (
               <div key={cat} className="bg-slate-950/80 border border-slate-800 px-4 py-2.5 rounded-xl text-xs shadow-inner">
                 <span className="text-slate-400 uppercase text-[10px] block font-medium">{cat}</span>
-                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-400' : 'text-slate-100'}`}>
                   {Math.round(val).toLocaleString()} {baseCurrency}
                 </span>
               </div>
@@ -640,11 +640,11 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     feedItems.push({
       id: `milestone-${asset.id}`,
       type: 'milestone',
-      icon: <Calendar className="w-4 h-4 text-teal-400" />,
+      icon: <Calendar className="w-4 h-4 text-slate-400" />,
       title: `Future Income Stream: ${asset.name}`,
       message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
       badge: 'Milestone',
-      border: 'border-teal-500/30 bg-teal-950/20',
+      border: 'border-slate-800 bg-slate-950',
     });
   });
 
@@ -662,7 +662,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     feedItems.push({
       id: 'vault-active',
       type: 'info',
-      icon: <Lock className="w-4 h-4 text-teal-400" />,
+      icon: <Lock className="w-4 h-4 text-slate-400" />,
       title: 'Encrypted Vault Secure',
       message: `${documents.length} document(s) safely stored under cryptographic family protection.`,
       badge: 'Security',
@@ -676,10 +676,10 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-teal-400" />
+          <Sparkles className="w-5 h-5 text-slate-400" />
           <h3 className="text-sm font-bold text-white uppercase">Intelligence &amp; Family Feed</h3>
         </div>
-        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-teal-600/20 border border-teal-500/30 text-teal-300">
+        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
           Live Analysis
         </span>
       </div>
@@ -721,7 +721,7 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <Lock className="w-5 h-5 text-teal-400" />
+        <Lock className="w-5 h-5 text-slate-400" />
         <h3 className="text-sm font-bold text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
       </div>
       <p className="text-sm text-slate-300">
@@ -738,7 +738,7 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
           {documents.map((doc) => (
             <div key={doc.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 bg-teal-600/10 border border-teal-500/20 rounded-lg text-teal-400 shrink-0">
+                <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 shrink-0">
                   <FileText className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -748,7 +748,7 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
                   </div>
                 </div>
               </div>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700">
+              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700">
                 View
               </a>
             </div>
@@ -832,12 +832,12 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
 
   return (
     <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl shrink-0 shadow-sm">
-      <Coins className="w-4 h-4 text-teal-400" />
+      <Coins className="w-4 h-4 text-slate-400" />
       <select 
         value={selectedCurrency} 
         onChange={handleCurrencyChange} 
         disabled={isPending}
-        className="bg-transparent border-0 text-xs text-teal-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+        className="bg-transparent border-0 text-xs text-slate-200 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
         {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
           <option key={c} value={c} className="bg-slate-900 text-white">{c}</option>
@@ -857,7 +857,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-          <Shield className="w-5 h-5 text-teal-400" />
+          <Shield className="w-5 h-5 text-slate-400" />
           <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
         <div className="text-center py-8 text-sm text-slate-400">
@@ -903,7 +903,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-teal-400" />
+          <Shield className="w-5 h-5 text-slate-400" />
           <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
       </div>
@@ -913,9 +913,9 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
           return (
             <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="w-full md:w-3/4">
-                <div className="text-xs font-bold text-teal-400 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
+                <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
                 <div className="text-sm font-semibold text-white mt-1">
-                  Owner: <span className="text-teal-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
+                  Owner: <span className="text-slate-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
                 </div>
                 {isEditing(asset.id) ? (
                   <textarea
@@ -925,7 +925,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                     rows={2}
                   />
                 ) : (
-                  <div className="text-xs text-slate-300 mt-1 max-w-xl">{getInstruction(asset)}</div>
+                  <div className="text-xs text-slate-400 mt-1 max-w-xl">{getInstruction(asset)}</div>
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
@@ -937,12 +937,12 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                         type="number"
                         value={getAmount(asset)}
                         onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none"
+                        className="w-24 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-slate-100 font-bold focus:outline-none"
                       />
                       <span className="text-xs text-slate-400">{cur}</span>
                     </div>
                   ) : (
-                    <span className="text-sm font-mono text-emerald-400 font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
+                    <span className="text-sm font-mono text-slate-100 font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
                   )}
                 </div>
                 <button onClick={() => setEditing(asset.id, !isEditing(asset.id))} className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer">
@@ -968,7 +968,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <Shield className="w-5 h-5 text-teal-400" />
+        <Shield className="w-5 h-5 text-slate-400" />
         <h3 className="text-sm font-bold text-white uppercase">Institution &amp; Account-Level Family Directives</h3>
       </div>
       <p className="text-sm text-slate-300">Write overarching login protocols, broker contact details, and succession steps for entire accounts.</p>
@@ -980,7 +980,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
               <button
                 key={acct}
                 onClick={() => { setSelectedAccount(acct); setEditingNote(instructionsMap[acct] || ''); }}
-                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-teal-600/20 border-teal-500/50 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'}`}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-slate-800 border-slate-700 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'}`}
               >
                 {acct}
               </button>
@@ -991,13 +991,13 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
           {selectedAccount ? (
             <>
               <div>
-                <div className="text-xs font-bold text-teal-400 mb-1">Directives for: {selectedAccount}</div>
+                <div className="text-xs font-bold text-slate-300 mb-1">Directives for: {selectedAccount}</div>
                 <textarea
                   value={editingNote}
                   onChange={(e) => setEditingNote(e.target.value)}
                   placeholder="Enter succession notes, broker estate desk info, or multi-stock transfer instructions..."
                   rows={4}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-teal-500 resize-none"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-slate-700 resize-none"
                 />
               </div>
               <div className="flex justify-end">
@@ -1048,12 +1048,12 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
         <div className="flex items-center gap-2">
-          <Globe className="w-5 h-5 text-teal-400" />
+          <Globe className="w-5 h-5 text-slate-400" />
           <h3 className="text-sm font-bold text-white uppercase">Historical Net Worth Trend</h3>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase text-slate-400 font-medium">Timeline:</span>
-          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-teal-300 font-mono font-bold focus:outline-none cursor-pointer">
+          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono font-bold focus:outline-none cursor-pointer">
             <option value="1m">Last 1 Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
@@ -1074,15 +1074,15 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0d9488" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#0d9488" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#475569" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#475569" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <path d={areaString} fill="url(#areaGradient)" />
-              <path d={pathString} fill="none" stroke="#2dd4bf" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={pathString} fill="none" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               {points.map((pt, idx) => (
                 <g key={idx} className="group cursor-pointer">
-                  <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-teal-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
+                  <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-slate-300 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
                   <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-300 group-hover:fill-emerald-400 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
                   <text x={pt.x} y={height - 5} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">{pt.month}</text>
                   <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
@@ -1109,13 +1109,13 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
   });
   
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
-  const colors = ['bg-teal-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500', 'bg-rose-500'];
+  const colors = ['bg-slate-500', 'bg-slate-400', 'bg-slate-600', 'bg-slate-700', 'bg-zinc-500', 'bg-zinc-600'];
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <PieChart className="w-5 h-5 text-teal-400" />
+        <PieChart className="w-5 h-5 text-slate-400" />
         <h3 className="text-sm font-bold text-white uppercase">Asset Class Allocation</h3>
       </div>
       {sortedEntries.length === 0 ? (
@@ -1137,7 +1137,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
                     <span className={`w-3 h-3 rounded-full ${colors[idx % colors.length]}`} />
                     <span className="text-xs font-bold text-slate-200 uppercase truncate">{type}</span>
                   </div>
-                  <div className="font-mono text-sm text-emerald-400 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
+                  <div className="font-mono text-sm text-slate-100 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
                   <div className="text-xs text-slate-400 font-mono">{pct}% of portfolio</div>
                 </div>
               );
@@ -1274,14 +1274,14 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto my-auto relative">
         {uploading && (
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6">
-            <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-slate-300 border-t-transparent rounded-full animate-spin"></div>
             <div className="text-white font-bold text-sm">Processing Statement with Gemini AI...</div>
             <div className="text-slate-300 text-xs max-w-sm">Reading document tables, extracting tickers, and calculating asset values.</div>
           </div>
         )}
         <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-teal-400" />
+            <Cpu className="w-5 h-5 text-slate-400" />
             <h2 className="text-base font-bold text-white">AI Statement Intelligence &amp; Review Locker</h2>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
@@ -1292,22 +1292,22 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2">
-                <FileUp className="w-4 h-4 text-teal-400" />
+                <FileUp className="w-4 h-4 text-slate-400" />
                 <span>Upload PDF or Image Statements</span>
               </label>
               <input name="files" type="file" multiple accept=".pdf,image/*" className="w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-600 file:text-white cursor-pointer" />
             </div>
             <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2">
-                <ClipboardPaste className="w-4 h-4 text-teal-400" />
+                <ClipboardPaste className="w-4 h-4 text-slate-400" />
                 <span>Or Paste Statement Text / Holdings</span>
               </label>
-              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 resize-none" />
+              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-700 resize-none" />
             </div>
           </div>
           <div className="flex justify-end pt-2 border-t border-slate-900">
             <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-md transition-colors flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-amber-400" />
               <span>{uploading ? 'Analyzing with Gemini...' : 'Extract & Parse with AI'}</span>
             </button>
           </div>
@@ -1350,8 +1350,8 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
     <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
       <div className="flex justify-between items-center">
         <div>
-          <span className="font-bold text-white text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-teal-400">({item.ticker})</span>}
-          <div className="text-xs font-mono text-emerald-400 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
+          <span className="font-bold text-white text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-slate-300">({item.ticker})</span>}
+          <div className="text-xs font-mono text-slate-100 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
         </div>
         <div className="flex gap-2">
           <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs cursor-pointer"><Check className="w-4 h-4" /> Approve</button>
@@ -1427,13 +1427,13 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-teal-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-slate-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
             <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden min-w-0">
               <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer min-w-0">
                 <div className="min-w-0 pr-2"><div className="font-bold text-white text-sm truncate">{name}</div><div className="text-xs text-slate-400">{data.assets.length} consolidated holding(s)</div></div>
-                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-emerald-400 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
+                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-slate-100 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
               </button>
               {expM[name] && (
                 <div className="border-t border-slate-900 p-4 space-y-2.5 bg-slate-950/80">
@@ -1456,13 +1456,13 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                             <span className="font-bold text-white text-sm truncate block">
                               {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
                             </span>
-                            <span className="text-xs text-teal-300">
+                            <span className="text-xs text-slate-400">
                               Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
                             </span>
                           </div>
                           <div className="flex items-center gap-2.5 shrink-0">
-                            <span className="font-mono text-emerald-400 font-semibold text-sm">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
-                            <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-teal-400 p-1"><Edit3 className="w-4 h-4" /></button>
+                            <span className="font-mono text-slate-100 font-semibold text-sm">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
+                            <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-slate-200 p-1"><Edit3 className="w-4 h-4" /></button>
                             <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400 p-1"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </>
@@ -1477,7 +1477,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-teal-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-slate-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
         <div className="space-y-3">
           {sortedPurposes.map(([purposeName, data]) => {
             const matchedPillar = legacyPillars.find(p => p.name === purposeName);
@@ -1487,20 +1487,20 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                 <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer min-w-0">
                   <div className="min-w-0 pr-2">
                     <div className="font-bold text-white text-sm flex items-center gap-2 truncate">
-                      <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0"></span><span className="truncate">{purposeName}</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span><span className="truncate">{purposeName}</span>
                     </div>
                     <div className="text-xs text-slate-400">{data.assets.length} consolidated holding(s)</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-emerald-400 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    <span className="font-mono text-slate-100 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                     {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
                 {expP[purposeName] && (
                   <div className="border-t border-slate-900 p-4 space-y-3 bg-slate-950/80 text-xs">
                     {description && (
-                      <div className="bg-slate-900/90 border border-teal-500/30 rounded-xl p-3.5 text-slate-200 space-y-1">
-                        <div className="flex items-center gap-1.5 text-teal-400 font-bold mb-1">
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 text-slate-200 space-y-1">
+                        <div className="flex items-center gap-1.5 text-slate-400 font-bold mb-1">
                           <FileText className="w-4 h-4" />
                           <span className="uppercase text-xs">Legacy Directive:</span>
                         </div>
@@ -1513,11 +1513,11 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                           <span className="font-bold text-white text-sm truncate block">
                             {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
                           </span>
-                          <span className="text-xs text-teal-300">
+                          <span className="text-xs text-slate-400">
                             Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
                           </span>
                         </div>
-                        <span className="font-mono text-emerald-400 font-semibold text-sm shrink-0">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
+                        <span className="font-mono text-slate-100 font-semibold text-sm shrink-0">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
                       </div>
                     ))}
                   </div>
