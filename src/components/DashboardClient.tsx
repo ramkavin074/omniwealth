@@ -67,12 +67,6 @@ function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [ke
     return Math.abs(baseVal);
   };
 
-  const getPositiveBaseVal = (asset: any) => {
-    const val = parseFloat(asset.nativeValue || '0');
-    const curr = asset.nativeCurrency || 'USD';
-    return Math.abs(convertCurrency(val, curr, baseCurrency, liveRates));
-  };
-
   const totalNetWorth = assets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
   
   const liquidAssets = assets.filter(a => {
@@ -82,7 +76,7 @@ function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [ke
   });
   const totalLiquidWealth = liquidAssets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
 
-  return { getBaseVal, getPositiveBaseVal, totalNetWorth, totalLiquidWealth };
+  return { getBaseVal, totalNetWorth, totalLiquidWealth };
 }
 
 // Helper to group identical tickers/assets across accounts
@@ -181,7 +175,7 @@ export default function DashboardClient({
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+    <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-500 selection:text-white">
       <div>
         {/* ========================================================= */}
         {/* UNIFIED HEADER & SUMMARY                                  */}
@@ -205,20 +199,20 @@ export default function DashboardClient({
           <div className="block md:hidden px-4 pt-3">
             <button 
               onClick={() => setIsAiReaderOpen(true)}
-              className="w-full bg-gradient-to-r from-indigo-900/80 via-purple-900/60 to-slate-900 border border-indigo-500/30 rounded-2xl p-3.5 shadow-md flex items-center justify-between text-left cursor-pointer group"
+              className="w-full bg-gradient-to-r from-teal-950/80 via-slate-900 to-slate-900 border border-teal-500/30 rounded-2xl p-4 shadow-md flex items-center justify-between text-left cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-600/30 rounded-xl text-indigo-300 border border-indigo-500/40 shrink-0">
+                <div className="p-2.5 bg-teal-600/30 rounded-xl text-teal-300 border border-teal-500/40 shrink-0">
                   <Sparkles className="w-4 h-4 text-amber-400" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
                     AI Statement Reader <span className="bg-amber-500 text-black text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow">NEW</span>
                   </div>
-                  <div className="text-[10px] text-slate-300 truncate">Upload PDF statements or paste holdings instantly</div>
+                  <div className="text-xs text-slate-300 truncate">Upload PDF statements or paste holdings instantly</div>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+              <ArrowRight className="w-4 h-4 text-teal-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
             </button>
           </div>
         )}
@@ -237,10 +231,10 @@ export default function DashboardClient({
               <div className="space-y-6">
                 <div className="flex justify-between items-center pb-4 border-b border-slate-800">
                   <div className="flex items-center gap-2.5">
-                    <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800">
+                    <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-teal-500/30 shrink-0 bg-slate-800">
                       <Image src="/omniwealth.jpg" alt="OmniWealth" width={28} height={28} className="object-cover w-full h-full" />
                     </div>
-                    <span className="font-bold text-sm tracking-wide text-indigo-200">OmniWealth</span>
+                    <span className="font-bold text-sm tracking-wide text-teal-200">OmniWealth</span>
                   </div>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer">
                     <X className="w-5 h-5" />
@@ -251,7 +245,7 @@ export default function DashboardClient({
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => { setActiveTab('wealth'); setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }}
-                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /><span>Add Asset</span>
                   </button>
@@ -266,15 +260,15 @@ export default function DashboardClient({
                 <nav className="flex flex-col space-y-1.5 pt-2">
                   <button 
                     onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
-                    <Home className="w-4 h-4 text-indigo-300" />
+                    <Home className="w-4 h-4 text-teal-300" />
                     <span>Home / Portfolio</span>
                   </button>
 
                   <button 
                     onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} 
-                    className="flex items-center justify-between py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-800 text-slate-300 transition-colors"
+                    className="flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-800 text-slate-300 transition-colors"
                   >
                     <div className="flex items-center space-x-3.5">
                       <Sparkles className="w-4 h-4 text-amber-400" />
@@ -285,7 +279,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <CreditCard className="w-4 h-4 text-rose-400" />
                     <span>Liabilities &amp; Debt</span>
@@ -293,7 +287,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('retirement'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Target className="w-4 h-4 text-emerald-400" />
                     <span>Retirement &amp; Planning</span>
@@ -301,7 +295,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <Shield className="w-4 h-4 text-cyan-400" />
                     <span>Directives &amp; Vault</span>
@@ -309,7 +303,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
                   >
                     <TrendingUp className="w-4 h-4 text-teal-400" />
                     <span>Intelligence Feed</span>
@@ -318,17 +312,17 @@ export default function DashboardClient({
               </div>
 
               <div className="pt-4 border-t border-slate-800 space-y-2.5">
-                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700">
-                  <span className="flex items-center gap-2"><Settings className="w-3.5 h-3.5 text-indigo-400" /> Household Settings</span>
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700">
+                  <span className="flex items-center gap-2"><Settings className="w-4 h-4 text-teal-400" /> Household Settings</span>
                 </Link>
                 {session.user.role === 'SUPER_ADMIN' && (
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/20">
-                    <span className="flex items-center gap-2"><Shield className="w-3.5 h-3.5" /> Admin Portal</span>
+                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-sm font-semibold rounded-xl border border-amber-500/20">
+                    <span className="flex items-center gap-2"><Shield className="w-4 h-4" /> Admin Portal</span>
                   </Link>
                 )}
                 <form action={logoutAction} className="pt-1">
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-950/60 text-rose-400 text-xs font-semibold rounded-xl border border-rose-900/50 hover:bg-rose-900/50 cursor-pointer">
-                    <LogOut className="w-3.5 h-3.5" /> Logout
+                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-950/60 text-rose-400 text-sm font-semibold rounded-xl border border-rose-900/50 hover:bg-rose-900/50 cursor-pointer">
+                    <LogOut className="w-4 h-4" /> Logout
                   </button>
                 </form>
               </div>
@@ -341,20 +335,20 @@ export default function DashboardClient({
           {/* DESKTOP TAB NAVIGATION BAR                                */}
           {/* ========================================================= */}
           <div className="hidden md:flex bg-slate-900 border border-slate-800 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-md">
-            <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
+            <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
             </button>
-            <button onClick={() => setActiveTab('liabilities')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'liabilities' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
+            <button onClick={() => setActiveTab('liabilities')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'liabilities' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
             </button>
-            <button onClick={() => setActiveTab('retirement')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'retirement' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
+            <button onClick={() => setActiveTab('retirement')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'retirement' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Target className="w-4 h-4" /> Retirement &amp; Planning
             </button>
-            <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
+            <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
               <Shield className="w-4 h-4" /> Directives &amp; Vault
             </button>
-            <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
-              <Sparkles className="w-4 h-4 text-indigo-300" /> Intelligence Feed
+            <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
+              <Sparkles className="w-4 h-4 text-teal-300" /> Intelligence Feed
             </button>
           </div>
 
@@ -406,19 +400,19 @@ export default function DashboardClient({
       <footer className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-20 pt-8 border-t border-slate-800 text-slate-400 text-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="text-center md:text-left space-y-1">
           <div>&copy; 2026 OmniWealth. All rights reserved.</div>
-          <div className="text-[10px] text-slate-500 max-w-xl">
+          <div className="text-xs text-slate-500 max-w-xl">
             Disclaimer: OmniWealth is a global family asset command and tracking platform for informational purposes only and does not constitute professional financial, tax, or legal advice.
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-4 font-medium text-slate-300">
-          <button onClick={() => setActiveModal('about')} className="hover:text-indigo-400 transition-colors cursor-pointer">About</button>
+          <button onClick={() => setActiveModal('about')} className="hover:text-teal-400 transition-colors cursor-pointer">About</button>
           <span>•</span>
-          <button onClick={() => setActiveModal('faq')} className="hover:text-indigo-400 transition-colors cursor-pointer">FAQ</button>
+          <button onClick={() => setActiveModal('faq')} className="hover:text-teal-400 transition-colors cursor-pointer">FAQ</button>
           <span>•</span>
-          <button onClick={() => setActiveModal('privacy')} className="hover:text-indigo-400 transition-colors cursor-pointer">Privacy Policy</button>
+          <button onClick={() => setActiveModal('privacy')} className="hover:text-teal-400 transition-colors cursor-pointer">Privacy Policy</button>
           <span>•</span>
-          <button onClick={() => setActiveModal('terms')} className="hover:text-indigo-400 transition-colors cursor-pointer">Terms of Service</button>
+          <button onClick={() => setActiveModal('terms')} className="hover:text-teal-400 transition-colors cursor-pointer">Terms of Service</button>
         </div>
       </footer>
 
@@ -486,14 +480,14 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             </button>
 
             <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800 flex items-center justify-center">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-teal-500/30 shrink-0 bg-slate-800 flex items-center justify-center">
                 <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
               </div>
               <div className="min-w-0">
-                <div className="font-bold text-white text-xs md:text-sm tracking-tight truncate">
+                <div className="font-bold text-white text-sm md:text-base tracking-tight truncate">
                   {householdTitle} {<span className="hidden md:inline">Vault</span>}
                 </div>
-                <div className="text-[10px] text-slate-400">Command Center</div>
+                <div className="text-xs text-slate-400">Command Center</div>
               </div>
             </Link>
           </div>
@@ -503,14 +497,14 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             
             {/* Desktop Quick Actions & Profile Controls */}
             <div className="hidden md:flex items-center gap-2">
-              <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-md">
+              <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-md">
                 <Plus className="w-4 h-4" /><span>Add Asset</span>
               </button>
-              <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-md">
+              <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-md">
                 <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
-              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-semibold text-xs rounded-xl transition cursor-pointer shadow-md">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /><span>AI Reader</span>
+              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-semibold text-sm rounded-xl transition cursor-pointer shadow-md">
+                <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
               </button>
 
               {/* Refresh Live Prices Button */}
@@ -518,7 +512,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                 onClick={handleRefreshPrices} 
                 disabled={isRefreshing}
                 title="Refresh Live Market Prices & Exchange Rates" 
-                className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white rounded-xl border border-indigo-500/30 transition cursor-pointer disabled:opacity-50 shadow-md"
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white rounded-xl border border-teal-500/30 transition cursor-pointer disabled:opacity-50 shadow-md"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
@@ -554,8 +548,8 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
       <div className="block md:hidden px-4 pt-3">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between">
           <div className="min-w-0">
-            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Global Net Worth</span>
-            <div className="text-xl font-black font-mono text-white truncate">
+            <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold block">Global Net Worth</span>
+            <div className="text-xl font-black font-mono text-amber-400 truncate">
               {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-emerald-400">{baseCurrency}</span>
             </div>
           </div>
@@ -564,9 +558,9 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               onClick={handleRefreshPrices} 
               disabled={isRefreshing}
               title="Refresh Live Market Prices" 
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl border border-slate-700 cursor-pointer disabled:opacity-50"
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -574,21 +568,21 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
 
       {/* Desktop Persistent Summary Bar */}
       <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8">
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex justify-between items-center">
+        <div className="bg-gradient-to-br from-slate-900 via-teal-950/30 to-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex justify-between items-center">
           <div>
-            <span className="text-xs uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-1.5">
+            <span className="text-xs uppercase tracking-wider text-teal-400 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4" /> Global Household Net Worth
             </span>
-            <div className="text-4xl font-extrabold font-mono text-white mt-1">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-indigo-400 text-lg font-sans">{baseCurrency}</span>
+            <div className="text-4xl font-extrabold font-mono text-amber-400 mt-1">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-400 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {sortedCategories.map(([cat, val]) => (
-              <div key={cat} className="bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl text-xs shadow-inner">
+              <div key={cat} className="bg-slate-950/80 border border-slate-800 px-4 py-2.5 rounded-xl text-xs shadow-inner">
                 <span className="text-slate-400 uppercase text-[10px] block font-medium">{cat}</span>
-                <span className={`font-mono font-bold ${val < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                   {Math.round(val).toLocaleString()} {baseCurrency}
                 </span>
               </div>
@@ -646,11 +640,11 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     feedItems.push({
       id: `milestone-${asset.id}`,
       type: 'milestone',
-      icon: <Calendar className="w-4 h-4 text-indigo-400" />,
+      icon: <Calendar className="w-4 h-4 text-teal-400" />,
       title: `Future Income Stream: ${asset.name}`,
       message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
       badge: 'Milestone',
-      border: 'border-indigo-500/30 bg-indigo-950/20',
+      border: 'border-teal-500/30 bg-teal-950/20',
     });
   });
 
@@ -668,7 +662,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     feedItems.push({
       id: 'vault-active',
       type: 'info',
-      icon: <Lock className="w-4 h-4 text-indigo-400" />,
+      icon: <Lock className="w-4 h-4 text-teal-400" />,
       title: 'Encrypted Vault Secure',
       message: `${documents.length} document(s) safely stored under cryptographic family protection.`,
       badge: 'Security',
@@ -682,37 +676,37 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-indigo-400" />
+          <Sparkles className="w-5 h-5 text-teal-400" />
           <h3 className="text-sm font-bold text-white uppercase">Intelligence &amp; Family Feed</h3>
         </div>
-        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-300">
+        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-teal-600/20 border border-teal-500/30 text-teal-300">
           Live Analysis
         </span>
       </div>
 
       <div className="space-y-3 pt-1">
         {activeFeedItems.length === 0 ? (
-          <div className="text-center py-8 text-xs text-slate-500 font-mono">
+          <div className="text-center py-8 text-sm text-slate-400 font-mono">
             No active intelligence alerts or all items have been dismissed.
           </div>
         ) : (
           activeFeedItems.map((item) => (
             <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all ${item.border}`}>
               <div className="flex items-start gap-3.5 min-w-0">
-                <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl shrink-0 mt-0.5 shadow-inner">
+                <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl shrink-0 mt-0.5 shadow-inner">
                   {item.icon}
                 </div>
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-bold text-white text-xs truncate">{item.title}</h4>
-                    <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
+                    <h4 className="font-bold text-white text-sm truncate">{item.title}</h4>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
                       {item.badge}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
+                  <p className="text-sm text-slate-300 leading-relaxed">{item.message}</p>
                 </div>
               </div>
-              <button onClick={() => handleDismiss(item.id)} className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-slate-800 cursor-pointer">
+              <button onClick={() => handleDismiss(item.id)} className="text-slate-500 hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -727,34 +721,34 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <Lock className="w-5 h-5 text-indigo-400" />
+        <Lock className="w-5 h-5 text-teal-400" />
         <h3 className="text-sm font-bold text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
       </div>
-      <p className="text-xs text-slate-400">
+      <p className="text-sm text-slate-300">
         Securely stored legal wills, trust deeds, property deeds, and financial statements protected with AES-256 encryption.
       </p>
 
       {documents.length === 0 ? (
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-2">
-          <div className="text-slate-300 font-bold text-sm">No documents uploaded to vault yet</div>
-          <p className="text-xs text-slate-500">Upload statements or legal documents via the AI Reader or household settings.</p>
+          <div className="text-slate-200 font-bold text-sm">No documents uploaded to vault yet</div>
+          <p className="text-xs text-slate-400">Upload statements or legal documents via the AI Reader or household settings.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {documents.map((doc) => (
-            <div key={doc.id} className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3">
+            <div key={doc.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 bg-indigo-600/10 border border-indigo-500/20 rounded-lg text-indigo-400 shrink-0">
+                <div className="p-2.5 bg-teal-600/10 border border-teal-500/20 rounded-lg text-teal-400 shrink-0">
                   <FileText className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-white text-xs truncate">{doc.name}</div>
-                  <div className="text-[10px] text-slate-400 font-mono">
+                  <div className="font-bold text-white text-sm truncate">{doc.name}</div>
+                  <div className="text-xs text-slate-400 font-mono">
                     {doc.fileType || 'PDF'} {doc.fileSize ? `• ${doc.fileSize}` : ''} • {new Date(doc.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700">
+              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-700">
                 View
               </a>
             </div>
@@ -784,8 +778,8 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
           <h3 className="text-sm font-bold text-white uppercase">Liabilities &amp; Debt Tracking</h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-rose-400 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
-          <button onClick={onAddLiability} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg cursor-pointer">
+          <span className="text-sm font-mono text-rose-400 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
+          <button onClick={onAddLiability} className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg cursor-pointer">
             + Add Liability
           </button>
         </div>
@@ -793,8 +787,8 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
 
       {liabilities.length === 0 ? (
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 text-center space-y-3">
-          <div className="text-slate-300 font-bold text-sm">No active liabilities logged yet</div>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
+          <div className="text-slate-200 font-bold text-sm">No active liabilities logged yet</div>
+          <p className="text-sm text-slate-400 max-w-md mx-auto">
             Log mortgages, cross-border loans, or credit lines using the button above to automatically subtract from your net worth in {baseCurrency}.
           </p>
         </div>
@@ -807,8 +801,8 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
                 <div className="text-xs text-slate-400">Owner: {item.user?.fullName || 'Family Member'} | Category: {item.accountCategory}</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-rose-400 font-bold">-{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
-                <button onClick={async () => { await deleteAssetAction(item.id); }} className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer">
+                <span className="font-mono text-rose-400 font-bold text-sm">-{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
+                <button onClick={async () => { await deleteAssetAction(item.id); }} className="text-slate-400 hover:text-rose-400 p-1.5 cursor-pointer">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -837,13 +831,13 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl shrink-0 shadow-sm">
-      <Coins className="w-3.5 h-3.5 text-indigo-400" />
+    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl shrink-0 shadow-sm">
+      <Coins className="w-4 h-4 text-teal-400" />
       <select 
         value={selectedCurrency} 
         onChange={handleCurrencyChange} 
         disabled={isPending}
-        className="bg-transparent border-0 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+        className="bg-transparent border-0 text-xs text-teal-300 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
         {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
           <option key={c} value={c} className="bg-slate-900 text-white">{c}</option>
@@ -863,10 +857,10 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-          <Shield className="w-5 h-5 text-indigo-400" />
+          <Shield className="w-5 h-5 text-teal-400" />
           <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
-        <div className="text-center py-8 text-xs text-slate-500">
+        <div className="text-center py-8 text-sm text-slate-400">
           No pension, provident fund, or social security assets logged yet. Add them to view milestones.
         </div>
       </div>
@@ -909,7 +903,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-indigo-400" />
+          <Shield className="w-5 h-5 text-teal-400" />
           <h3 className="text-sm font-bold text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
       </div>
@@ -919,9 +913,9 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
           return (
             <div key={asset.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="w-full md:w-3/4">
-                <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
+                <div className="text-xs font-bold text-teal-400 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
                 <div className="text-sm font-semibold text-white mt-1">
-                  Owner: <span className="text-indigo-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
+                  Owner: <span className="text-teal-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
                 </div>
                 {isEditing(asset.id) ? (
                   <textarea
@@ -931,7 +925,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                     rows={2}
                   />
                 ) : (
-                  <div className="text-xs text-slate-400 mt-0.5 max-w-xl">{getInstruction(asset)}</div>
+                  <div className="text-xs text-slate-300 mt-1 max-w-xl">{getInstruction(asset)}</div>
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
@@ -948,7 +942,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                       <span className="text-xs text-slate-400">{cur}</span>
                     </div>
                   ) : (
-                    <span className="text-xs font-mono text-emerald-400 font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
+                    <span className="text-sm font-mono text-emerald-400 font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
                   )}
                 </div>
                 <button onClick={() => setEditing(asset.id, !isEditing(asset.id))} className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer">
@@ -974,10 +968,10 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <Shield className="w-5 h-5 text-indigo-400" />
+        <Shield className="w-5 h-5 text-teal-400" />
         <h3 className="text-sm font-bold text-white uppercase">Institution &amp; Account-Level Family Directives</h3>
       </div>
-      <p className="text-xs text-slate-400">Write overarching login protocols, broker contact details, and succession steps for entire accounts.</p>
+      <p className="text-sm text-slate-300">Write overarching login protocols, broker contact details, and succession steps for entire accounts.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
         <div className="space-y-2">
           <label className="block text-[10px] text-slate-400 uppercase font-medium">Select Account / Institution</label>
@@ -986,7 +980,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
               <button
                 key={acct}
                 onClick={() => { setSelectedAccount(acct); setEditingNote(instructionsMap[acct] || ''); }}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-indigo-600/20 border-indigo-500/50 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'}`}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-teal-600/20 border-teal-500/50 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-900'}`}
               >
                 {acct}
               </button>
@@ -997,19 +991,19 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
           {selectedAccount ? (
             <>
               <div>
-                <div className="text-xs font-bold text-indigo-400 mb-1">Directives for: {selectedAccount}</div>
+                <div className="text-xs font-bold text-teal-400 mb-1">Directives for: {selectedAccount}</div>
                 <textarea
                   value={editingNote}
                   onChange={(e) => setEditingNote(e.target.value)}
                   placeholder="Enter succession notes, broker estate desk info, or multi-stock transfer instructions..."
                   rows={4}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 resize-none"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-teal-500 resize-none"
                 />
               </div>
               <div className="flex justify-end">
                 <button
                   onClick={() => { setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote })); alert('Account instructions saved!'); }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md transition-colors"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md transition-colors"
                 >
                   Save Account Notes
                 </button>
@@ -1054,12 +1048,12 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
         <div className="flex items-center gap-2">
-          <Globe className="w-5 h-5 text-indigo-400" />
+          <Globe className="w-5 h-5 text-teal-400" />
           <h3 className="text-sm font-bold text-white uppercase">Historical Net Worth Trend</h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase text-slate-400 font-medium">Timeline:</span>
-          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer">
+          <span className="text-xs uppercase text-slate-400 font-medium">Timeline:</span>
+          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-teal-300 font-mono font-bold focus:outline-none cursor-pointer">
             <option value="1m">Last 1 Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
@@ -1080,15 +1074,15 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#0d9488" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#0d9488" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <path d={areaString} fill="url(#areaGradient)" />
-              <path d={pathString} fill="none" stroke="#818cf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={pathString} fill="none" stroke="#2dd4bf" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               {points.map((pt, idx) => (
                 <g key={idx} className="group cursor-pointer">
-                  <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-indigo-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
+                  <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-teal-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
                   <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-300 group-hover:fill-emerald-400 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
                   <text x={pt.x} y={height - 5} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">{pt.month}</text>
                   <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
@@ -1115,20 +1109,20 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
   });
   
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
-  const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500', 'bg-rose-500'];
+  const colors = ['bg-teal-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500', 'bg-rose-500'];
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-        <PieChart className="w-5 h-5 text-indigo-400" />
+        <PieChart className="w-5 h-5 text-teal-400" />
         <h3 className="text-sm font-bold text-white uppercase">Asset Class Allocation</h3>
       </div>
       {sortedEntries.length === 0 ? (
-        <div className="text-center py-6 text-slate-500 text-xs">No assets available for allocation view.</div>
+        <div className="text-center py-6 text-slate-400 text-sm">No assets available for allocation view.</div>
       ) : (
         <div className="space-y-4">
-          <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+          <div className="h-3.5 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
             {sortedEntries.map(([type, val], idx) => {
               const pct = (val / positiveNetWorth) * 100;
               return <div key={type} style={{ width: `${Math.max(pct, 2)}%` }} className={`${colors[idx % colors.length]} transition-all duration-500`} title={`${type}: ${pct.toFixed(1)}%`} />;
@@ -1138,13 +1132,13 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
             {sortedEntries.map(([type, val], idx) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
               return (
-                <div key={type} className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col gap-1">
+                <div key={type} className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${colors[idx % colors.length]}`} />
-                    <span className="text-[11px] font-bold text-slate-300 uppercase truncate">{type}</span>
+                    <span className={`w-3 h-3 rounded-full ${colors[idx % colors.length]}`} />
+                    <span className="text-xs font-bold text-slate-200 uppercase truncate">{type}</span>
                   </div>
-                  <div className="font-mono text-xs text-emerald-400 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
-                  <div className="text-[10px] text-slate-500 font-mono">{pct}% of portfolio</div>
+                  <div className="font-mono text-sm text-emerald-400 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
+                  <div className="text-xs text-slate-400 font-mono">{pct}% of portfolio</div>
                 </div>
               );
             })}
@@ -1169,14 +1163,14 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
           onClose();
         }} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-[10px] text-slate-400 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage' : 'e.g. Apple Stock'} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white" /></div>
-            <div><label className="block text-[10px] text-slate-400 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-xs text-slate-300 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage' : 'e.g. Apple Stock'} className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white" /></div>
+            <div><label className="block text-xs text-slate-300 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white font-mono" /></div>
           </div>
           {!isLiability && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Asset Type</label>
-                <select name="assetType" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
+                <label className="block text-xs text-slate-300 mb-1">Asset Type</label>
+                <select name="assetType" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white">
                   <option value="STOCK">Stock</option>
                   <option value="CRYPTO">Crypto</option>
                   <option value="COMMODITY">Commodity / Gold</option>
@@ -1189,8 +1183,8 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Account Category</label>
-                <select name="accountCategory" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
+                <label className="block text-xs text-slate-300 mb-1">Account Category</label>
+                <select name="accountCategory" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white">
                   <option value="INDIVIDUAL">Individual</option>
                   <option value="IRA">Traditional IRA</option>
                   <option value="ROTH_IRA">Roth IRA</option>
@@ -1208,30 +1202,30 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
             </div>
           )}
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="block text-[10px] text-slate-400 mb-1">Quantity</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
-            <div><label className="block text-[10px] text-slate-400 mb-1">{isLiability ? 'Debt Amount' : 'Total Value'}</label><input name="nativeValue" type="number" step="any" required placeholder="10000" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
-            <div><label className="block text-[10px] text-slate-400 mb-1">Currency</label><input name="nativeCurrency" defaultValue="USD" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-xs text-slate-300 mb-1">Quantity</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white font-mono" /></div>
+            <div><label className="block text-xs text-slate-300 mb-1">{isLiability ? 'Debt Amount' : 'Total Value'}</label><input name="nativeValue" type="number" step="any" required placeholder="10000" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white font-mono" /></div>
+            <div><label className="block text-xs text-slate-300 mb-1">Currency</label><input name="nativeCurrency" defaultValue="USD" required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white font-mono" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-[10px] text-slate-400 mb-1">Acct # (Last 4)</label><input name="accountNumber" defaultValue="DEFAULT" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white font-mono" /></div>
+            <div><label className="block text-xs text-slate-300 mb-1">Acct # (Last 4)</label><input name="accountNumber" defaultValue="DEFAULT" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white font-mono" /></div>
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1">Owner</label>
-              <select name="userId" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white">
+              <label className="block text-xs text-slate-300 mb-1">Owner</label>
+              <select name="userId" className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white">
                 {members.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
               </select>
             </div>
           </div>
           {!isLiability && (
             <div>
-              <label className="block text-[10px] text-slate-400 mb-1">Strategic Rationale &amp; Legacy Pillar</label>
-              <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-xs text-white cursor-pointer">
+              <label className="block text-xs text-slate-300 mb-1">Strategic Rationale &amp; Legacy Pillar</label>
+              <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2.5 text-sm text-white cursor-pointer">
                 {legacyPillars.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
               </select>
             </div>
           )}
           <div className="flex justify-end gap-2 pt-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs cursor-pointer">Cancel</button>
-            <button type="submit" className={`px-4 py-2 text-white rounded-lg text-xs font-semibold cursor-pointer ${isLiability ? 'bg-rose-600 hover:bg-rose-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}>
+            <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-sm cursor-pointer">Cancel</button>
+            <button type="submit" className={`px-4 py-2 text-white rounded-lg text-sm font-semibold cursor-pointer ${isLiability ? 'bg-rose-600 hover:bg-rose-500' : 'bg-teal-600 hover:bg-teal-500'}`}>
               {isLiability ? 'Save Liability' : 'Save Asset'}
             </button>
           </div>
@@ -1280,40 +1274,40 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto my-auto relative">
         {uploading && (
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6">
-            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
             <div className="text-white font-bold text-sm">Processing Statement with Gemini AI...</div>
-            <div className="text-slate-400 text-xs max-w-sm">Reading document tables, extracting tickers, and calculating asset values.</div>
+            <div className="text-slate-300 text-xs max-w-sm">Reading document tables, extracting tickers, and calculating asset values.</div>
           </div>
         )}
         <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-indigo-400" />
+            <Cpu className="w-5 h-5 text-teal-400" />
             <h2 className="text-base font-bold text-white">AI Statement Intelligence &amp; Review Locker</h2>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
-        {error && <div className="text-xs text-rose-400 bg-rose-950/50 border border-rose-800 p-2.5 rounded-lg mb-4">{error}</div>}
-        {successMsg && <div className="text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 p-2.5 rounded-lg mb-4">{successMsg}</div>}
+        {error && <div className="text-xs text-rose-400 bg-rose-950/50 border border-rose-800 p-3 rounded-lg mb-4">{error}</div>}
+        {successMsg && <div className="text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 p-3 rounded-lg mb-4">{successMsg}</div>}
         <form onSubmit={handleUpload} className="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between">
+            <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2">
-                <FileUp className="w-3.5 h-3.5 text-indigo-400" />
+                <FileUp className="w-4 h-4 text-teal-400" />
                 <span>Upload PDF or Image Statements</span>
               </label>
-              <input name="files" type="file" multiple accept=".pdf,image/*" className="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white cursor-pointer" />
+              <input name="files" type="file" multiple accept=".pdf,image/*" className="w-full text-xs text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-600 file:text-white cursor-pointer" />
             </div>
-            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between">
+            <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-2">
-                <ClipboardPaste className="w-3.5 h-3.5 text-indigo-400" />
+                <ClipboardPaste className="w-4 h-4 text-teal-400" />
                 <span>Or Paste Statement Text / Holdings</span>
               </label>
-              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none" />
+              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 resize-none" />
             </div>
           </div>
           <div className="flex justify-end pt-2 border-t border-slate-900">
-            <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-md transition-colors flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" />
+            <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-md transition-colors flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
               <span>{uploading ? 'Analyzing with Gemini...' : 'Extract & Parse with AI'}</span>
             </button>
           </div>
@@ -1323,18 +1317,18 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Pending Extracted Items ({drafts.length})</h3>
             {drafts.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400 uppercase font-medium">Assign Owner For All:</span>
-                <select value={bulkUser} onChange={(e) => setBulkUser(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-xs text-white cursor-pointer font-medium">
+                <span className="text-xs text-slate-400 uppercase font-medium">Assign Owner For All:</span>
+                <select value={bulkUser} onChange={(e) => setBulkUser(e.target.value)} className="bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-white cursor-pointer font-medium">
                   {members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
-                <button onClick={async () => { setUploading(true); try { await approveAllDraftLineItemsAction(bulkUser); await loadData(); setSuccessMsg("Successfully approved all pending items!"); } catch { setError("Failed to approve items."); } finally { setUploading(false); } }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md">
+                <button onClick={async () => { setUploading(true); try { await approveAllDraftLineItemsAction(bulkUser); await loadData(); setSuccessMsg("Successfully approved all pending items!"); } catch { setError("Failed to approve items."); } finally { setUploading(false); } }} className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-md">
                   <CheckCheck className="w-4 h-4" /><span>Approve All Pending</span>
                 </button>
               </div>
             )}
           </div>
           {drafts.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 text-xs border border-dashed border-slate-800 rounded-xl">No pending items. Upload statements or paste text above!</div>
+            <div className="text-center py-12 text-slate-400 text-sm border border-dashed border-slate-800 rounded-xl">No pending items. Upload statements or paste text above!</div>
           ) : (
             <div className="space-y-3">
               {drafts.map((item) => <DraftItemRow key={item.id} item={item} members={members} legacyPillars={legacyPillars} onRefresh={loadData} />)}
@@ -1356,17 +1350,17 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
     <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
       <div className="flex justify-between items-center">
         <div>
-          <span className="font-bold text-white text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-indigo-400">({item.ticker})</span>}
+          <span className="font-bold text-white text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-teal-400">({item.ticker})</span>}
           <div className="text-xs font-mono text-emerald-400 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
         </div>
         <div className="flex gap-2">
-          <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded text-xs cursor-pointer"><Check className="w-3.5 h-3.5" /> Approve</button>
-          <button onClick={async () => { await rejectDraftLineItemAction(item.id); onRefresh(); }} className="p-1 bg-slate-900 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-800 rounded cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+          <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded text-xs cursor-pointer"><Check className="w-4 h-4" /> Approve</button>
+          <button onClick={async () => { await rejectDraftLineItemAction(item.id); onRefresh(); }} className="p-1.5 bg-slate-900 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-800 rounded cursor-pointer"><Trash2 className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-900 text-xs">
-        <select value={usr} onChange={(e) => setUsr(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white">{members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}</select>
-        <select value={cat} onChange={(e) => setCat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white">
+        <select value={usr} onChange={(e) => setUsr(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1.5 text-white">{members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}</select>
+        <select value={cat} onChange={(e) => setCat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1.5 text-white">
           <option value="INDIVIDUAL">Individual</option>
           <option value="IRA">Traditional IRA</option>
           <option value="ROTH_IRA">Roth IRA</option>
@@ -1380,8 +1374,8 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           <option value="TRUST">Trust</option>
           <option value="REAL_ESTATE">Real Estate</option>
         </select>
-        <input value={acct} onChange={(e) => setAcct(e.target.value)} placeholder="Acct #" className="bg-slate-900 border border-slate-800 rounded p-1 text-white font-mono" />
-        <select value={rat} onChange={(e) => setRat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1 text-white cursor-pointer">
+        <input value={acct} onChange={(e) => setAcct(e.target.value)} placeholder="Acct #" className="bg-slate-900 border border-slate-800 rounded p-1.5 text-white font-mono" />
+        <select value={rat} onChange={(e) => setRat(e.target.value)} className="bg-slate-900 border border-slate-800 rounded p-1.5 text-white cursor-pointer">
           {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
         </select>
       </div>
@@ -1433,43 +1427,43 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Users className="w-5 h-5 text-teal-400" /><h3 className="text-sm font-bold text-white uppercase">Family Member Sub-Totals</h3></div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
             <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden min-w-0">
               <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer min-w-0">
                 <div className="min-w-0 pr-2"><div className="font-bold text-white text-sm truncate">{name}</div><div className="text-xs text-slate-400">{data.assets.length} consolidated holding(s)</div></div>
-                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
+                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-emerald-400 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
               </button>
               {expM[name] && (
-                <div className="border-t border-slate-900 p-4 space-y-2 bg-slate-950/80">
+                <div className="border-t border-slate-900 p-4 space-y-2.5 bg-slate-950/80">
                   {data.assets.map((asset) => (
-                    <div key={asset.id} className="bg-slate-900/70 border border-slate-800 p-3 rounded-lg text-xs flex justify-between items-center min-w-0">
+                    <div key={asset.id} className="bg-slate-900/70 border border-slate-800 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0">
                       {editingId === asset.id ? (
                         <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
-                          <input name="name" defaultValue={asset.name} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white" />
+                          <input name="name" defaultValue={asset.name} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm" />
                           <div className="grid grid-cols-2 gap-2">
-                            <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white font-mono" />
-                            <select name="rationale" defaultValue={asset.rationale} className="w-full bg-slate-950 border border-slate-800 rounded p-1 text-white cursor-pointer">
+                            <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm font-mono" />
+                            <select name="rationale" defaultValue={asset.rationale} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-sm cursor-pointer">
                               {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                             </select>
                           </div>
-                          <div className="flex justify-end gap-1"><button type="button" onClick={() => setEditingId(null)} className="p-1 bg-slate-800 rounded text-slate-300"><X className="w-3 h-3" /></button><button type="submit" className="p-1 bg-emerald-600 rounded text-white"><Check className="w-3 h-3" /></button></div>
+                          <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setEditingId(null)} className="px-2 py-1 bg-slate-800 rounded text-slate-300 text-xs"><X className="w-3.5 h-3.5" /></button><button type="submit" className="px-2 py-1 bg-emerald-600 rounded text-white text-xs"><Check className="w-3.5 h-3.5" /></button></div>
                         </form>
                       ) : (
                         <>
                           <div className="min-w-0 pr-2">
-                            <span className="font-bold text-white truncate block">
+                            <span className="font-bold text-white text-sm truncate block">
                               {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
                             </span>
-                            <span className="text-[10px] text-indigo-300">
+                            <span className="text-xs text-teal-300">
                               Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
-                            <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button>
-                            <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <span className="font-mono text-emerald-400 font-semibold text-sm">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
+                            <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-teal-400 p-1"><Edit3 className="w-4 h-4" /></button>
+                            <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400 p-1"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </>
                       )}
@@ -1483,7 +1477,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-indigo-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800"><Target className="w-5 h-5 text-teal-400" /><h3 className="text-sm font-bold text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
         <div className="space-y-3">
           {sortedPurposes.map(([purposeName, data]) => {
             const matchedPillar = legacyPillars.find(p => p.name === purposeName);
@@ -1493,37 +1487,37 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                 <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer min-w-0">
                   <div className="min-w-0 pr-2">
                     <div className="font-bold text-white text-sm flex items-center gap-2 truncate">
-                      <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span><span className="truncate">{purposeName}</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0"></span><span className="truncate">{purposeName}</span>
                     </div>
                     <div className="text-xs text-slate-400">{data.assets.length} consolidated holding(s)</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    <span className="font-mono text-emerald-400 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                     {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                   </div>
                 </button>
                 {expP[purposeName] && (
                   <div className="border-t border-slate-900 p-4 space-y-3 bg-slate-950/80 text-xs">
                     {description && (
-                      <div className="bg-slate-900/90 border border-indigo-500/30 rounded-xl p-3 text-slate-200 space-y-1">
-                        <div className="flex items-center gap-1.5 text-indigo-400 font-bold mb-1">
-                          <FileText className="w-3.5 h-3.5" />
-                          <span className="uppercase text-[10px]">Legacy Directive:</span>
+                      <div className="bg-slate-900/90 border border-teal-500/30 rounded-xl p-3.5 text-slate-200 space-y-1">
+                        <div className="flex items-center gap-1.5 text-teal-400 font-bold mb-1">
+                          <FileText className="w-4 h-4" />
+                          <span className="uppercase text-xs">Legacy Directive:</span>
                         </div>
-                        <p className="text-slate-200 font-medium">{description}</p>
+                        <p className="text-slate-200 text-sm font-medium">{description}</p>
                       </div>
                     )}
                     {data.assets.map(asset => (
-                      <div key={asset.id} className="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 min-w-0">
+                      <div key={asset.id} className="flex justify-between items-center bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 min-w-0">
                         <div className="min-w-0 pr-2">
-                          <span className="font-bold text-white truncate block">
+                          <span className="font-bold text-white text-sm truncate block">
                             {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
                           </span>
-                          <span className="text-[10px] text-indigo-300">
+                          <span className="text-xs text-teal-300">
                             Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
                           </span>
                         </div>
-                        <span className="font-mono text-emerald-400 font-semibold shrink-0">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
+                        <span className="font-mono text-emerald-400 font-semibold text-sm shrink-0">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
                       </div>
                     ))}
                   </div>
@@ -1541,7 +1535,7 @@ function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' |
   const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-y-auto my-auto text-slate-200 text-xs space-y-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-y-auto my-auto text-slate-200 text-sm space-y-4">
         <div className="flex justify-between items-center pb-3 border-b border-slate-800">
           <h2 className="text-base font-bold text-white">{titles[type]}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
@@ -1560,7 +1554,7 @@ function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' |
         {type === 'privacy' && (<div className="space-y-3 text-slate-300"><p>Your privacy is paramount. OmniWealth stores your data in encrypted database columns and secure cryptographic vaults.</p></div>)}
         {type === 'terms' && (<div className="space-y-3 text-slate-300"><p>By accessing and using OmniWealth, you agree to use the platform solely for personal family wealth tracking.</p></div>)}
         <div className="flex justify-end pt-3 border-t border-slate-800">
-          <button onClick={onClose} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold cursor-pointer">Close</button>
+          <button onClick={onClose} className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-semibold cursor-pointer">Close</button>
         </div>
       </div>
     </div>
