@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { assets, users, households } from '@/db/schema';
-import { getSessionUserAction, fetchHouseholdDocumentsAction } from '@/actions/vault';
+import { getSessionUserAction, fetchHouseholdDocumentsAction, fetchLiveExchangeRatesAction } from '@/actions/vault';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
@@ -50,12 +50,16 @@ export default async function DashboardPage() {
 
   const documents = await fetchHouseholdDocumentsAction();
 
+  // Fetch live rates on the server so the first HTML byte is 100% accurate, eliminating the refresh flash.
+  const initialLiveRates = await fetchLiveExchangeRatesAction();
+
   return (
     <DashboardClient 
       session={updatedSession} 
       initialAssets={rawAssets} 
       baseCurrency={baseCurrency} 
       initialDocuments={documents}
+      initialLiveRates={initialLiveRates}
     />
   );
 }

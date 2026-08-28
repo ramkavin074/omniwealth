@@ -53,13 +53,15 @@ interface DashboardClientProps {
   initialAssets: any[];
   baseCurrency: string;
   initialDocuments?: any[];
+  initialLiveRates?: { [key: string]: number };
 }
 
 export default function DashboardClient({ 
   session, 
   initialAssets, 
   baseCurrency, 
-  initialDocuments = [] 
+  initialDocuments = [],
+  initialLiveRates = FX_RATES
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives' | 'feed'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
@@ -71,7 +73,7 @@ export default function DashboardClient({
   const [members, setMembers] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
-  const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(FX_RATES);
+  const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(initialLiveRates);
 
   useEffect(() => {
     fetchFamilyMembersAction().then(setMembers);

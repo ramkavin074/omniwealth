@@ -109,6 +109,26 @@ export async function addFamilyMemberAction(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteFamilyMemberAction(memberId: string) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const [targetUser] = await db.select().from(users).where(eq(users.id, memberId));
+  if (!targetUser) return { success: false, error: 'User not found' };
+
+  if (targetUser.id === session.user.id) {
+    return { success: false, error: 'You cannot remove your own account from the household.' };
+  }
+
+  if (targetUser.householdId !== session.household.id) {
+    return { success: false, error: 'Unauthorized action.' };
+  }
+
+  await db.delete(users).where(eq(users.id, memberId));
+  revalidatePath('/profile');
+  return { success: true };
+}
+
 export async function loginAction(formData: FormData) {
   const email = (formData.get('email') as string || '').trim();
   const password = (formData.get('password') as string || '').trim();
@@ -219,7 +239,6 @@ export async function registerMemberWithCodeAction(formData: FormData) {
   return { success: true, role: user.role };
 }
 
-// --- Automated Live FX Rate Engine via Frankfurter API with Static Fallback ---
 let cachedRates: { rates: Record<string, number>; fetchedAt: number } | null = null;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -949,25 +968,5 @@ export async function deleteDocumentAction(documentId: string) {
 
   await db.delete(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
   revalidatePath('/vault');
-  return { success: true };
-}
-
-export async function deleteFamilyMemberAction(memberId: string) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
-
-  const [targetUser] = await db.select().from(users).where(eq(users.id, memberId));
-  if (!targetUser) return { success: false, error: 'User not found' };
-
-  if (targetUser.id === session.user.id) {
-    return { success: false, error: 'You cannot remove your own account from the household.' };
-  }
-
-  if (targetUser.householdId !== session.household.id) {
-    return { success: false, error: 'Unauthorized action.' };
-  }
-
-  await db.delete(users).where(eq(users.id, memberId));
-  revalidatePath('/profile');
   return { success: true };
 }
