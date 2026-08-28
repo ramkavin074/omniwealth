@@ -4,7 +4,8 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import RetirementCalculator from '@/components/RetirementCalculator';
-import { 
+
+ import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
   updateAssetAction, 
@@ -12,8 +13,10 @@ import {
   updateHouseholdBaseCurrencyAction, 
   fetchNetWorthTrendAction,
   refreshLiveMarketPricesAction,
+  fetchLiveExchangeRatesAction,
   logoutAction 
 } from '@/actions/vault';
+
 import { 
   parseStatementAction, 
   fetchDraftLineItemsAction, 

@@ -6,9 +6,9 @@ import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import crypto from 'crypto';
 import { Resend } from 'resend';
-import { redirect } from 'next/navigation'; // <-- Add this line
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
@@ -104,7 +104,7 @@ export async function addFamilyMemberAction(formData: FormData) {
 export async function deleteFamilyMemberAction(memberId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-  
+
   await db.delete(users).where(and(eq(users.id, memberId), eq(users.householdId, session.household.id)));
   revalidatePath('/profile');
   return { success: true };
@@ -138,6 +138,7 @@ export async function setupDemoHouseholdAction(formData: FormData) {
 }
 
 // --- Automated Live FX Rate Engine via Frankfurter API with Static Fallback ---
+// Used server-side for per-asset conversions (e.g. when logging a transaction).
 export async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
   if (fromCurrency === toCurrency) return 1;
 
@@ -165,6 +166,55 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string):
     CNY: 0.149,
   };
   return (rates[fromCurrency] || 1) / (rates[toCurrency] || 1);
+}
+
+// --- Live FX rate TABLE for client-side display conversion (DashboardClient) ---
+// IMPORTANT: this returns rates in the same convention as the old static FX_RATES
+// table used in DashboardClient: rates[X] = "USD value of 1 unit of X".
+// Frankfurter's raw response (base=USD) is the INVERSE of that (units of X per 1 USD),
+// so we invert it here — do not remove this inversion or client-side conversions
+// will be flipped.
+let cachedRates: { rates: Record<string, number>; fetchedAt: number } | null = null;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+export async function fetchLiveExchangeRatesAction(): Promise<Record<string, number>> {
+  const now = Date.now();
+  if (cachedRates && now - cachedRates.fetchedAt < CACHE_TTL_MS) {
+    return cachedRates.rates;
+  }
+
+  const STATIC_FALLBACK: Record<string, number> = {
+    USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65,
+    INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
+  };
+
+  try {
+    const res = await fetch('https://api.frankfurter.app/latest?from=USD', {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) throw new Error('FX fetch failed');
+    const data = await res.json();
+
+    // data.rates = { EUR: 0.93, GBP: 0.79, ... } => units of X per 1 USD.
+    // Invert each to get "USD value of 1 X", matching the old static table's convention.
+    const rates: Record<string, number> = { USD: 1 };
+    for (const [currency, unitsPerUsd] of Object.entries(data.rates || {})) {
+      const n = Number(unitsPerUsd);
+      if (n > 0) rates[currency] = 1 / n;
+    }
+
+    // Guard against a malformed/empty response
+    if (Object.keys(rates).length <= 1) {
+      cachedRates = { rates: STATIC_FALLBACK, fetchedAt: now };
+      return STATIC_FALLBACK;
+    }
+
+    cachedRates = { rates, fetchedAt: now };
+    return rates;
+  } catch (err) {
+    console.error('Live FX fetch failed, falling back to static rates:', err);
+    return STATIC_FALLBACK;
+  }
 }
 
 export async function refreshLiveMarketPricesAction() {
@@ -242,7 +292,6 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
 
     if (householdAssets.length === 0) return [];
 
-    // Calculate current accurate total net worth in base currency
     let currentTotal = 0;
     for (const a of householdAssets) {
       const fx = await getExchangeRate(a.nativeCurrency || 'USD', session.household.baseCurrency);
@@ -272,25 +321,21 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
 
     const now = new Date();
     const periods: { date: Date; key: string; label: string }[] = [];
-    
+
     for (let i = totalPoints - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = totalPoints > 12 
-        ? (i % 12 === 0 ? `${d.getFullYear()}` : '') 
+      const label = totalPoints > 12
+        ? (i % 12 === 0 ? `${d.getFullYear()}` : '')
         : d.toLocaleString('default', { month: 'short', year: '2-digit' });
       periods.push({ date: d, key, label });
     }
 
-    // Fetch all transactions to build a real timeline if available
     const assetIds = householdAssets.map(a => a.id);
     const allTransactions = await db.select().from(transactions).orderBy(transactions.transactionDate);
 
     if (allTransactions.length === 0) {
-      // If no ledger transactions exist, generate a stable baseline curve ending at currentTotal
-      // rather than breaking or fluctuating randomly.
       return periods.map((p, idx, arr) => {
-        // Slight realistic tapering for visual stability if no historical ledger exists
         const factor = 0.95 + (0.05 * (idx / Math.max(arr.length - 1, 1)));
         return {
           month: p.label || p.key,
@@ -314,11 +359,10 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
       }
 
       const assetKeys = Object.keys(latestAssetValues);
-      let periodTotal = assetKeys.length > 0 
-        ? Object.values(latestAssetValues).reduce((a, b) => a + b, 0) 
-        : currentTotal * 0.95; // Safe baseline fallback instead of full current spike
+      let periodTotal = assetKeys.length > 0
+        ? Object.values(latestAssetValues).reduce((a, b) => a + b, 0)
+        : currentTotal * 0.95;
 
-      // Sanity cap: ensure historical points never exceed current live net worth maliciously
       if (periodTotal > currentTotal * 1.5 || periodTotal <= 0) {
         periodTotal = currentTotal * 0.98;
       }
@@ -329,7 +373,6 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
       });
     }
 
-    // Ensure the final point matches the exact current live net worth
     if (results.length > 0) {
       results[results.length - 1].value = Math.round(currentTotal);
     }
@@ -339,19 +382,20 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
     return [];
   }
 }
+
 async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, delay = 5000): Promise<any> {
   try {
     return await ai.models.generateContent(params);
   } catch (error: any) {
     const status = error?.status || error?.code;
     const message = error?.message || '';
-    
-    const isRateLimitedOrOverloaded = 
-      status === 429 || 
-      status === 503 || 
-      message.includes('429') || 
-      message.includes('503') || 
-      message.includes('RESOURCE_EXHAUSTED') || 
+
+    const isRateLimitedOrOverloaded =
+      status === 429 ||
+      status === 503 ||
+      message.includes('429') ||
+      message.includes('503') ||
+      message.includes('RESOURCE_EXHAUSTED') ||
       message.includes('overloaded');
 
     if (retries > 0 && isRateLimitedOrOverloaded) {
@@ -493,7 +537,7 @@ export async function parseStatementAction(formData: FormData) {
         });
         totalCount++;
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err: any) {
       console.error(`Error parsing file ${file.name}:`, err);
@@ -535,13 +579,13 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   let targetAssetId: string;
 
   if (existingAsset) {
-    await db.update(assets).set({ 
-      nativeValue: draft.totalNativeValue, 
+    await db.update(assets).set({
+      nativeValue: draft.totalNativeValue,
       quantity: draft.quantity || existingAsset.quantity,
-      accountCategory: finalCategory, 
-      rationale: finalRationale, 
+      accountCategory: finalCategory,
+      rationale: finalRationale,
       assetType: finalAssetType,
-      updatedAt: new Date() 
+      updatedAt: new Date()
     }).where(eq(assets.id, existingAsset.id));
     targetAssetId = existingAsset.id;
   } else {
@@ -684,7 +728,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
 export async function deleteAssetAction(assetId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-   
+
   await db.delete(transactions).where(eq(transactions.assetId, assetId));
   await db.delete(assets).where(eq(assets.id, assetId));
 
@@ -770,7 +814,7 @@ function encryptFileBuffer(buffer: Buffer, userId: string, email: string, househ
   const iv = crypto.randomBytes(16);
   const key = getVaultEncryptionKey(userId, email, householdId);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-   
+
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
   const tag = cipher.getAuthTag();
 
@@ -815,9 +859,9 @@ export async function uploadDocumentAction(formData: FormData) {
     const rawBuffer = Buffer.from(bytes);
 
     const encryptedBase64Payload = encryptFileBuffer(
-      rawBuffer, 
-      session.user.id, 
-      session.user.email, 
+      rawBuffer,
+      session.user.id,
+      session.user.email,
       session.household.id
     );
 
@@ -870,6 +914,7 @@ export async function deleteDocumentAction(documentId: string) {
   revalidatePath('/vault');
   return { success: true };
 }
+
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete('vault_user_id');

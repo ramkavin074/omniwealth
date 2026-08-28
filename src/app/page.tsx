@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { assets, users, households } from '@/db/schema';
-import { getSessionUserAction, getExchangeRate, fetchHouseholdDocumentsAction } from '@/actions/vault';
+import { getSessionUserAction, fetchHouseholdDocumentsAction } from '@/actions/vault';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
@@ -29,6 +29,8 @@ export default async function DashboardPage() {
     household: freshHousehold,
   };
 
+  // Pass RAW native values — do NOT convert here.
+  // DashboardClient owns the one and only currency-conversion pass.
   const rawAssets = await db
     .select({
       id: assets.id,
@@ -46,19 +48,12 @@ export default async function DashboardPage() {
     .leftJoin(users, eq(assets.userId, users.id))
     .where(eq(assets.householdId, householdId));
 
-  const convertedAssets = await Promise.all(
-    rawAssets.map(async (asset) => {
-      const fxRate = await getExchangeRate(asset.nativeCurrency, baseCurrency);
-      return { ...asset, nativeValue: parseFloat(asset.nativeValue) * fxRate };
-    })
-  );
-
   const documents = await fetchHouseholdDocumentsAction();
 
   return (
     <DashboardClient 
       session={updatedSession} 
-      initialAssets={convertedAssets} 
+      initialAssets={rawAssets} 
       baseCurrency={baseCurrency} 
       initialDocuments={documents}
     />

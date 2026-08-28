@@ -5,11 +5,20 @@ import { households, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+const SESSION_COOKIE_OPTIONS = {
+  path: '/',
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+};
 
 export async function getSessionUserAction() {
   const cookieStore = await cookies();
@@ -117,10 +126,16 @@ export async function loginAction(formData: FormData) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, { path: '/' });
+  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
 
   revalidatePath('/');
   return { success: true, role: user.role };
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete('vault_user_id');
+  redirect('/login');
 }
 
 export async function registerOwnerAction(formData: FormData) {
@@ -129,15 +144,6 @@ export async function registerOwnerAction(formData: FormData) {
   const email = (formData.get('email') as string || '').trim();
   const password = (formData.get('password') as string || '').trim();
   const baseCurrency = (formData.get('baseCurrency') as string || 'USD').trim();
-
-  // Terminal inspection log to see exactly what arrives from the form
-  console.log('--- REGISTER OWNER DEBUG PAYLOAD ---', {
-    fullName: `"${fullName}"`,
-    householdName: `"${householdName}"`,
-    email: `"${email}"`,
-    passwordLength: password.length,
-    baseCurrency: `"${baseCurrency}"`
-  });
 
   if (!fullName || !householdName || !email || !password) {
     return { success: false, error: 'All fields are required.' };
@@ -167,7 +173,7 @@ export async function registerOwnerAction(formData: FormData) {
   }).returning();
 
   const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, { path: '/' });
+  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
 
   revalidatePath('/');
   return { success: true, role: user.role };
@@ -204,7 +210,7 @@ export async function registerMemberWithCodeAction(formData: FormData) {
   }).returning();
 
   const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, { path: '/' });
+  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
 
   revalidatePath('/');
   return { success: true, role: user.role };
