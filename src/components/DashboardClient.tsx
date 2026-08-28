@@ -925,8 +925,18 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 }
 
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
-  const safeData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
+  const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   
+  // Dynamically thin out data points for long ranges (e.g. 5y, 10y) to prevent label crowding
+  const getOptimizedData = (data: any[]) => {
+    if (data.length <= 12) return data;
+    const targetMaxPoints = 10; // Keep around 10-12 clean points max on screen
+    const step = Math.ceil(data.length / targetMaxPoints);
+    return data.filter((item, idx) => idx % step === 0 || idx === data.length - 1);
+  };
+
+  const safeData = getOptimizedData(rawData);
+
   // Format large numbers compactly for labels
   const formatCompactValue = (val: number) => {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
@@ -937,7 +947,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
   // SVG dimensions
   const width = 700;
   const height = 180;
-  const padding = 30;
+  const padding = 35;
 
   const values = safeData.map(d => d.value);
   const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
@@ -1026,12 +1036,12 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
                       {formatCompactValue(pt.value)}
                     </text>
 
-                    {/* Month label at the bottom */}
+                    {/* Date label at the bottom */}
                     <text 
                       x={pt.x} 
                       y={height - 2} 
                       textAnchor="middle" 
-                      className="text-[9px] font-mono fill-slate-500"
+                      className="text-[9px] font-mono fill-slate-400"
                     >
                       {pt.month}
                     </text>
