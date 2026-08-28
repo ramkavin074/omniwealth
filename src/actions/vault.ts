@@ -4,21 +4,29 @@ import { db } from '@/db';
 import { households, users, portfolios, assets, transactions, draftLineItems, documents } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { GoogleGenAI, Type } from '@google/genai';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
+const SESSION_COOKIE_OPTIONS = {
+  path: '/',
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+};
+
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
   try {
     const response = await resend.emails.send({
-      from: 'Global Family Vault <vault@omniwealth.org>',
+      from: process.env.RESEND_FROM_EMAIL || 'Global Family Vault <vault@resend.dev>',
       to: [toEmail],
       subject: `Welcome to ${householdName} Wealth Command Center`,
-      text: `You have been invited to collaborate on the ${householdName} wealth command center. ${inviteCode ? `Your household invite code is: ${inviteCode}.` : ''} Access your wealth vault here: https://omniwealth.org/login`,
       html: `
         <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
           <h2 style="color: #818cf8; margin-top: 0;">Global Family Vault Invitation</h2>
@@ -31,7 +39,7 @@ export async function sendInviteEmail(toEmail: string, householdName: string, in
               <span style="font-size: 22px; font-weight: bold; color: #38bdf8; letter-spacing: 2px;">${inviteCode}</span>
             </div>
           ` : ''}
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org'}/login" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;">
             Access Wealth Vault →
           </a>
         </div>
@@ -69,9 +77,9 @@ export async function addFamilyMemberAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  const fullName = formData.get('fullName') as string;
-  const email = formData.get('email') as string;
-  const role = (formData.get('role') as string) || 'MEMBER';
+  const fullName = (formData.get('fullName') as string || '').trim();
+  const email = (formData.get('email') as string || '').trim();
+  const role = (formData.get('role') as string || 'MEMBER').trim();
 
   if (!fullName || !email) {
     return { success: false, error: 'Name and email are required.' };
@@ -101,79 +109,117 @@ export async function addFamilyMemberAction(formData: FormData) {
   return { success: true };
 }
 
-export async function deleteFamilyMemberAction(memberId: string) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
+export async function loginAction(formData: FormData) {
+  const email = (formData.get('email') as string || '').trim();
+  const password = (formData.get('password') as string || '').trim();
 
-  await db.delete(users).where(and(eq(users.id, memberId), eq(users.householdId, session.household.id)));
-  revalidatePath('/profile');
-  return { success: true };
+  if (!email || !password) {
+    return { success: false, error: 'Please enter both email and password.' };
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.email, email));
+  if (!user) {
+    return { success: false, error: 'No account found with this email.' };
+  }
+
+  let isValid = false;
+  if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
+    isValid = await bcrypt.compare(password, user.passwordHash);
+  } else {
+    isValid = user.passwordHash === password;
+  }
+
+  if (!isValid) {
+    return { success: false, error: 'Incorrect password.' };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
+  revalidatePath('/');
+  return { success: true, role: user.role };
 }
 
-export async function setupDemoHouseholdAction(formData: FormData) {
-  const fullName = (formData.get('fullName') as string) || 'Primary Owner';
-  const email = (formData.get('email') as string) || 'owner@family.com';
-  const householdName = (formData.get('householdName') as string) || 'Family Legacy';
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete('vault_user_id');
+  redirect('/login');
+}
+
+export async function registerOwnerAction(formData: FormData) {
+  const fullName = (formData.get('fullName') as string || '').trim();
+  const householdName = (formData.get('householdName') as string || '').trim();
+  const email = (formData.get('email') as string || '').trim();
+  const password = (formData.get('password') as string || '').trim();
+  const baseCurrency = (formData.get('baseCurrency') as string || 'USD').trim();
+
+  if (!fullName || !householdName || !email || !password) {
+    return { success: false, error: 'All fields are required.' };
+  }
+
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+  if (existingUser) {
+    return { success: false, error: 'An account with this email already exists.' };
+  }
+
   const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
 
   const [household] = await db.insert(households).values({
     name: householdName,
-    baseCurrency: 'USD',
+    baseCurrency,
     inviteCode,
   } as any).returning();
 
+  const passwordHash = await bcrypt.hash(password, 10);
   const [user] = await db.insert(users).values({
     householdId: household.id,
     email,
-    passwordHash: 'demo_password',
+    passwordHash,
     fullName,
     role: 'OWNER',
   }).returning();
 
   const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, { path: '/' });
-
+  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
   revalidatePath('/');
-  return { success: true };
+  return { success: true, role: user.role };
+}
+
+export async function registerMemberWithCodeAction(formData: FormData) {
+  const fullName = (formData.get('fullName') as string || '').trim();
+  const inviteCode = (formData.get('inviteCode') as string || '').trim();
+  const email = (formData.get('email') as string || '').trim();
+  const password = (formData.get('password') as string || '').trim();
+
+  if (!fullName || !inviteCode || !email || !password) {
+    return { success: false, error: 'All fields are required.' };
+  }
+
+  const [household] = await db.select().from(households).where(eq((households as any).inviteCode, inviteCode));
+  if (!household) {
+    return { success: false, error: 'Invalid household invite code.' };
+  }
+
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+  if (existingUser) {
+    return { success: false, error: 'An account with this email already exists.' };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const [user] = await db.insert(users).values({
+    householdId: household.id,
+    email,
+    passwordHash,
+    fullName,
+    role: 'MEMBER',
+  }).returning();
+
+  const cookieStore = await cookies();
+  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
+  revalidatePath('/');
+  return { success: true, role: user.role };
 }
 
 // --- Automated Live FX Rate Engine via Frankfurter API with Static Fallback ---
-// Used server-side for per-asset conversions (e.g. when logging a transaction).
-export async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
-  if (fromCurrency === toCurrency) return 1;
-
-  try {
-    const res = await fetch(`https://api.frankfurter.app/latest?from=${fromCurrency}&to=${toCurrency}`, {
-      next: { revalidate: 3600 }
-    });
-    const data = await res.json();
-    if (data?.rates && data.rates[toCurrency]) {
-      return data.rates[toCurrency];
-    }
-  } catch (err) {
-    console.warn(`Live FX fetch failed for ${fromCurrency} -> ${toCurrency}, using fallback rates.`);
-  }
-
-  const rates: { [key: string]: number } = {
-    USD: 1,
-    EUR: 1.08,
-    GBP: 1.28,
-    CAD: 0.74,
-    AUD: 0.65,
-    INR: 0.012,
-    JPY: 0.0067,
-    CHF: 1.12,
-    CNY: 0.149,
-  };
-  return (rates[fromCurrency] || 1) / (rates[toCurrency] || 1);
-}
-
-// --- Live FX rate TABLE for client-side display conversion (DashboardClient) ---
-// IMPORTANT: this returns rates in the same convention as the old static FX_RATES
-// table used in DashboardClient: rates[X] = "USD value of 1 unit of X".
-// Frankfurter's raw response (base=USD) is the INVERSE of that (units of X per 1 USD),
-// so we invert it here — do not remove this inversion or client-side conversions
-// will be flipped.
 let cachedRates: { rates: Record<string, number>; fetchedAt: number } | null = null;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -182,39 +228,30 @@ export async function fetchLiveExchangeRatesAction(): Promise<Record<string, num
   if (cachedRates && now - cachedRates.fetchedAt < CACHE_TTL_MS) {
     return cachedRates.rates;
   }
-
-  const STATIC_FALLBACK: Record<string, number> = {
-    USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65,
-    INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
-  };
-
   try {
     const res = await fetch('https://api.frankfurter.app/latest?from=USD', {
       next: { revalidate: 3600 },
     });
     if (!res.ok) throw new Error('FX fetch failed');
     const data = await res.json();
-
-    // data.rates = { EUR: 0.93, GBP: 0.79, ... } => units of X per 1 USD.
-    // Invert each to get "USD value of 1 X", matching the old static table's convention.
-    const rates: Record<string, number> = { USD: 1 };
-    for (const [currency, unitsPerUsd] of Object.entries(data.rates || {})) {
-      const n = Number(unitsPerUsd);
-      if (n > 0) rates[currency] = 1 / n;
-    }
-
-    // Guard against a malformed/empty response
-    if (Object.keys(rates).length <= 1) {
-      cachedRates = { rates: STATIC_FALLBACK, fetchedAt: now };
-      return STATIC_FALLBACK;
-    }
-
+    const rates: Record<string, number> = { USD: 1, ...data.rates };
     cachedRates = { rates, fetchedAt: now };
     return rates;
   } catch (err) {
     console.error('Live FX fetch failed, falling back to static rates:', err);
-    return STATIC_FALLBACK;
+    return {
+      USD: 1, EUR: 0.93, GBP: 0.78, CAD: 1.35, AUD: 1.54,
+      INR: 83.3, JPY: 149.3, CHF: 0.89, CNY: 6.71,
+    };
   }
+}
+
+export async function getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+  if (fromCurrency === toCurrency) return 1;
+  const rates = await fetchLiveExchangeRatesAction();
+  const rateFrom = rates[fromCurrency] || 1;
+  const rateTo = rates[toCurrency] || 1;
+  return rateTo / rateFrom;
 }
 
 export async function refreshLiveMarketPricesAction() {
@@ -321,12 +358,12 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
 
     const now = new Date();
     const periods: { date: Date; key: string; label: string }[] = [];
-
+    
     for (let i = totalPoints - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const label = totalPoints > 12
-        ? (i % 12 === 0 ? `${d.getFullYear()}` : '')
+      const label = totalPoints > 12 
+        ? (i % 12 === 0 ? `${d.getFullYear()}` : '') 
         : d.toLocaleString('default', { month: 'short', year: '2-digit' });
       periods.push({ date: d, key, label });
     }
@@ -359,8 +396,8 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
       }
 
       const assetKeys = Object.keys(latestAssetValues);
-      let periodTotal = assetKeys.length > 0
-        ? Object.values(latestAssetValues).reduce((a, b) => a + b, 0)
+      let periodTotal = assetKeys.length > 0 
+        ? Object.values(latestAssetValues).reduce((a, b) => a + b, 0) 
         : currentTotal * 0.95;
 
       if (periodTotal > currentTotal * 1.5 || periodTotal <= 0) {
@@ -389,13 +426,13 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, dela
   } catch (error: any) {
     const status = error?.status || error?.code;
     const message = error?.message || '';
-
-    const isRateLimitedOrOverloaded =
-      status === 429 ||
-      status === 503 ||
-      message.includes('429') ||
-      message.includes('503') ||
-      message.includes('RESOURCE_EXHAUSTED') ||
+    
+    const isRateLimitedOrOverloaded = 
+      status === 429 || 
+      status === 503 || 
+      message.includes('429') || 
+      message.includes('503') || 
+      message.includes('RESOURCE_EXHAUSTED') || 
       message.includes('overloaded');
 
     if (retries > 0 && isRateLimitedOrOverloaded) {
@@ -428,7 +465,7 @@ export async function parseStatementAction(formData: FormData) {
   if (pastedText) {
     try {
       const response = await generateWithRetry(ai, {
-        model: 'gemini-3.7-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           { text: `${extractionPrompt}\n\nHere is the pasted statement text:\n${pastedText}` },
         ],
@@ -488,7 +525,7 @@ export async function parseStatementAction(formData: FormData) {
       const mimeType = file.type || 'application/pdf';
 
       const response = await generateWithRetry(ai, {
-        model: 'gemini-3.7-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           { inlineData: { mimeType, data: buffer.toString('base64') } },
           { text: extractionPrompt },
@@ -537,7 +574,7 @@ export async function parseStatementAction(formData: FormData) {
         });
         totalCount++;
       }
-
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err: any) {
       console.error(`Error parsing file ${file.name}:`, err);
@@ -579,13 +616,13 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   let targetAssetId: string;
 
   if (existingAsset) {
-    await db.update(assets).set({
-      nativeValue: draft.totalNativeValue,
+    await db.update(assets).set({ 
+      nativeValue: draft.totalNativeValue, 
       quantity: draft.quantity || existingAsset.quantity,
-      accountCategory: finalCategory,
-      rationale: finalRationale,
+      accountCategory: finalCategory, 
+      rationale: finalRationale, 
       assetType: finalAssetType,
-      updatedAt: new Date()
+      updatedAt: new Date() 
     }).where(eq(assets.id, existingAsset.id));
     targetAssetId = existingAsset.id;
   } else {
@@ -728,7 +765,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
 export async function deleteAssetAction(assetId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-
+   
   await db.delete(transactions).where(eq(transactions.assetId, assetId));
   await db.delete(assets).where(eq(assets.id, assetId));
 
@@ -814,7 +851,7 @@ function encryptFileBuffer(buffer: Buffer, userId: string, email: string, househ
   const iv = crypto.randomBytes(16);
   const key = getVaultEncryptionKey(userId, email, householdId);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
+   
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
   const tag = cipher.getAuthTag();
 
@@ -859,9 +896,9 @@ export async function uploadDocumentAction(formData: FormData) {
     const rawBuffer = Buffer.from(bytes);
 
     const encryptedBase64Payload = encryptFileBuffer(
-      rawBuffer,
-      session.user.id,
-      session.user.email,
+      rawBuffer, 
+      session.user.id, 
+      session.user.email, 
       session.household.id
     );
 
@@ -913,10 +950,4 @@ export async function deleteDocumentAction(documentId: string) {
   await db.delete(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
   revalidatePath('/vault');
   return { success: true };
-}
-
-export async function logoutAction() {
-  const cookieStore = await cookies();
-  cookieStore.delete('vault_user_id');
-  redirect('/login');
 }

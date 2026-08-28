@@ -3,9 +3,9 @@
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import RetirementCalculator from '@/components/RetirementCalculator';
-
- import { 
+import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
   updateAssetAction, 
@@ -16,7 +16,6 @@ import RetirementCalculator from '@/components/RetirementCalculator';
   fetchLiveExchangeRatesAction,
   logoutAction 
 } from '@/actions/vault';
-
 import { 
   parseStatementAction, 
   fetchDraftLineItemsAction, 
@@ -29,7 +28,6 @@ import {
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
   Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, HelpCircle, Lock, BookOpen, Menu, TrendingUp, Calendar 
 } from 'lucide-react';
-import Link from 'next/link';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1,
@@ -43,11 +41,11 @@ const FX_RATES: { [key: string]: number } = {
   CNY: 0.149,
 };
 
-function convertCurrency(amount: number, fromCurr: string, toCurr: string): number {
+function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates: { [key: string]: number } = FX_RATES): number {
   if (fromCurr === toCurr) return amount;
-  const rateFrom = FX_RATES[fromCurr] || 1;
-  const rateTo = FX_RATES[toCurr] || 1;
-  return (amount * rateFrom) / rateTo;
+  const rateFrom = rates[fromCurr] || 1;
+  const rateTo = rates[toCurr] || 1;
+  return (amount * rateTo) / rateFrom;
 }
 
 interface DashboardClientProps {
@@ -73,6 +71,7 @@ export default function DashboardClient({
   const [members, setMembers] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
+  const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(FX_RATES);
 
   useEffect(() => {
     fetchFamilyMembersAction().then(setMembers);
@@ -82,10 +81,14 @@ export default function DashboardClient({
     fetchNetWorthTrendAction(timeRange).then(setTrendData);
   }, [timeRange]);
 
+  useEffect(() => {
+    fetchLiveExchangeRatesAction().then(setLiveRates).catch(() => {});
+  }, []);
+
   const getAssetBaseValue = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
     const curr = asset.nativeCurrency || 'USD';
-    const baseVal = convertCurrency(val, curr, baseCurrency);
+    const baseVal = convertCurrency(val, curr, baseCurrency, liveRates);
     const type = (asset.assetType || '').toUpperCase();
     const cat = (asset.accountCategory || '').toUpperCase();
     
@@ -123,10 +126,8 @@ export default function DashboardClient({
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between">
       <div>
-        {/* RESPONSIVE TOP HEADER */}
         <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-lg">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            {/* Left: Logo & Household Name + Desktop Nav */}
             <div className="flex items-center gap-4 min-w-0">
               <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
                 <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-indigo-500/30 shrink-0 bg-slate-800 group-hover:border-indigo-400 transition-colors">
@@ -152,7 +153,6 @@ export default function DashboardClient({
               </nav>
             </div>
 
-            {/* Desktop Actions (Hidden on mobile) */}
             <div className="hidden md:flex items-center gap-2.5 shrink-0">
               <CurrencySwitcherForm currentCurrency={baseCurrency} />
               <button 
@@ -184,7 +184,6 @@ export default function DashboardClient({
               </form>
             </div>
 
-            {/* Mobile Actions: Direct Logout Button + Hamburger Button */}
             <div className="flex md:hidden items-center gap-2">
               <form action={logoutAction}>
                 <button 
@@ -206,7 +205,6 @@ export default function DashboardClient({
             </div>
           </div>
 
-          {/* Mobile Dropdown Drawer */}
           {isMobileMenuOpen && (
             <div className="md:hidden mt-3 pt-3 border-t border-slate-800 space-y-2.5 animate-fadeIn">
               <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800">
@@ -246,17 +244,12 @@ export default function DashboardClient({
           )}
         </header>
 
-        {/* MAIN CONTAINER */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
-          
-          {/* PILL TAB BAR */}
           <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2 overflow-x-auto shadow-md">
             <button
               onClick={() => setActiveTab('wealth')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'wealth'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
@@ -265,9 +258,7 @@ export default function DashboardClient({
             <button
               onClick={() => setActiveTab('liabilities')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'liabilities'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                activeTab === 'liabilities' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
@@ -276,9 +267,7 @@ export default function DashboardClient({
             <button
               onClick={() => setActiveTab('retirement')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'retirement'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                activeTab === 'retirement' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <Target className="w-4 h-4" /> Retirement &amp; Planning
@@ -287,9 +276,7 @@ export default function DashboardClient({
             <button
               onClick={() => setActiveTab('directives')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'directives'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                activeTab === 'directives' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <Shield className="w-4 h-4" /> Directives &amp; Vault
@@ -298,29 +285,26 @@ export default function DashboardClient({
             <button
               onClick={() => setActiveTab('feed')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                activeTab === 'feed'
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                activeTab === 'feed' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
               <Sparkles className="w-4 h-4 text-indigo-300" /> Intelligence Feed
             </button>
           </div>
 
-          {/* TAB CONTENTS */}
           <div className="space-y-6">
             {activeTab === 'wealth' && (
               <div className="space-y-6 animate-fadeIn">
-                <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} />
-                <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} />
-                <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} />
+                <PersistentGlobalNetWorthSummary assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+                <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
+                <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} totalNetWorth={totalNetWorth} liveRates={liveRates} />
                 <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
               </div>
             )}
 
             {activeTab === 'liabilities' && (
               <div className="space-y-6 animate-fadeIn">
-                <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} onAddLiability={() => setIsAddLiabilityOpen(true)} />
+                <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} onAddLiability={() => setIsAddLiabilityOpen(true)} />
               </div>
             )}
 
@@ -354,7 +338,6 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* PROFESSIONAL COPYRIGHT & LEGAL FOOTER */}
       <footer className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-20 pt-8 border-t border-slate-800 text-slate-400 text-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="text-center md:text-left space-y-1">
           <div>&copy; 2026 OmniWealth. All rights reserved.</div>
@@ -374,7 +357,6 @@ export default function DashboardClient({
         </div>
       </footer>
 
-      {/* MODALS */}
       {isAddAssetOpen && (
         <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} isLiability={false} />
       )}
@@ -538,11 +520,12 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     </div>
   );
 }
-function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
+
+function PersistentGlobalNetWorthSummary({ assets, baseCurrency, liveRates }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number } }) {
   const getBaseVal = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
     const curr = asset.nativeCurrency || 'USD';
-    const baseVal = convertCurrency(val, curr, baseCurrency);
+    const baseVal = convertCurrency(val, curr, baseCurrency, liveRates);
     const type = (asset.assetType || '').toUpperCase();
     const cat = (asset.accountCategory || '').toUpperCase();
     if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') {
@@ -635,7 +618,7 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
   );
 }
 
-function LiabilitiesManagementSection({ assets, baseCurrency, onAddLiability }: { assets: any[]; baseCurrency: string; onAddLiability: () => void }) {
+function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLiability }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number }; onAddLiability: () => void }) {
   const liabilities = assets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const cat = (a.accountCategory || '').toUpperCase();
@@ -645,7 +628,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, onAddLiability }: 
   const getBaseVal = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
     const curr = asset.nativeCurrency || 'USD';
-    return convertCurrency(val, curr, baseCurrency);
+    return convertCurrency(val, curr, baseCurrency, liveRates);
   };
 
   const totalLiabilities = liabilities.reduce((s, a) => s + getBaseVal(a), 0);
@@ -940,7 +923,6 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 }
 
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
-  // Filter out corrupted or zero-value historical anomalies
   const safeData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const maxValue = safeData.length > 0 ? Math.max(...safeData.map(d => d.value), 1) : 1;
 
@@ -975,7 +957,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
       <div className="pt-6 pb-2 px-2 border-b border-slate-800/80">
         {safeData.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-xs text-slate-500 font-mono">
-            No valid historical trend data available yet.
+            Loading timeline data...
           </div>
         ) : (
           <div className="h-48 flex items-end justify-between gap-1.5 overflow-x-auto pb-1">
@@ -1004,14 +986,15 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     </div>
   );
 }
-function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth }: { assets: any[]; baseCurrency: string; totalNetWorth: number }) {
+
+function AssetAllocationVisualizer({ assets, baseCurrency, totalNetWorth, liveRates }: { assets: any[]; baseCurrency: string; totalNetWorth: number; liveRates: { [key: string]: number } }) {
   const typeMap: { [key: string]: number } = {};
    
   assets.forEach((a) => {
     let t = (a.assetType || 'OTHER').toUpperCase().trim();
     if (t === 'LIABILITY' || t === 'DEBT') return;
     if (t === 'EQUITY') t = 'EQUITIES';
-    const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency);
+    const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
     typeMap[t] = (typeMap[t] || 0) + val;
   });
 
@@ -1366,13 +1349,13 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
   );
 }
 
-function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars }: { assets: any[]; baseCurrency: string; legacyPillars: { name: string; description: string }[] }) {
+function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates }: { assets: any[]; baseCurrency: string; legacyPillars: { name: string; description: string }[]; liveRates: { [key: string]: number } }) {
   const [expM, setExpM] = useState<{ [key: string]: boolean }>({});
   const [expP, setExpP] = useState<{ [key: string]: boolean }>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const getBaseVal = (valStr: string, curr: string) => {
-    return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency);
+    return convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency, liveRates);
   };
 
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
