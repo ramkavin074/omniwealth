@@ -234,7 +234,7 @@ export default function DashboardClient({
                     <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100">
                       <Image src="/omniwealth.jpg" alt="OmniWealth" width={28} height={28} className="object-cover w-full h-full" />
                     </div>
-                    <span className="font-bold text-sm tracking-wide text-slate-950 font-serif">OmniWealth Office</span>
+                    <span className="font-bold text-sm tracking-wide text-slate-950">OmniWealth Office</span>
                   </div>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer">
                     <X className="w-5 h-5" />
@@ -332,7 +332,7 @@ export default function DashboardClient({
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
           {/* ========================================================= */}
-          {/* DESKTOP TAB NAVIGATION BAR (FAMILY OFFICE STYLE)          */}
+          {/* DESKTOP TAB NAVIGATION BAR                                */}
           {/* ========================================================= */}
           <div className="hidden md:flex bg-white border border-slate-200/80 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-xs">
             <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
@@ -465,6 +465,15 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
   });
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
+  // Pastel theme mapping for categories
+  const categoryStyles: { [key: string]: { bg: string; border: string; text: string } } = {
+    INDIVIDUAL: { bg: 'bg-teal-50/50', border: 'border-l-4 border-teal-600', text: 'text-teal-900' },
+    RETIREMENT: { bg: 'bg-purple-50/50', border: 'border-l-4 border-purple-600', text: 'text-purple-900' },
+    REAL_ESTATE: { bg: 'bg-amber-50/50', border: 'border-l-4 border-amber-600', text: 'text-amber-900' },
+    TRUST: { bg: 'bg-blue-50/50', border: 'border-l-4 border-blue-600', text: 'text-blue-900' },
+    DEFAULT: { bg: 'bg-slate-50', border: 'border-l-4 border-slate-400', text: 'text-slate-800' }
+  };
+
   return (
     <div className="space-y-4">
       {/* Top Header Bar */}
@@ -484,8 +493,8 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                 <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
               </div>
               <div className="min-w-0">
-                <div className="font-bold text-slate-900 text-sm md:text-base tracking-tight truncate font-serif">
-                  {householdTitle} <span className="font-sans font-normal text-xs text-slate-500 hidden md:inline">Command</span>
+                <div className="font-bold text-slate-900 text-sm md:text-base tracking-tight truncate">
+                  {householdTitle} <span className="font-normal text-xs text-slate-500 hidden md:inline">Command</span>
                 </div>
                 <div className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold font-mono">Family Office Suite</div>
               </div>
@@ -549,7 +558,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
           <div className="min-w-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block">Global Net Worth</span>
-            <div className="text-xl font-black font-mono text-teal-900 truncate">
+            <div className="text-xl font-black font-mono text-teal-800 truncate">
               {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-700">{baseCurrency}</span>
             </div>
           </div>
@@ -566,27 +575,30 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </div>
 
-      {/* Desktop Persistent Summary Bar */}
+      {/* Desktop Persistent Summary Bar with Category Pastel Tints */}
       <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8">
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex justify-between items-center">
           <div>
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-slate-400" /> Global Household Net Worth
             </span>
-            <div className="text-4xl font-extrabold font-mono text-teal-900 mt-1">
+            <div className="text-4xl font-extrabold font-mono text-teal-800 mt-1">
               {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-700 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {sortedCategories.map(([cat, val]) => (
-              <div key={cat} className="bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs shadow-2xs">
-                <span className="text-slate-500 uppercase text-[10px] block font-medium">{cat}</span>
-                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
-                  {Math.round(val).toLocaleString()} {baseCurrency}
-                </span>
-              </div>
-            ))}
+          <div className="flex flex-wrap gap-2.5">
+            {sortedCategories.map(([cat, val]) => {
+              const style = categoryStyles[cat] || categoryStyles.DEFAULT;
+              return (
+                <div key={cat} className={`${style.bg} ${style.border} px-4 py-2.5 rounded-xl text-xs shadow-2xs border-slate-200`}>
+                  <span className="text-slate-500 uppercase text-[10px] block font-medium">{cat}</span>
+                  <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-700' : style.text}`}>
+                    {Math.round(val).toLocaleString()} {baseCurrency}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1351,7 +1363,7 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
       <div className="flex justify-between items-center">
         <div>
           <span className="font-bold text-slate-900 text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-slate-600">({item.ticker})</span>}
-          <div className="text-xs font-mono text-slate-900 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
+          <div className="text-xs font-mono text-emerald-700 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
         </div>
         <div className="flex gap-2">
           <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 text-white rounded text-xs cursor-pointer shadow-2xs"><Check className="w-4 h-4" /> Approve</button>
@@ -1424,6 +1436,9 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   });
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
+  // Soft color rotation for legacy pillar bullet dots
+  const pillarDotColors = ['bg-teal-600', 'bg-amber-600', 'bg-purple-600', 'bg-blue-600', 'bg-emerald-600'];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
@@ -1433,42 +1448,45 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
             <div key={name} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-w-0 shadow-2xs">
               <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-100/70 cursor-pointer min-w-0 transition">
                 <div className="min-w-0 pr-2"><div className="font-bold text-slate-900 text-sm truncate">{name}</div><div className="text-xs text-slate-500">{data.assets.length} consolidated holding(s)</div></div>
-                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-slate-900 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}</div>
+                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-emerald-700 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}</div>
               </button>
               {expM[name] && (
                 <div className="border-t border-slate-200 p-4 space-y-2.5 bg-white">
-                  {data.assets.map((asset) => (
-                    <div key={asset.id} className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0 shadow-2xs">
-                      {editingId === asset.id ? (
-                        <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
-                          <input name="name" defaultValue={asset.name} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm shadow-2xs" />
-                          <div className="grid grid-cols-2 gap-2">
-                            <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm font-mono shadow-2xs" />
-                            <select name="rationale" defaultValue={asset.rationale} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm cursor-pointer shadow-2xs">
-                              {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                            </select>
-                          </div>
-                          <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setEditingId(null)} className="px-2 py-1 bg-slate-100 rounded text-slate-600 text-xs shadow-2xs"><X className="w-3.5 h-3.5" /></button><button type="submit" className="px-2 py-1 bg-emerald-700 rounded text-white text-xs shadow-2xs"><Check className="w-3.5 h-3.5" /></button></div>
-                        </form>
-                      ) : (
-                        <>
-                          <div className="min-w-0 pr-2">
-                            <span className="font-bold text-slate-900 text-sm truncate block">
-                              {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2.5 shrink-0">
-                            <span className="font-mono text-slate-900 font-semibold text-sm">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
-                            <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-slate-700 p-1"><Edit3 className="w-4 h-4" /></button>
-                            <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 className="w-4 h-4" /></button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                  {data.assets.map((asset) => {
+                    const val = getBaseVal(asset);
+                    return (
+                      <div key={asset.id} className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0 shadow-2xs">
+                        {editingId === asset.id ? (
+                          <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
+                            <input name="name" defaultValue={asset.name} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm shadow-2xs" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm font-mono shadow-2xs" />
+                              <select name="rationale" defaultValue={asset.rationale} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm cursor-pointer shadow-2xs">
+                                {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setEditingId(null)} className="px-2 py-1 bg-slate-100 rounded text-slate-600 text-xs shadow-2xs"><X className="w-3.5 h-3.5" /></button><button type="submit" className="px-2 py-1 bg-emerald-700 rounded text-white text-xs shadow-2xs"><Check className="w-3.5 h-3.5" /></button></div>
+                          </form>
+                        ) : (
+                          <>
+                            <div className="min-w-0 pr-2">
+                              <span className="font-bold text-slate-900 text-sm truncate block">
+                                {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <span className={`font-mono font-semibold text-sm ${val < 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
+                              <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-slate-700 p-1"><Edit3 className="w-4 h-4" /></button>
+                              <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1479,20 +1497,21 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200"><Target className="w-5 h-5 text-slate-500" /><h3 className="text-sm font-bold text-slate-900 uppercase">Purpose &amp; Legacy Instructions</h3></div>
         <div className="space-y-3">
-          {sortedPurposes.map(([purposeName, data]) => {
+          {sortedPurposes.map(([purposeName, data], idx) => {
             const matchedPillar = legacyPillars.find(p => p.name === purposeName);
             const description = matchedPillar?.description;
+            const dotColor = pillarDotColors[idx % pillarDotColors.length];
             return (
               <div key={purposeName} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-w-0 shadow-2xs">
                 <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-100/70 cursor-pointer min-w-0 transition">
                   <div className="min-w-0 pr-2">
                     <div className="font-bold text-slate-900 text-sm flex items-center gap-2 truncate">
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span><span className="truncate">{purposeName}</span>
+                      <span className={`w-2.5 h-2.5 rounded-full ${dotColor} shrink-0`}></span><span className="truncate">{purposeName}</span>
                     </div>
                     <div className="text-xs text-slate-500">{data.assets.length} consolidated holding(s)</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-slate-900 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    <span className="font-mono text-emerald-700 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                     {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
                   </div>
                 </button>
@@ -1507,19 +1526,22 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                         <p className="text-slate-800 text-sm font-medium">{description}</p>
                       </div>
                     )}
-                    {data.assets.map(asset => (
-                      <div key={asset.id} className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200 min-w-0 shadow-2xs">
-                        <div className="min-w-0 pr-2">
-                          <span className="font-bold text-slate-900 text-sm truncate block">
-                            {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
-                          </span>
+                    {data.assets.map(asset => {
+                      const val = getBaseVal(asset);
+                      return (
+                        <div key={asset.id} className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200 min-w-0 shadow-2xs">
+                          <div className="min-w-0 pr-2">
+                            <span className="font-bold text-slate-900 text-sm truncate block">
+                              {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
+                            </span>
+                          </div>
+                          <span className={`font-mono font-semibold text-sm shrink-0 ${val < 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
                         </div>
-                        <span className="font-mono text-slate-900 font-semibold text-sm shrink-0">{Math.round(getBaseVal(asset)).toLocaleString()} {baseCurrency}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
