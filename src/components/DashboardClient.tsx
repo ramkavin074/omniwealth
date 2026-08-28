@@ -494,7 +494,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
       </header>
 
       {/* ========================================================= */}
-      {/* MOBILE COMPACT SUMMARY BAR (TOTAL & REFRESH)              */}
+      {/* MOBILE COMPACT SUMMARY BAR (TOTAL & REFRESH ONLY)         */}
       {/* ========================================================= */}
       <div className="block md:hidden px-4 pt-3">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between">
@@ -512,12 +512,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl border border-slate-700 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={onOpenAddAsset}
-              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /><span>Add</span>
             </button>
           </div>
         </div>
@@ -1348,7 +1342,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 
   const getBaseVal = (valStr: string, curr: string) => convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency, liveRates);
 
-  // Helper to group identical tickers/assets per family member
   const groupMemberAssets = (rawAssets: any[]) => {
     const map: { [key: string]: any } = {};
     rawAssets.forEach(a => {
@@ -1385,7 +1378,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   });
 
   Object.keys(memberMap).forEach(name => {
-    // Group identical tickers/assets for this member
     memberMap[name].assets = groupMemberAssets(memberMap[name].assets);
     memberMap[name].assets.sort((a, b) => getBaseVal(b.totalNative, b.nativeCurrency) - getBaseVal(a.totalNative, a.nativeCurrency));
   });
