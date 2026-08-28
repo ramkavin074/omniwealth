@@ -143,7 +143,7 @@ export default function DashboardClient({
     <main className="min-h-screen bg-slate-950 text-slate-100 pb-20 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
       <div>
         {/* ========================================================= */}
-        {/* UNIFIED HEADER & MOBILE CARD STACK                        */}
+        {/* UNIFIED HEADER & SUMMARY                                  */}
         {/* ========================================================= */}
         <UnifiedHeaderAndSummary
           session={session}
@@ -167,7 +167,7 @@ export default function DashboardClient({
               onClick={() => setIsMobileMenuOpen(false)} 
             />
 
-            <div className="relative w-4/5 max-w-xs bg-slate-900 text-white h-full shadow-2xl z-10 flex flex-col justify-between p-6 border-r border-slate-800">
+            <div className="relative w-4/5 max-w-xs bg-slate-900 text-white h-full shadow-2xl z-10 flex flex-col justify-between p-6 border-r border-slate-800 overflow-y-auto">
               <div className="space-y-6">
                 <div className="flex justify-between items-center pb-4 border-b border-slate-800">
                   <div className="flex items-center gap-2.5">
@@ -179,7 +179,23 @@ export default function DashboardClient({
                   </button>
                 </div>
 
-                <nav className="flex flex-col space-y-1.5">
+                {/* Quick Action Buttons in Mobile Drawer */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /><span>Add Asset</span>
+                  </button>
+                  <button 
+                    onClick={() => { setIsAddLiabilityOpen(true); setIsMobileMenuOpen(false); }}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" /><span>Liability</span>
+                  </button>
+                </div>
+
+                <nav className="flex flex-col space-y-1.5 pt-2">
                   <button 
                     onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} 
                     className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'hover:bg-slate-800 text-slate-300'}`}
@@ -358,7 +374,7 @@ export default function DashboardClient({
 }
 
 // ========================================================= //
-// UNIFIED RESPONSIVE HEADER & MOBILE STACKED CARDS            //
+// UNIFIED HEADER & SUMMARY                                  //
 // ========================================================= //
 function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader, onSelectTab }: any) {
   const router = useRouter();
@@ -478,84 +494,30 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
       </header>
 
       {/* ========================================================= */}
-      {/* MOBILE STACKED CARDS                                      */}
+      {/* MOBILE COMPACT HEADER CARD                                */}
       {/* ========================================================= */}
       <div className="block md:hidden px-4 space-y-3 pt-3">
-        {/* 1. Welcome Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between">
           <div className="min-w-0">
             <h1 className="text-sm font-bold text-white truncate">Welcome, {userName}</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Multi-currency global tracking active</p>
+            <p className="text-xs text-slate-400 mt-0.5">Net Worth: <span className="font-mono text-emerald-400 font-bold">{Math.round(totalNetWorth).toLocaleString()} {baseCurrency}</span></p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button 
               onClick={handleRefreshPrices} 
               disabled={isRefreshing}
               title="Refresh Live Market Prices" 
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 cursor-pointer disabled:opacity-50"
+              className="p-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-xl border border-slate-700 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">
-              SECURE
-            </span>
+            <button
+              onClick={onOpenAddAsset}
+              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /><span>Add</span>
+            </button>
           </div>
-        </div>
-
-        {/* 2. AI Reader / Featured Action Card */}
-        <div 
-          onClick={onOpenAiReader}
-          className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 rounded-2xl p-5 shadow-xl relative overflow-hidden border border-indigo-500/30 cursor-pointer active:scale-[0.99] transition-all"
-        >
-          <div className="flex justify-between items-start mb-1">
-            <div className="p-2 bg-slate-950/60 rounded-xl border border-indigo-500/20 text-indigo-300 inline-block">
-              <Sparkles className="w-5 h-5 text-indigo-400" />
-            </div>
-            <span className="bg-amber-400 text-black text-[10px] font-black px-2 py-0.5 rounded shadow tracking-wider uppercase">
-              NEW
-            </span>
-          </div>
-          <div className="text-white font-extrabold text-base tracking-tight mt-2">
-            AI Statement Reader &amp; Parser
-          </div>
-          <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-            Instantly upload PDF statements or paste text to extract portfolio holdings with Gemini AI.
-          </p>
-          <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold text-white transition shadow">
-            <span>Start Parsing</span> <ArrowRight className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* 3. View Portfolio / Net Worth Card */}
-        <div 
-          onClick={() => onSelectTab('wealth')}
-          className="bg-gradient-to-r from-teal-700 to-emerald-800 rounded-2xl p-5 shadow-xl relative overflow-hidden border border-emerald-500/20 cursor-pointer active:scale-[0.99] transition-all"
-        >
-          <div className="flex justify-between items-start">
-            <span className="text-xs uppercase tracking-wider text-emerald-100 font-semibold">Global Net Worth</span>
-            <span className="bg-emerald-400 text-black text-[10px] font-extrabold px-2 py-0.5 rounded shadow">LIVE</span>
-          </div>
-          <div className="text-3xl font-black font-mono text-white mt-1">
-            {Math.round(totalNetWorth).toLocaleString()} <span className="text-sm font-sans font-normal text-emerald-200">{baseCurrency}</span>
-          </div>
-          <p className="text-xs text-emerald-200 mt-1">{initialAssets.length} active holdings tracked</p>
-        </div>
-
-        {/* 4. Liabilities & Debt Card */}
-        <div 
-          onClick={() => onSelectTab('liabilities')}
-          className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between cursor-pointer hover:bg-slate-800/80 transition"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-rose-950/50 border border-rose-900/50 text-rose-400 rounded-xl">
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="font-bold text-white text-xs">Liabilities &amp; Debt Tracking</div>
-              <p className="text-[10px] text-slate-400">Manage mortgages &amp; loans</p>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-500" />
         </div>
       </div>
 
