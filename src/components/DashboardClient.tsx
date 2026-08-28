@@ -494,13 +494,15 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
       </header>
 
       {/* ========================================================= */}
-      {/* MOBILE COMPACT HEADER CARD                                */}
+      {/* MOBILE COMPACT SUMMARY BAR (TOTAL & REFRESH)              */}
       {/* ========================================================= */}
-      <div className="block md:hidden px-4 space-y-3 pt-3">
+      <div className="block md:hidden px-4 pt-3">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-md flex items-center justify-between">
           <div className="min-w-0">
-            <h1 className="text-sm font-bold text-white truncate">Welcome, {userName}</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Net Worth: <span className="font-mono text-emerald-400 font-bold">{Math.round(totalNetWorth).toLocaleString()} {baseCurrency}</span></p>
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Global Net Worth</span>
+            <div className="text-xl font-black font-mono text-white truncate">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-emerald-400">{baseCurrency}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button 
