@@ -951,3 +951,23 @@ export async function deleteDocumentAction(documentId: string) {
   revalidatePath('/vault');
   return { success: true };
 }
+
+export async function deleteFamilyMemberAction(memberId: string) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const [targetUser] = await db.select().from(users).where(eq(users.id, memberId));
+  if (!targetUser) return { success: false, error: 'User not found' };
+
+  if (targetUser.id === session.user.id) {
+    return { success: false, error: 'You cannot remove your own account from the household.' };
+  }
+
+  if (targetUser.householdId !== session.household.id) {
+    return { success: false, error: 'Unauthorized action.' };
+  }
+
+  await db.delete(users).where(eq(users.id, memberId));
+  revalidatePath('/profile');
+  return { success: true };
+}
