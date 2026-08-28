@@ -927,10 +927,10 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   
-  // Dynamically thin out data points for long ranges (e.g. 5y, 10y) to prevent label crowding
+  // Dynamically thin out data points for long ranges (e.g. 3y, 5y, 10y) to prevent label crowding
   const getOptimizedData = (data: any[]) => {
     if (data.length <= 12) return data;
-    const targetMaxPoints = 10; // Keep around 10-12 clean points max on screen
+    const targetMaxPoints = 10; 
     const step = Math.ceil(data.length / targetMaxPoints);
     return data.filter((item, idx) => idx % step === 0 || idx === data.length - 1);
   };
@@ -944,10 +944,10 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return val.toString();
   };
 
-  // SVG dimensions
+  // SVG dimensions with balanced padding to prevent clipping
   const width = 700;
   const height = 180;
-  const padding = 35;
+  const padding = 40;
 
   const values = safeData.map(d => d.value);
   const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
@@ -1003,7 +1003,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
             Loading timeline data...
           </div>
         ) : (
-          <div className="relative w-full overflow-x-auto">
+          <div className="relative w-full overflow-hidden rounded-xl">
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -1024,7 +1024,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
                 return (
                   <g key={idx} className="group cursor-pointer">
                     {/* Hover target circle */}
-                    <circle cx={pt.x} cy={pt.y} r="6" className="fill-slate-900 stroke-indigo-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
+                    <circle cx={pt.x} cy={pt.y} r="5" className="fill-slate-900 stroke-indigo-400 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-400" />
                     
                     {/* Value label on top of each point */}
                     <text 
@@ -1039,7 +1039,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
                     {/* Date label at the bottom */}
                     <text 
                       x={pt.x} 
-                      y={height - 2} 
+                      y={height - 5} 
                       textAnchor="middle" 
                       className="text-[9px] font-mono fill-slate-400"
                     >
