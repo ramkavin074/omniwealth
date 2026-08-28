@@ -175,7 +175,7 @@ export default function DashboardClient({
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-500 selection:text-white">
+    <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white">
       <div>
         {/* ========================================================= */}
         {/* UNIFIED HEADER & SUMMARY                                  */}
@@ -199,15 +199,15 @@ export default function DashboardClient({
           <div className="block md:hidden px-4 pt-3">
             <button 
               onClick={() => setIsAiReaderOpen(true)}
-              className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between text-left cursor-pointer group hover:border-teal-500/50 transition"
+              className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between text-left cursor-pointer group hover:border-teal-600/40 transition"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-slate-100 rounded-xl text-slate-700 border border-slate-200 shrink-0">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <Sparkles className="w-4 h-4 text-amber-600" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                    AI Statement Reader <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded">NEW</span>
+                    AI Statement Reader <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-1.5 py-0.5 rounded">NEW</span>
                   </div>
                   <div className="text-xs text-slate-500 truncate">Upload PDF statements or paste holdings instantly</div>
                 </div>
@@ -271,10 +271,10 @@ export default function DashboardClient({
                     className="flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 text-slate-700 transition-colors"
                   >
                     <div className="flex items-center space-x-3.5">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <Sparkles className="w-4 h-4 text-amber-600" />
                       <span>AI Statement Reader</span>
                     </div>
-                    <span className="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded">NEW</span>
+                    <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-1.5 py-0.5 rounded">NEW</span>
                   </button>
 
                   <button 
@@ -504,7 +504,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                 <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
               <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition cursor-pointer shadow-xs">
-                <Sparkles className="w-4 h-4 text-amber-500" /><span>AI Reader</span>
+                <Sparkles className="w-4 h-4 text-amber-600" /><span>AI Reader</span>
               </button>
 
               {/* Refresh Live Prices Button */}
@@ -549,8 +549,8 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
           <div className="min-w-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block">Global Net Worth</span>
-            <div className="text-xl font-black font-mono text-slate-900 truncate">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-600">{baseCurrency}</span>
+            <div className="text-xl font-black font-mono text-teal-900 truncate">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-700">{baseCurrency}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -573,8 +573,8 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-slate-400" /> Global Household Net Worth
             </span>
-            <div className="text-4xl font-extrabold font-mono text-slate-900 mt-1">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-slate-600 text-lg font-sans">{baseCurrency}</span>
+            <div className="text-4xl font-extrabold font-mono text-teal-900 mt-1">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-700 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
@@ -582,7 +582,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             {sortedCategories.map(([cat, val]) => (
               <div key={cat} className="bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs shadow-2xs">
                 <span className="text-slate-500 uppercase text-[10px] block font-medium">{cat}</span>
-                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
                   {Math.round(val).toLocaleString()} {baseCurrency}
                 </span>
               </div>
@@ -628,7 +628,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     feedItems.push({
       id: 'perf-growth',
       type: 'success',
-      icon: <TrendingUp className="w-4 h-4 text-emerald-600" />,
+      icon: <TrendingUp className="w-4 h-4 text-emerald-700" />,
       title: 'Portfolio Progress Update',
       message: `Great job! Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
       badge: 'Performance',
@@ -652,7 +652,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     feedItems.push({
       id: 'vault-empty',
       type: 'warning',
-      icon: <Lock className="w-4 h-4 text-amber-600" />,
+      icon: <Lock className="w-4 h-4 text-amber-700" />,
       title: 'Secure Document Vault Empty',
       message: 'You have not uploaded any wills, trust deeds, or physical statements to your AES-256 encrypted vault yet.',
       badge: 'Action Required',
@@ -774,11 +774,11 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
     <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-rose-600" />
+          <CreditCard className="w-5 h-5 text-rose-700" />
           <h3 className="text-sm font-bold text-slate-900 uppercase">Liabilities &amp; Debt Tracking</h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-mono text-rose-600 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
+          <span className="text-sm font-mono text-rose-700 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
           <button onClick={onAddLiability} className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-xs transition">
             + Add Liability
           </button>
@@ -801,8 +801,8 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
                 <div className="text-xs text-slate-500">Owner: {item.user?.fullName || 'Family Member'} | Category: {item.accountCategory}</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-rose-600 font-bold text-sm">-{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
-                <button onClick={async () => { await deleteAssetAction(item.id); }} className="text-slate-400 hover:text-rose-600 p-1.5 cursor-pointer">
+                <span className="font-mono text-rose-700 font-bold text-sm">-{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
+                <button onClick={async () => { await deleteAssetAction(item.id); }} className="text-slate-400 hover:text-rose-700 p-1.5 cursor-pointer">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
