@@ -1,30 +1,21 @@
-'use client';
+function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { assets: any[]; trendData: { month: string; value: number }[]; baseCurrency: string; documents: any[] }) {
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-import { Sparkles, TrendingUp, ShieldAlert, Lock, Calendar, Coins } from 'lucide-react';
-
-interface IntelligenceFeedProps {
-  assets: any[];
-  trendData: { month: string; value: number }[];
-  baseCurrency: string;
-  documents: any[];
-}
-
-export default function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: IntelligenceFeedProps) {
-  // 1. Calculate Monthly Growth Progress
   const safeData = Array.isArray(trendData) ? trendData : [];
   const currentVal = safeData[safeData.length - 1]?.value || 0;
   const previousVal = safeData[safeData.length - 2]?.value || currentVal;
   const growthAmount = currentVal - previousVal;
   const growthPercent = previousVal > 0 ? (growthAmount / previousVal) * 100 : 0;
 
-  // 2. Identify Future Milestones (Pensions / Social Security)
+  // Sanity check: Ensure growth is mathematically realistic (growth amount cannot exceed current net worth, and % must be within reasonable bounds)
+  const isGrowthRealistic = growthAmount > 0 && growthAmount <= currentVal && growthPercent <= 100;
+
   const milestoneAssets = assets.filter(a => ['SOCIAL_SECURITY', 'PENSION', 'PPF'].includes(a.accountCategory));
 
-  // 3. Generate Dynamic Feed Items
   const feedItems = [];
 
-  // Performance Celebration Card
-  if (growthPercent > 0) {
+  // Only show performance celebration if math is realistic and positive
+  if (isGrowthRealistic) {
     feedItems.push({
       id: 'perf-growth',
       type: 'success',
@@ -36,7 +27,6 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
     });
   }
 
-  // Milestone Reminders
   milestoneAssets.forEach((asset) => {
     feedItems.push({
       id: `milestone-${asset.id}`,
@@ -49,7 +39,6 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
     });
   });
 
-  // Vault Status Check
   if (documents.length === 0) {
     feedItems.push({
       id: 'vault-empty',
@@ -72,7 +61,6 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
     });
   }
 
-  // General Cross-Border Tax/Compliance Info Card
   feedItems.push({
     id: 'tax-notice',
     type: 'notice',
@@ -82,6 +70,8 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
     badge: 'System Notice',
     border: 'border-slate-800 bg-slate-950',
   });
+
+  const activeFeedItems = feedItems.filter(item => !dismissedIds.includes(item.id));
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
@@ -96,22 +86,38 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
       </div>
 
       <div className="space-y-3 pt-1">
-        {feedItems.map((item) => (
-          <div key={item.id} className={`border rounded-xl p-4 flex items-start gap-3.5 transition-all ${item.border}`}>
-            <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl shrink-0 mt-0.5 shadow-inner">
-              {item.icon}
-            </div>
-            <div className="space-y-1 min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="font-bold text-white text-xs truncate">{item.title}</h4>
-                <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
-                  {item.badge}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
-            </div>
+        {activeFeedItems.length === 0 ? (
+          <div className="text-center py-8 text-xs text-slate-500 font-mono">
+            No active intelligence alerts or all items have been dismissed.
           </div>
-        ))}
+        ) : (
+          activeFeedItems.map((item) => (
+            <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all ${item.border}`}>
+              <div className="flex items-start gap-3.5 min-w-0">
+                <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl shrink-0 mt-0.5 shadow-inner">
+                  {item.icon}
+                </div>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-bold text-white text-xs truncate">{item.title}</h4>
+                    <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDismissedIds(prev => [...prev, item.id])}
+                className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                title="Dismiss Card"
+                aria-label="Dismiss Card"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
