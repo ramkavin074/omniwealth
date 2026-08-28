@@ -32,6 +32,7 @@ export default function LoginPage() {
       } else {
         router.push('/');
       }
+      router.refresh();
     } else {
       setError(res?.error || 'Authentication failed');
       setLoading(false);
