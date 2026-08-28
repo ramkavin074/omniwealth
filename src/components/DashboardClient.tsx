@@ -392,17 +392,43 @@ export default function DashboardClient({
 }
 
 function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { assets: any[]; trendData: { month: string; value: number }[]; baseCurrency: string; documents: any[] }) {
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('omniwealth_dismissed_feed');
+        return saved ? JSON.parse(saved) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const handleDismiss = (id: string) => {
+    const updated = [...dismissedIds, id];
+    setDismissedIds(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated));
+      } catch (err) {
+        console.error('Failed to save dismissed feed state', err);
+      }
+    }
+  };
+
   const safeData = Array.isArray(trendData) ? trendData : [];
   const currentVal = safeData[safeData.length - 1]?.value || 0;
   const previousVal = safeData[safeData.length - 2]?.value || currentVal;
   const growthAmount = currentVal - previousVal;
   const growthPercent = previousVal > 0 ? (growthAmount / previousVal) * 100 : 0;
 
+  const isGrowthRealistic = growthAmount > 0 && growthAmount <= currentVal && growthPercent <= 100;
+
   const milestoneAssets = assets.filter(a => ['SOCIAL_SECURITY', 'PENSION', 'PPF'].includes(a.accountCategory));
 
   const feedItems = [];
 
-  if (growthPercent > 0) {
+  if (isGrowthRealistic) {
     feedItems.push({
       id: 'perf-growth',
       type: 'success',
@@ -458,6 +484,8 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     border: 'border-slate-800 bg-slate-950',
   });
 
+  const activeFeedItems = feedItems.filter(item => !dismissedIds.includes(item.id));
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -471,27 +499,42 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       </div>
 
       <div className="space-y-3 pt-1">
-        {feedItems.map((item) => (
-          <div key={item.id} className={`border rounded-xl p-4 flex items-start gap-3.5 transition-all ${item.border}`}>
-            <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl shrink-0 mt-0.5 shadow-inner">
-              {item.icon}
-            </div>
-            <div className="space-y-1 min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="font-bold text-white text-xs truncate">{item.title}</h4>
-                <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
-                  {item.badge}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
-            </div>
+        {activeFeedItems.length === 0 ? (
+          <div className="text-center py-8 text-xs text-slate-500 font-mono">
+            No active intelligence alerts or all items have been dismissed.
           </div>
-        ))}
+        ) : (
+          activeFeedItems.map((item) => (
+            <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all ${item.border}`}>
+              <div className="flex items-start gap-3.5 min-w-0">
+                <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl shrink-0 mt-0.5 shadow-inner">
+                  {item.icon}
+                </div>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-bold text-white text-xs truncate">{item.title}</h4>
+                    <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800 shrink-0">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">{item.message}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDismiss(item.id)}
+                className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                title="Dismiss Card"
+                aria-label="Dismiss Card"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
-
 function PersistentGlobalNetWorthSummary({ assets, baseCurrency }: { assets: any[]; baseCurrency: string }) {
   const getBaseVal = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
