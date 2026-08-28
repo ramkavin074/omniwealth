@@ -179,16 +179,16 @@ export default function DashboardClient({
                   </button>
                 </div>
 
-                {/* Quick Action Buttons in Mobile Drawer */}
+                {/* Quick Action Buttons routing to respective individual tabs */}
                 <div className="grid grid-cols-2 gap-2">
                   <button 
-                    onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }}
+                    onClick={() => { setActiveTab('wealth'); setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }}
                     className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /><span>Add Asset</span>
                   </button>
                   <button 
-                    onClick={() => { setIsAddLiabilityOpen(true); setIsMobileMenuOpen(false); }}
+                    onClick={() => { setActiveTab('liabilities'); setIsAddLiabilityOpen(true); setIsMobileMenuOpen(false); }}
                     className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow cursor-pointer"
                   >
                     <CreditCard className="w-3.5 h-3.5" /><span>Liability</span>
@@ -1348,6 +1348,31 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 
   const getBaseVal = (valStr: string, curr: string) => convertCurrency(parseFloat(valStr || '0'), curr || 'USD', baseCurrency, liveRates);
 
+  // Helper to group identical tickers/assets per family member
+  const groupMemberAssets = (rawAssets: any[]) => {
+    const map: { [key: string]: any } = {};
+    rawAssets.forEach(a => {
+      const key = a.ticker ? a.ticker.toUpperCase().trim() : a.name.toLowerCase().trim();
+      if (!map[key]) {
+        map[key] = {
+          ...a,
+          totalNative: parseFloat(a.nativeValue || '0'),
+          totalQty: parseFloat(a.quantity || '1'),
+          accounts: [a.accountCategory],
+          ids: [a.id]
+        };
+      } else {
+        map[key].totalNative += parseFloat(a.nativeValue || '0');
+        map[key].totalQty += parseFloat(a.quantity || '1');
+        if (!map[key].accounts.includes(a.accountCategory)) {
+          map[key].accounts.push(a.accountCategory);
+        }
+        map[key].ids.push(a.id);
+      }
+    });
+    return Object.values(map);
+  };
+
   const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
   assets.forEach((a) => {
     const type = (a.assetType || '').toUpperCase();
@@ -1358,8 +1383,11 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
     memberMap[name].total += getBaseVal(a.nativeValue, a.nativeCurrency);
     memberMap[name].assets.push(a);
   });
+
   Object.keys(memberMap).forEach(name => {
-    memberMap[name].assets.sort((a, b) => getBaseVal(b.nativeValue, b.nativeCurrency) - getBaseVal(a.nativeValue, a.nativeCurrency));
+    // Group identical tickers/assets for this member
+    memberMap[name].assets = groupMemberAssets(memberMap[name].assets);
+    memberMap[name].assets.sort((a, b) => getBaseVal(b.totalNative, b.nativeCurrency) - getBaseVal(a.totalNative, a.nativeCurrency));
   });
   const sortedMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
 
@@ -1386,7 +1414,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
           {sortedMembers.map(([name, data]) => (
             <div key={name} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden min-w-0">
               <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-900/50 cursor-pointer min-w-0">
-                <div className="min-w-0 pr-2"><div className="font-bold text-white text-sm truncate">{name}</div><div className="text-xs text-slate-400">{data.assets.length} holding(s)</div></div>
+                <div className="min-w-0 pr-2"><div className="font-bold text-white text-sm truncate">{name}</div><div className="text-xs text-slate-400">{data.assets.length} consolidated holding(s)</div></div>
                 <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-emerald-400 font-semibold">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}</div>
               </button>
               {expM[name] && (
@@ -1406,8 +1434,19 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                         </form>
                       ) : (
                         <>
-                          <div className="min-w-0 pr-2"><span className="font-bold text-white truncate block">{asset.name}</span> <span className="text-[10px] text-indigo-300">({asset.accountCategory})</span></div>
-                          <div className="flex items-center gap-2 shrink-0"><span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(asset.nativeValue, asset.nativeCurrency)).toLocaleString()} {baseCurrency}</span><button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button><button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button></div>
+                          <div className="min-w-0 pr-2">
+                            <span className="font-bold text-white truncate block">
+                              {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
+                            </span>
+                            <span className="text-[10px] text-indigo-300">
+                              Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-mono text-emerald-400 font-semibold">{Math.round(getBaseVal(asset.totalNative, asset.nativeCurrency)).toLocaleString()} {baseCurrency}</span>
+                            <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-indigo-400"><Edit3 className="w-3.5 h-3.5" /></button>
+                            <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </div>
                         </>
                       )}
                     </div>
