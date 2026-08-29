@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { updatePasswordAction } from '@/actions/auth';
 import { addFamilyMemberAction, deleteFamilyMemberAction, updateHouseholdLegacyPillarsAction } from '@/actions/vault';
-import { Users, User, Plus, X, CheckCircle2, Lock, Target, UserPlus, AlertCircle, Trash2, ArrowLeft } from 'lucide-react';
+import { Users, User, Plus, X, CheckCircle2, Lock, Target, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProfileClientProps {
@@ -119,11 +119,6 @@ export default function ProfileClient({ session, initialFamilyMembers, household
         {/* Header with Page Title and Quick Action Buttons */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Link href="/" className="text-xs text-teal-700 hover:underline font-semibold flex items-center gap-1">
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
-              </Link>
-            </div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Profile &amp; Family Management</h1>
             <p className="text-xs text-slate-500 mt-0.5">View account details, customize legacy pillars, and manage members.</p>
           </div>
