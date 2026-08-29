@@ -110,9 +110,13 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
               <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 dark:bg-slate-800 text-white border border-slate-800 dark:border-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
               </button>
-              <button onClick={() => window.print()} title="Export Report / Save as PDF" className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
-                <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" /><span>Export Report</span>
-              </button>
+              <button 
+  onClick={() => window.print()} 
+  title="Export Report / Save as PDF" 
+  className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm"
+>
+  <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+</button>
               <button onClick={handleRefreshPrices} disabled={isRefreshing} title="Refresh Live Market Prices" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:opacity-50 shadow-sm">
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
