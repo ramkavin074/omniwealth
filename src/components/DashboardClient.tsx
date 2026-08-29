@@ -454,7 +454,10 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
     });
   };
 
-  const householdTitle = session?.household?.name ? session.household.name.replace(/ Vault$/i, '') : 'Private Vault';
+  const rawHouseholdName = session?.household?.name 
+    ? session.household.name.replace(/(\s+Vault|\s+Command|\s+Command Center)$/i, '') 
+    : 'Private';
+  const householdTitle = `${rawHouseholdName} Family`;
 
   const categorySubtotals: { [key: string]: number } = {};
   initialAssets.forEach((a: any) => {
@@ -467,7 +470,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
   return (
     <div className="space-y-4">
       {/* Top Header Bar */}
-      <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm">
+      <header className="bg-white border-b border-slate-200/85 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button 
@@ -484,9 +487,9 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-slate-900 text-sm md:text-base tracking-tight truncate">
-                  {householdTitle} <span className="font-normal text-xs text-slate-500 hidden md:inline">Command</span>
+                  {householdTitle} <span className="font-normal text-xs text-slate-500 hidden md:inline">Command Center</span>
                 </div>
-                <div className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold font-mono">Family Office Suite</div>
+                <div className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold font-mono">Private Family Office</div>
               </div>
             </Link>
           </div>
@@ -501,7 +504,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
-              {/* Premium Dark Slate AI Reader Button matching peer action weight */}
               <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white border border-slate-800 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
               </button>
@@ -559,10 +561,10 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </div>
 
-      {/* Desktop Persistent Summary Bar with Uniform Clean Cards */}
+      {/* Desktop Persistent Summary Bar with Fixed-Column Uniform Grid Cards */}
       <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8 pt-2">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex justify-between items-center">
-          <div>
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="shrink-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-slate-400" /> Global Household Net Worth
             </span>
@@ -571,12 +573,12 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl">
             {sortedCategories.map(([cat, val]) => (
-              <div key={cat} className="bg-slate-50/70 border border-slate-200/80 px-4 py-3 rounded-xl text-xs shadow-sm">
-                <span className="text-slate-500 uppercase text-[10px] block font-medium">{cat}</span>
-                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
-                  {Math.round(val).toLocaleString()} {baseCurrency}
+              <div key={cat} className="bg-slate-50/70 border border-slate-200/80 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0">
+                <span className="text-slate-500 uppercase text-[10px] block font-medium truncate">{cat}</span>
+                <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
+                  {Math.round(val).toLocaleString()} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
                 </span>
               </div>
             ))}
@@ -1417,7 +1419,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   });
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
-  // Extensible curated pillar dot colors that cycle cleanly
   const pillarDotColors = ['bg-teal-600', 'bg-amber-600', 'bg-purple-600', 'bg-blue-600', 'bg-emerald-600', 'bg-indigo-600', 'bg-rose-600'];
 
   return (
