@@ -86,21 +86,20 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
             <button onClick={onOpenMenu} className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition" aria-label="Open Menu">
               <Menu className="w-5 h-5" />
             </button>
-            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
-              </div>
-            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-  <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-    <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
+            <Link href="/" className="flex items-center gap-3 group cursor-pointer min-w-0">
+  <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+    <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
   </div>
-  <div className="min-w-0">
-    <div className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
+  <div className="flex items-center gap-2.5 min-w-0">
+    <span className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
       Family Wealth Hub
-    </div>
+    </span>
+    <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
+    <span className="hidden sm:inline text-xs font-mono text-teal-700 dark:text-teal-400 font-semibold uppercase tracking-wider truncate">
+      {householdTitle}
+    </span>
   </div>
 </Link>
-            </Link>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
