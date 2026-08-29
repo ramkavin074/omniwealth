@@ -81,27 +81,27 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
   return (
     <div className="space-y-4">
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm transition-colors print:hidden">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button onClick={onOpenMenu} className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition" aria-label="Open Menu">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center min-w-0 flex-1 max-w-[52%] sm:max-w-none">
+            <button onClick={onOpenMenu} className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition shrink-0" aria-label="Open Menu">
               <Menu className="w-5 h-5" />
             </button>
-            <Link href="/" className="flex items-center gap-3 group cursor-pointer min-w-0">
-              <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer min-w-0 flex-1">
+              <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
                 <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
               </div>
-              <div className="min-w-0">
-                <div className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
+              <div className="min-w-0 flex-1 leading-tight">
+                <div className="font-bold text-[10px] sm:text-xs md:text-base tracking-tight break-words text-slate-900 dark:text-white">
                   Family Wealth Hub
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
+                <div className="text-[8px] sm:text-[10px] md:text-xs uppercase tracking-wide text-teal-700 dark:text-teal-400 font-semibold font-mono break-words">
                   {householdTitle}
                 </div>
               </div>
             </Link>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 max-w-[48%] sm:max-w-none">
             <CurrencySwitcherForm currentCurrency={baseCurrency} />
              
             <div className="hidden md:flex items-center gap-2">
