@@ -96,7 +96,7 @@ function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [ke
     const baseVal = convertCurrency(val, curr, baseCurrency, liveRates);
     const type = (asset.assetType || '').toUpperCase();
     const cat = (asset.accountCategory || '').toUpperCase();
-    
+     
     if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') {
       return -Math.abs(baseVal);
     }
@@ -104,7 +104,7 @@ function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [ke
   };
 
   const totalNetWorth = assets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
-  
+   
   const liquidAssets = assets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const category = (a.accountCategory || '').toUpperCase();
@@ -226,7 +226,7 @@ export default function DashboardClient({
           onSelectTab={(tab: any) => setActiveTab(tab)}
         />
 
-       
+         
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
             <div 
@@ -279,12 +279,10 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} 
-                    className="flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+                    className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
                   >
-                    <div className="flex items-center space-x-3.5">
-                      <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      <span>AI Statement Reader</span>
-                    </div>
+                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>AI Statement Reader</span>
                   </button>
 
                   <button 
@@ -567,7 +565,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                 </Link>
               )}
 
-              {/* Theme Toggle placed right next to Logout */}
               <ThemeToggleButton />
 
               <form action={logoutAction}>
@@ -708,7 +705,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       id: `milestone-${asset.id}`,
       type: 'milestone',
       icon: <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-      title: asset.name,
+      title: `Future Income Stream: ${asset.name}`,
       message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
       badge: 'Milestone',
       border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
@@ -785,80 +782,8 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     </div>
   );
 }
-function LiabilitiesSection({ liabilities = [], baseCurrency, onAddLiability, onDeleteLiability, onUpdateLiability }: { liabilities: any[]; baseCurrency: string; onAddLiability: () => void; onDeleteLiability: (id: string) => void; onUpdateLiability: (id: string, fd: FormData) => void }) {
-  const totalDebt = liabilities.reduce((acc, l) => acc + parseFloat(l.nativeValue || '0'), 0);
 
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 transition-colors">
-      {/* Header & Controls: Stacked on mobile, side-by-side on desktop */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-400 shrink-0 shadow-sm">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
-              Liabilities &amp; Debt Tracking
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-              Total Outstanding: <span className="text-rose-600 dark:text-rose-400 font-bold">{Math.round(totalDebt).toLocaleString()} {baseCurrency}</span>
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onAddLiability}
-          className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-xl transition shadow-sm cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Liability</span>
-        </button>
-      </div>
-
-      {/* Description */}
-      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-        Log mortgages, cross-border loans, or credit lines to automatically subtract from your global net worth in {baseCurrency}.
-      </p>
-
-      {/* Liabilities List or Empty State */}
-      {liabilities.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-8 sm:p-10 text-center space-y-2 shadow-inner">
-          <div className="text-slate-900 dark:text-slate-100 font-bold text-sm">No active liabilities logged yet</div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-            Use the button above to securely track loans and credit lines against your portfolio.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {liabilities.map((liability) => (
-            <div key={liability.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center justify-between gap-3 shadow-sm min-w-0">
-              <div className="min-w-0 pr-2">
-                <div className="font-bold text-slate-900 dark:text-white text-sm break-words">
-                  {liability.name} {liability.institution ? `(${liability.institution})` : ''}
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                  Owner: {liability.user?.fullName || 'Family General'} • {liability.accountCategory || 'Loan'}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm">
-                  -{Math.round(parseFloat(liability.nativeValue || '0')).toLocaleString()} {liability.nativeCurrency || baseCurrency}
-                </span>
-                <button
-                  onClick={() => onDeleteLiability(liability.id)}
-                  className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
-                  title="Delete Liability"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
+function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
   const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
@@ -940,7 +865,6 @@ function LiabilitiesSection({ liabilities = [], baseCurrency, onAddLiability, on
                 )}
               </div>
 
-              {/* Bottom row for Target Value & Edit Button with clean spacing */}
               <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl flex-1 shadow-sm">
                   <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
@@ -1107,12 +1031,11 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
           Institution &amp; Account-Level Family Directives
         </h3>
       </div>
-      
+       
       <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
         Write overarching login protocols, broker contact details, and succession steps for entire accounts.
       </p>
 
-      {/* Responsive layout: Stacks on mobile, 3-column grid on desktop */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
         <div className="space-y-2">
           <label className="block text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider">
@@ -1163,6 +1086,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
     </div>
   );
 }
+
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => {
@@ -1171,7 +1095,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return val.toString();
   };
 
-  // Helper generator to calculate points for any dimension and max point cap
   const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
     const data = rawData.length <= maxPoints ? rawData : rawData.filter((_, idx) => idx % Math.ceil(rawData.length / (maxPoints - 1)) === 0 || idx === rawData.length - 1);
     const values = data.map(d => d.value);
@@ -1188,7 +1111,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return { points, pathString, areaString };
   };
 
-  // Desktop keeps up to 12 points, Mobile is capped strictly at 6 points to prevent overlapping dates
   const desktopChart = generateChartData(12, 700, 180, 40);
   const mobileChart = generateChartData(6, 400, 280, 45);
 
@@ -1218,7 +1140,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
           <div className="h-52 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
         ) : (
           <>
-            {/* Desktop View (Wide and spacious) */}
             <div className="hidden md:block relative w-full overflow-hidden rounded-xl">
               <svg viewBox="0 0 700 180" className="w-full h-52 overflow-visible">
                 <defs>
@@ -1240,7 +1161,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
               </svg>
             </div>
 
-            {/* Mobile View (Capped at 6 points for clean, non-overlapping dates) */}
             <div className="block md:hidden relative w-full overflow-hidden rounded-xl">
               <svg viewBox="0 0 400 280" className="w-full h-72 overflow-visible">
                 <defs>
@@ -1267,6 +1187,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     </div>
   );
 }
+
 function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number } }) {
   const { totalNetWorth } = useAssetValuation(assets, baseCurrency, liveRates);
   const typeMap: { [key: string]: number } = {};
@@ -1330,7 +1251,6 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
             })}
           </div>
 
-          {/* Changed grid-cols-2 to grid-cols-1 on mobile for clean text wrapping */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pt-2">
             {sortedEntries.map(([type, val]) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
@@ -1357,6 +1277,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
     </div>
   );
 }
+
 function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legacyPillars: { name: string; description: string }[]; members: any[]; onClose: () => void; isLiability: boolean }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4">
@@ -1636,7 +1557,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Family Member Sub-Totals */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
           <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -1702,7 +1622,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
         </div>
       </div>
 
-      {/* Purpose & Legacy Instructions */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
           <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -1766,7 +1685,9 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       </div>
     </div>
   );
-}function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
+}
+
+function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
   const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -1795,6 +1716,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
     </div>
   );
 }
+
 function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLiability }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number }; onAddLiability: () => void }) {
   const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
    
@@ -1808,7 +1730,6 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 transition-colors">
-      {/* Responsive Header: Stacks on mobile, side-by-side on desktop */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-400 shrink-0 shadow-sm">
