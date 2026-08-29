@@ -28,20 +28,20 @@ export default async function ProfilePage() {
     .from(households)
     .where(eq(households.id, householdId));
 
-  // Map session shape to match ProfileClient props, including all AI key fields
+  // Map session shape, converting database nulls to undefined to satisfy TypeScript
   const formattedSession = {
     user: {
       id: session.user.id,
       fullName: session.user.fullName,
       email: session.user.email,
       role: session.user.role,
-      aiProvider: session.user.aiProvider,
-      aiApiKey: session.user.aiApiKey,
-      geminiApiKey: session.user.geminiApiKey,
-      openaiApiKey: session.user.openaiApiKey,
-      anthropicApiKey: session.user.anthropicApiKey,
-      groqApiKey: session.user.groqApiKey,
-      openrouterApiKey: session.user.openrouterApiKey,
+      aiProvider: session.user.aiProvider || undefined,
+      aiApiKey: session.user.aiApiKey || undefined,
+      geminiApiKey: session.user.geminiApiKey || undefined,
+      openaiApiKey: session.user.openaiApiKey || undefined,
+      anthropicApiKey: session.user.anthropicApiKey || undefined,
+      groqApiKey: session.user.groqApiKey || undefined,
+      openrouterApiKey: session.user.openrouterApiKey || undefined,
     },
     household: {
       id: session.household.id,
