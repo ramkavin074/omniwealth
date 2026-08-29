@@ -79,28 +79,19 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="space-y-4">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm transition-colors print:hidden">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button onClick={onOpenMenu} className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition" aria-label="Open Menu">
-              <Menu className="w-5 h-5" />
-            </button>
-            <Link href="/" className="flex items-center gap-3 group cursor-pointer min-w-0">
-  <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-    <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
+   <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+  <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+    <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
   </div>
-  <div className="flex items-center gap-2.5 min-w-0">
-    <span className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
+  <div className="min-w-0">
+    <div className="font-bold text-slate-900 dark:text-white text-xs md:text-base tracking-tight truncate">
       Family Wealth Hub
-    </span>
-    <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
-    <span className="hidden sm:inline text-xs font-mono text-teal-700 dark:text-teal-400 font-semibold uppercase tracking-wider truncate">
+    </div>
+    <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
       {householdTitle}
-    </span>
+    </div>
   </div>
 </Link>
-          </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <CurrencySwitcherForm currentCurrency={baseCurrency} />
