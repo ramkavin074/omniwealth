@@ -154,22 +154,22 @@ export default function ProfileClient({ session, initialFamilyMembers, household
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
       <div className="space-y-6">
-        <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-4 md:px-8 py-3.5 shadow-sm transition-colors">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Link href="/" className="flex items-center gap-2 group cursor-pointer min-w-0">
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
+                  <div className="font-bold text-slate-900 dark:text-white text-xs md:text-base tracking-tight truncate">
                     {householdDetails?.name || session?.household?.name || 'Private Family'}
                   </div>
-                  <div className="text-[11px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono">
+                  <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono">
                     Command Center
                   </div>
                 </div>
               </Link>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <button
                 onClick={toggleTheme}
                 title="Toggle Theme"
@@ -178,9 +178,13 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                 {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
               </button>
 
-              <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-xl transition border border-slate-200 dark:border-slate-700 shadow-sm">
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Dashboard</span>
+              <Link 
+                href="/" 
+                title="Back to Dashboard"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 px-2.5 sm:px-3 py-2 rounded-xl transition border border-slate-200 dark:border-slate-700 shadow-sm"
+              >
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
               </Link>
 
               <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
