@@ -226,28 +226,7 @@ export default function DashboardClient({
           onSelectTab={(tab: any) => setActiveTab(tab)}
         />
 
-        {activeTab === 'wealth' && (
-          <div className="block md:hidden px-4 pt-4">
-            <button 
-              onClick={() => setIsAiReaderOpen(true)}
-              className="w-full bg-slate-900 dark:bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between text-left cursor-pointer group hover:bg-slate-800 transition"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-slate-800 rounded-xl text-amber-400 border border-slate-700 shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
-                    AI Statement Reader
-                  </div>
-                  <div className="text-xs text-slate-400 truncate">Upload PDF statements or paste holdings instantly</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
-            </button>
-          </div>
-        )}
-
+       
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
             <div 
