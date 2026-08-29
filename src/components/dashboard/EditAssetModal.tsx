@@ -24,12 +24,18 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
   useEffect(() => {
     if (asset) {
       if (asset.rawAssets && Array.isArray(asset.rawAssets) && asset.rawAssets.length > 0) {
-        setSubRows(asset.rawAssets.map((r: any) => ({ ...r, quantity: r.quantity ?? '' })));
+        setSubRows(asset.rawAssets.map((r: any) => ({ 
+          ...r, 
+          quantity: r.quantity ?? r.qty ?? r.shares ?? '' 
+        })));
       } else {
-        setSubRows([{ ...asset, quantity: asset.quantity ?? '' }]);
+        setSubRows([{ 
+          ...asset, 
+          quantity: asset.quantity ?? asset.qty ?? asset.shares ?? '' 
+        }]);
       }
       setSingleValue(asset.totalNative ?? asset.nativeValue ?? '');
-      setSingleQty(asset.totalQty ?? asset.quantity ?? '');
+      setSingleQty(asset.totalQty ?? asset.quantity ?? asset.qty ?? asset.shares ?? '');
       setSingleCurrency(asset.nativeCurrency || 'USD');
     }
   }, [asset]);
