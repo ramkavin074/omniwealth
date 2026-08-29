@@ -69,6 +69,23 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
+// Clean helper to format asset types into human-readable titles
+function formatAssetTypeName(type: string): string {
+  if (!type) return 'Other';
+  const upper = type.toUpperCase().trim();
+  if (upper === 'MUTUAL_FUND') return 'Mutual Funds';
+  if (upper === 'REAL_ESTATE') return 'Real Estate';
+  if (upper === 'FIXED_INCOME') return 'Fixed Income';
+  if (upper === 'STOCK' || upper === 'STOCKS') return 'Stocks';
+  if (upper === 'ETF' || upper === 'ETFS') return 'ETFs';
+  if (upper === 'EQUITIES' || upper === 'EQUITY') return 'Equities';
+  if (upper === 'CASH') return 'Cash';
+  if (upper === 'CRYPTO') return 'Crypto';
+  if (upper === 'PENSION') return 'Pension';
+  if (upper === 'COMMODITY') return 'Commodity';
+  return upper.replace(/_/g, ' ');
+}
+
 // ========================================================= //
 // SHARED VALUATION HOOK                                     //
 // ========================================================= //
@@ -197,9 +214,6 @@ export default function DashboardClient({
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans">
       <div>
-        {/* ========================================================= */}
-        {/* UNIFIED HEADER & SUMMARY                                  */}
-        {/* ========================================================= */}
         <UnifiedHeaderAndSummary
           session={session}
           initialAssets={initialAssets}
@@ -212,9 +226,6 @@ export default function DashboardClient({
           onSelectTab={(tab: any) => setActiveTab(tab)}
         />
 
-        {/* ========================================================= */}
-        {/* MOBILE AI STATEMENT READER PROMOTIONAL BANNER             */}
-        {/* ========================================================= */}
         {activeTab === 'wealth' && (
           <div className="block md:hidden px-4 pt-4">
             <button 
@@ -237,9 +248,6 @@ export default function DashboardClient({
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* MOBILE SLIDE-OUT NAVIGATION DRAWER                        */}
-        {/* ========================================================= */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
             <div 
@@ -350,9 +358,6 @@ export default function DashboardClient({
         )}
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
-          {/* ========================================================= */}
-          {/* DESKTOP TAB NAVIGATION BAR                                */}
-          {/* ========================================================= */}
           <div className="hidden md:flex bg-white border border-slate-200/80 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-sm">
             <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
@@ -454,9 +459,6 @@ export default function DashboardClient({
   );
 }
 
-// ========================================================= //
-// UNIFIED HEADER & SUMMARY                                  //
-// ========================================================= //
 function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
   const router = useRouter();
   const [isRefreshing, startRefreshTransition] = useTransition();
@@ -474,7 +476,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
     });
   };
 
-  // Trust database name completely without concatenation/appending suffixes
   const householdTitle = session?.household?.name || 'Private Family';
 
   const categorySubtotals: { [key: string]: number } = {};
@@ -487,7 +488,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
 
   return (
     <div className="space-y-4">
-      {/* Top Header Bar */}
       <header className="bg-white border-b border-slate-200/85 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -559,7 +559,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </header>
 
-      {/* MOBILE COMPACT SUMMARY BAR */}
       <div className="block md:hidden px-4 pt-4">
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div className="min-w-0">
@@ -581,7 +580,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </div>
 
-      {/* Desktop Persistent Summary Bar with Fixed-Column Uniform Grid Cards */}
       <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8 pt-2">
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="shrink-0">
@@ -1140,7 +1138,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
           <div className="h-3.5 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
             {sortedEntries.map(([type, val], idx) => {
               const pct = (val / positiveNetWorth) * 100;
-              return <div key={type} style={{ width: `${Math.max(pct, 2)}%` }} className={`${colors[idx % colors.length]} transition-all duration-500`} title={`${type}: ${pct.toFixed(1)}%`} />;
+              return <div key={type} style={{ width: `${Math.max(pct, 2)}%` }} className={`${colors[idx % colors.length]} transition-all duration-500`} title={`${formatAssetTypeName(type)}: ${pct.toFixed(1)}%`} />;
             })}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
@@ -1150,7 +1148,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
                 <div key={type} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm">
                   <div className="flex items-center gap-2">
                     <span className={`w-3 h-3 rounded-full ${colors[idx % colors.length]}`} />
-                    <span className="text-xs font-bold text-slate-800 uppercase truncate">{type}</span>
+                    <span className="text-xs font-bold text-slate-800 uppercase truncate">{formatAssetTypeName(type)}</span>
                   </div>
                   <div className="font-mono text-sm text-slate-900 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
                   <div className="text-xs text-slate-500 font-mono">{pct}% of portfolio</div>
