@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -116,9 +116,12 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
               <button onClick={handleRefreshPrices} disabled={isRefreshing} title="Refresh Live Market Prices" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:opacity-50 shadow-sm">
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
-              <Link href="/profile" title="Household Settings" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
+              <Link href="/profile" title="Household Settings" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                 <Settings className="w-4 h-4" />
               </Link>
+
+              <ThemeToggleButton />
+
               <form action={logoutAction}>
                 <button type="submit" title="Logout" className="p-2 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 transition cursor-pointer shadow-sm">
                   <LogOut className="w-4 h-4" />
@@ -137,9 +140,12 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
               {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
             </div>
           </div>
-          <button onClick={handleRefreshPrices} disabled={isRefreshing} className="p-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50 shadow-sm">
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggleButton />
+            <button onClick={handleRefreshPrices} disabled={isRefreshing} className="p-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50 shadow-sm">
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -167,6 +173,47 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
         </div>
       </div>
     </div>
+  );
+}
+
+function ThemeToggleButton() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const isDarkMode = document.documentElement.classList.contains('dark') || 
+      localStorage.getItem('theme') === 'dark' ||
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+     
+    setIsDark(isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
+  return (
+    <button
+      onClick={toggleTheme}
+      title="Toggle Light/Dark Theme"
+      className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm flex items-center gap-1.5 text-xs font-semibold"
+    >
+      {isDark ? (
+        <Sun className="w-4 h-4 text-amber-400" />
+      ) : (
+        <Moon className="w-4 h-4 text-slate-600" />
+      )}
+    </button>
   );
 }
 
