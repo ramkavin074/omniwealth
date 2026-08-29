@@ -17,6 +17,7 @@ import IntelligenceFeed from '@/components/dashboard/IntelligenceFeed';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import AccountInstructionsHub from '@/components/dashboard/AccountInstructionsHub';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
+import EditAssetModal from '@/components/dashboard/EditAssetModal';
 
 // Import Modals & External Components
 import AddAssetModal from '@/components/dashboard/AddAssetModal';
@@ -70,6 +71,10 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
   const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(initialLiveRates);
+  
+  // Edit Asset / Liability Modal State
+  const [editingAsset, setEditingAsset] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFamilyMembersAction().then(setMembers).catch(err => console.warn('Failed to fetch family members:', err));
@@ -175,7 +180,6 @@ export default function DashboardClient({
                     <TrendingUp className="w-4 h-4" /><span>Intelligence Feed</span>
                   </button>
 
-                  {/* Super Admin Portal Link (Visible only for SUPER_ADMIN role) */}
                   {session?.user?.role === 'SUPER_ADMIN' && (
                     <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors">
                       <Shield className="w-4 h-4" /><span>Super Admin Portal</span>
@@ -229,7 +233,16 @@ export default function DashboardClient({
                   </div>
                 </div>
 
-                <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
+                <WealthSummaryDashboard 
+                  assets={initialAssets} 
+                  baseCurrency={baseCurrency} 
+                  legacyPillars={legacyPillars} 
+                  liveRates={liveRates} 
+                  onEditAsset={(asset: any) => {
+                    setEditingAsset(asset);
+                    setIsEditModalOpen(true);
+                  }}
+                />
                 <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
               </div>
@@ -237,7 +250,16 @@ export default function DashboardClient({
 
             {activeTab === 'liabilities' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
-                <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} onAddLiability={() => setIsAddLiabilityOpen(true)} />
+                <LiabilitiesManagementSection 
+                  assets={initialAssets} 
+                  baseCurrency={baseCurrency} 
+                  liveRates={liveRates} 
+                  onAddLiability={() => setIsAddLiabilityOpen(true)} 
+                  onEditAsset={(asset: any) => {
+                    setEditingAsset(asset);
+                    setIsEditModalOpen(true);
+                  }}
+                />
               </div>
             )}
 
@@ -277,6 +299,17 @@ export default function DashboardClient({
       {isAddLiabilityOpen && <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddLiabilityOpen(false)} isLiability={true} />}
       {isAiReaderOpen && <StatementUploadModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAiReaderOpen(false)} />}
       {isVaultUploadOpen && <VaultUploadModal isOpen={isVaultUploadOpen} onClose={() => setIsVaultUploadOpen(false)} />}
+      
+      {/* Universal Edit Asset/Liability Modal */}
+      <EditAssetModal 
+        asset={editingAsset}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingAsset(null);
+        }}
+        legacyPillars={legacyPillars}
+      />
     </main>
   );
 }

@@ -13,7 +13,15 @@ export default function LegacyPillarsCard({ householdDetails }: LegacyPillarsCar
 
   let currentPillars: { name: string; description: string }[] = [];
   try {
-    currentPillars = JSON.parse(householdDetails?.legacyPillars || '[]');
+    const parsed = JSON.parse(householdDetails?.legacyPillars || '[]');
+    if (Array.isArray(parsed)) {
+      currentPillars = parsed.map((p: any) => {
+        if (typeof p === 'string') {
+          return { name: p, description: '' };
+        }
+        return { name: p?.name || '', description: p?.description || '' };
+      });
+    }
   } catch (e) {
     currentPillars = (householdDetails?.legacyPillars || '').split(',').map((p: string) => {
       const parts = p.split(' - ');
