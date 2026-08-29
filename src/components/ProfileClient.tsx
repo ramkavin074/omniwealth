@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { updatePasswordAction, logoutAction } from '@/actions/auth';
@@ -8,11 +8,12 @@ import {
   addFamilyMemberAction, 
   deleteFamilyMemberAction, 
   updateHouseholdLegacyPillarsAction, 
-  updateHouseholdBaseCurrencyAction 
+  updateHouseholdBaseCurrencyAction,
+  updateUserApiKeyAction // Action to save BYOK key
 } from '@/actions/vault';
 import { 
   Users, User, Plus, X, CheckCircle2, Lock, Target, 
-  UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut 
+  UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut, Key, Moon, Sun 
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 
@@ -23,6 +24,7 @@ interface ProfileClientProps {
       fullName: string;
       email: string;
       role: string;
+      apiKey?: string;
       [key: string]: any;
     };
     household: {
@@ -47,6 +49,31 @@ export default function ProfileClient({ session, initialFamilyMembers, household
   const [pwdLoading, setPwdLoading] = useState(false);
 
   const [pillarSuccess, setPillarSuccess] = useState('');
+  
+  // BYOK State
+  const [apiKey, setApiKey] = useState(session.user.apiKey || '');
+  const [apiKeySuccess, setApiKeySuccess] = useState('');
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+
+  // Theme State
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   let currentPillars: { name: string; description: string }[] = [];
   try {
@@ -123,6 +150,23 @@ export default function ProfileClient({ session, initialFamilyMembers, household
     }
   }
 
+  async function handleApiKeySave(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setApiKeyLoading(true);
+    setApiKeySuccess('');
+    try {
+      const res = await updateUserApiKeyAction(apiKey);
+      if (res.success) {
+        setApiKeySuccess('API Key successfully saved!');
+        setTimeout(() => setApiKeySuccess(''), 3000);
+      }
+    } catch (err) {
+      alert('Failed to save API key.');
+    } finally {
+      setApiKeyLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
       <div className="space-y-6">
@@ -142,6 +186,14 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
 
             <div className="flex items-center gap-3">
+              <button
+                onClick={toggleTheme}
+                title="Toggle Theme"
+                className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-sm"
+              >
+                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+              </button>
+
               <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-xl transition border border-slate-200 dark:border-slate-700 shadow-sm">
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Dashboard</span>
@@ -162,7 +214,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Profile &amp; Family Management</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View account details, customize legacy pillars, and manage members.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View account details, customize legacy pillars, configure BYOK, and manage members.</p>
             </div>
 
             <div className="flex items-center gap-2.5">
@@ -181,6 +233,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           )}
 
+          {/* Account Details */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <User className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -207,6 +260,42 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
+          {/* BYOK (Bring Your Own Key) Settings */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <Key className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Bring Your Own Key (BYOK) - AI API Configuration</h2>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Provide your personal OpenAI or Gemini API key to power the AI Statement Reader and Intelligence Feed without rate limits.
+            </p>
+
+            {apiKeySuccess && (
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {apiKeySuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleApiKeySave} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Custom API Key (OpenAI / Gemini)</label>
+                <input 
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-..." 
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                />
+              </div>
+              <div className="flex justify-end">
+                <button type="submit" disabled={apiKeyLoading} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition">
+                  {apiKeyLoading ? 'Saving Key...' : 'Save API Key'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Legacy & Wealth Pillars */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -259,6 +348,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </form>
           </div>
 
+          {/* Security & Password */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -287,6 +377,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </form>
           </div>
 
+          {/* Family Members */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
