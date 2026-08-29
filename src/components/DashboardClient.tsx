@@ -175,7 +175,7 @@ export default function DashboardClient({
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white">
+    <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans">
       <div>
         {/* ========================================================= */}
         {/* UNIFIED HEADER & SUMMARY                                  */}
@@ -196,10 +196,10 @@ export default function DashboardClient({
         {/* MOBILE AI STATEMENT READER PROMOTIONAL BANNER             */}
         {/* ========================================================= */}
         {activeTab === 'wealth' && (
-          <div className="block md:hidden px-4 pt-3">
+          <div className="block md:hidden px-4 pt-4">
             <button 
               onClick={() => setIsAiReaderOpen(true)}
-              className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between text-left cursor-pointer group hover:border-teal-600/40 transition"
+              className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center justify-between text-left cursor-pointer group hover:border-teal-600/40 transition"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-slate-100 rounded-xl text-slate-700 border border-slate-200 shrink-0">
@@ -241,17 +241,16 @@ export default function DashboardClient({
                   </button>
                 </div>
 
-                {/* Quick Action Buttons routing to respective individual tabs */}
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => { setActiveTab('wealth'); setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }}
-                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition"
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition"
                   >
                     <Plus className="w-3.5 h-3.5" /><span>Add Asset</span>
                   </button>
                   <button 
                     onClick={() => { setActiveTab('liabilities'); setIsAddLiabilityOpen(true); setIsMobileMenuOpen(false); }}
-                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition"
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition"
                   >
                     <CreditCard className="w-3.5 h-3.5" /><span>Liability</span>
                   </button>
@@ -260,7 +259,7 @@ export default function DashboardClient({
                 <nav className="flex flex-col space-y-1.5 pt-2">
                   <button 
                     onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
                   >
                     <Home className="w-4 h-4" />
                     <span>Portfolio Overview</span>
@@ -279,7 +278,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
                   >
                     <CreditCard className="w-4 h-4" />
                     <span>Liabilities &amp; Debt</span>
@@ -287,7 +286,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('retirement'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
                   >
                     <Target className="w-4 h-4" />
                     <span>Retirement &amp; Planning</span>
@@ -295,7 +294,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
                   >
                     <Shield className="w-4 h-4" />
                     <span>Directives &amp; Vault</span>
@@ -303,7 +302,7 @@ export default function DashboardClient({
 
                   <button 
                     onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} 
-                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-xs' : 'hover:bg-slate-100 text-slate-700'}`}
+                    className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 text-slate-700'}`}
                   >
                     <TrendingUp className="w-4 h-4" />
                     <span>Intelligence Feed</span>
@@ -334,20 +333,20 @@ export default function DashboardClient({
           {/* ========================================================= */}
           {/* DESKTOP TAB NAVIGATION BAR                                */}
           {/* ========================================================= */}
-          <div className="hidden md:flex bg-white border border-slate-200/80 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-xs">
-            <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
+          <div className="hidden md:flex bg-white border border-slate-200/80 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-sm">
+            <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
             </button>
-            <button onClick={() => setActiveTab('liabilities')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
+            <button onClick={() => setActiveTab('liabilities')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
               <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
             </button>
-            <button onClick={() => setActiveTab('retirement')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'retirement' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
+            <button onClick={() => setActiveTab('retirement')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'retirement' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
               <Target className="w-4 h-4" /> Retirement &amp; Planning
             </button>
-            <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
+            <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
               <Shield className="w-4 h-4" /> Directives &amp; Vault
             </button>
-            <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
+            <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}>
               <Sparkles className="w-4 h-4" /> Intelligence Feed
             </button>
           </div>
@@ -465,19 +464,10 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
   });
   const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
 
-  // Pastel theme mapping for categories
-  const categoryStyles: { [key: string]: { bg: string; border: string; text: string } } = {
-    INDIVIDUAL: { bg: 'bg-teal-50/50', border: 'border-l-4 border-teal-600', text: 'text-teal-900' },
-    RETIREMENT: { bg: 'bg-purple-50/50', border: 'border-l-4 border-purple-600', text: 'text-purple-900' },
-    REAL_ESTATE: { bg: 'bg-amber-50/50', border: 'border-l-4 border-amber-600', text: 'text-amber-900' },
-    TRUST: { bg: 'bg-blue-50/50', border: 'border-l-4 border-blue-600', text: 'text-blue-900' },
-    DEFAULT: { bg: 'bg-slate-50', border: 'border-l-4 border-slate-400', text: 'text-slate-800' }
-  };
-
   return (
     <div className="space-y-4">
       {/* Top Header Bar */}
-      <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-xs">
+      <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button 
@@ -489,7 +479,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
             </button>
 
             <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center shadow-xs">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center shadow-sm">
                 <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
               </div>
               <div className="min-w-0">
@@ -504,45 +494,40 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
           <div className="flex items-center gap-2.5 shrink-0">
             <CurrencySwitcherForm currentCurrency={baseCurrency} />
             
-            {/* Desktop Quick Actions & Profile Controls */}
             <div className="hidden md:flex items-center gap-2">
-              <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-xs">
+              <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <Plus className="w-4 h-4" /><span>Add Asset</span>
               </button>
-              <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-xs">
+              <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
-              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition cursor-pointer shadow-xs">
+              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <Sparkles className="w-4 h-4 text-amber-600" /><span>AI Reader</span>
               </button>
 
-              {/* Refresh Live Prices Button */}
               <button 
                 onClick={handleRefreshPrices} 
                 disabled={isRefreshing}
                 title="Refresh Live Market Prices & Exchange Rates" 
-                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 transition cursor-pointer disabled:opacity-50 shadow-xs"
+                className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 transition cursor-pointer disabled:opacity-50 shadow-sm"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
 
               <div className="h-5 w-[1px] bg-slate-200 mx-1" />
 
-              {/* Desktop Settings Link */}
-              <Link href="/profile" title="Household Settings" className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 transition cursor-pointer shadow-xs">
+              <Link href="/profile" title="Household Settings" className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 transition cursor-pointer shadow-sm">
                 <Settings className="w-4 h-4" />
               </Link>
 
-              {/* Desktop Admin Portal (if Super Admin) */}
               {session.user.role === 'SUPER_ADMIN' && (
-                <Link href="/admin" title="Admin Portal" className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl border border-amber-200 transition cursor-pointer shadow-xs">
+                <Link href="/admin" title="Admin Portal" className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl border border-amber-200 transition cursor-pointer shadow-sm">
                   <Shield className="w-4 h-4" />
                 </Link>
               )}
 
-              {/* Desktop Logout Button */}
               <form action={logoutAction}>
-                <button type="submit" title="Logout" className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200 transition cursor-pointer shadow-xs">
+                <button type="submit" title="Logout" className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200 transition cursor-pointer shadow-sm">
                   <LogOut className="w-4 h-4" />
                 </button>
               </form>
@@ -551,15 +536,13 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </header>
 
-      {/* ========================================================= */}
-      {/* MOBILE COMPACT SUMMARY BAR                                */}
-      {/* ========================================================= */}
-      <div className="block md:hidden px-4 pt-3">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+      {/* MOBILE COMPACT SUMMARY BAR */}
+      <div className="block md:hidden px-4 pt-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div className="min-w-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block">Global Net Worth</span>
-            <div className="text-xl font-black font-mono text-teal-800 truncate">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-700">{baseCurrency}</span>
+            <div className="text-xl font-black font-mono text-teal-700 truncate">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -567,7 +550,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               onClick={handleRefreshPrices} 
               disabled={isRefreshing}
               title="Refresh Live Market Prices" 
-              className="p-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 cursor-pointer disabled:opacity-50 shadow-xs"
+              className="p-2.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 cursor-pointer disabled:opacity-50 shadow-sm"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -575,30 +558,27 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </div>
 
-      {/* Desktop Persistent Summary Bar with Category Pastel Tints */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex justify-between items-center">
+      {/* Desktop Persistent Summary Bar with Uniform Clean Cards */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8 pt-2">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex justify-between items-center">
           <div>
             <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-slate-400" /> Global Household Net Worth
             </span>
-            <div className="text-4xl font-extrabold font-mono text-teal-800 mt-1">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-700 text-lg font-sans">{baseCurrency}</span>
+            <div className="text-4xl font-extrabold font-mono text-teal-700 mt-1">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-600 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2.5">
-            {sortedCategories.map(([cat, val]) => {
-              const style = categoryStyles[cat] || categoryStyles.DEFAULT;
-              return (
-                <div key={cat} className={`${style.bg} ${style.border} px-4 py-2.5 rounded-xl text-xs shadow-2xs border-slate-200`}>
-                  <span className="text-slate-500 uppercase text-[10px] block font-medium">{cat}</span>
-                  <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-700' : style.text}`}>
-                    {Math.round(val).toLocaleString()} {baseCurrency}
-                  </span>
-                </div>
-              );
-            })}
+            {sortedCategories.map(([cat, val]) => (
+              <div key={cat} className="bg-slate-50/70 border border-slate-200/80 px-4 py-3 rounded-xl text-xs shadow-sm">
+                <span className="text-slate-500 uppercase text-[10px] block font-medium">{cat}</span>
+                <span className={`font-mono font-bold text-sm ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
+                  {Math.round(val).toLocaleString()} {baseCurrency}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -685,7 +665,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
   const activeFeedItems = feedItems.filter(item => !dismissedIds.includes(item.id));
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-slate-500" />
@@ -703,9 +683,9 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
           </div>
         ) : (
           activeFeedItems.map((item) => (
-            <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all shadow-2xs ${item.border}`}>
+            <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all shadow-sm ${item.border}`}>
               <div className="flex items-start gap-3.5 min-w-0">
-                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl shrink-0 mt-0.5 shadow-2xs">
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl shrink-0 mt-0.5 shadow-sm">
                   {item.icon}
                 </div>
                 <div className="space-y-1 min-w-0 flex-1">
@@ -731,7 +711,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
 
 function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
         <Lock className="w-5 h-5 text-slate-500" />
         <h3 className="text-sm font-bold text-slate-900 uppercase">Encrypted Family Vault &amp; Documents</h3>
@@ -748,9 +728,9 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {documents.map((doc) => (
-            <div key={doc.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+            <div key={doc.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 shrink-0 shadow-2xs">
+                <div className="p-2.5 bg-white border border-slate-200 rounded-lg text-slate-600 shrink-0 shadow-sm">
                   <FileText className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -760,7 +740,7 @@ function SecureDocumentsVault({ documents = [] }: { documents: any[] }) {
                   </div>
                 </div>
               </div>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-200 shadow-2xs">
+              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-200 shadow-sm">
                 View
               </a>
             </div>
@@ -783,7 +763,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
   const totalLiabilities = liabilities.reduce((s: number, a: any) => s + Math.abs(getBaseVal(a)), 0);
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <CreditCard className="w-5 h-5 text-rose-700" />
@@ -791,7 +771,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-mono text-rose-700 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
-          <button onClick={onAddLiability} className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-xs transition">
+          <button onClick={onAddLiability} className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-sm transition">
             + Add Liability
           </button>
         </div>
@@ -807,7 +787,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
       ) : (
         <div className="space-y-3">
           {liabilities.map((item) => (
-            <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center shadow-2xs">
+            <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
               <div>
                 <div className="font-bold text-slate-900 text-sm">{item.name}</div>
                 <div className="text-xs text-slate-500">Owner: {item.user?.fullName || 'Family Member'} | Category: {item.accountCategory}</div>
@@ -843,7 +823,7 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0 shadow-2xs">
+    <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0 shadow-sm">
       <Coins className="w-4 h-4 text-slate-500" />
       <select 
         value={selectedCurrency} 
@@ -867,7 +847,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
 
   if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
     return (
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
           <Shield className="w-5 h-5 text-slate-500" />
           <h3 className="text-sm font-bold text-slate-900 uppercase">Future Income Milestones &amp; Family Directives</h3>
@@ -912,7 +892,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   };
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-slate-500" />
@@ -923,7 +903,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
         {ssnAssets.concat(pensionAssets, ppfAssets).map((asset) => {
           const cur = asset.nativeCurrency || 'USD';
           return (
-            <div key={asset.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
+            <div key={asset.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
               <div className="w-full md:w-3/4">
                 <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
                 <div className="text-sm font-semibold text-slate-900 mt-1">
@@ -933,7 +913,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                   <textarea
                     value={getInstruction(asset)}
                     onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
-                    className="w-full mt-2 bg-white border border-slate-200 rounded p-2 text-xs text-slate-800 focus:outline-none resize-none shadow-2xs"
+                    className="w-full mt-2 bg-white border border-slate-200 rounded p-2 text-xs text-slate-800 focus:outline-none resize-none shadow-sm"
                     rows={2}
                   />
                 ) : (
@@ -941,7 +921,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                 )}
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-left md:text-right shadow-2xs">
+                <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-left md:text-right shadow-sm">
                   <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
                   {isEditing(asset.id) ? (
                     <div className="flex items-center gap-1 mt-1">
@@ -957,7 +937,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                     <span className="text-sm font-mono text-slate-900 font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
                   )}
                 </div>
-                <button onClick={() => setEditing(asset.id, !isEditing(asset.id))} className="p-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-800 rounded-xl cursor-pointer shadow-2xs transition">
+                <button onClick={() => setEditing(asset.id, !isEditing(asset.id))} className="p-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-800 rounded-xl cursor-pointer shadow-sm transition">
                   <Edit3 className="w-4 h-4" />
                 </button>
               </div>
@@ -978,7 +958,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
   if (uniqueAccounts.length === 0) return null;
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
         <Shield className="w-5 h-5 text-slate-500" />
         <h3 className="text-sm font-bold text-slate-900 uppercase">Institution &amp; Account-Level Family Directives</h3>
@@ -992,14 +972,14 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
               <button
                 key={acct}
                 onClick={() => { setSelectedAccount(acct); setEditingNote(instructionsMap[acct] || ''); }}
-                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-slate-100 border-slate-300 text-slate-900 font-bold shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-mono transition-colors cursor-pointer border ${selectedAccount === acct ? 'bg-slate-100 border-slate-300 text-slate-900 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
               >
                 {acct}
               </button>
             ))}
           </div>
         </div>
-        <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-3 shadow-2xs">
+        <div className="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-3 shadow-sm">
           {selectedAccount ? (
             <>
               <div>
@@ -1009,13 +989,13 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
                   onChange={(e) => setEditingNote(e.target.value)}
                   placeholder="Enter succession notes, broker estate desk info, or multi-stock transfer instructions..."
                   rows={4}
-                  className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs text-slate-800 focus:outline-none focus:border-slate-400 resize-none shadow-2xs"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs text-slate-800 focus:outline-none focus:border-slate-400 resize-none shadow-sm"
                 />
               </div>
               <div className="flex justify-end">
                 <button
                   onClick={() => { setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote })); alert('Account instructions saved!'); }}
-                  className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-2xs transition-colors"
+                  className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-sm transition-colors"
                 >
                   Save Account Notes
                 </button>
@@ -1057,7 +1037,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
   const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 10} L ${points[0].x} ${height - 10} Z` : '';
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-200 gap-3">
         <div className="flex items-center gap-2">
           <Globe className="w-5 h-5 text-slate-500" />
@@ -1065,7 +1045,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase text-slate-500 font-medium">Timeline:</span>
-          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono font-bold focus:outline-none cursor-pointer shadow-2xs">
+          <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono font-bold focus:outline-none cursor-pointer shadow-sm">
             <option value="1m">Last 1 Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
@@ -1125,7 +1105,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
         <PieChart className="w-5 h-5 text-slate-500" />
         <h3 className="text-sm font-bold text-slate-900 uppercase">Asset Class Allocation</h3>
@@ -1144,7 +1124,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
             {sortedEntries.map(([type, val], idx) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
               return (
-                <div key={type} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-2xs">
+                <div key={type} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm">
                   <div className="flex items-center gap-2">
                     <span className={`w-3 h-3 rounded-full ${colors[idx % colors.length]}`} />
                     <span className="text-xs font-bold text-slate-800 uppercase truncate">{type}</span>
@@ -1175,14 +1155,14 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
           onClose();
         }} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs text-slate-600 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage' : 'e.g. Apple Stock'} className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-2xs" /></div>
-            <div><label className="block text-xs text-slate-600 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-2xs" /></div>
+            <div><label className="block text-xs text-slate-600 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage' : 'e.g. Apple Stock'} className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-sm" /></div>
+            <div><label className="block text-xs text-slate-600 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-sm" /></div>
           </div>
           {!isLiability && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-600 mb-1">Asset Type</label>
-                <select name="assetType" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-2xs">
+                <select name="assetType" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-sm">
                   <option value="STOCK">Stock</option>
                   <option value="CRYPTO">Crypto</option>
                   <option value="COMMODITY">Commodity / Gold</option>
@@ -1196,7 +1176,7 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
               </div>
               <div>
                 <label className="block text-xs text-slate-600 mb-1">Account Category</label>
-                <select name="accountCategory" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-2xs">
+                <select name="accountCategory" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-sm">
                   <option value="INDIVIDUAL">Individual</option>
                   <option value="IRA">Traditional IRA</option>
                   <option value="ROTH_IRA">Roth IRA</option>
@@ -1214,15 +1194,15 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
             </div>
           )}
           <div className="grid grid-cols-3 gap-3">
-            <div><label className="block text-xs text-slate-600 mb-1">Quantity</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-2xs" /></div>
-            <div><label className="block text-xs text-slate-600 mb-1">{isLiability ? 'Debt Amount' : 'Total Value'}</label><input name="nativeValue" type="number" step="any" required placeholder="10000" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-2xs" /></div>
-            <div><label className="block text-xs text-slate-600 mb-1">Currency</label><input name="nativeCurrency" defaultValue="USD" required className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-2xs" /></div>
+            <div><label className="block text-xs text-slate-600 mb-1">Quantity</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-sm" /></div>
+            <div><label className="block text-xs text-slate-600 mb-1">{isLiability ? 'Debt Amount' : 'Total Value'}</label><input name="nativeValue" type="number" step="any" required placeholder="10000" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-sm" /></div>
+            <div><label className="block text-xs text-slate-600 mb-1">Currency</label><input name="nativeCurrency" defaultValue="USD" required className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-sm" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs text-slate-600 mb-1">Acct # (Last 4)</label><input name="accountNumber" defaultValue="DEFAULT" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-2xs" /></div>
+            <div><label className="block text-xs text-slate-600 mb-1">Acct # (Last 4)</label><input name="accountNumber" defaultValue="DEFAULT" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 font-mono shadow-sm" /></div>
             <div>
               <label className="block text-xs text-slate-600 mb-1">Owner</label>
-              <select name="userId" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-2xs">
+              <select name="userId" className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 shadow-sm">
                 {members.map((m) => <option key={m.id} value={m.id}>{m.fullName}</option>)}
               </select>
             </div>
@@ -1230,14 +1210,14 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
           {!isLiability && (
             <div>
               <label className="block text-xs text-slate-600 mb-1">Strategic Rationale &amp; Legacy Pillar</label>
-              <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 cursor-pointer shadow-2xs">
+              <select name="rationale" defaultValue={legacyPillars[0]?.name} required className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2.5 text-sm text-slate-900 cursor-pointer shadow-sm">
                 {legacyPillars.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
               </select>
             </div>
           )}
           <div className="flex justify-end gap-2 pt-3">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm cursor-pointer hover:bg-slate-200 transition">Cancel</button>
-            <button type="submit" className={`px-4 py-2 text-white rounded-lg text-sm font-semibold cursor-pointer shadow-2xs transition ${isLiability ? 'bg-rose-700 hover:bg-rose-800' : 'bg-teal-700 hover:bg-teal-800'}`}>
+            <button type="submit" className={`px-4 py-2 text-white rounded-lg text-sm font-semibold cursor-pointer shadow-sm transition ${isLiability ? 'bg-rose-700 hover:bg-rose-800' : 'bg-teal-700 hover:bg-teal-800'}`}>
               {isLiability ? 'Save Liability' : 'Save Asset'}
             </button>
           </div>
@@ -1300,25 +1280,25 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
         </div>
         {error && <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-lg mb-4">{error}</div>}
         {successMsg && <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-lg mb-4">{successMsg}</div>}
-        <form onSubmit={handleUpload} className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-4 shadow-2xs">
+        <form onSubmit={handleUpload} className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-4 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 p-3.5 rounded-xl flex flex-col justify-between shadow-2xs">
+            <div className="bg-white border border-slate-200 p-3.5 rounded-xl flex flex-col justify-between shadow-sm">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-2">
                 <FileUp className="w-4 h-4 text-slate-500" />
                 <span>Upload PDF or Image Statements</span>
               </label>
               <input name="files" type="file" multiple accept=".pdf,image/*" className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-700 file:text-white cursor-pointer" />
             </div>
-            <div className="bg-white border border-slate-200 p-3.5 rounded-xl flex flex-col justify-between shadow-2xs">
+            <div className="bg-white border border-slate-200 p-3.5 rounded-xl flex flex-col justify-between shadow-sm">
               <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 mb-2">
                 <ClipboardPaste className="w-4 h-4 text-slate-500" />
                 <span>Or Paste Statement Text / Holdings</span>
               </label>
-              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 resize-none shadow-2xs" />
+              <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 resize-none shadow-sm" />
             </div>
           </div>
           <div className="flex justify-end pt-2 border-t border-slate-200">
-            <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-2xs transition-colors flex items-center gap-2">
+            <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition-colors flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>{uploading ? 'Analyzing with Gemini...' : 'Extract & Parse with AI'}</span>
             </button>
@@ -1330,10 +1310,10 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
             {drafts.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 uppercase font-medium">Assign Owner For All:</span>
-                <select value={bulkUser} onChange={(e) => setBulkUser(e.target.value)} className="bg-white border border-slate-200 rounded px-3 py-1.5 text-xs text-slate-900 cursor-pointer font-medium shadow-2xs">
+                <select value={bulkUser} onChange={(e) => setBulkUser(e.target.value)} className="bg-white border border-slate-200 rounded px-3 py-1.5 text-xs text-slate-900 cursor-pointer font-medium shadow-sm">
                   {members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
-                <button onClick={async () => { setUploading(true); try { await approveAllDraftLineItemsAction(bulkUser); await loadData(); setSuccessMsg("Successfully approved all pending items!"); } catch { setError("Failed to approve items."); } finally { setUploading(false); } }} className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-2xs">
+                <button onClick={async () => { setUploading(true); try { await approveAllDraftLineItemsAction(bulkUser); await loadData(); setSuccessMsg("Successfully approved all pending items!"); } catch { setError("Failed to approve items."); } finally { setUploading(false); } }} className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-sm">
                   <CheckCheck className="w-4 h-4" /><span>Approve All Pending</span>
                 </button>
               </div>
@@ -1359,20 +1339,20 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
   const [rat, setRat] = useState(item.rationale || legacyPillars[0]?.name);
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 shadow-2xs">
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
       <div className="flex justify-between items-center">
         <div>
           <span className="font-bold text-slate-900 text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-slate-600">({item.ticker})</span>}
-          <div className="text-xs font-mono text-emerald-700 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
+          <div className="text-xs font-mono text-slate-900 font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
         </div>
         <div className="flex gap-2">
-          <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 text-white rounded text-xs cursor-pointer shadow-2xs"><Check className="w-4 h-4" /> Approve</button>
-          <button onClick={async () => { await rejectDraftLineItemAction(item.id); onRefresh(); }} className="p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded cursor-pointer shadow-2xs"><Trash2 className="w-4 h-4" /></button>
+          <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 text-white rounded text-xs cursor-pointer shadow-sm"><Check className="w-4 h-4" /> Approve</button>
+          <button onClick={async () => { await rejectDraftLineItemAction(item.id); onRefresh(); }} className="p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded cursor-pointer shadow-sm"><Trash2 className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 text-xs">
-        <select value={usr} onChange={(e) => setUsr(e.target.value)} className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 shadow-2xs">{members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}</select>
-        <select value={cat} onChange={(e) => setCat(e.target.value)} className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 shadow-2xs">
+        <select value={usr} onChange={(e) => setUsr(e.target.value)} className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 shadow-sm">{members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}</select>
+        <select value={cat} onChange={(e) => setCat(e.target.value)} className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 shadow-sm">
           <option value="INDIVIDUAL">Individual</option>
           <option value="IRA">Traditional IRA</option>
           <option value="ROTH_IRA">Roth IRA</option>
@@ -1386,8 +1366,8 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           <option value="TRUST">Trust</option>
           <option value="REAL_ESTATE">Real Estate</option>
         </select>
-        <input value={acct} onChange={(e) => setAcct(e.target.value)} placeholder="Acct #" className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 font-mono shadow-2xs" />
-        <select value={rat} onChange={(e) => setRat(e.target.value)} className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 cursor-pointer shadow-2xs">
+        <input value={acct} onChange={(e) => setAcct(e.target.value)} placeholder="Acct #" className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 font-mono shadow-sm" />
+        <select value={rat} onChange={(e) => setRat(e.target.value)} className="bg-white border border-slate-200 rounded p-1.5 text-slate-900 cursor-pointer shadow-sm">
           {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
         </select>
       </div>
@@ -1436,36 +1416,35 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   });
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
-  // Soft color rotation for legacy pillar bullet dots
   const pillarDotColors = ['bg-teal-600', 'bg-amber-600', 'bg-purple-600', 'bg-blue-600', 'bg-emerald-600'];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200"><Users className="w-5 h-5 text-slate-500" /><h3 className="text-sm font-bold text-slate-900 uppercase">Family Member Sub-Totals</h3></div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
-            <div key={name} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-w-0 shadow-2xs">
+            <div key={name} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-w-0 shadow-sm">
               <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-100/70 cursor-pointer min-w-0 transition">
                 <div className="min-w-0 pr-2"><div className="font-bold text-slate-900 text-sm truncate">{name}</div><div className="text-xs text-slate-500">{data.assets.length} consolidated holding(s)</div></div>
-                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-emerald-700 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}</div>
+                <div className="flex items-center gap-3 shrink-0"><span className="font-mono text-slate-900 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>{expM[name] ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}</div>
               </button>
               {expM[name] && (
                 <div className="border-t border-slate-200 p-4 space-y-2.5 bg-white">
                   {data.assets.map((asset) => {
                     const val = getBaseVal(asset);
                     return (
-                      <div key={asset.id} className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0 shadow-2xs">
+                      <div key={asset.id} className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0 shadow-sm">
                         {editingId === asset.id ? (
                           <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
-                            <input name="name" defaultValue={asset.name} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm shadow-2xs" />
+                            <input name="name" defaultValue={asset.name} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm shadow-sm" />
                             <div className="grid grid-cols-2 gap-2">
-                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm font-mono shadow-2xs" />
-                              <select name="rationale" defaultValue={asset.rationale} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm cursor-pointer shadow-2xs">
+                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm font-mono shadow-sm" />
+                              <select name="rationale" defaultValue={asset.rationale} className="w-full bg-white border border-slate-200 rounded p-2 text-slate-900 text-sm cursor-pointer shadow-sm">
                                 {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                               </select>
                             </div>
-                            <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setEditingId(null)} className="px-2 py-1 bg-slate-100 rounded text-slate-600 text-xs shadow-2xs"><X className="w-3.5 h-3.5" /></button><button type="submit" className="px-2 py-1 bg-emerald-700 rounded text-white text-xs shadow-2xs"><Check className="w-3.5 h-3.5" /></button></div>
+                            <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setEditingId(null)} className="px-2 py-1 bg-slate-100 rounded text-slate-600 text-xs shadow-sm"><X className="w-3.5 h-3.5" /></button><button type="submit" className="px-2 py-1 bg-emerald-700 rounded text-white text-xs shadow-sm"><Check className="w-3.5 h-3.5" /></button></div>
                           </form>
                         ) : (
                           <>
@@ -1478,7 +1457,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                               </span>
                             </div>
                             <div className="flex items-center gap-2.5 shrink-0">
-                              <span className={`font-mono font-semibold text-sm ${val < 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
+                              <span className={`font-mono font-semibold text-sm ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
                               <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-slate-700 p-1"><Edit3 className="w-4 h-4" /></button>
                               <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 className="w-4 h-4" /></button>
                             </div>
@@ -1494,7 +1473,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200"><Target className="w-5 h-5 text-slate-500" /><h3 className="text-sm font-bold text-slate-900 uppercase">Purpose &amp; Legacy Instructions</h3></div>
         <div className="space-y-3">
           {sortedPurposes.map(([purposeName, data], idx) => {
@@ -1502,7 +1481,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
             const description = matchedPillar?.description;
             const dotColor = pillarDotColors[idx % pillarDotColors.length];
             return (
-              <div key={purposeName} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-w-0 shadow-2xs">
+              <div key={purposeName} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden min-w-0 shadow-sm">
                 <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-100/70 cursor-pointer min-w-0 transition">
                   <div className="min-w-0 pr-2">
                     <div className="font-bold text-slate-900 text-sm flex items-center gap-2 truncate">
@@ -1511,14 +1490,14 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                     <div className="text-xs text-slate-500">{data.assets.length} consolidated holding(s)</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-emerald-700 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    <span className="font-mono text-slate-900 font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                     {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
                   </div>
                 </button>
                 {expP[purposeName] && (
                   <div className="border-t border-slate-200 p-4 space-y-3 bg-white text-xs">
                     {description && (
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-slate-700 space-y-1 shadow-2xs">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-slate-700 space-y-1 shadow-sm">
                         <div className="flex items-center gap-1.5 text-slate-600 font-bold mb-1">
                           <FileText className="w-4 h-4" />
                           <span className="uppercase text-xs">Legacy Directive:</span>
@@ -1529,7 +1508,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                     {data.assets.map(asset => {
                       const val = getBaseVal(asset);
                       return (
-                        <div key={asset.id} className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200 min-w-0 shadow-2xs">
+                        <div key={asset.id} className="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-200 min-w-0 shadow-sm">
                           <div className="min-w-0 pr-2">
                             <span className="font-bold text-slate-900 text-sm truncate block">
                               {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
@@ -1538,7 +1517,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                               Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
                             </span>
                           </div>
-                          <span className={`font-mono font-semibold text-sm shrink-0 ${val < 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
+                          <span className={`font-mono font-semibold text-sm shrink-0 ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
                         </div>
                       );
                     })}
@@ -1576,7 +1555,7 @@ function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' |
         {type === 'privacy' && (<div className="space-y-3 text-slate-600"><p>Your privacy is paramount. OmniWealth stores your data in encrypted database columns and secure cryptographic vaults.</p></div>)}
         {type === 'terms' && (<div className="space-y-3 text-slate-600"><p>By accessing and using OmniWealth, you agree to use the platform solely for personal family wealth tracking.</p></div>)}
         <div className="flex justify-end pt-3 border-t border-slate-200">
-          <button onClick={onClose} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-xs">Close</button>
+          <button onClick={onClose} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-sm">Close</button>
         </div>
       </div>
     </div>
