@@ -15,6 +15,7 @@ import {
   UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut, Moon, Sun 
 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import AiSettingsCard from '@/components/AiSettingsCard';
 
 interface ProfileClientProps {
   session: {
@@ -23,6 +24,13 @@ interface ProfileClientProps {
       fullName: string;
       email: string;
       role: string;
+      aiProvider?: string;
+      aiApiKey?: string;
+      geminiApiKey?: string;
+      openaiApiKey?: string;
+      anthropicApiKey?: string;
+      groqApiKey?: string;
+      openrouterApiKey?: string;
       [key: string]: any;
     };
     household: {
@@ -241,6 +249,15 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               </div>
             </div>
           </div>
+
+          {/* Multi-AI Free-First Cascade BYOK Settings Card */}
+          <AiSettingsCard 
+            initialGroq={Boolean(session.user.groqApiKey)}
+            initialOpenrouter={Boolean(session.user.openrouterApiKey)}
+            initialGemini={Boolean(session.user.geminiApiKey || session.user.aiApiKey)}
+            initialOpenai={Boolean(session.user.openaiApiKey)}
+            initialAnthropic={Boolean(session.user.anthropicApiKey)}
+          />
 
           {/* Legacy & Wealth Pillars */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
