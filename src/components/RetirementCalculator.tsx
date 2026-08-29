@@ -134,23 +134,23 @@ export default function RetirementCalculator({
   const surplusPercentage = targetNestEgg > 0 ? Math.min(Math.round((surplusAmount / targetNestEgg) * 100), 150) : 0;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-200 gap-3">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-indigo-400" />
-          <h3 className="text-sm font-bold text-white uppercase">Retirement Readiness &amp; Regional SWR Simulator</h3>
+          <Target className="w-5 h-5 text-teal-700" />
+          <h3 className="text-sm font-bold text-slate-900 uppercase">Retirement Readiness &amp; Regional SWR Simulator</h3>
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-            <span className="text-[10px] text-slate-400 uppercase font-medium">Region:</span>
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
+            <span className="text-[10px] text-slate-500 uppercase font-medium">Region:</span>
             <select
               value={selectedCountryKey}
               onChange={(e) => handleCountryChange(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-indigo-300 font-mono font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent border-0 text-xs text-teal-700 font-mono font-bold focus:outline-none cursor-pointer"
             >
               {Object.entries(COUNTRIES).map(([key, cfg]) => (
-                <option key={key} value={key}>
+                <option key={key} value={key} className="bg-white text-slate-900">
                   {cfg.name} ({cfg.currency})
                 </option>
               ))}
@@ -160,7 +160,7 @@ export default function RetirementCalculator({
           <button
             onClick={handleSavePreferences}
             disabled={isPending}
-            className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-md"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
           >
             {savedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Save className="w-3.5 h-3.5" />}
             <span>{savedSuccess ? 'Saved!' : 'Save Targets'}</span>
@@ -169,54 +169,54 @@ export default function RetirementCalculator({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-        <div>
-          <label className="block text-slate-400 mb-1">Current Age ({cAge} yrs)</label>
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-1 shadow-sm">
+          <label className="block text-slate-500 mb-1 font-medium">Current Age ({cAge} yrs)</label>
           <input 
             type="number" 
             value={currentAge} 
             onChange={(e) => setCurrentAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
+            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
-        <div>
-          <label className="block text-slate-400 mb-1">Target Retirement Age ({rAge} yrs)</label>
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-1 shadow-sm">
+          <label className="block text-slate-500 mb-1 font-medium">Target Retirement Age ({rAge} yrs)</label>
           <input 
             type="number" 
             value={retirementAge} 
             onChange={(e) => setRetirementAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
+            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
-        <div>
-          <label className="block text-slate-400 mb-1">Current Liquid Savings ({country.symbol})</label>
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-1 shadow-sm">
+          <label className="block text-slate-500 mb-1 font-medium">Current Liquid Savings ({country.symbol})</label>
           <input 
             type="number" 
             value={currentSavings} 
             onChange={(e) => setCurrentSavings(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-emerald-400 font-mono font-bold focus:outline-none focus:border-indigo-500" 
+            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-teal-700 font-mono font-bold focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
-        <div>
-          <label className="block text-slate-400 mb-1">Monthly Contribution ({country.symbol})</label>
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-1 shadow-sm">
+          <label className="block text-slate-500 mb-1 font-medium">Monthly Contribution ({country.symbol})</label>
           <input 
             type="number" 
             value={monthlyContribution} 
             onChange={(e) => setMonthlyContribution(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
+            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
-        <div>
-          <label className="block text-slate-400 mb-1">Desired Annual Income ({country.symbol})</label>
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-1 shadow-sm">
+          <label className="block text-slate-500 mb-1 font-medium">Desired Annual Income ({country.symbol})</label>
           <input 
             type="number" 
             value={desiredAnnualIncome} 
             onChange={(e) => setDesiredAnnualIncome(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white font-mono focus:outline-none focus:border-indigo-500" 
+            className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
-        <div>
-          <label className="block text-slate-400 mb-1">Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)</label>
-          <div className="flex gap-2 mt-1">
+        <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-sm">
+          <label className="block text-slate-500 mb-1 font-medium">Expected Return ({rRate}%) &amp; Inflation ({inflationRate}%)</label>
+          <div className="flex gap-2 mt-2">
             <input 
               type="range" 
               min="1" 
@@ -224,7 +224,7 @@ export default function RetirementCalculator({
               step="0.5" 
               value={rRate} 
               onChange={(e) => setReturnRate(parseFloat(e.target.value))} 
-              className="w-1/2 accent-indigo-500 cursor-pointer" 
+              className="w-1/2 accent-teal-700 cursor-pointer" 
               title="Return Rate"
             />
             <input 
@@ -234,18 +234,18 @@ export default function RetirementCalculator({
               step="0.5" 
               value={inflationRate === '' ? 0 : inflationRate} 
               onChange={(e) => setInflationRate(parseFloat(e.target.value))} 
-              className="w-1/2 accent-rose-500 cursor-pointer" 
+              className="w-1/2 accent-rose-700 cursor-pointer" 
               title="Inflation Rate"
             />
           </div>
         </div>
 
-        <div className="md:col-span-2 lg:col-span-3 bg-slate-950 border border-slate-800 rounded-xl p-3">
-          <div className="flex justify-between items-center mb-1">
-            <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">
+        <div className="md:col-span-2 lg:col-span-3 bg-slate-50 border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-[11px] font-semibold text-slate-700 uppercase tracking-wide">
               Additional Future Simulation Horizon (+{additionalYears} Years)
             </label>
-            <span className="text-xs font-mono font-bold text-indigo-400">
+            <span className="text-xs font-mono font-bold text-teal-700">
               Retiring at Age {effectiveRetirementAge}
             </span>
           </div>
@@ -256,7 +256,7 @@ export default function RetirementCalculator({
             step="1" 
             value={additionalYears} 
             onChange={(e) => setAdditionalYears(parseInt(e.target.value) || 0)} 
-            className="w-full accent-indigo-500 cursor-pointer" 
+            className="w-full accent-teal-700 cursor-pointer" 
             title="Additional Future Horizon Years"
           />
           <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
@@ -267,67 +267,67 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-5">
+      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-5 space-y-5 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">Projected Nest Egg at Age {effectiveRetirementAge}</span>
-            <div className="text-2xl font-extrabold font-mono text-emerald-400 mt-0.5">
+            <span className="text-[10px] uppercase text-slate-500 font-semibold block">Projected Nest Egg at Age {effectiveRetirementAge}</span>
+            <div className="text-2xl font-extrabold font-mono text-teal-700 mt-0.5">
               {country.symbol}{projectedNestEgg.toLocaleString()}
             </div>
           </div>
           <div>
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">
+            <span className="text-[10px] uppercase text-slate-500 font-semibold block">
               Target Capital Needed ({(country.swr * 100).toFixed(2)}% Rule)
             </span>
-            <div className="text-2xl font-extrabold font-mono text-white mt-0.5">
+            <div className="text-2xl font-extrabold font-mono text-slate-900 mt-0.5">
               {country.symbol}{targetNestEgg.toLocaleString()}
             </div>
           </div>
           <div className="text-left md:text-right">
-            <span className="text-[10px] uppercase text-slate-400 font-medium block">Readiness Status</span>
-            <div className={`text-xl font-bold font-mono ${fundingPercentage >= 100 ? 'text-emerald-400' : 'text-indigo-400'}`}>
+            <span className="text-[10px] uppercase text-slate-500 font-semibold block">Readiness Status</span>
+            <div className={`text-xl font-bold font-mono ${fundingPercentage >= 100 ? 'text-emerald-700' : 'text-teal-700'}`}>
               {fundingPercentage >= 100 ? '🎉 Goal Achieved!' : `🚀 ${100 - fundingPercentage}% away`}
             </div>
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex justify-between text-[11px] font-mono text-slate-400">
+          <div className="flex justify-between text-[11px] font-mono text-slate-600 font-medium">
             <span>Retirement Target Funding Progress</span>
             <span>{fundingPercentage}%</span>
           </div>
-          <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800">
+          <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300">
             <div 
               style={{ width: `${Math.min(fundingPercentage, 100)}%` }} 
-              className={`h-full transition-all duration-500 ${fundingPercentage >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-amber-500'}`}
+              className={`h-full transition-all duration-500 ${fundingPercentage >= 100 ? 'bg-emerald-600' : 'bg-teal-700'}`}
             />
           </div>
         </div>
 
         {isFullyFunded && surplusAmount > 0 && (
-          <div className="space-y-1.5 pt-2 border-t border-slate-900">
-            <div className="flex justify-between text-[11px] font-mono text-cyan-400">
+          <div className="space-y-1.5 pt-2 border-t border-slate-200">
+            <div className="flex justify-between text-[11px] font-mono text-teal-800 font-medium">
               <span className="flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> Surplus / Generational Wealth Leftover (Beyond Target)
+                <TrendingUp className="w-3.5 h-3.5 text-teal-700" /> Surplus / Generational Wealth Leftover (Beyond Target)
               </span>
               <span>{country.symbol}{surplusAmount.toLocaleString()}</span>
             </div>
-            <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+            <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
               <div 
                 style={{ width: `${Math.min(surplusPercentage, 100)}%` }} 
-                className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500"
+                className="h-full bg-teal-600 transition-all duration-500"
               />
             </div>
           </div>
         )}
 
-        <div className="flex items-start gap-3 pt-2 text-xs text-slate-300">
+        <div className="flex items-start gap-3 pt-2 text-xs text-slate-700">
           {isFullyFunded ? (
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
           )}
-          <p>
+          <p className="leading-relaxed">
             {isFullyFunded 
               ? `Your family is fully on track under the ${country.name} economic parameters. Delaying or extending your horizon by ${additionalYears} years brings your effective retirement age to ${effectiveRetirementAge}, yielding an excess surplus of ${country.symbol}${surplusAmount.toLocaleString()}.`
               : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
