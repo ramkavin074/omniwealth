@@ -1275,12 +1275,12 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
               const formattedName = formatAssetTypeName(type);
               const colorClass = assetColors[type] || 'bg-slate-500';
               return (
-                <div key={type} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-full ${colorClass}`} />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase truncate">{formattedName}</span>
+                <div key={type} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm min-w-0">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className={`w-3 h-3 rounded-full ${colorClass} shrink-0 mt-0.5`} />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase leading-snug break-words">{formattedName}</span>
                   </div>
-                  <div className="font-mono text-sm text-slate-900 dark:text-white font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
+                  <div className="font-mono text-sm text-slate-900 dark:text-white font-semibold mt-1">{Math.round(val).toLocaleString()} {baseCurrency}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">{pct}% of portfolio</div>
                 </div>
               );
@@ -1291,7 +1291,6 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
     </div>
   );
 }
-
 function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legacyPillars: { name: string; description: string }[]; members: any[]; onClose: () => void; isLiability: boolean }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4">
@@ -1571,17 +1570,24 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Family Member Sub-Totals */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800"><Users className="w-5 h-5 text-slate-500 dark:text-slate-400" /><h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Family Member Sub-Totals</h3></div>
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+          <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Family Member Sub-Totals</h3>
+        </div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
             <div key={name} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
-              <button onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-2">
+              <button 
+                onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} 
+                className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
+              >
                 <div className="min-w-0 pr-2">
                   <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">{name}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.assets.length} consolidated holding(s)</div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                   <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                   {expM[name] ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
                 </div>
@@ -1630,8 +1636,12 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
         </div>
       </div>
 
+      {/* Purpose & Legacy Instructions */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800"><Target className="w-5 h-5 text-slate-500 dark:text-slate-400" /><h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3></div>
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+          <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3>
+        </div>
         <div className="space-y-3">
           {sortedPurposes.map(([purposeName, data], idx) => {
             const matchedPillar = legacyPillars.find(p => p.name === purposeName);
@@ -1639,14 +1649,17 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
             const dotColor = pillarDotColors[idx % pillarDotColors.length];
             return (
               <div key={purposeName} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
-                <button onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-2">
+                <button 
+                  onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} 
+                  className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
+                >
                   <div className="min-w-0 pr-2">
                     <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2 leading-snug break-words">
                       <span className={`w-2.5 h-2.5 rounded-full ${dotColor} shrink-0`}></span><span>{purposeName}</span>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.assets.length} consolidated holding(s)</div>
                   </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
                     {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
                   </div>
@@ -1687,8 +1700,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       </div>
     </div>
   );
-}
-function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
+}function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
   const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
