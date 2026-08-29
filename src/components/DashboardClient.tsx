@@ -225,7 +225,22 @@ export default function DashboardClient({
           onOpenAiReader={() => setIsAiReaderOpen(true)}
           onSelectTab={(tab: any) => setActiveTab(tab)}
         />
+{activeTab === 'wealth' && (
+  <div className="space-y-6 animate-fadeIn">
+    {/* --- ADD THE PRINT-OPTIMIZED EXECUTIVE HEADER WRAPPER HERE --- */}
+    <div className="hidden print:block space-y-2 mb-6">
+      <div className="border-b-2 border-slate-900 pb-3">
+        <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
+        <p className="text-xs text-slate-600 font-mono mt-0.5">Generated on {new Date().toLocaleDateString()} • Confidential Asset &amp; Estate Summary</p>
+      </div>
+    </div>
+    {/* ------------------------------------------------------------- */}
 
+    <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
+    <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+    <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+  </div>
+)}
          
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
