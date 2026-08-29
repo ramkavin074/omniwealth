@@ -961,7 +961,23 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
     return { success: false, error: 'Decryption failed. Security context mismatch.' };
   }
 }
+export async function updateUserApiKeyAction(apiKey: string) {
+  try {
+    const session = await verifySession();
+    if (!session || !session.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
 
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { apiKey },
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to save API key' };
+  }
+}
 export async function deleteDocumentAction(documentId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
