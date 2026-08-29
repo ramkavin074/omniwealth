@@ -176,7 +176,8 @@ export default function RetirementCalculator({
           Simulation Parameters
         </h4>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          {/* Ages in a clean 2-column row */}
           <div className="space-y-1">
             <label className="block text-slate-500 dark:text-slate-400 font-medium">Current Age ({cAge} yrs)</label>
             <input 
@@ -217,7 +218,7 @@ export default function RetirementCalculator({
             />
           </div>
 
-          <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+          <div className="space-y-1 sm:col-span-2">
             <label className="block text-slate-500 dark:text-slate-400 font-medium">Desired Annual Income ({country.symbol})</label>
             <input 
               type="number" 
@@ -226,34 +227,42 @@ export default function RetirementCalculator({
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
             />
           </div>
+        </div>
 
-          <div className="space-y-2 sm:col-span-2 lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-sm">
-            <div className="flex justify-between text-slate-500 dark:text-slate-400 font-medium">
-              <span>Expected Return ({rRate}%)</span>
-              <span>Inflation ({inflationRate}%)</span>
+        {/* Stacked Sliders for Clean Mobile Spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
+            <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
+              <span>Expected Return</span>
+              <span className="font-mono font-bold text-teal-700 dark:text-teal-400">{rRate}%</span>
             </div>
-            <div className="flex gap-4">
-              <input 
-                type="range" 
-                min="1" 
-                max="15" 
-                step="0.5" 
-                value={rRate} 
-                onChange={(e) => setReturnRate(parseFloat(e.target.value))} 
-                className="w-1/2 accent-teal-700 cursor-pointer" 
-                title="Return Rate"
-              />
-              <input 
-                type="range" 
-                min="0" 
-                max="10" 
-                step="0.5" 
-                value={inflationRate === '' ? 0 : inflationRate} 
-                onChange={(e) => setInflationRate(parseFloat(e.target.value))} 
-                className="w-1/2 accent-rose-700 cursor-pointer" 
-                title="Inflation Rate"
-              />
+            <input 
+              type="range" 
+              min="1" 
+              max="15" 
+              step="0.5" 
+              value={rRate} 
+              onChange={(e) => setReturnRate(parseFloat(e.target.value))} 
+              className="w-full accent-teal-700 cursor-pointer" 
+              title="Return Rate"
+            />
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
+            <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
+              <span>Inflation Rate</span>
+              <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{inflationRate}%</span>
             </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="10" 
+              step="0.5" 
+              value={inflationRate === '' ? 0 : inflationRate} 
+              onChange={(e) => setInflationRate(parseFloat(e.target.value))} 
+              className="w-full accent-rose-700 cursor-pointer" 
+              title="Inflation Rate"
+            />
           </div>
         </div>
 
