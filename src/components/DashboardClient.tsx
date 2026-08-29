@@ -1118,7 +1118,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
           <label className="block text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider">
             Select Account / Institution
           </label>
-          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1 mt-2">
             {uniqueAccounts.map((acct) => (
               <button
                 key={acct}
