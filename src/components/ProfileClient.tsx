@@ -80,24 +80,35 @@ export default function ProfileClient({ session, initialFamilyMembers, household
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
       <div className="space-y-6">
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
-              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0 overflow-hidden">
-                <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                  <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center min-w-0 flex-1">
+              <Link
+                href="/"
+                className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer min-w-0 flex-1"
+              >
+                <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                  <Image
+                    src="/omniwealth.jpg"
+                    alt="OmniWealth"
+                    width={36}
+                    height={36}
+                    className="object-cover w-full h-full"
+                  />
                 </div>
-                <div className="min-w-0 overflow-hidden">
-                  <div className="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs md:text-base tracking-tight truncate max-w-[120px] sm:max-w-none">
+
+                <div className="min-w-0 flex-1 leading-tight">
+                  <div className="font-bold text-[10px] sm:text-xs md:text-base lg:text-lg text-slate-900 dark:text-white tracking-tight break-words">
                     Family Wealth Hub
                   </div>
-                  <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate max-w-[120px] sm:max-w-none">
+
+                  <div className="text-[8px] sm:text-[10px] md:text-xs uppercase tracking-wide text-teal-700 dark:text-teal-400 font-semibold font-mono break-words">
                     {householdTitle}
                   </div>
                 </div>
               </Link>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
 
               <button
