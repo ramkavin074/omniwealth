@@ -18,7 +18,9 @@ import {
   refreshLiveMarketPricesAction,
   fetchLiveExchangeRatesAction,
   uploadDocumentAction,
-  logoutAction 
+  logoutAction,
+fetchDocumentDownloadUrlAction, // <-- Add this
+  deleteDocumentAction         // <-- Add this
 } from '@/actions/vault';
 import { 
   parseStatementAction, 
