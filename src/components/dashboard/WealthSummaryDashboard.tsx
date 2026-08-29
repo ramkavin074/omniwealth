@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Users, Target, ChevronDown, ChevronUp, Edit3, Trash2 } from 'lucide-react';
-import { deleteAssetAction } from '@/actions/vault';
+import { Users, Target, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -63,7 +62,6 @@ function groupAssets(rawAssets: any[], baseCurrency: string, liveRates: { [key: 
     }
   });
 
-  // Restored sorting: Highest value holdings will now appear at the top
   return Object.values(map).sort((a: any, b: any) => b.totalBase - a.totalBase);
 }
 
@@ -171,24 +169,14 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                           </span>
                           <div className="flex items-center gap-1">
                             {onEditAsset && (
-                              <button onClick={() => onEditAsset(item)} className="p-1 text-slate-400 hover:text-teal-600 rounded transition cursor-pointer" title="Edit Asset">
+                              <button 
+                                onClick={() => onEditAsset(item.rawAssets[0])} 
+                                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer" 
+                                title="Edit Asset"
+                              >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
                             )}
-                            <button onClick={async () => {
-                              if (confirm(`Are you sure you want to delete ${item.name}?`)) {
-                                try {
-                                  for (const id of item.ids) {
-                                    await deleteAssetAction(id);
-                                  }
-                                  window.location.reload();
-                                } catch (err) {
-                                  console.error('Failed to delete asset:', err);
-                                }
-                              }
-                            }} className="p-1 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer" title="Delete Asset">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -250,20 +238,15 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                             {Math.round(item.totalBase).toLocaleString()} {baseCurrency}
                           </span>
                           <div className="flex items-center gap-1">
-                            <button onClick={async () => {
-                              if (confirm(`Are you sure you want to delete ${item.name}?`)) {
-                                try {
-                                  for (const id of item.ids) {
-                                    await deleteAssetAction(id);
-                                  }
-                                  window.location.reload();
-                                } catch (err) {
-                                  console.error('Failed to delete asset:', err);
-                                }
-                              }
-                            }} className="p-1 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer" title="Delete Asset">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {onEditAsset && (
+                              <button 
+                                onClick={() => onEditAsset(item.rawAssets[0])} 
+                                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer" 
+                                title="Edit Asset"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>

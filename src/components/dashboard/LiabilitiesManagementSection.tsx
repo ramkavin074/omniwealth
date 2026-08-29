@@ -1,82 +1,142 @@
 'use client';
 
-import { useMemo } from 'react';
+import { CreditCard, Plus, Edit3, Trash2 } from 'lucide-react';
 import { deleteAssetAction } from '@/actions/vault';
-import { CreditCard, Plus, Trash2 } from 'lucide-react';
+import { useTransition } from 'react';
 
-const FX_RATES: { [key: string]: number } = { USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149 };
+const FX_RATES: { [key: string]: number } = {
+  USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
+};
+
 function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates: { [key: string]: number } = FX_RATES): number {
   if (fromCurr === toCurr) return amount;
-  return (amount * (rates[toCurr] || 1)) / (rates[fromCurr] || 1);
+  const rateFrom = rates[fromCurr] || 1;
+  const rateTo = rates[toCurr] || 1;
+  return (amount * rateTo) / rateFrom;
 }
 
-function formatCategoryName(cat: string): string {
-  if (!cat) return 'Individual';
-  const upper = cat.toUpperCase();
-  if (upper === 'REAL_ESTATE') return 'Real Estate';
-  if (upper === 'SOCIAL_SECURITY') return 'Social Security';
-  if (upper === 'ROTH_IRA') return 'Roth IRA';
-  if (upper === 'IRA') return 'Traditional IRA';
-  if (upper === '401K') return '401(k)';
-  return cat.replace(/_/g, ' ');
+interface LiabilitiesManagementSectionProps {
+  assets: any[];
+  baseCurrency: string;
+  liveRates?: { [key: string]: number };
+  onAddLiability: () => void;
+  onEditAsset?: (asset: any) => void;
 }
 
-export default function LiabilitiesManagementSection({ assets, baseCurrency, liveRates = FX_RATES, onAddLiability }: any) {
-  const { liabilities, totalLiabilities } = useMemo(() => {
-    const list = assets.filter((a: any) => {
-      const type = (a.assetType || '').toUpperCase();
-      const cat = (a.accountCategory || '').toUpperCase();
-      return type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT';
-    });
-    const total = list.reduce((s: number, a: any) => {
-      const val = parseFloat(a.nativeValue || '0');
-      const baseVal = convertCurrency(val, a.nativeCurrency || 'USD', baseCurrency, liveRates);
-      return s + Math.abs(baseVal);
-    }, 0);
-    return { liabilities: list, totalLiabilities: total };
-  }, [assets, baseCurrency, liveRates]);
+export default function LiabilitiesManagementSection({
+  assets,
+  baseCurrency,
+  liveRates = FX_RATES,
+  onAddLiability,
+  onEditAsset,
+}: LiabilitiesManagementSectionProps) {
+  const [isPending, startTransition] = useTransition();
+
+  // Filter assets to find liabilities/debt
+  const liabilities = assets.filter((a: any) => {
+    const type = (a.assetType || '').toUpperCase();
+    const cat = (a.accountCategory || '').toUpperCase();
+    return type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT';
+  });
+
+  const totalLiabilitiesBase = liabilities.reduce((sum, l) => {
+    const val = parseFloat(l.nativeValue || '0');
+    const converted = convertCurrency(val, l.nativeCurrency || 'USD', baseCurrency, liveRates);
+    return sum + Math.abs(converted);
+  }, 0);
+
+  async function handleDelete(id: string) {
+    if (confirm('Are you sure you want to delete this liability?')) {
+      startTransition(async () => {
+        await deleteAssetAction(id);
+      });
+    }
+  }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 transition-colors">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-400 shrink-0 shadow-sm">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">Liabilities &amp; Debt Tracking</h3>
-            <p className="text-xs font-mono text-rose-700 dark:text-rose-400 font-bold mt-0.5">
-              Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}
-            </p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-rose-600 dark:text-rose-400 font-bold font-mono">Total Outstanding Debt</div>
+          <div className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono">
+            {Math.round(totalLiabilitiesBase).toLocaleString()} <span className="text-base font-normal text-slate-500">{baseCurrency}</span>
           </div>
         </div>
-        <button onClick={onAddLiability} className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-xl cursor-pointer shadow-sm transition shrink-0">
-          <Plus className="w-4 h-4" /><span>Add Liability</span>
+        <button
+          onClick={onAddLiability}
+          className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
+        >
+          <Plus className="w-4 h-4" /> Add Liability / Loan
         </button>
       </div>
 
-      <div className="space-y-3">
-        {liabilities.map((item: any) => {
-          const baseVal = convertCurrency(parseFloat(item.nativeValue || '0'), item.nativeCurrency || 'USD', baseCurrency, liveRates);
-          return (
-            <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm min-w-0">
-              <div className="min-w-0 pr-2">
-                <div className="font-bold text-slate-900 dark:text-white text-sm break-words">{item.name}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Owner: {item.user?.fullName || 'Family Member'} | Category: {formatCategoryName(item.accountCategory)}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+          <CreditCard className="w-5 h-5 text-rose-500" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Active Liabilities &amp; Loans</h3>
+        </div>
+
+        {liabilities.length === 0 ? (
+          <div className="text-center py-10 text-slate-500 dark:text-slate-400 text-xs">
+            No liabilities recorded. Click &quot;Add Liability / Loan&quot; above to track mortgages, car loans, or personal debt.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {liabilities.map((item) => {
+              const nativeVal = parseFloat(item.nativeValue || '0');
+              const baseVal = convertCurrency(nativeVal, item.nativeCurrency || 'USD', baseCurrency, liveRates);
+
+              return (
+                <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                  <div className="min-w-0 pr-2">
+                    <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                      <span className="truncate">{item.name}</span>
+                      <span className="text-[10px] uppercase font-mono bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-900">
+                        Liability
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Account Number: <span className="font-mono">{item.accountNumber || 'N/A'}</span> • Pillar: <span className="font-medium text-slate-700 dark:text-slate-300">{item.rationale || 'General'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                    <div className="text-right font-mono">
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">
+                        {Math.round(baseVal).toLocaleString()} {baseCurrency}
+                      </div>
+                      {item.nativeCurrency !== baseCurrency && (
+                        <div className="text-[10px] text-slate-500">
+                          ({nativeVal.toLocaleString()} {item.nativeCurrency})
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-slate-800 pl-3">
+                      {onEditAsset && (
+                        <button
+                          onClick={() => onEditAsset(item)}
+                          className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-xl transition cursor-pointer"
+                          title="Edit Liability"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        disabled={isPending}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition cursor-pointer disabled:opacity-50"
+                        title="Delete Liability"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-800">
-                <span className="font-mono text-rose-700 dark:text-rose-400 font-bold text-sm">
-                  -{Math.round(Math.abs(baseVal)).toLocaleString()} {baseCurrency}
-                </span>
-                <button onClick={async () => { await deleteAssetAction(item.id); window.location.reload(); }} className="text-slate-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
