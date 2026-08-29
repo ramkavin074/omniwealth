@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, FileText, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Lock, FileText, Plus, Trash2 } from 'lucide-react';
 import VaultUploadModal from '@/components/VaultUploadModal';
+import { fetchDocumentDownloadUrlAction, deleteDocumentAction } from '@/actions/vault';
 
 interface VaultDocument {
   id: string;
@@ -17,7 +19,51 @@ interface VaultDocument {
 }
 
 export default function DocumentVaultSection({ initialDocuments = [] }: { initialDocuments: VaultDocument[] }) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+
+  async function handleView(docId: string) {
+    setViewingId(docId);
+    try {
+      const res = await fetchDocumentDownloadUrlAction(docId);
+      if (res.success && res.dataUri) {
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>${res.name || 'Secure Document'}</title></head>
+              <body style="margin:0; background:#0f172a; display:flex; align-items:center; justify-content:center; height:100vh;">
+                <iframe src="${res.dataUri}" style="width:100%; height:100%; border:none;"></iframe>
+              </body>
+            </html>
+          `);
+        } else {
+          const a = document.createElement('a');
+          a.href = res.dataUri;
+          a.download = res.name || 'document';
+          a.click();
+        }
+      } else {
+        alert(res.error || 'Failed to decrypt document.');
+      }
+    } catch (err) {
+      alert('An error occurred while opening the document.');
+    } finally {
+      setViewingId(null);
+    }
+  }
+
+  async function handleDelete(docId: string) {
+    if (confirm('Are you sure you want to delete this document from the secure vault?')) {
+      const res = await deleteDocumentAction(docId);
+      if (res.success) {
+        router.refresh();
+      } else {
+        alert(res.error || 'Failed to delete document');
+      }
+    }
+  }
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
@@ -74,14 +120,23 @@ export default function DocumentVaultSection({ initialDocuments = [] }: { initia
                   </div>
                 </div>
               </div>
-              <a
-                href={doc.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-white rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-200 dark:border-slate-700"
-              >
-                View
-              </a>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => handleView(doc.id)}
+                  disabled={viewingId === doc.id}
+                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-white rounded-lg text-xs font-semibold transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
+                >
+                  {viewingId === doc.id ? 'Decrypting...' : 'View'}
+                </button>
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  title="Delete Document"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -933,7 +933,7 @@ export async function uploadDocumentAction(formData: FormData) {
       fileSize: fileSizeMB,
     });
 
-    revalidatePath('/vault');
+    revalidatePath('/');
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || 'Encryption/Upload failed' };
@@ -966,7 +966,16 @@ export async function deleteDocumentAction(documentId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  await db.delete(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
-  revalidatePath('/vault');
-  return { success: true };
+  try {
+    await db.delete(documents).where(
+      and(
+        eq(documents.id, documentId),
+        eq(documents.householdId, session.household.id)
+      )
+    );
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
