@@ -1553,8 +1553,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   });
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
-  const pillarDotColors = ['bg-teal-600', 'bg-amber-600', 'bg-purple-600', 'bg-blue-600', 'bg-emerald-600', 'bg-indigo-600', 'bg-rose-600'];
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
@@ -1628,10 +1626,9 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3>
         </div>
         <div className="space-y-3">
-          {sortedPurposes.map(([purposeName, data], idx) => {
+          {sortedPurposes.map(([purposeName, data]) => {
             const matchedPillar = legacyPillars.find(p => p.name === purposeName);
             const description = matchedPillar?.description;
-            const dotColor = pillarDotColors[idx % pillarDotColors.length];
             return (
               <div key={purposeName} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
                 <button 
@@ -1639,8 +1636,8 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                   className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
                 >
                   <div className="min-w-0 pr-2">
-                    <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2 leading-snug break-words">
-                      <span className={`w-2.5 h-2.5 rounded-full ${dotColor} shrink-0`}></span><span>{purposeName}</span>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
+                      {purposeName}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.assets.length} consolidated holding(s)</div>
                   </div>
@@ -1686,7 +1683,6 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
     </div>
   );
 }
-
 function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
   const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
