@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import RetirementCalculator from '@/components/RetirementCalculator';
+import Footer from '@/components/Footer';
 import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
@@ -50,7 +51,6 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates
   return (amount * rateTo) / rateFrom;
 }
 
-// Clean helper to format raw database category keys into human-readable strings
 function formatCategoryName(cat: string): string {
   if (!cat) return 'Individual';
   const upper = cat.toUpperCase();
@@ -69,7 +69,6 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
-// Clean helper to format asset types into human-readable titles
 function formatAssetTypeName(type: string): string {
   if (!type) return 'Other';
   const upper = type.toUpperCase().trim();
@@ -86,9 +85,6 @@ function formatAssetTypeName(type: string): string {
   return upper.replace(/_/g, ' ');
 }
 
-// ========================================================= //
-// SHARED VALUATION HOOK                                     //
-// ========================================================= //
 function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [key: string]: number }) {
   const getBaseVal = (asset: any) => {
     const val = parseFloat(asset.nativeValue || '0');
@@ -115,7 +111,6 @@ function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [ke
   return { getBaseVal, totalNetWorth, totalLiquidWealth };
 }
 
-// Helper to group identical tickers/assets across accounts
 function groupAssets(rawAssets: any[]) {
   const map: { [key: string]: any } = {};
   rawAssets.forEach(a => {
@@ -421,24 +416,7 @@ export default function DashboardClient({
         </div>
       </div>
 
-      <footer className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-20 pt-8 border-t border-slate-200 text-slate-500 text-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="text-center md:text-left space-y-1">
-          <div>&copy; 2026 OmniWealth Private Office. All rights reserved.</div>
-          <div className="text-xs text-slate-500 max-w-xl">
-            Disclaimer: OmniWealth is a global multi-generational family asset command platform for informational tracking purposes only.
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-4 font-medium text-slate-600">
-          <button onClick={() => setActiveModal('about')} className="hover:text-slate-900 transition-colors cursor-pointer">About</button>
-          <span>•</span>
-          <button onClick={() => setActiveModal('faq')} className="hover:text-slate-900 transition-colors cursor-pointer">FAQ</button>
-          <span>•</span>
-          <button onClick={() => setActiveModal('privacy')} className="hover:text-slate-900 transition-colors cursor-pointer">Privacy Policy</button>
-          <span>•</span>
-          <button onClick={() => setActiveModal('terms')} className="hover:text-slate-900 transition-colors cursor-pointer">Terms of Service</button>
-        </div>
-      </footer>
+      <Footer />
 
       {isAddAssetOpen && (
         <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} isLiability={false} />
@@ -844,7 +822,7 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   };
 
   return (
-    <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0 shadow-sm">
+    <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl shrink-0 shadow-sm">
       <Coins className="w-4 h-4 text-slate-500" />
       <select 
         value={selectedCurrency} 
@@ -856,6 +834,13 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
           <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
         ))}
       </select>
+      <button 
+        type="button"
+        className="px-2 py-0.5 bg-teal-800 hover:bg-teal-900 text-white rounded text-[10px] font-bold tracking-wide transition-colors cursor-pointer shadow-sm"
+        title="Base Currency Selected"
+      >
+        Set
+      </button>
     </div>
   );
 }
@@ -1122,7 +1107,23 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
   });
   
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
-  const colors = ['bg-slate-800', 'bg-teal-700', 'bg-slate-600', 'bg-slate-500', 'bg-teal-900', 'bg-slate-400'];
+  
+  const assetColors: { [key: string]: string } = {
+    STOCK: 'bg-teal-700',
+    STOCKS: 'bg-teal-700',
+    ETF: 'bg-emerald-600',
+    ETFS: 'bg-emerald-600',
+    EQUITIES: 'bg-blue-600',
+    MUTUAL_FUND: 'bg-indigo-600',
+    REAL_ESTATE: 'bg-amber-600',
+    CASH: 'bg-slate-700',
+    CRYPTO: 'bg-purple-600',
+    FIXED_INCOME: 'bg-teal-500',
+    PENSION: 'bg-rose-600',
+    COMMODITY: 'bg-yellow-600',
+    OTHER: 'bg-slate-400',
+  };
+
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
@@ -1135,20 +1136,37 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
         <div className="text-center py-6 text-slate-500 text-sm">No assets available for allocation view.</div>
       ) : (
         <div className="space-y-4">
-          <div className="h-3.5 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
-            {sortedEntries.map(([type, val], idx) => {
+          <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200 shadow-inner">
+            {sortedEntries.map(([type, val]) => {
               const pct = (val / positiveNetWorth) * 100;
-              return <div key={type} style={{ width: `${Math.max(pct, 2)}%` }} className={`${colors[idx % colors.length]} transition-all duration-500`} title={`${formatAssetTypeName(type)}: ${pct.toFixed(1)}%`} />;
+              const formattedName = formatAssetTypeName(type);
+              const colorClass = assetColors[type] || 'bg-slate-500';
+              return (
+                <div 
+                  key={type} 
+                  style={{ width: `${Math.max(pct, 2)}%` }} 
+                  className={`${colorClass} hover:opacity-85 transition-all duration-300 cursor-help relative group`} 
+                >
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-20 pointer-events-none">
+                    <div className="bg-slate-900 text-white text-[10px] font-mono px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                      {formattedName}: {pct.toFixed(1)}% ({Math.round(val).toLocaleString()} {baseCurrency})
+                    </div>
+                  </div>
+                </div>
+              );
             })}
           </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
-            {sortedEntries.map(([type, val], idx) => {
+            {sortedEntries.map(([type, val]) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
+              const formattedName = formatAssetTypeName(type);
+              const colorClass = assetColors[type] || 'bg-slate-500';
               return (
                 <div key={type} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm">
                   <div className="flex items-center gap-2">
-                    <span className={`w-3 h-3 rounded-full ${colors[idx % colors.length]}`} />
-                    <span className="text-xs font-bold text-slate-800 uppercase truncate">{formatAssetTypeName(type)}</span>
+                    <span className={`w-3 h-3 rounded-full ${colorClass}`} />
+                    <span className="text-xs font-bold text-slate-800 uppercase truncate">{formattedName}</span>
                   </div>
                   <div className="font-mono text-sm text-slate-900 font-semibold">{Math.round(val).toLocaleString()} {baseCurrency}</div>
                   <div className="text-xs text-slate-500 font-mono">{pct}% of portfolio</div>
