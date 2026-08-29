@@ -1719,7 +1719,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
         </div>
       ) : (
         <div className="space-y-3">
-          {liabilities.link?.length === 0 || liabilities.map((item) => (
+          {liabilities.map((item) => (
             <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm min-w-0">
               <div className="min-w-0 pr-2">
                 <div className="font-bold text-slate-900 dark:text-white text-sm break-words">{item.name}</div>
