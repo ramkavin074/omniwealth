@@ -126,13 +126,18 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
                   {item.icon}
                 </div>
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug">{item.title}</h4>
-                    <span className="self-start sm:self-auto text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
+                  {/* Badge placed on its own line so the title never gets squished */}
+                  <div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 inline-block">
                       {item.badge}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{item.message}</p>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
+                    {item.title}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {item.message}
+                  </p>
                 </div>
               </div>
               <button
