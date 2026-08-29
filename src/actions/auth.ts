@@ -268,3 +268,20 @@ export async function deleteFamilyMemberAction(memberId: string) {
   revalidatePath('/profile');
   return { success: true };
 }
+export async function updateUserApiKeyAction(apiKey: string) {
+  try {
+    const session = await getSessionUserAction();
+    if (!session || !session.user?.id) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    await db.update(users)
+      .set({ apiKey, updatedAt: new Date() } as any)
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath('/profile');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to save API key' };
+  }
+}

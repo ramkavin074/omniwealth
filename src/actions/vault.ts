@@ -4,22 +4,12 @@ import { db } from '@/db';
 import { households, users, portfolios, assets, transactions, draftLineItems, documents } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { GoogleGenAI, Type } from '@google/genai';
-import { cookies } from 'next/headers';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
+import { getSessionUserAction } from './auth';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
-
-const SESSION_COOKIE_OPTIONS = {
-  path: '/',
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 60 * 60 * 24 * 30, // 30 days
-};
 
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
   try {
@@ -53,18 +43,6 @@ export async function sendInviteEmail(toEmail: string, householdName: string, in
   } catch (err) {
     return { success: false, error: err };
   }
-}
-
-export async function getSessionUserAction() {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get('vault_user_id')?.value;
-  if (!userId) return null;
-
-  const [user] = await db.select().from(users).where(eq(users.id, userId));
-  if (!user) return null;
-
-  const [household] = await db.select().from(households).where(eq(households.id, user.householdId));
-  return { user, household };
 }
 
 export async function fetchFamilyMembersAction() {
@@ -127,116 +105,6 @@ export async function deleteFamilyMemberAction(memberId: string) {
   await db.delete(users).where(eq(users.id, memberId));
   revalidatePath('/profile');
   return { success: true };
-}
-
-export async function loginAction(formData: FormData) {
-  const email = (formData.get('email') as string || '').trim();
-  const password = (formData.get('password') as string || '').trim();
-
-  if (!email || !password) {
-    return { success: false, error: 'Please enter both email and password.' };
-  }
-
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  if (!user) {
-    return { success: false, error: 'No account found with this email.' };
-  }
-
-  let isValid = false;
-  if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
-    isValid = await bcrypt.compare(password, user.passwordHash);
-  } else {
-    isValid = user.passwordHash === password;
-  }
-
-  if (!isValid) {
-    return { success: false, error: 'Incorrect password.' };
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
-  revalidatePath('/');
-  return { success: true, role: user.role };
-}
-
-export async function logoutAction() {
-  const cookieStore = await cookies();
-  cookieStore.delete('vault_user_id');
-  redirect('/login');
-}
-
-export async function registerOwnerAction(formData: FormData) {
-  const fullName = (formData.get('fullName') as string || '').trim();
-  const householdName = (formData.get('householdName') as string || '').trim();
-  const email = (formData.get('email') as string || '').trim();
-  const password = (formData.get('password') as string || '').trim();
-  const baseCurrency = (formData.get('baseCurrency') as string || 'USD').trim();
-
-  if (!fullName || !householdName || !email || !password) {
-    return { success: false, error: 'All fields are required.' };
-  }
-
-  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-  if (existingUser) {
-    return { success: false, error: 'An account with this email already exists.' };
-  }
-
-  const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-
-  const [household] = await db.insert(households).values({
-    name: householdName,
-    baseCurrency,
-    inviteCode,
-  } as any).returning();
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const [user] = await db.insert(users).values({
-    householdId: household.id,
-    email,
-    passwordHash,
-    fullName,
-    role: 'OWNER',
-  }).returning();
-
-  const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
-  revalidatePath('/');
-  return { success: true, role: user.role };
-}
-
-export async function registerMemberWithCodeAction(formData: FormData) {
-  const fullName = (formData.get('fullName') as string || '').trim();
-  const inviteCode = (formData.get('inviteCode') as string || '').trim();
-  const email = (formData.get('email') as string || '').trim();
-  const password = (formData.get('password') as string || '').trim();
-
-  if (!fullName || !inviteCode || !email || !password) {
-    return { success: false, error: 'All fields are required.' };
-  }
-
-  const [household] = await db.select().from(households).where(eq((households as any).inviteCode, inviteCode));
-  if (!household) {
-    return { success: false, error: 'Invalid household invite code.' };
-  }
-
-  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-  if (existingUser) {
-    return { success: false, error: 'An account with this email already exists.' };
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const [user] = await db.insert(users).values({
-    householdId: household.id,
-    email,
-    passwordHash,
-    fullName,
-    role: 'MEMBER',
-  }).returning();
-
-  const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
-  revalidatePath('/');
-  return { success: true, role: user.role };
 }
 
 let cachedRates: { rates: Record<string, number>; fetchedAt: number } | null = null;
@@ -473,8 +341,9 @@ export async function parseStatementAction(formData: FormData) {
     return { success: false, error: 'No files uploaded or text provided' };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return { success: false, error: 'GEMINI_API_KEY is not configured in .env' };
+  // Support user's personal BYOK API key if saved in database, else fallback to environment variable
+  const apiKey = session.user.apiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) return { success: false, error: 'Gemini API key is not configured. Add it in your profile settings or .env' };
 
   const ai = new GoogleGenAI({ apiKey });
   let totalCount = 0;
@@ -961,23 +830,7 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
     return { success: false, error: 'Decryption failed. Security context mismatch.' };
   }
 }
-export async function updateUserApiKeyAction(apiKey: string) {
-  try {
-    const session = await verifySession();
-    if (!session || !session.user?.id) {
-      return { success: false, error: 'Unauthorized' };
-    }
 
-    await db.user.update({
-      where: { id: session.user.id },
-      data: { apiKey },
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to save API key' };
-  }
-}
 export async function deleteDocumentAction(documentId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
