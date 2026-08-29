@@ -1,0 +1,188 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { 
+  updateHouseholdBaseCurrencyAction, 
+  refreshLiveMarketPricesAction,
+  fetchLiveExchangeRatesAction,
+  logoutAction 
+} from '@/actions/vault';
+import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, FileText, Menu, Sun, Moon } from 'lucide-react';
+
+function formatCategoryName(cat: string): string {
+  if (!cat) return 'Individual';
+  const upper = cat.toUpperCase();
+  if (upper === 'REAL_ESTATE') return 'Real Estate';
+  if (upper === 'SOCIAL_SECURITY') return 'Social Security';
+  if (upper === 'ROTH_IRA') return 'Roth IRA';
+  if (upper === 'IRA') return 'Traditional IRA';
+  if (upper === '401K') return '401(k)';
+  if (upper === 'HSA') return 'HSA';
+  if (upper === 'PPF') return 'PPF';
+  if (upper === 'PF') return 'PF / EPF';
+  if (upper === 'PENSION') return 'Pension';
+  if (upper === '529') return '529 College';
+  if (upper === 'TRUST') return 'Trust';
+  if (upper === 'INDIVIDUAL') return 'Individual';
+  return cat.replace(/_/g, ' ');
+}
+
+export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
+  const router = useRouter();
+  const [isRefreshing, startRefreshTransition] = useTransition();
+
+  const handleRefreshPrices = () => {
+    startRefreshTransition(async () => {
+      try {
+        await refreshLiveMarketPricesAction();
+        await fetchLiveExchangeRatesAction();
+        router.refresh();
+      } catch (err) {
+        console.error('Failed to refresh live market prices:', err);
+      }
+    });
+  };
+
+  const householdTitle = session?.household?.name || 'Private Family';
+
+  const categorySubtotals: { [key: string]: number } = {};
+  let totalNetWorth = 0;
+
+  initialAssets.forEach((a: any) => {
+    const val = parseFloat(a.nativeValue || '0');
+    const type = (a.assetType || '').toUpperCase();
+    const rawCat = a.accountCategory || 'INDIVIDUAL';
+    const isLiability = type === 'LIABILITY' || type === 'DEBT' || rawCat === 'LIABILITY';
+    const netVal = isLiability ? -Math.abs(val) : Math.abs(val);
+
+    totalNetWorth += netVal;
+    const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
+    categorySubtotals[label] = (categorySubtotals[label] || 0) + netVal;
+  });
+
+  const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="space-y-4">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm transition-colors print:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button onClick={onOpenMenu} className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition" aria-label="Open Menu">
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">{householdTitle}</div>
+                <div className="text-[11px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono">Command Center</div>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <CurrencySwitcherForm currentCurrency={baseCurrency} />
+             
+            <div className="hidden md:flex items-center gap-2">
+              <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                <Plus className="w-4 h-4" /><span>Add Asset</span>
+              </button>
+              <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                <CreditCard className="w-4 h-4" /><span>Add Liability</span>
+              </button>
+              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 dark:bg-slate-800 text-white border border-slate-800 dark:border-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
+              </button>
+              <button onClick={() => window.print()} title="Export Report / Save as PDF" className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
+                <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" /><span>Export Report</span>
+              </button>
+              <button onClick={handleRefreshPrices} disabled={isRefreshing} title="Refresh Live Market Prices" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:opacity-50 shadow-sm">
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <Link href="/profile" title="Household Settings" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
+                <Settings className="w-4 h-4" />
+              </Link>
+              <form action={logoutAction}>
+                <button type="submit" title="Logout" className="p-2 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 transition cursor-pointer shadow-sm">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="block md:hidden px-4 pt-4 print:hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div className="min-w-0">
+            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Global Net Worth</span>
+            <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
+            </div>
+          </div>
+          <button onClick={handleRefreshPrices} disabled={isRefreshing} className="p-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50 shadow-sm">
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8 pt-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:border-none print:shadow-none print:p-0">
+          <div className="shrink-0">
+            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1.5">
+              <Wallet className="w-4 h-4 text-slate-400 print:hidden" /> Global Household Net Worth
+            </span>
+            <div className="text-4xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
+              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-600 dark:text-teal-500 text-lg font-sans">{baseCurrency}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl print:grid-cols-3">
+            {sortedCategories.map(([cat, val]) => (
+              <div key={cat} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0 print:border-slate-300 print:bg-white">
+                <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] block font-medium truncate">{formatCategoryName(cat)}</span>
+                <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
+                  {Math.round(val).toLocaleString()} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
+  const router = useRouter();
+  const [selectedCurrency, setSelectedCurrency] = useState(currentCurrency);
+  const [isPending, startTransition] = useTransition();
+
+  const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCurrency = e.target.value;
+    setSelectedCurrency(newCurrency);
+    startTransition(async () => {
+      try {
+        await updateHouseholdBaseCurrencyAction(newCurrency);
+        router.refresh();
+      } catch (err) {
+        console.error('Failed to update base currency:', err);
+      }
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-1.5 rounded-xl shrink-0 shadow-sm">
+      <Coins className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+      <select value={selectedCurrency} onChange={handleCurrencyChange} disabled={isPending} className="bg-transparent border-0 text-xs text-slate-800 dark:text-slate-200 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50">
+        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
+          <option key={c} value={c} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{c}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
