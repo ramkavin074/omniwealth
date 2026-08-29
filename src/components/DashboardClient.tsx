@@ -785,50 +785,70 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     </div>
   );
 }
-function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLiability }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number }; onAddLiability: () => void }) {
-  const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
-   
-  const liabilities = assets.filter(a => {
-    const type = (a.assetType || '').toUpperCase();
-    const cat = (a.accountCategory || '').toUpperCase();
-    return type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT';
-  });
-
-  const totalLiabilities = liabilities.reduce((s: number, a: any) => s + Math.abs(getBaseVal(a)), 0);
+function LiabilitiesSection({ liabilities = [], baseCurrency, onAddLiability, onDeleteLiability, onUpdateLiability }: { liabilities: any[]; baseCurrency: string; onAddLiability: () => void; onDeleteLiability: (id: string) => void; onUpdateLiability: (id: string, fd: FormData) => void }) {
+  const totalDebt = liabilities.reduce((acc, l) => acc + parseFloat(l.nativeValue || '0'), 0);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-rose-700 dark:text-rose-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Liabilities &amp; Debt Tracking</h3>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 transition-colors">
+      {/* Header & Controls: Stacked on mobile, side-by-side on desktop */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-rose-700 dark:text-rose-400 shrink-0 shadow-sm">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+              Liabilities &amp; Debt Tracking
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+              Total Outstanding: <span className="text-rose-600 dark:text-rose-400 font-bold">{Math.round(totalDebt).toLocaleString()} {baseCurrency}</span>
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-mono text-rose-700 dark:text-rose-400 font-bold">Total Debt: -{Math.round(totalLiabilities).toLocaleString()} {baseCurrency}</span>
-          <button onClick={onAddLiability} className="px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-sm transition">
-            + Add Liability
-          </button>
-        </div>
+
+        <button
+          onClick={onAddLiability}
+          className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs rounded-xl transition shadow-sm cursor-pointer shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Liability</span>
+        </button>
       </div>
 
+      {/* Description */}
+      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+        Log mortgages, cross-border loans, or credit lines to automatically subtract from your global net worth in {baseCurrency}.
+      </p>
+
+      {/* Liabilities List or Empty State */}
       {liabilities.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center space-y-3">
-          <div className="text-slate-800 dark:text-slate-200 font-bold text-sm">No active liabilities logged yet</div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            Log mortgages, cross-border loans, or credit lines using the button above to automatically subtract from your net worth in {baseCurrency}.
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-8 sm:p-10 text-center space-y-2 shadow-inner">
+          <div className="text-slate-900 dark:text-slate-100 font-bold text-sm">No active liabilities logged yet</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            Use the button above to securely track loans and credit lines against your portfolio.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {liabilities.map((item) => (
-            <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex justify-between items-center shadow-sm">
-              <div>
-                <div className="font-bold text-slate-900 dark:text-white text-sm">{item.name}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">Owner: {item.user?.fullName || 'Family Member'} | Category: {formatCategoryName(item.accountCategory)}</div>
+          {liabilities.map((liability) => (
+            <div key={liability.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center justify-between gap-3 shadow-sm min-w-0">
+              <div className="min-w-0 pr-2">
+                <div className="font-bold text-slate-900 dark:text-white text-sm break-words">
+                  {liability.name} {liability.institution ? `(${liability.institution})` : ''}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                  Owner: {liability.user?.fullName || 'Family General'} • {liability.accountCategory || 'Loan'}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-rose-700 dark:text-rose-400 font-bold text-sm">-{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
-                <button onClick={async () => { await deleteAssetAction(item.id); }} className="text-slate-400 hover:text-rose-700 p-1.5 cursor-pointer">
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm">
+                  -{Math.round(parseFloat(liability.nativeValue || '0')).toLocaleString()} {liability.nativeCurrency || baseCurrency}
+                </span>
+                <button
+                  onClick={() => onDeleteLiability(liability.id)}
+                  className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                  title="Delete Liability"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -839,7 +859,6 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
     </div>
   );
 }
-
 function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
@@ -1605,7 +1624,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
           <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Wealth by Member</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Wealth by Family Member</h3>
         </div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
