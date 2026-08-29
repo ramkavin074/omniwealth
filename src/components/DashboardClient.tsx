@@ -750,6 +750,51 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
 }
 
 function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any[]; onOpenUpload: () => void }) {
+  const router = useRouter();
+  const [viewingId, setViewingId] = useState<string | null>(null);
+
+  async function handleView(docId: string) {
+    setViewingId(docId);
+    try {
+      const res = await fetchDocumentDownloadUrlAction(docId);
+      if (res.success && res.dataUri) {
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>${res.name || 'Secure Document'}</title></head>
+              <body style="margin:0; background:#0f172a; display:flex; align-items:center; justify-content:center; height:100vh;">
+                <iframe src="${res.dataUri}" style="width:100%; height:100%; border:none;"></iframe>
+              </body>
+            </html>
+          `);
+        } else {
+          const a = document.createElement('a');
+          a.href = res.dataUri;
+          a.download = res.name || 'document';
+          a.click();
+        }
+      } else {
+        alert(res.error || 'Failed to decrypt document.');
+      }
+    } catch (err) {
+      alert('An error occurred while opening the document.');
+    } finally {
+      setViewingId(null);
+    }
+  }
+
+  async function handleDelete(docId: string) {
+    if (confirm('Are you sure you want to delete this document from the secure vault?')) {
+      const res = await deleteDocumentAction(docId);
+      if (res.success) {
+        router.refresh();
+      } else {
+        alert(res.error || 'Failed to delete document');
+      }
+    }
+  }
+
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -796,9 +841,23 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
                   </div>
                 </div>
               </div>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold shrink-0 transition-colors border border-slate-200 shadow-sm">
-                View
-              </a>
+              
+              <div className="flex items-center gap-2 shrink-0">
+                <button 
+                  onClick={() => handleView(doc.id)}
+                  disabled={viewingId === doc.id}
+                  className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {viewingId === doc.id ? 'Decrypting...' : 'View'}
+                </button>
+                <button 
+                  onClick={() => handleDelete(doc.id)}
+                  title="Delete Document"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-200 transition cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -806,7 +865,6 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
     </div>
   );
 }
-
 function VaultUploadModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
