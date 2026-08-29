@@ -160,7 +160,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                             {item.ticker && <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400">{item.ticker}</span>}
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            Accounts: {item.accounts.join(', ')} • Qty: {item.totalQty}
+                            Accounts: {item.accounts.join(', ')} • Qty: {Number(item.totalQty).toLocaleString(undefined, { maximumFractionDigits: 4 })}
                           </div>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
@@ -230,7 +230,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                             {item.ticker && <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400">{item.ticker}</span>}
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            Owner: {item.user?.fullName || 'Family Member'} • Qty: {item.totalQty}
+                            Owner: {item.user?.fullName || 'Family Member'} • Qty: {Number(item.totalQty).toLocaleString(undefined, { maximumFractionDigits: 4 })}
                           </div>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
