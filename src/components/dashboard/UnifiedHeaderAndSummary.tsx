@@ -90,14 +90,16 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
               <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
                 <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
               </div>
-             <div className="min-w-0">
-  <div className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
-    Family Wealth Hub
+            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+  <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+    <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
   </div>
-  <div className="text-[11px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
-    {householdTitle}
+  <div className="min-w-0">
+    <div className="font-bold text-slate-900 dark:text-white text-sm md:text-base tracking-tight truncate">
+      Family Wealth Hub
+    </div>
   </div>
-</div>
+</Link>
             </Link>
           </div>
 
