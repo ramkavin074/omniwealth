@@ -62,7 +62,9 @@ function groupAssets(rawAssets: any[], baseCurrency: string, liveRates: { [key: 
       map[key].rawAssets.push(a);
     }
   });
-  return Object.values(map);
+
+  // Restored sorting: Highest value holdings will now appear at the top
+  return Object.values(map).sort((a: any, b: any) => b.totalBase - a.totalBase);
 }
 
 export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates = FX_RATES, onEditAsset }: any) {
