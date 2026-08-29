@@ -827,7 +827,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
   const valueVal = formData.get('nativeValue') as string;
   const rationaleVal = formData.get('rationale') as string;
   const qtyVal = formData.get('quantity') as string;
-  const assetTypeVal = formData.get('assetType') ? (formData.get('assetType'] as string).toUpperCase().trim() : existing.assetType;
+  const assetTypeVal = formData.get('assetType') ? (formData.get('assetType') as string).toUpperCase().trim() : existing.assetType;
 
   // Clean up extra underlying consolidated rows if merging
   const extraAssetIdsStr = formData.get('extraAssetIds') as string;
