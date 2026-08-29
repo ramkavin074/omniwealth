@@ -1141,7 +1141,10 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
     return val.toString();
   };
-  const width = 700; const height = 180; const padding = 40;
+  
+  // Increased height and padding for a taller, more prominent chart view
+  const width = 700; const height = 230; const padding = 45;
+  
   const values = safeData.map(d => d.value);
   const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
   const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
@@ -1178,23 +1181,24 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
       </div>
       <div className="pt-4 pb-2 px-1 border-b border-slate-100 dark:border-slate-800">
         {safeData.length === 0 ? (
-          <div className="h-52 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
+          <div className="h-72 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
         ) : (
           <div className="relative w-full overflow-hidden rounded-xl">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-52 overflow-visible">
+            {/* Increased display height class from h-52 to h-72 for mobile visibility */}
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-72 sm:h-64 overflow-visible">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0f766e" stopOpacity="0.12" />
+                  <stop offset="0%" stopColor="#0f766e" stopOpacity="0.15" />
                   <stop offset="100%" stopColor="#0f766e" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <path d={areaString} fill="url(#areaGradient)" />
-              <path d={pathString} fill="none" stroke="#0f766e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={pathString} fill="none" stroke="#0f766e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
               {points.map((pt, idx) => (
                 <g key={idx} className="group cursor-pointer">
-                  <circle cx={pt.x} cy={pt.y} r="5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
-                  <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
-                  <text x={pt.x} y={height - 5} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">{pt.month}</text>
+                  <circle cx={pt.x} cy={pt.y} r="5.5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
+                  <text x={pt.x} y={pt.y - 14} textAnchor="middle" className="text-[11px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
+                  <text x={pt.x} y={height - 8} textAnchor="middle" className="text-[10px] font-mono fill-slate-400">{pt.month}</text>
                   <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
                 </g>
               ))}
@@ -1205,7 +1209,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     </div>
   );
 }
-
 function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number } }) {
   const { totalNetWorth } = useAssetValuation(assets, baseCurrency, liveRates);
   const typeMap: { [key: string]: number } = {};
