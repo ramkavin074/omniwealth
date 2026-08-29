@@ -1167,7 +1167,6 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Timeline:</span>
           <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-mono font-bold focus:outline-none cursor-pointer shadow-sm">
-            <option value="1m">Last 1 Month</option>
             <option value="3m">Last 3 Months</option>
             <option value="6m">Last 6 Months</option>
             <option value="1y">Last 1 Year</option>
