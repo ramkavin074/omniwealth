@@ -21,7 +21,6 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
   const [singleQty, setSingleQty] = useState('');
   const [singleCurrency, setSingleCurrency] = useState('USD');
 
-  // Sync state cleanly whenever the selected asset changes
   useEffect(() => {
     if (asset) {
       if (asset.rawAssets && Array.isArray(asset.rawAssets) && asset.rawAssets.length > 0) {
@@ -53,7 +52,6 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
     startTransition(async () => {
       let res;
       if (isConsolidated) {
-        // Update each underlying account row individually with its custom quantity & value
         for (const row of subRows) {
           const rowFormData = new FormData();
           rowFormData.set('name', formData.get('name') as string);
@@ -70,7 +68,6 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
           if (!res?.success) break;
         }
       } else {
-        // Single asset update
         formData.set('nativeValue', singleValue);
         formData.set('quantity', singleQty);
         formData.set('nativeCurrency', singleCurrency);
@@ -157,7 +154,6 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
             </select>
           </div>
 
-          {/* Account Breakdown or Single Asset Inputs */}
           {isConsolidated ? (
             <div className="space-y-3 pt-2">
               <div className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
@@ -192,7 +188,7 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
                       <input 
                         type="number"
                         step="any"
-                        value={row.quantity ?? ''}
+                        value={row.quantity ?? '1'}
                         onChange={(e) => {
                           const qty = e.target.value;
                           setSubRows(prev => prev.map((item, i) => i === idx ? { ...item, quantity: qty } : item));
@@ -232,7 +228,7 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
                 <input 
                   type="number" 
                   step="any"
-                  value={singleQty} 
+                  value={singleQty || '1'} 
                   onChange={(e) => setSingleQty(e.target.value)}
                   required
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono" 

@@ -170,7 +170,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                           <div className="flex items-center gap-1">
                             {onEditAsset && (
                               <button 
-onClick={() => onEditAsset(item)} // <-- Pass the full consolidated item here
+                                onClick={() => onEditAsset(item)} 
                                 className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer" 
                                 title="Edit Asset"
                               >
@@ -240,7 +240,7 @@ onClick={() => onEditAsset(item)} // <-- Pass the full consolidated item here
                           <div className="flex items-center gap-1">
                             {onEditAsset && (
                               <button 
-                                onClick={() => onEditAsset(item.rawAssets[0])} 
+                                onClick={() => onEditAsset(item)} 
                                 className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer" 
                                 title="Edit Asset"
                               >
