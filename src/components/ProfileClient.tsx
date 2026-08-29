@@ -339,7 +339,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
-          {/* 4. Multi-AI Free-First Cascade BYOK Settings Card (Moved last before security) */}
+          {/* 4. Multi-AI Free-First Cascade BYOK Settings Card (Placed right before security) */}
           <AiSettingsCard 
             initialGroq={Boolean(session.user.groqApiKey)}
             initialOpenrouter={Boolean(session.user.openrouterApiKey)}
