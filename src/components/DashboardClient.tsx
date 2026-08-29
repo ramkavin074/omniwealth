@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -89,30 +89,33 @@ function formatAssetTypeName(type: string): string {
   return upper.replace(/_/g, ' ');
 }
 
+// Optimized with useMemo hook for high performance
 function useAssetValuation(assets: any[], baseCurrency: string, liveRates: { [key: string]: number }) {
-  const getBaseVal = (asset: any) => {
-    const val = parseFloat(asset.nativeValue || '0');
-    const curr = asset.nativeCurrency || 'USD';
-    const baseVal = convertCurrency(val, curr, baseCurrency, liveRates);
-    const type = (asset.assetType || '').toUpperCase();
-    const cat = (asset.accountCategory || '').toUpperCase();
+  return useMemo(() => {
+    const getBaseVal = (asset: any) => {
+      const val = parseFloat(asset.nativeValue || '0');
+      const curr = asset.nativeCurrency || 'USD';
+      const baseVal = convertCurrency(val, curr, baseCurrency, liveRates);
+      const type = (asset.assetType || '').toUpperCase();
+      const cat = (asset.accountCategory || '').toUpperCase();
+       
+      if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') {
+        return -Math.abs(baseVal);
+      }
+      return Math.abs(baseVal);
+    };
+
+    const totalNetWorth = assets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
      
-    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') {
-      return -Math.abs(baseVal);
-    }
-    return Math.abs(baseVal);
-  };
+    const liquidAssets = assets.filter(a => {
+      const type = (a.assetType || '').toUpperCase();
+      const category = (a.accountCategory || '').toUpperCase();
+      return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY' && type !== 'LIABILITY' && type !== 'DEBT';
+    });
+    const totalLiquidWealth = liquidAssets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
 
-  const totalNetWorth = assets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
-   
-  const liquidAssets = assets.filter(a => {
-    const type = (a.assetType || '').toUpperCase();
-    const category = (a.accountCategory || '').toUpperCase();
-    return type !== 'REAL_ESTATE' && category !== 'SOCIAL_SECURITY' && type !== 'LIABILITY' && type !== 'DEBT';
-  });
-  const totalLiquidWealth = liquidAssets.reduce((s: number, a: any) => s + getBaseVal(a), 0);
-
-  return { getBaseVal, totalNetWorth, totalLiquidWealth };
+    return { getBaseVal, totalNetWorth, totalLiquidWealth };
+  }, [assets, baseCurrency, liveRates]);
 }
 
 function groupAssets(rawAssets: any[]) {
@@ -170,15 +173,15 @@ export default function DashboardClient({
   const { totalNetWorth, totalLiquidWealth } = useAssetValuation(initialAssets, baseCurrency, liveRates);
 
   useEffect(() => {
-    fetchFamilyMembersAction().then(setMembers);
+    fetchFamilyMembersAction().then(setMembers).catch(err => console.warn('Failed to fetch family members:', err));
   }, []);
 
   useEffect(() => {
-    fetchNetWorthTrendAction(timeRange).then(setTrendData);
+    fetchNetWorthTrendAction(timeRange).then(setTrendData).catch(err => console.warn('Failed to fetch net worth trend:', err));
   }, [timeRange]);
 
   useEffect(() => {
-    fetchLiveExchangeRatesAction().then(setLiveRates).catch(() => {});
+    fetchLiveExchangeRatesAction().then(setLiveRates).catch((err) => console.warn('Failed to fetch live exchange rates:', err));
   }, []);
 
   useEffect(() => {
@@ -195,21 +198,20 @@ export default function DashboardClient({
     return () => { App.removeAllListeners(); };
   }, []);
 
-  let legacyPillars: { name: string; description: string }[] = [];
-  try {
-    legacyPillars = JSON.parse(session?.household?.legacyPillars || '[]');
-  } catch {
-    legacyPillars = [
+  const legacyPillars = useMemo(() => {
+    try {
+      const parsed = JSON.parse(session?.household?.legacyPillars || '[]');
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (err) {
+      console.warn('Failed to parse legacy pillars, falling back to defaults:', err);
+    }
+    return [
       { name: 'Core Growth & Accumulation', description: '' },
       { name: 'Retirement & Income Preservation', description: '' },
       { name: 'Succession & Education', description: '' },
       { name: 'General Long-Term Growth', description: '' },
     ];
-  }
-
-  if (legacyPillars.length === 0) {
-    legacyPillars = [{ name: 'General Long-Term Growth', description: '' }];
-  }
+  }, [session?.household?.legacyPillars]);
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
@@ -225,22 +227,20 @@ export default function DashboardClient({
           onOpenAiReader={() => setIsAiReaderOpen(true)}
           onSelectTab={(tab: any) => setActiveTab(tab)}
         />
-{activeTab === 'wealth' && (
-  <div className="space-y-6 animate-fadeIn">
-    {/* --- ADD THE PRINT-OPTIMIZED EXECUTIVE HEADER WRAPPER HERE --- */}
-    <div className="hidden print:block space-y-2 mb-6">
-      <div className="border-b-2 border-slate-900 pb-3">
-        <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
-        <p className="text-xs text-slate-600 font-mono mt-0.5">Generated on {new Date().toLocaleDateString()} • Confidential Asset &amp; Estate Summary</p>
-      </div>
-    </div>
-    {/* ------------------------------------------------------------- */}
+        {activeTab === 'wealth' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="hidden print:block space-y-2 mb-6">
+              <div className="border-b-2 border-slate-900 pb-3">
+                <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
+                <p className="text-xs text-slate-600 font-mono mt-0.5">Generated on {new Date().toLocaleDateString()} • Confidential Asset &amp; Estate Summary</p>
+              </div>
+            </div>
 
-    <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
-    <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
-    <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
-  </div>
-)}
+            <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
+            <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+            <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+          </div>
+        )}
          
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
@@ -442,7 +442,6 @@ export default function DashboardClient({
   );
 }
 
-// Reusable Theme Toggle Button Component
 function ThemeToggleButton() {
   const [isDark, setIsDark] = useState(false);
 
@@ -559,7 +558,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                 <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
               </button>
 
-              {/* Export Report / PDF Print Button */}
               <button 
                 onClick={() => window.print()}
                 title="Export Executive Report / Save as PDF"
@@ -597,7 +595,6 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                   <LogOut className="w-4 h-4" />
                 </button>
               </form>
-            </div>
           </div>
         </div>
       </header>
@@ -649,6 +646,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
     </div>
   );
 }
+
 function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
   const router = useRouter();
   const [selectedCurrency, setSelectedCurrency] = useState(currentCurrency);
@@ -660,8 +658,12 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
     const newCurrency = e.target.value;
     setSelectedCurrency(newCurrency);
     startTransition(async () => {
-      await updateHouseholdBaseCurrencyAction(newCurrency);
-      router.refresh();
+      try {
+        await updateHouseholdBaseCurrencyAction(newCurrency);
+        router.refresh();
+      } catch (err) {
+        console.error('Failed to update base currency:', err);
+      }
     });
   };
 
@@ -688,7 +690,8 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       try {
         const saved = localStorage.getItem('omniwealth_dismissed_feed');
         return saved ? JSON.parse(saved) : [];
-      } catch {
+      } catch (err) {
+        console.warn('Failed to load dismissed feed from storage:', err);
         return [];
       }
     }
@@ -699,7 +702,11 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     const updated = [...dismissedIds, id];
     setDismissedIds(updated);
     if (typeof window !== 'undefined') {
-      try { localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated)); } catch {}
+      try { 
+        localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated)); 
+      } catch (err) {
+        console.warn('Failed to save dismissed feed to storage:', err);
+      }
     }
   };
 
@@ -905,16 +912,16 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
                   ) : (
                     <span className="text-sm font-mono text-slate-900 dark:text-white font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
                   )}
-                </div>
-                <button 
-                  onClick={() => setEditing(asset.id, !isEditing(asset.id))} 
-                  className="p-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl cursor-pointer shadow-sm transition shrink-0 flex items-center justify-center"
-                  title="Edit Milestone"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
               </div>
+              <button 
+                onClick={() => setEditing(asset.id, !isEditing(asset.id))} 
+                className="p-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl cursor-pointer shadow-sm transition shrink-0 flex items-center justify-center"
+                title="Edit Milestone"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
             </div>
+          </div>
           );
         })}
       </div>
@@ -951,6 +958,7 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
         alert(res.error || 'Failed to decrypt document.');
       }
     } catch (err) {
+      console.error('An error occurred while opening the document:', err);
       alert('An error occurred while opening the document.');
     } finally {
       setViewingId(null);
@@ -959,11 +967,15 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
 
   async function handleDelete(docId: string) {
     if (confirm('Are you sure you want to delete this document from the secure vault?')) {
-      const res = await deleteDocumentAction(docId);
-      if (res.success) {
-        router.refresh();
-      } else {
-        alert(res.error || 'Failed to delete document');
+      try {
+        const res = await deleteDocumentAction(docId);
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert(res.error || 'Failed to delete document');
+        }
+      } catch (err) {
+        console.error('Failed to delete document:', err);
       }
     }
   }
@@ -1030,12 +1042,12 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-              </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
   );
 }
 
@@ -1043,7 +1055,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [instructionsMap, setInstructionsMap] = useState<{ [key: string]: string }>({});
   const [editingNote, setEditingNote] = useState('');
-  const uniqueAccounts = Array.from(new Set(assets.map(a => `${formatCategoryName(a.accountCategory)} (${a.accountNumber || 'Primary'})`)));
+  const uniqueAccounts = useMemo(() => Array.from(new Set(assets.map(a => `${formatCategoryName(a.accountCategory)} (${a.accountNumber || 'Primary'})`))), [assets]);
 
   if (uniqueAccounts.length === 0) return null;
 
@@ -1119,24 +1131,28 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return val.toString();
   };
 
-  const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
-    const data = rawData.length <= maxPoints ? rawData : rawData.filter((_, idx) => idx % Math.ceil(rawData.length / (maxPoints - 1)) === 0 || idx === rawData.length - 1);
-    const values = data.map(d => d.value);
-    const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
-    const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
-    const range = maxVal - minVal || 1;
-    const points = data.map((d, idx) => {
-      const x = data.length === 1 ? width / 2 : padding + (idx / (data.length - 1)) * (width - padding * 2);
-      const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
-      return { x, y, ...d };
-    });
-    const pathString = points.reduce((acc, pt, idx) => idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`, '');
-    const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 15} L ${points[0].x} ${height - 15} Z` : '';
-    return { points, pathString, areaString };
-  };
+  const { desktopChart, mobileChart } = useMemo(() => {
+    const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
+      const data = rawData.length <= maxPoints ? rawData : rawData.filter((_, idx) => idx % Math.ceil(rawData.length / (maxPoints - 1)) === 0 || idx === rawData.length - 1);
+      const values = data.map(d => d.value);
+      const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
+      const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
+      const range = maxVal - minVal || 1;
+      const points = data.map((d, idx) => {
+        const x = data.length === 1 ? width / 2 : padding + (idx / (data.length - 1)) * (width - padding * 2);
+        const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
+        return { x, y, ...d };
+      });
+      const pathString = points.reduce((acc, pt, idx) => idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`, '');
+      const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 15} L ${points[0].x} ${height - 15} Z` : '';
+      return { points, pathString, areaString };
+    };
 
-  const desktopChart = generateChartData(12, 700, 180, 40);
-  const mobileChart = generateChartData(6, 400, 280, 45);
+    return {
+      desktopChart: generateChartData(12, 700, 180, 40),
+      mobileChart: generateChartData(6, 400, 280, 45)
+    };
+  }, [rawData]);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
@@ -1214,17 +1230,18 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
 
 function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number } }) {
   const { totalNetWorth } = useAssetValuation(assets, baseCurrency, liveRates);
-  const typeMap: { [key: string]: number } = {};
-   
-  assets.forEach((a) => {
-    let t = (a.assetType || 'OTHER').toUpperCase().trim();
-    if (t === 'LIABILITY' || t === 'DEBT') return;
-    if (t === 'EQUITY') t = 'EQUITIES';
-    const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
-    typeMap[t] = (typeMap[t] || 0) + val;
-  });
-   
-  const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
+  
+  const sortedEntries = useMemo(() => {
+    const typeMap: { [key: string]: number } = {};
+    assets.forEach((a) => {
+      let t = (a.assetType || 'OTHER').toUpperCase().trim();
+      if (t === 'LIABILITY' || t === 'DEBT') return;
+      if (t === 'EQUITY') t = 'EQUITIES';
+      const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
+      typeMap[t] = (typeMap[t] || 0) + val;
+    });
+    return Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
+  }, [assets, baseCurrency, liveRates]);
    
   const assetColors: { [key: string]: string } = {
     STOCK: 'bg-teal-700',
@@ -1292,13 +1309,13 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
                   <div className="font-mono text-base sm:text-lg text-slate-900 dark:text-white font-bold mt-1">
                     {Math.round(val).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-500">{baseCurrency}</span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
-      )}
     </div>
+    )}
+  </div>
   );
 }
 
@@ -1311,10 +1328,14 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
         <form action={async (fd) => {
-          if (isLiability) { fd.set('assetType', 'LIABILITY'); fd.set('accountCategory', 'LIABILITY'); }
-          await addAssetAction(fd);
-          onClose();
-        }} className="space-y-4">
+          try {
+            if (isLiability) { fd.set('assetType', 'LIABILITY'); fd.set('accountCategory', 'LIABILITY'); }
+            await addAssetAction(fd);
+            onClose();
+          } catch (err) {
+            console.error('Failed to add asset/liability:', err);
+          }
+      }} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">{isLiability ? 'Liability Name' : 'Asset Name'}</label><input name="name" required placeholder={isLiability ? 'e.g. Mortgage' : 'e.g. Apple Stock'} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-3 py-2.5 text-sm text-slate-900 dark:text-white shadow-sm" /></div>
             <div><label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Ticker / Reference</label><input name="ticker" placeholder="Optional" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-3 py-2.5 text-sm text-slate-900 dark:text-white font-mono shadow-sm" /></div>
@@ -1352,7 +1373,7 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
                   <option value="REAL_ESTATE">Real Estate</option>
                 </select>
               </div>
-            </div>
+          </div>
           )}
           <div className="grid grid-cols-3 gap-3">
             <div><label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Quantity</label><input name="quantity" type="number" step="any" defaultValue="1" required className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-3 py-2.5 text-sm text-slate-900 dark:text-white font-mono shadow-sm" /></div>
@@ -1383,8 +1404,8 @@ function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legac
             </button>
           </div>
         </form>
-      </div>
     </div>
+  </div>
   );
 }
 
@@ -1399,7 +1420,9 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
     try {
       const data = await fetchDraftLineItemsAction();
       setDrafts(data);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error('Failed to load draft line items:', err); 
+    }
   };
 
   useEffect(() => { loadData(); }, []);
@@ -1418,8 +1441,12 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
         (e.target as HTMLFormElement).reset();
         await loadData();
       } else { setError(res?.error || 'Failed to parse statements or text.'); }
-    } catch (err: any) { setError(err.message || 'An unexpected error occurred.'); }
-    finally { setUploading(false); }
+    } catch (err: any) { 
+      console.error('Statement upload error:', err);
+      setError(err.message || 'An unexpected error occurred.'); 
+    } finally { 
+      setUploading(false); 
+    }
   }
 
   return (
@@ -1474,7 +1501,19 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
                 <select value={bulkUser} onChange={(e) => setBulkUser(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-xs text-slate-900 dark:text-white cursor-pointer font-medium shadow-sm">
                   {members.map(m => <option key={m.id} value={m.id}>{m.fullName}</option>)}
                 </select>
-                <button onClick={async () => { setUploading(true); try { await approveAllDraftLineItemsAction(bulkUser); await loadData(); setSuccessMsg("Successfully approved all pending items!"); } catch { setError("Failed to approve items."); } finally { setUploading(false); } }} className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-sm">
+                <button onClick={async () => { 
+                  setUploading(true); 
+                  try { 
+                    await approveAllDraftLineItemsAction(bulkUser); 
+                    await loadData(); 
+                    setSuccessMsg("Successfully approved all pending items!"); 
+                  } catch (err) { 
+                    console.error('Failed to approve all items:', err);
+                    setError("Failed to approve items."); 
+                  } finally { 
+                    setUploading(false); 
+                  } 
+                }} className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-lg cursor-pointer shadow-sm">
                   <CheckCheck className="w-4 h-4" /><span>Approve All Pending</span>
                 </button>
               </div>
@@ -1489,7 +1528,7 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
           )}
         </div>
       </div>
-    </div>
+  </div>
   );
 }
 
@@ -1507,8 +1546,22 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           <div className="text-xs font-mono text-slate-900 dark:text-white font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
         </div>
         <div className="flex gap-2">
-          <button onClick={async () => { await approveDraftLineItemAction(item.id, cat, usr, acct, rat); onRefresh(); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 text-white rounded text-xs cursor-pointer shadow-sm"><Check className="w-4 h-4" /> Approve</button>
-          <button onClick={async () => { await rejectDraftLineItemAction(item.id); onRefresh(); }} className="p-1.5 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 rounded cursor-pointer shadow-sm"><Trash2 className="w-4 h-4" /></button>
+          <button onClick={async () => { 
+            try {
+              await approveDraftLineItemAction(item.id, cat, usr, acct, rat); 
+              onRefresh(); 
+            } catch (err) {
+              console.error('Failed to approve draft item:', err);
+            }
+          }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 text-white rounded text-xs cursor-pointer shadow-sm"><Check className="w-4 h-4" /> Approve</button>
+          <button onClick={async () => { 
+            try {
+              await rejectDraftLineItemAction(item.id); 
+              onRefresh(); 
+            } catch (err) {
+              console.error('Failed to reject draft item:', err);
+            }
+          }} className="p-1.5 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 rounded cursor-pointer shadow-sm"><Trash2 className="w-4 h-4" /></button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
@@ -1532,7 +1585,7 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
           {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
         </select>
       </div>
-    </div>
+  </div>
   );
 }
 
@@ -1543,39 +1596,43 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 
   const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
 
-  const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
-  assets.forEach((a) => {
-    const type = (a.assetType || '').toUpperCase();
-    const cat = (a.accountCategory || '').toUpperCase();
-    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
-    const name = a.user?.fullName || 'Family General';
-    if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
-    memberMap[name].total += getBaseVal(a);
-    memberMap[name].assets.push(a);
-  });
+  const { sortedMembers, sortedPurposes } = useMemo(() => {
+    const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
+    assets.forEach((a) => {
+      const type = (a.assetType || '').toUpperCase();
+      const cat = (a.accountCategory || '').toUpperCase();
+      if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
+      const name = a.user?.fullName || 'Family General';
+      if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
+      memberMap[name].total += getBaseVal(a);
+      memberMap[name].assets.push(a);
+    });
 
-  Object.keys(memberMap).forEach(name => {
-    memberMap[name].assets = groupAssets(memberMap[name].assets);
-    memberMap[name].assets.sort((a, b) => getBaseVal(b) - getBaseVal(a));
-  });
-  const sortedMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
+    Object.keys(memberMap).forEach(name => {
+      memberMap[name].assets = groupAssets(memberMap[name].assets);
+      memberMap[name].assets.sort((a, b) => getBaseVal(b) - getBaseVal(a));
+    });
+    const sMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
 
-  const purposeMap: { [key: string]: { total: number; assets: any[] } } = {};
-  assets.forEach((a) => {
-    const type = (a.assetType || '').toUpperCase();
-    const cat = (a.accountCategory || '').toUpperCase();
-    if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
-    const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
-    if (!purposeMap[p]) purposeMap[p] = { total: 0, assets: [] };
-    purposeMap[p].total += getBaseVal(a);
-    purposeMap[p].assets.push(a);
-  });
+    const purposeMap: { [key: string]: { total: number; assets: any[] } } = {};
+    assets.forEach((a) => {
+      const type = (a.assetType || '').toUpperCase();
+      const cat = (a.accountCategory || '').toUpperCase();
+      if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
+      const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
+      if (!purposeMap[p]) purposeMap[p] = { total: 0, assets: [] };
+      purposeMap[p].total += getBaseVal(a);
+      purposeMap[p].assets.push(a);
+    });
 
-  Object.keys(purposeMap).forEach(p => {
-    purposeMap[p].assets = groupAssets(purposeMap[p].assets);
-    purposeMap[p].assets.sort((a, b) => getBaseVal(b) - getBaseVal(a));
-  });
-  const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
+    Object.keys(purposeMap).forEach(p => {
+      purposeMap[p].assets = groupAssets(purposeMap[p].assets);
+      purposeMap[p].assets.sort((a, b) => getBaseVal(b) - getBaseVal(a));
+    });
+    const sPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
+
+    return { sortedMembers: sMembers, sortedPurposes: sPurposes };
+  }, [assets, baseCurrency, legacyPillars, liveRates, getBaseVal]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1607,7 +1664,14 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                     return (
                       <div key={asset.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0 shadow-sm">
                         {editingId === asset.id ? (
-                          <form action={async (fd) => { await updateAssetAction(asset.id, fd); setEditingId(null); }} className="w-full space-y-2">
+                          <form action={async (fd) => { 
+                            try {
+                              await updateAssetAction(asset.id, fd); 
+                              setEditingId(null); 
+                            } catch (err) {
+                              console.error('Failed to update asset:', err);
+                            }
+                          }} className="w-full space-y-2">
                             <input name="name" defaultValue={asset.name} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-slate-900 dark:text-white text-sm shadow-sm" />
                             <div className="grid grid-cols-2 gap-2">
                               <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-slate-900 dark:text-white text-sm font-mono shadow-sm" />
@@ -1630,83 +1694,90 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                             <div className="flex items-center gap-2.5 shrink-0">
                               <span className={`font-mono font-semibold text-sm ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
                               <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1"><Edit3 className="w-4 h-4" /></button>
-                              <button onClick={async () => { await deleteAssetAction(asset.id); }} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 className="w-4 h-4" /></button>
+                              <button onClick={async () => { 
+                                try {
+                                  await deleteAssetAction(asset.id); 
+                                } catch (err) {
+                                  console.error('Failed to delete asset:', err);
+                                }
+                              }} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 className="w-4 h-4" /></button>
                             </div>
                           </>
                         )}
                       </div>
                     );
                   })}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3>
-        </div>
-        <div className="space-y-3">
-          {sortedPurposes.map(([purposeName, data]) => {
-            const matchedPillar = legacyPillars.find(p => p.name === purposeName);
-            const description = matchedPillar?.description;
-            return (
-              <div key={purposeName} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
-                <button 
-                  onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} 
-                  className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
-                >
-                  <div className="min-w-0 pr-2">
-                    <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
-                      {purposeName}
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.assets.length} consolidated holding(s)</div>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
-                    {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
-                  </div>
-                </button>
-                {expP[purposeName] && (
-                  <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-white dark:bg-slate-900 text-xs">
-                    {description && (
-                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-slate-700 dark:text-slate-300 space-y-1 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-bold mb-1">
-                          <FileText className="w-4 h-4" />
-                          <span className="uppercase text-xs">Legacy Directive:</span>
-                        </div>
-                        <p className="text-slate-800 dark:text-slate-200 text-sm font-medium">{description}</p>
-                      </div>
-                    )}
-                    {data.assets.map(asset => {
-                      const val = getBaseVal(asset);
-                      return (
-                        <div key={asset.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 min-w-0 shadow-sm">
-                          <div className="min-w-0 pr-2">
-                            <span className="font-bold text-slate-900 dark:text-white text-sm break-words block">
-                              {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
-                            </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
-                            </span>
-                          </div>
-                          <span className={`font-mono font-semibold text-sm shrink-0 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
-            );
-          })}
+            )}
         </div>
-      </div>
+        ))}
     </div>
+  </div>
+
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+        <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3>
+      </div>
+      <div className="space-y-3">
+        {sortedPurposes.map(([purposeName, data]) => {
+          const matchedPillar = legacyPillars.find(p => p.name === purposeName);
+          const description = matchedPillar?.description;
+          return (
+            <div key={purposeName} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
+              <button 
+                onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} 
+                className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
+              >
+                <div className="min-w-0 pr-2">
+                  <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
+                    {purposeName}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.assets.length} consolidated holding(s)</div>
+                </div>
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                  <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                  {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
+                </div>
+              </button>
+              {expP[purposeName] && (
+                <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-white dark:bg-slate-900 text-xs">
+                  {description && (
+                    <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-slate-700 dark:text-slate-300 space-y-1 shadow-sm">
+                      <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-bold mb-1">
+                        <FileText className="w-4 h-4" />
+                        <span className="uppercase text-xs">Legacy Directive:</span>
+                      </div>
+                      <p className="text-slate-800 dark:text-slate-200 text-sm font-medium">{description}</p>
+                    </div>
+                  )}
+                  {data.assets.map(asset => {
+                    const val = getBaseVal(asset);
+                    return (
+                      <div key={asset.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 min-w-0 shadow-sm">
+                        <div className="min-w-0 pr-2">
+                          <span className="font-bold text-slate-900 dark:text-white text-sm break-words block">
+                            {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
+                          </span>
+                        </div>
+                        <span className={`font-mono font-semibold text-sm shrink-0 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+        </div>
+        );
+        })}
+    </div>
+  </div>
+  </div>
   );
 }
+
 function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
   const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
@@ -1731,22 +1802,24 @@ function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' |
         {type === 'terms' && (<div className="space-y-3 text-slate-600 dark:text-slate-300"><p>By accessing and using OmniWealth, you agree to use the platform solely for personal family wealth tracking.</p></div>)}
         <div className="flex justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
           <button onClick={onClose} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-sm">Close</button>
-        </div>
       </div>
     </div>
+  </div>
   );
 }
 
 function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLiability }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number }; onAddLiability: () => void }) {
   const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
    
-  const liabilities = assets.filter(a => {
-    const type = (a.assetType || '').toUpperCase();
-    const cat = (a.accountCategory || '').toUpperCase();
-    return type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT';
-  });
-
-  const totalLiabilities = liabilities.reduce((s: number, a: any) => s + Math.abs(getBaseVal(a)), 0);
+  const { liabilities, totalLiabilities } = useMemo(() => {
+    const list = assets.filter(a => {
+      const type = (a.assetType || '').toUpperCase();
+      const cat = (a.accountCategory || '').toUpperCase();
+      return type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT';
+    });
+    const total = list.reduce((s: number, a: any) => s + Math.abs(getBaseVal(a)), 0);
+    return { liabilities: list, totalLiabilities: total };
+  }, [assets, getBaseVal]);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 transition-colors">
@@ -1781,32 +1854,38 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
             Log mortgages, cross-border loans, or credit lines using the button above to automatically subtract from your net worth in {baseCurrency}.
           </p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {liabilities.map((item) => (
-            <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm min-w-0">
-              <div className="min-w-0 pr-2">
-                <div className="font-bold text-slate-900 dark:text-white text-sm break-words">{item.name}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Owner: {item.user?.fullName || 'Family Member'} | Category: {formatCategoryName(item.accountCategory)}
-                </div>
-              </div>
-              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-800">
-                <span className="font-mono text-rose-700 dark:text-rose-400 font-bold text-sm">
-                  -{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}
-                </span>
-                <button 
-                  onClick={async () => { await deleteAssetAction(item.id); }} 
-                  className="text-slate-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
-                  title="Delete Liability"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+    ) : (
+      <div className="space-y-3">
+        {liabilities.map((item) => (
+          <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm min-w-0">
+            <div className="min-w-0 pr-2">
+              <div className="font-bold text-slate-900 dark:text-white text-sm break-words">{item.name}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Owner: {item.user?.fullName || 'Family Member'} | Category: {formatCategoryName(item.accountCategory)}
               </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-800">
+              <span className="font-mono text-rose-700 dark:text-rose-400 font-bold text-sm">
+                -{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}
+              </span>
+              <button 
+                onClick={async () => { 
+                  try {
+                    await deleteAssetAction(item.id); 
+                  } catch (err) {
+                    console.error('Failed to delete liability:', err);
+                  }
+                }} 
+                className="text-slate-400 hover:text-rose-700 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Delete Liability"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
   );
 }
