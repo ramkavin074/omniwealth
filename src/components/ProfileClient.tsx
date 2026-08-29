@@ -86,11 +86,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                 <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
                   <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
                 </div>
-                <div className="hidden sm:block min-w-0">
-                  <div className="font-bold text-slate-900 dark:text-white text-xs md:text-base tracking-tight truncate">
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs md:text-base tracking-tight truncate">
                     Family Wealth Hub
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
+                  <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
                     {householdTitle}
                   </div>
                 </div>
