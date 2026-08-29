@@ -57,33 +57,33 @@ export default function AiSettingsCard({
   }
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 transition-colors">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <Cpu className="w-5 h-5 text-teal-700" />
-          <h3 className="text-sm font-bold text-slate-900 uppercase">Multi-AI Free-First Cascade Settings (BYOK)</h3>
+          <Cpu className="w-5 h-5 text-teal-700 dark:text-teal-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Multi-AI Free-First Cascade Settings (BYOK)</h3>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full font-medium">
-          <ShieldCheck className="w-3.5 h-3.5 text-teal-700" />
+        <div className="flex items-center gap-1.5 text-xs text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800 px-2.5 py-1 rounded-full font-medium">
+          <ShieldCheck className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
           Encrypted Storage
         </div>
       </div>
 
-      <p className="text-xs text-slate-600 leading-relaxed">
-        Configure your API keys below. The vault automatically prioritizes free providers first (<strong className="text-slate-900">Groq &rarr; OpenRouter &rarr; Gemini</strong>), cascading to paid backups only if needed.
+      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+        Configure your API keys below. The vault automatically prioritizes free providers first (<strong className="text-slate-900 dark:text-white">Groq &rarr; OpenRouter &rarr; Gemini</strong>), cascading to paid backups only if needed.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {/* 1. Groq Key */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-sm">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <label className="font-semibold text-slate-800">1. Groq API Key (Free Tier - Ultra Fast Llama)</label>
+            <label className="font-semibold text-slate-800 dark:text-slate-200">1. Groq API Key (Free Tier - Ultra Fast Llama)</label>
             {initialGroq ? (
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Stored in DB
+              <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400 font-mono">Not Configured</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
             )}
           </div>
           <input 
@@ -91,21 +91,21 @@ export default function AiSettingsCard({
             value={groqApiKey} 
             onChange={e => setGroq(e.target.value)} 
             placeholder={initialGroq ? "••••••••••••••••••••" : "gsk_..."} 
-            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
-          <p className="text-[10px] text-slate-500 mt-1">Get a free key at console.groq.com (No credit card required)</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Get a free key at console.groq.com (No credit card required)</p>
         </div>
 
         {/* 2. OpenRouter Key */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-sm">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <label className="font-semibold text-slate-800">2. OpenRouter API Key (Free Models Router)</label>
+            <label className="font-semibold text-slate-800 dark:text-slate-200">2. OpenRouter API Key (Free Models Router)</label>
             {initialOpenrouter ? (
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Stored in DB
+              <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400 font-mono">Not Configured</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
             )}
           </div>
           <input 
@@ -113,21 +113,21 @@ export default function AiSettingsCard({
             value={openrouterApiKey} 
             onChange={e => setOpenrouter(e.target.value)} 
             placeholder={initialOpenrouter ? "••••••••••••••••••••" : "sk-or-..."} 
-            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
-          <p className="text-[10px] text-slate-500 mt-1">Get a free key at openrouter.ai (Access to rotating free models)</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Get a free key at openrouter.ai (Access to rotating free models)</p>
         </div>
 
         {/* 3. Google Gemini Key */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-sm">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <label className="font-semibold text-slate-800">3. Google Gemini API Key (Free Tier / Paid)</label>
+            <label className="font-semibold text-slate-800 dark:text-slate-200">3. Google Gemini API Key (Free Tier / Paid)</label>
             {initialGemini ? (
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Stored in DB
+              <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400 font-mono">Not Configured</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
             )}
           </div>
           <input 
@@ -135,21 +135,21 @@ export default function AiSettingsCard({
             value={geminiApiKey} 
             onChange={e => setGemini(e.target.value)} 
             placeholder={initialGemini ? "••••••••••••••••••••" : "AIza..."} 
-            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
-          <p className="text-[10px] text-slate-500 mt-1">Get a free key at aistudio.google.com</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Get a free key at aistudio.google.com</p>
         </div>
 
         {/* 4. OpenAI Key */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-sm">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <label className="font-semibold text-slate-800">4. OpenAI API Key (Paid Backup)</label>
+            <label className="font-semibold text-slate-800 dark:text-slate-200">4. OpenAI API Key (Paid Backup)</label>
             {initialOpenai ? (
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Stored in DB
+              <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400 font-mono">Not Configured</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
             )}
           </div>
           <input 
@@ -157,20 +157,20 @@ export default function AiSettingsCard({
             value={openaiApiKey} 
             onChange={e => setOpenai(e.target.value)} 
             placeholder={initialOpenai ? "••••••••••••••••••••" : "sk-..."} 
-            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
 
         {/* 5. Anthropic Claude Key */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 shadow-sm">
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
           <div className="flex items-center justify-between mb-1">
-            <label className="font-semibold text-slate-800">5. Anthropic Claude API Key (Paid Backup)</label>
+            <label className="font-semibold text-slate-800 dark:text-slate-200">5. Anthropic Claude API Key (Paid Backup)</label>
             {initialAnthropic ? (
-              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Stored in DB
+              <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
               </span>
             ) : (
-              <span className="text-[10px] text-slate-400 font-mono">Not Configured</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
             )}
           </div>
           <input 
@@ -178,14 +178,14 @@ export default function AiSettingsCard({
             value={anthropicApiKey} 
             onChange={e => setAnthropic(e.target.value)} 
             placeholder={initialAnthropic ? "••••••••••••••••••••" : "sk-ant-..."} 
-            className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
           />
         </div>
 
-        {error && <p className="text-rose-600 font-medium">{error}</p>}
+        {error && <p className="text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
         {success && (
-          <div className="flex items-center gap-1.5 text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 p-3 rounded-xl shadow-sm">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Keys updated &amp; saved to your database profile!
+          <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 p-3 rounded-xl shadow-sm">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Keys updated &amp; saved to your database profile!
           </div>
         )}
 
