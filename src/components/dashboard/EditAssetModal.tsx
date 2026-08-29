@@ -21,23 +21,56 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
   const [singleQty, setSingleQty] = useState('');
   const [singleCurrency, setSingleCurrency] = useState('USD');
 
-  // Depend on both asset AND isOpen so it re-populates every time the modal opens
   useEffect(() => {
     if (isOpen && asset) {
+      // Diagnostic logs to inspect the exact object structure in your browser console (F12)
+      console.log('EDIT ASSET:', asset);
+      console.log('RAW ASSETS:', asset.rawAssets);
+
       if (asset.rawAssets && Array.isArray(asset.rawAssets) && asset.rawAssets.length > 0) {
-        setSubRows(asset.rawAssets.map((r: any) => ({ 
-          ...r, 
-          quantity: r.quantity ?? r.qty ?? r.shares ?? '' 
-        })));
+        setSubRows(
+          asset.rawAssets.map((r: any) => ({
+            ...r,
+            quantity:
+              r.quantity ??
+              r.qty ??
+              r.shares ??
+              r.totalQty ??
+              r.totalQuantity ??
+              r.holdingQty ??
+              r.nativeQuantity ??
+              ''
+          }))
+        );
       } else {
-        setSubRows([{ 
-          ...asset, 
-          quantity: asset.quantity ?? asset.qty ?? asset.shares ?? '' 
-        }]);
+        setSubRows([
+          {
+            ...asset,
+            quantity:
+              asset.quantity ??
+              asset.qty ??
+              asset.shares ??
+              asset.totalQty ??
+              asset.totalQuantity ??
+              asset.holdingQty ??
+              asset.nativeQuantity ??
+              ''
+          }
+        ]);
       }
-      setSingleValue(asset.totalNative ?? asset.nativeValue ?? '');
-      setSingleQty(asset.totalQty ?? asset.quantity ?? asset.qty ?? asset.shares ?? '');
-      setSingleCurrency(asset.nativeCurrency || 'USD');
+
+      setSingleValue(asset.totalNative ?? asset.nativeValue ?? asset.value ?? '');
+      setSingleQty(
+        asset.totalQty ??
+        asset.quantity ??
+        asset.qty ??
+        asset.shares ??
+        asset.totalQuantity ??
+        asset.holdingQty ??
+        asset.nativeQuantity ??
+        ''
+      );
+      setSingleCurrency(asset.nativeCurrency || asset.currency || 'USD');
     }
   }, [asset, isOpen]);
 
