@@ -21,8 +21,9 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
   const [singleQty, setSingleQty] = useState('');
   const [singleCurrency, setSingleCurrency] = useState('USD');
 
+  // Depend on both asset AND isOpen so it re-populates every time the modal opens
   useEffect(() => {
-    if (asset) {
+    if (isOpen && asset) {
       if (asset.rawAssets && Array.isArray(asset.rawAssets) && asset.rawAssets.length > 0) {
         setSubRows(asset.rawAssets.map((r: any) => ({ 
           ...r, 
@@ -38,7 +39,7 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
       setSingleQty(asset.totalQty ?? asset.quantity ?? asset.qty ?? asset.shares ?? '');
       setSingleCurrency(asset.nativeCurrency || 'USD');
     }
-  }, [asset]);
+  }, [asset, isOpen]);
 
   if (!isOpen || !asset) return null;
 
