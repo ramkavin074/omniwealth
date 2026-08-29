@@ -143,19 +143,12 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
         </div>
       </header>
 
+      {/* Clean Mobile Net Worth Card without extraneous floating buttons */}
       <div className="block md:hidden px-4 pt-4 print:hidden">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="min-w-0">
-            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Global Net Worth</span>
-            <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggleButton />
-            <button onClick={handleRefreshPrices} disabled={isRefreshing} className="p-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50 shadow-sm">
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+          <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Global Net Worth</span>
+          <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate mt-0.5">
+            {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
           </div>
         </div>
       </div>
