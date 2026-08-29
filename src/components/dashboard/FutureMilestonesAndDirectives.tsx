@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Edit3 } from 'lucide-react';
+import { Shield, Edit3, Check } from 'lucide-react';
 
 export default function FutureMilestonesAndDirectives({ assets }: any) {
   const ssnAssets = assets.filter((a: any) => a.accountCategory === 'SOCIAL_SECURITY');
@@ -63,51 +63,61 @@ export default function FutureMilestonesAndDirectives({ assets }: any) {
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {ssnAssets.concat(pensionAssets, ppfAssets).map((asset: any) => {
           const cur = asset.nativeCurrency || 'USD';
+          const editing = isEditing(asset.id);
+
           return (
-            <div key={asset.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-4 shadow-sm">
-              <div>
+            <div key={asset.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+              <div className="min-w-0 space-y-1 flex-1">
                 <div className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
+                <div className="text-sm font-semibold text-slate-900 dark:text-white">
                   Owner: <span className="text-slate-700 dark:text-slate-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
                 </div>
-                {isEditing(asset.id) ? (
+                {editing ? (
                   <textarea
                     value={getInstruction(asset)}
                     onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
-                    className="w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none resize-none shadow-sm"
+                    className="w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none resize-none shadow-xs"
                     rows={2}
                   />
                 ) : (
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{getInstruction(asset)}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{getInstruction(asset)}</div>
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl flex-1 shadow-sm">
-                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
-                  {isEditing(asset.id) ? (
-                    <div className="flex items-center gap-1 mt-1">
+              {/* Compact, clean target value badge & edit button */}
+              <div className="flex items-center gap-2.5 shrink-0 self-start md:self-center">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl shadow-xs">
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Target Value / Payout</span>
+                  {editing ? (
+                    <div className="flex items-center gap-1.5 mt-0.5">
                       <input
                         type="number"
                         value={getAmount(asset)}
                         onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-full max-w-[120px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-slate-900 dark:text-white font-bold focus:outline-none"
+                        className="w-28 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-slate-900 dark:text-white font-bold focus:outline-none"
                       />
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{cur}</span>
+                      <span className="text-xs font-sans text-slate-500 dark:text-slate-400">{cur}</span>
                     </div>
                   ) : (
-                    <span className="text-sm font-mono text-slate-900 dark:text-white font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
+                    <span className="text-sm font-mono text-teal-700 dark:text-teal-400 font-bold block mt-0.5">
+                      {getAmount(asset).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-500">{cur}</span>
+                    </span>
                   )}
                 </div>
+
                 <button 
-                  onClick={() => setEditing(asset.id, !isEditing(asset.id))} 
-                  className="p-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl cursor-pointer shadow-sm transition shrink-0 flex items-center justify-center"
-                  title="Edit Milestone"
+                  onClick={() => setEditing(asset.id, !editing)} 
+                  className={`p-2.5 rounded-xl border transition cursor-pointer shadow-xs flex items-center justify-center ${
+                    editing 
+                      ? 'bg-teal-700 text-white border-teal-700 hover:bg-teal-800' 
+                      : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+                  }`}
+                  title={editing ? "Save Milestone" : "Edit Milestone"}
                 >
-                  <Edit3 className="w-4 h-4" />
+                  {editing ? <Check className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                 </button>
               </div>
             </div>
