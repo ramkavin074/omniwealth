@@ -1269,19 +1269,24 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
             })}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
+          {/* Changed grid-cols-2 to grid-cols-1 on mobile for clean text wrapping */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pt-2">
             {sortedEntries.map(([type, val]) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
               const formattedName = formatAssetTypeName(type);
               const colorClass = assetColors[type] || 'bg-slate-500';
               return (
-                <div key={type} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm min-w-0">
-                  <div className="flex items-start gap-2 min-w-0">
-                    <span className={`w-3 h-3 rounded-full ${colorClass} shrink-0 mt-0.5`} />
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase leading-snug break-words">{formattedName}</span>
+                <div key={type} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-1.5 shadow-sm min-w-0">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className={`w-3 h-3 rounded-full ${colorClass} shrink-0 mt-1`} />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase leading-snug break-words">{formattedName}</span>
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono shrink-0">{pct}% of portfolio</span>
                   </div>
-                  <div className="font-mono text-sm text-slate-900 dark:text-white font-semibold mt-1">{Math.round(val).toLocaleString()} {baseCurrency}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">{pct}% of portfolio</div>
+                  <div className="font-mono text-base sm:text-lg text-slate-900 dark:text-white font-bold mt-1">
+                    {Math.round(val).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-500">{baseCurrency}</span>
+                  </div>
                 </div>
               );
             })}
