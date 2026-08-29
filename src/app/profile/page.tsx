@@ -1,12 +1,12 @@
 import { db } from '@/db';
-import { households, users, documents } from '@/db/schema';
+import { households, users } from '@/db/schema';
 import { getSessionUserAction } from '@/actions/auth';
-import { eq, count } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import ProfileClient from '@/components/ProfileClient';
 import AiSettingsCard from '@/components/AiSettingsCard';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Lock, Sparkles, RefreshCw, LogOut, ArrowLeft, Coins } from 'lucide-react';
+import { Sparkles, RefreshCw, LogOut, ArrowLeft, Coins } from 'lucide-react';
 import { updateHouseholdBaseCurrencyAction, refreshLiveMarketPricesAction } from '@/actions/vault';
 import { redirect } from 'next/navigation';
 
@@ -36,12 +36,6 @@ export default async function ProfilePage() {
     .from(households)
     .where(eq(households.id, session.household.id));
 
-  const [docCountResult] = await db
-    .select({ value: count() })
-    .from(documents)
-    .where(eq(documents.householdId, session.household.id));
-
-  const documentCount = docCountResult?.value || 0;
   const baseCurrency = householdDetails?.baseCurrency || 'USD';
 
   const rawHouseholdName = householdDetails?.name 
@@ -143,7 +137,7 @@ export default async function ProfilePage() {
         {/* PAGE CONTENT CONTAINER */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
           
-          {/* 1. Core Profile & Family Management (Primary Focus) */}
+          {/* 1. Core Profile & Family Management */}
           <ProfileClient 
             session={session} 
             initialFamilyMembers={familyMembers} 
@@ -153,28 +147,7 @@ export default async function ProfilePage() {
           <div className="border-t border-slate-200 pt-6 space-y-6">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Advanced &amp; System Integrations</h3>
 
-            {/* 2. Secure Document Vault Quick Access Card */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-xl shadow-sm">
-                  <Lock className="w-5 h-5 text-teal-700" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">Secure Document Vault</h4>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Household-wide AES-256 encrypted storage protecting <span className="text-teal-700 font-semibold">{documentCount}</span> document{documentCount === 1 ? '' : 's'}.
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/vault"
-                className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold px-4 py-2.5 rounded-xl transition border border-slate-200 flex items-center gap-2 whitespace-nowrap shadow-sm"
-              >
-                Open Vault →
-              </Link>
-            </div>
-
-            {/* 3. Multi-AI Settings Card (BYOK) */}
+            {/* 2. Multi-AI Settings Card (BYOK) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
                 <Sparkles className="w-5 h-5 text-amber-500" />
