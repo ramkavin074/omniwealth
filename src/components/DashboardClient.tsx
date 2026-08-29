@@ -585,6 +585,39 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
   );
 }
 
+function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
+  const router = useRouter();
+  const [selectedCurrency, setSelectedCurrency] = useState(currentCurrency);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => { setSelectedCurrency(currentCurrency); }, [currentCurrency]);
+
+  const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCurrency = e.target.value;
+    setSelectedCurrency(newCurrency);
+    startTransition(async () => {
+      await updateHouseholdBaseCurrencyAction(newCurrency);
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl shrink-0 shadow-sm">
+      <Coins className="w-4 h-4 text-slate-500" />
+      <select 
+        value={selectedCurrency} 
+        onChange={handleCurrencyChange} 
+        disabled={isPending}
+        className="bg-transparent border-0 text-xs text-slate-800 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
+      >
+        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
+          <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { assets: any[]; trendData: { month: string; value: number }[]; baseCurrency: string; documents: any[] }) {
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
@@ -801,46 +834,6 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) {
-  const router = useRouter();
-  const [selectedCurrency, setSelectedCurrency] = useState(currentCurrency);
-  const [isPending, startTransition] = useTransition();
-
-  useEffect(() => { setSelectedCurrency(currentCurrency); }, [currentCurrency]);
-
-  const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCurrency = e.target.value;
-    setSelectedCurrency(newCurrency);
-    startTransition(async () => {
-      await updateHouseholdBaseCurrencyAction(newCurrency);
-      router.refresh();
-    });
-  };
-
-  return (
-    <div className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl shrink-0 shadow-sm">
-      <Coins className="w-4 h-4 text-slate-500" />
-      <select 
-        value={selectedCurrency} 
-        onChange={handleCurrencyChange} 
-        disabled={isPending}
-        className="bg-transparent border-0 text-xs text-slate-800 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
-      >
-        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
-          <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
-        ))}
-      </select>
-      <button 
-        type="button"
-        className="px-2 py-0.5 bg-teal-800 hover:bg-teal-900 text-white rounded text-[10px] font-bold tracking-wide transition-colors cursor-pointer shadow-sm"
-        title="Base Currency Selected"
-      >
-        Set
-      </button>
     </div>
   );
 }
