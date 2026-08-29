@@ -40,8 +40,11 @@ export default async function ProfilePage() {
 
   const rawHouseholdName = householdDetails?.name 
     ? householdDetails.name.replace(/(\s+Vault|\s+Command|\s+Command Center)$/i, '') 
-    : 'Private';
-  const householdTitle = `${rawHouseholdName} Family`;
+    : 'Private Family';
+  
+  const householdTitle = rawHouseholdName.toLowerCase().includes('family') 
+    ? rawHouseholdName 
+    : `${rawHouseholdName} Family`;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans">
@@ -134,7 +137,7 @@ export default async function ProfilePage() {
           </div>
         </header>
 
-        {/* PAGE CONTENT CONTAINER - Updated to max-w-7xl */}
+        {/* PAGE CONTENT CONTAINER */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
           
           {/* 1. Core Profile & Family Management */}
