@@ -80,7 +80,7 @@ export default function AiSettingsCard({
             <label className="font-semibold text-slate-800 dark:text-slate-200">1. Groq API Key (Free Tier - Ultra Fast Llama)</label>
             {initialGroq ? (
               <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Secured in Vault
               </span>
             ) : (
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
@@ -102,7 +102,7 @@ export default function AiSettingsCard({
             <label className="font-semibold text-slate-800 dark:text-slate-200">2. OpenRouter API Key (Free Models Router)</label>
             {initialOpenrouter ? (
               <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Secured in Vault
               </span>
             ) : (
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
@@ -124,7 +124,7 @@ export default function AiSettingsCard({
             <label className="font-semibold text-slate-800 dark:text-slate-200">3. Google Gemini API Key (Free Tier / Paid)</label>
             {initialGemini ? (
               <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Secured in Vault
               </span>
             ) : (
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
@@ -146,7 +146,7 @@ export default function AiSettingsCard({
             <label className="font-semibold text-slate-800 dark:text-slate-200">4. OpenAI API Key (Paid Backup)</label>
             {initialOpenai ? (
               <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Secured in Vault
               </span>
             ) : (
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
@@ -167,7 +167,7 @@ export default function AiSettingsCard({
             <label className="font-semibold text-slate-800 dark:text-slate-200">5. Anthropic Claude API Key (Paid Backup)</label>
             {initialAnthropic ? (
               <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Stored in DB
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Secured in Vault
               </span>
             ) : (
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Not Configured</span>
