@@ -1605,7 +1605,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
           <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Family Member Sub-Totals</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Wealth by Member</h3>
         </div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
