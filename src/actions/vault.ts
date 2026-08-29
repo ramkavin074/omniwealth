@@ -8,7 +8,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getSessionUserAction } from './auth';
-
+export { getSessionUserAction, logoutAction, updateUserApiKeyAction } from './auth';
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
