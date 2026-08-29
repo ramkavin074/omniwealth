@@ -4,6 +4,7 @@ import { users, households } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSessionUserAction } from '@/actions/vault';
 import ProfileClient from '@/components/ProfileClient';
+import AiSettingsCard from '@/components/AiSettingsCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,13 +28,20 @@ export default async function ProfilePage() {
     .from(households)
     .where(eq(households.id, householdId));
 
-  // Map session shape to match ProfileClient props
+  // Map session shape to match ProfileClient props, including all AI key fields
   const formattedSession = {
     user: {
       id: session.user.id,
       fullName: session.user.fullName,
       email: session.user.email,
       role: session.user.role,
+      aiProvider: session.user.aiProvider,
+      aiApiKey: session.user.aiApiKey,
+      geminiApiKey: session.user.geminiApiKey,
+      openaiApiKey: session.user.openaiApiKey,
+      anthropicApiKey: session.user.anthropicApiKey,
+      groqApiKey: session.user.groqApiKey,
+      openrouterApiKey: session.user.openrouterApiKey,
     },
     household: {
       id: session.household.id,
@@ -43,10 +51,23 @@ export default async function ProfilePage() {
   };
 
   return (
-    <ProfileClient 
-      session={formattedSession} 
-      initialFamilyMembers={initialFamilyMembers} 
-      householdDetails={householdDetails} 
-    />
+    <div className="space-y-8 pb-12">
+      <ProfileClient 
+        session={formattedSession} 
+        initialFamilyMembers={initialFamilyMembers} 
+        householdDetails={householdDetails} 
+      />
+
+      {/* Multi-AI Free-First Cascade BYOK Settings Card */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <AiSettingsCard 
+          initialGroq={Boolean(session.user.groqApiKey)}
+          initialOpenrouter={Boolean(session.user.openrouterApiKey)}
+          initialGemini={Boolean(session.user.geminiApiKey || session.user.aiApiKey)}
+          initialOpenai={Boolean(session.user.openaiApiKey)}
+          initialAnthropic={Boolean(session.user.anthropicApiKey)}
+        />
+      </div>
+    </div>
   );
 }
