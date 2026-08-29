@@ -827,7 +827,21 @@ export async function updateAssetAction(id: string, formData: FormData) {
   const valueVal = formData.get('nativeValue') as string;
   const rationaleVal = formData.get('rationale') as string;
   const qtyVal = formData.get('quantity') as string;
-  const assetTypeVal = formData.get('assetType') ? (formData.get('assetType') as string).toUpperCase().trim() : existing.assetType;
+  const assetTypeVal = formData.get('assetType') ? (formData.get('assetType'] as string).toUpperCase().trim() : existing.assetType;
+
+  // Clean up extra underlying consolidated rows if merging
+  const extraAssetIdsStr = formData.get('extraAssetIds') as string;
+  if (extraAssetIdsStr) {
+    try {
+      const extraIds = JSON.parse(extraAssetIdsStr);
+      for (const extraId of extraIds) {
+        await db.delete(transactions).where(eq(transactions.assetId, extraId));
+        await db.delete(assets).where(eq(assets.id, extraId));
+      }
+    } catch (e) {
+      console.warn('Failed to clean up extra consolidated asset IDs:', e);
+    }
+  }
 
   await db.update(assets).set({
     name: nameVal || existing.name,
