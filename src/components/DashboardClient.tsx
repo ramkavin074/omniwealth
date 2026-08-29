@@ -8,7 +8,7 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import RetirementCalculator from '@/components/RetirementCalculator';
 import Footer from '@/components/Footer';
-import VaultUploadModal from '@/components/VaultVaultUploadModal'; // adjust if needed
+import VaultUploadModal from '@/components/VaultUploadModal';
 import { 
   fetchFamilyMembersAction, 
   addAssetAction, 
