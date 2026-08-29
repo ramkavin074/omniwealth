@@ -199,17 +199,17 @@ export default function DashboardClient({
           <div className="block md:hidden px-4 pt-4">
             <button 
               onClick={() => setIsAiReaderOpen(true)}
-              className="w-full bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center justify-between text-left cursor-pointer group hover:border-teal-600/40 transition"
+              className="w-full bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between text-left cursor-pointer group hover:bg-slate-800 transition"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-slate-100 rounded-xl text-slate-700 border border-slate-200 shrink-0">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
+                <div className="p-2.5 bg-slate-800 rounded-xl text-amber-400 border border-slate-700 shrink-0">
+                  <Sparkles className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                    AI Statement Reader <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-1.5 py-0.5 rounded">NEW</span>
+                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
+                    AI Statement Reader <span className="bg-amber-500/20 text-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-amber-500/30">NEW</span>
                   </div>
-                  <div className="text-xs text-slate-500 truncate">Upload PDF statements or paste holdings instantly</div>
+                  <div className="text-xs text-slate-400 truncate">Upload PDF statements or paste holdings instantly</div>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
@@ -501,8 +501,9 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <CreditCard className="w-4 h-4" /><span>Add Liability</span>
               </button>
-              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
-                <Sparkles className="w-4 h-4 text-amber-600" /><span>AI Reader</span>
+              {/* Premium Dark Slate AI Reader Button matching peer action weight */}
+              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white border border-slate-800 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
               </button>
 
               <button 
@@ -1416,7 +1417,8 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   });
   const sortedPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
-  const pillarDotColors = ['bg-teal-600', 'bg-amber-600', 'bg-purple-600', 'bg-blue-600', 'bg-emerald-600'];
+  // Extensible curated pillar dot colors that cycle cleanly
+  const pillarDotColors = ['bg-teal-600', 'bg-amber-600', 'bg-purple-600', 'bg-blue-600', 'bg-emerald-600', 'bg-indigo-600', 'bg-rose-600'];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
