@@ -1130,32 +1130,32 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
 
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
-  const getOptimizedData = (data: any[]) => {
-    if (data.length <= 12) return data;
-    const step = Math.ceil(data.length / 10);
-    return data.filter((item, idx) => idx % step === 0 || idx === data.length - 1);
-  };
-  const safeData = getOptimizedData(rawData);
   const formatCompactValue = (val: number) => {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
     if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
     return val.toString();
   };
-  
-  // Adjusted aspect ratio for a much taller, larger display on mobile screens
-  const width = 450; const height = 280; const padding = 45;
-  
-  const values = safeData.map(d => d.value);
-  const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
-  const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
-  const range = maxVal - minVal || 1;
-  const points = safeData.map((d, idx) => {
-    const x = safeData.length === 1 ? width / 2 : padding + (idx / (safeData.length - 1)) * (width - padding * 2);
-    const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
-    return { x, y, ...d };
-  });
-  const pathString = points.reduce((acc, pt, idx) => idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`, '');
-  const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 15} L ${points[0].x} ${height - 15} Z` : '';
+
+  // Helper generator to calculate points for any dimension
+  const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
+    const data = rawData.length <= maxPoints ? rawData : rawData.filter((_, idx) => idx % Math.ceil(rawData.length / (maxPoints - 1)) === 0 || idx === rawData.length - 1);
+    const values = data.map(d => d.value);
+    const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
+    const maxVal = values.length > 0 ? Math.max(...values) * 1.05 : 1;
+    const range = maxVal - minVal || 1;
+    const points = data.map((d, idx) => {
+      const x = data.length === 1 ? width / 2 : padding + (idx / (data.length - 1)) * (width - padding * 2);
+      const y = height - padding - ((d.value - minVal) / range) * (height - padding * 2);
+      return { x, y, ...d };
+    });
+    const pathString = points.reduce((acc, pt, idx) => idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`, '');
+    const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 15} L ${points[0].x} ${height - 15} Z` : '';
+    return { points, pathString, areaString };
+  };
+
+  // Separate configurations: Wide for desktop, tall for mobile
+  const desktopChart = generateChartData(12, 700, 180, 40);
+  const mobileChart = generateChartData(8, 400, 280, 45);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
@@ -1180,30 +1180,54 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
         </div>
       </div>
       <div className="pt-4 pb-2 px-1 border-b border-slate-100 dark:border-slate-800">
-        {safeData.length === 0 ? (
-          <div className="h-80 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
+        {rawData.length === 0 ? (
+          <div className="h-52 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
         ) : (
-          <div className="relative w-full overflow-hidden rounded-xl">
-            {/* Taller container class to give the chart plenty of height */}
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-80 sm:h-72 overflow-visible">
-              <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0f766e" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#0f766e" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <path d={areaString} fill="url(#areaGradient)" />
-              <path d={pathString} fill="none" stroke="#0f766e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-              {points.map((pt, idx) => (
-                <g key={idx} className="group cursor-pointer">
-                  <circle cx={pt.x} cy={pt.y} r="6" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-[2.5] transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
-                  <text x={pt.x} y={pt.y - 14} textAnchor="middle" className="text-[12px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-bold transition-colors">{formatCompactValue(pt.value)}</text>
-                  <text x={pt.x} y={height - 10} textAnchor="middle" className="text-[11px] font-mono fill-slate-400 font-medium">{pt.month}</text>
-                  <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
-                </g>
-              ))}
-            </svg>
-          </div>
+          <>
+            {/* Desktop View (Wide and spacious) */}
+            <div className="hidden md:block relative w-full overflow-hidden rounded-xl">
+              <svg viewBox="0 0 700 180" className="w-full h-52 overflow-visible">
+                <defs>
+                  <linearGradient id="areaGradientDesktop" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0f766e" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#0f766e" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d={desktopChart.areaString} fill="url(#areaGradientDesktop)" />
+                <path d={desktopChart.pathString} fill="none" stroke="#0f766e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                {desktopChart.points.map((pt, idx) => (
+                  <g key={idx} className="group cursor-pointer">
+                    <circle cx={pt.x} cy={pt.y} r="5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
+                    <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
+                    <text x={pt.x} y={170} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">{pt.month}</text>
+                    <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
+                  </g>
+                ))}
+              </svg>
+            </div>
+
+            {/* Mobile View (Taller and easier to read on small screens) */}
+            <div className="block md:hidden relative w-full overflow-hidden rounded-xl">
+              <svg viewBox="0 0 400 280" className="w-full h-72 overflow-visible">
+                <defs>
+                  <linearGradient id="areaGradientMobile" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0f766e" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#0f766e" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d={mobileChart.areaString} fill="url(#areaGradientMobile)" />
+                <path d={mobileChart.pathString} fill="none" stroke="#0f766e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                {mobileChart.points.map((pt, idx) => (
+                  <g key={idx} className="group cursor-pointer">
+                    <circle cx={pt.x} cy={pt.y} r="6" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-[2.5] transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
+                    <text x={pt.x} y={pt.y - 14} textAnchor="middle" className="text-[11px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-bold transition-colors">{formatCompactValue(pt.value)}</text>
+                    <text x={pt.x} y={265} textAnchor="middle" className="text-[10px] font-mono fill-slate-400 font-medium">{pt.month}</text>
+                    <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
+                  </g>
+                ))}
+              </svg>
+            </div>
+          </>
         )}
       </div>
     </div>
