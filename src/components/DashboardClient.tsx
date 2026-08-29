@@ -686,6 +686,445 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   );
 }
 
+function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { assets: any[]; trendData: { month: string; value: number }[]; baseCurrency: string; documents: any[] }) {
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('omniwealth_dismissed_feed');
+        return saved ? JSON.parse(saved) : [];
+      } catch (err) {
+        console.warn('Failed to load dismissed feed from storage:', err);
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const handleDismiss = (id: string) => {
+    const updated = [...dismissedIds, id];
+    setDismissedIds(updated);
+    if (typeof window !== 'undefined') {
+      try { 
+        localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated)); 
+      } catch (err) {
+        console.warn('Failed to save dismissed feed to storage:', err);
+      }
+    }
+  };
+
+  const safeData = Array.isArray(trendData) ? trendData : [];
+  const currentVal = safeData[safeData.length - 1]?.value || 0;
+  const previousVal = safeData[safeData.length - 2]?.value || currentVal;
+  const growthAmount = currentVal - previousVal;
+  const growthPercent = previousVal > 0 ? (growthAmount / previousVal) * 100 : 0;
+  const isGrowthRealistic = growthAmount > 0 && growthAmount <= currentVal && growthPercent <= 100;
+  const milestoneAssets = assets.filter(a => ['SOCIAL_SECURITY', 'PENSION', 'PPF'].includes(a.accountCategory));
+
+  const feedItems = [];
+  if (isGrowthRealistic) {
+    feedItems.push({
+      id: 'perf-growth',
+      type: 'success',
+      icon: <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />,
+      title: 'Portfolio Growth',
+      message: `Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
+      badge: 'Performance',
+      border: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20',
+    });
+  }
+
+  milestoneAssets.forEach((asset) => {
+    feedItems.push({
+      id: `milestone-${asset.id}`,
+      type: 'milestone',
+      icon: <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+      title: `Future Income Stream: ${asset.name}`,
+      message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
+      badge: 'Milestone',
+      border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
+    });
+  });
+
+  if (documents.length === 0) {
+    feedItems.push({
+      id: 'vault-empty',
+      type: 'warning',
+      icon: <Lock className="w-4 h-4 text-amber-700 dark:text-amber-400" />,
+      title: 'Secure Vault Empty',
+      message: 'You have not uploaded any wills, trust deeds, or physical statements to your AES-256 encrypted vault yet.',
+      badge: 'Action Required',
+      border: 'border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20',
+    });
+  } else {
+    feedItems.push({
+      id: 'vault-active',
+      type: 'info',
+      icon: <Lock className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+      title: 'Encrypted Vault Secure',
+      message: `${documents.length} document(s) safely stored under cryptographic family protection.`,
+      badge: 'Security',
+      border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
+    });
+  }
+
+  const activeFeedItems = feedItems.filter(item => !dismissedIds.includes(item.id));
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Intelligence &amp; Family Feed</h3>
+        </div>
+        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+          Live Analysis
+        </span>
+      </div>
+
+      <div className="space-y-3 pt-1">
+        {activeFeedItems.length === 0 ? (
+          <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400 font-mono">
+            No active intelligence alerts or all items have been dismissed.
+          </div>
+        ) : (
+          activeFeedItems.map((item) => (
+            <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all shadow-sm ${item.border}`}>
+              <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shrink-0 mt-0.5 shadow-sm">
+                  {item.icon}
+                </div>
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 inline-block">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
+                    {item.title}
+                  </h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{item.message}</p>
+                </div>
+              </div>
+              <button onClick={() => handleDismiss(item.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
+  const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
+  const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
+  const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
+  const [customData, setCustomData] = useState<{ [key: string]: { amount: number; instruction: string; editing: boolean } }>({});
+
+  if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+          <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+        </div>
+        <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+          No pension, provident fund, or social security assets logged yet. Add them to view milestones.
+        </div>
+      </div>
+    );
+  }
+
+  const getDefaultInstruction = (category: string) => {
+    if (category === 'SOCIAL_SECURITY') return 'Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.';
+    if (category === 'PENSION') return 'Guaranteed monthly pension tier claimable upon reaching maturity.';
+    return 'Family Claiming Instruction: Submit forms at the designated branch upon maturity.';
+  };
+
+  const getAmount = (asset: any) => customData[asset.id]?.amount !== undefined ? customData[asset.id].amount : parseFloat(asset.nativeValue || '0');
+  const getInstruction = (asset: any) => customData[asset.id]?.instruction !== undefined ? customData[asset.id].instruction : getDefaultInstruction(asset.accountCategory);
+  const isEditing = (assetId: string) => customData[assetId]?.editing || false;
+
+  const setEditing = (assetId: string, editing: boolean) => {
+    setCustomData(prev => ({
+      ...prev,
+      [assetId]: {
+        amount: prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0'),
+        instruction: prev[assetId]?.instruction ?? getDefaultInstruction(assets.find(a => a.id === assetId)?.accountCategory),
+        editing
+      }
+    }));
+  };
+
+  const updateField = (assetId: string, field: 'amount' | 'instruction', value: any) => {
+    setCustomData(prev => ({
+      ...prev,
+      [assetId]: {
+        amount: field === 'amount' ? value : (prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0')),
+        instruction: field === 'instruction' ? value : (prev[assetId]?.instruction ?? getDefaultInstruction(assets.find(a => a.id === assetId)?.accountCategory)),
+        editing: true
+      }
+    }));
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {ssnAssets.concat(pensionAssets, ppfAssets).map((asset) => {
+          const cur = asset.nativeCurrency || 'USD';
+          return (
+            <div key={asset.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-4 shadow-sm">
+              <div>
+                <div className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
+                  Owner: <span className="text-slate-700 dark:text-slate-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
+                </div>
+                {isEditing(asset.id) ? (
+                  <textarea
+                    value={getInstruction(asset)}
+                    onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
+                    className="w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none resize-none shadow-sm"
+                    rows={2}
+                  />
+                ) : (
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{getInstruction(asset)}</div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl flex-1 shadow-sm">
+                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
+                  {isEditing(asset.id) ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <input
+                        type="number"
+                        value={getAmount(asset)}
+                        onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
+                        className="w-full max-w-[120px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-slate-900 dark:text-white font-bold focus:outline-none"
+                      />
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{cur}</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-mono text-slate-900 dark:text-white font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
+                  )}
+                </div>
+                <button 
+                  onClick={() => setEditing(asset.id, !isEditing(asset.id))} 
+                  className="p-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl cursor-pointer shadow-sm transition shrink-0 flex items-center justify-center"
+                  title="Edit Milestone"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any[]; onOpenUpload: () => void }) {
+  const router = useRouter();
+  const [viewingId, setViewingId] = useState<string | null>(null);
+
+  async function handleView(docId: string) {
+    setViewingId(docId);
+    try {
+      const res = await fetchDocumentDownloadUrlAction(docId);
+      if (res.success && res.dataUri) {
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>${res.name || 'Secure Document'}</title></head>
+              <body style="margin:0; background:#0f172a; display:flex; align-items:center; justify-content:center; height:100vh;">
+                <iframe src="${res.dataUri}" style="width:100%; height:100%; border:none;"></iframe>
+              </body>
+            </html>
+          `);
+        } else {
+          const a = document.createElement('a');
+          a.href = res.dataUri;
+          a.download = res.name || 'document';
+          a.click();
+        }
+      } else {
+        alert(res.error || 'Failed to decrypt document.');
+      }
+    } catch (err) {
+      console.error('An error occurred while opening the document:', err);
+      alert('An error occurred while opening the document.');
+    } finally {
+      setViewingId(null);
+    }
+  }
+
+  async function handleDelete(docId: string) {
+    if (confirm('Are you sure you want to delete this document from the secure vault?')) {
+      try {
+        const res = await deleteDocumentAction(docId);
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert(res.error || 'Failed to delete document');
+        }
+      } catch (err) {
+        console.error('Failed to delete document:', err);
+      }
+    }
+  }
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
+        </div>
+        <button 
+          onClick={onOpenUpload}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-sm"
+        >
+          <Plus className="w-4 h-4" /><span>Upload Document</span>
+        </button>
+      </div>
+      <p className="text-sm text-slate-600 dark:text-slate-400">
+        Securely stored legal wills, trust deeds, property deeds, and financial statements protected with AES-256 encryption.
+      </p>
+
+      {documents.length === 0 ? (
+        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center space-y-3">
+          <div className="text-slate-800 dark:text-slate-200 font-bold text-sm">No documents uploaded to vault yet</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Upload statements, wills, or trust deeds using the button below.
+          </p>
+          <button 
+            onClick={onOpenUpload}
+            className="mt-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-sm inline-flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" /> Upload First Document
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {documents.map((doc) => (
+            <div key={doc.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 shrink-0 shadow-sm">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 dark:text-white text-sm truncate">{doc.name}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    {doc.fileType || 'PDF'} {doc.fileSize ? `• ${doc.fileSize}` : ''} • {new Date(doc.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+               
+              <div className="flex items-center gap-2 shrink-0">
+                <button 
+                  onClick={() => handleView(doc.id)}
+                  disabled={viewingId === doc.id}
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-colors border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {viewingId === doc.id ? 'Decrypting...' : 'View'}
+                </button>
+                <button 
+                  onClick={() => handleDelete(doc.id)}
+                  title="Delete Document"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountInstructionsHub({ assets }: { assets: any[] }) {
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [instructionsMap, setInstructionsMap] = useState<{ [key: string]: string }>({});
+  const [editingNote, setEditingNote] = useState('');
+  const uniqueAccounts = useMemo(() => Array.from(new Set(assets.map(a => `${formatCategoryName(a.accountCategory)} (${a.accountNumber || 'Primary'})`))), [assets]);
+
+  if (uniqueAccounts.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4 transition-colors">
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+        <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400 shrink-0" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+          Institution &amp; Account-Level Family Directives
+        </h3>
+      </div>
+       
+      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+        Write overarching login protocols, broker contact details, and succession steps for entire accounts.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <div className="space-y-2">
+          <label className="block text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+            Select Account / Institution
+          </label>
+          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1 mt-2">
+            {uniqueAccounts.map((acct) => (
+              <button
+                key={acct}
+                onClick={() => { setSelectedAccount(acct); setEditingNote(instructionsMap[acct] || ''); }}
+                className={`w-full text-left px-3.5 py-3 rounded-xl text-xs font-mono transition-colors cursor-pointer border break-words ${selectedAccount === acct ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              >
+                {acct}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="md:col-span-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-sm">
+          {selectedAccount ? (
+            <div className="space-y-3">
+              <div className="text-xs font-bold text-slate-900 dark:text-white break-words">
+                Directives for: <span className="text-teal-700 dark:text-teal-400 font-mono">{selectedAccount}</span>
+              </div>
+              <textarea
+                value={editingNote}
+                onChange={(e) => setEditingNote(e.target.value)}
+                placeholder="Enter succession notes, broker estate desk info, or multi-stock transfer instructions..."
+                rows={5}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-teal-600 resize-none shadow-sm leading-relaxed"
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={() => { setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote })); alert('Account instructions saved!'); }}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl cursor-pointer shadow-sm transition-colors"
+                >
+                  Save Account Notes
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-xs text-slate-400 dark:text-slate-500 py-12 text-center px-4">
+              Select an account from the left list to view or edit master family instructions.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => {
