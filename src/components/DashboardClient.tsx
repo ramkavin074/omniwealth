@@ -50,6 +50,25 @@ function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates
   return (amount * rateTo) / rateFrom;
 }
 
+// Clean helper to format raw database category keys into human-readable strings
+function formatCategoryName(cat: string): string {
+  if (!cat) return 'Individual';
+  const upper = cat.toUpperCase();
+  if (upper === 'REAL_ESTATE') return 'Real Estate';
+  if (upper === 'SOCIAL_SECURITY') return 'Social Security';
+  if (upper === 'ROTH_IRA') return 'Roth IRA';
+  if (upper === 'IRA') return 'Traditional IRA';
+  if (upper === '401K') return '401(k)';
+  if (upper === 'HSA') return 'HSA';
+  if (upper === 'PPF') return 'PPF';
+  if (upper === 'PF') return 'PF / EPF';
+  if (upper === 'PENSION') return 'Pension';
+  if (upper === '529') return '529 College';
+  if (upper === 'TRUST') return 'Trust';
+  if (upper === 'INDIVIDUAL') return 'Individual';
+  return cat.replace(/_/g, ' ');
+}
+
 // ========================================================= //
 // SHARED VALUATION HOOK                                     //
 // ========================================================= //
@@ -89,14 +108,15 @@ function groupAssets(rawAssets: any[]) {
         ...a,
         totalNative: parseFloat(a.nativeValue || '0'),
         totalQty: parseFloat(a.quantity || '1'),
-        accounts: [a.accountCategory],
+        accounts: [formatCategoryName(a.accountCategory)],
         ids: [a.id]
       };
     } else {
       map[key].totalNative += parseFloat(a.nativeValue || '0');
       map[key].totalQty += parseFloat(a.quantity || '1');
-      if (!map[key].accounts.includes(a.accountCategory)) {
-        map[key].accounts.push(a.accountCategory);
+      const formattedCat = formatCategoryName(a.accountCategory);
+      if (!map[key].accounts.includes(formattedCat)) {
+        map[key].accounts.push(formattedCat);
       }
       map[key].ids.push(a.id);
     }
@@ -454,10 +474,8 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
     });
   };
 
-  const rawHouseholdName = session?.household?.name 
-    ? session.household.name.replace(/(\s+Vault|\s+Command|\s+Command Center)$/i, '') 
-    : 'Private';
-  const householdTitle = `${rawHouseholdName} Family`;
+  // Trust database name completely without concatenation/appending suffixes
+  const householdTitle = session?.household?.name || 'Private Family';
 
   const categorySubtotals: { [key: string]: number } = {};
   initialAssets.forEach((a: any) => {
@@ -487,9 +505,11 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-slate-900 text-sm md:text-base tracking-tight truncate">
-                  {householdTitle} <span className="font-normal text-xs text-slate-500 hidden md:inline">Command Center</span>
+                  {householdTitle}
                 </div>
-                <div className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold font-mono">Private Family Office</div>
+                <div className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold font-mono">
+                  Command Center
+                </div>
               </div>
             </Link>
           </div>
@@ -576,7 +596,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl">
             {sortedCategories.map(([cat, val]) => (
               <div key={cat} className="bg-slate-50/70 border border-slate-200/80 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0">
-                <span className="text-slate-500 uppercase text-[10px] block font-medium truncate">{cat}</span>
+                <span className="text-slate-500 uppercase text-[10px] block font-medium truncate">{formatCategoryName(cat)}</span>
                 <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
                   {Math.round(val).toLocaleString()} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
                 </span>
@@ -793,7 +813,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
             <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
               <div>
                 <div className="font-bold text-slate-900 text-sm">{item.name}</div>
-                <div className="text-xs text-slate-500">Owner: {item.user?.fullName || 'Family Member'} | Category: {item.accountCategory}</div>
+                <div className="text-xs text-slate-500">Owner: {item.user?.fullName || 'Family Member'} | Category: {formatCategoryName(item.accountCategory)}</div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-mono text-rose-700 font-bold text-sm">-{Math.round(Math.abs(getBaseVal(item))).toLocaleString()} {item.nativeCurrency || baseCurrency}</span>
@@ -956,7 +976,7 @@ function AccountInstructionsHub({ assets }: { assets: any[] }) {
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [instructionsMap, setInstructionsMap] = useState<{ [key: string]: string }>({});
   const [editingNote, setEditingNote] = useState('');
-  const uniqueAccounts = Array.from(new Set(assets.map(a => `${a.accountCategory} (${a.accountNumber || 'Primary'})`)));
+  const uniqueAccounts = Array.from(new Set(assets.map(a => `${formatCategoryName(a.accountCategory)} (${a.accountNumber || 'Primary'})`)));
 
   if (uniqueAccounts.length === 0) return null;
 
