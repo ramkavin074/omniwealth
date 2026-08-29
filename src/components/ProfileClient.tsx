@@ -9,7 +9,7 @@ import {
   deleteFamilyMemberAction, 
   updateHouseholdLegacyPillarsAction, 
   updateHouseholdBaseCurrencyAction,
-  updateUserAiPreferencesAction // Action to save all 5 AI fields
+  updateUserAiPreferencesAction 
 } from '@/actions/vault';
 import { 
   Users, User, Plus, X, CheckCircle2, Lock, Target, 
@@ -29,6 +29,8 @@ interface ProfileClientProps {
       geminiApiKey?: string;
       openaiApiKey?: string;
       anthropicApiKey?: string;
+      groqApiKey?: string;
+      openrouterApiKey?: string;
       [key: string]: any;
     };
     household: {
@@ -54,12 +56,15 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
   const [pillarSuccess, setPillarSuccess] = useState('');
   
-  // AI Provider & 5 Key Fields State
+  // AI Provider & All 7 Database Fields State (Initialized from session.user so saved values appear)
   const [aiProvider, setAiProvider] = useState(session.user.aiProvider || 'gemini');
   const [aiApiKey, setAiApiKey] = useState(session.user.aiApiKey || '');
   const [geminiApiKey, setGeminiApiKey] = useState(session.user.geminiApiKey || '');
   const [openaiApiKey, setOpenaiApiKey] = useState(session.user.openaiApiKey || '');
   const [anthropicApiKey, setAnthropicApiKey] = useState(session.user.anthropicApiKey || '');
+  const [groqApiKey, setGroqApiKey] = useState(session.user.groqApiKey || '');
+  const [openrouterApiKey, setOpenrouterApiKey] = useState(session.user.openrouterApiKey || '');
+  
   const [aiPreferencesSuccess, setAiPreferencesSuccess] = useState('');
   const [aiPreferencesLoading, setAiPreferencesLoading] = useState(false);
 
@@ -169,6 +174,8 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       formData.append('geminiApiKey', geminiApiKey);
       formData.append('openaiApiKey', openaiApiKey);
       formData.append('anthropicApiKey', anthropicApiKey);
+      formData.append('groqApiKey', groqApiKey);
+      formData.append('openrouterApiKey', openrouterApiKey);
 
       const res = await updateUserAiPreferencesAction(formData);
       if (res.success) {
@@ -277,11 +284,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
-          {/* AI Provider & 5 Key Fields Configuration */}
+          {/* AI Provider & All 7 Database Fields Configuration */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <Cpu className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">AI Model Preferences &amp; API Keys (5 Key Fields)</h2>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">AI Model Preferences &amp; API Keys</h2>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Configure your primary AI provider and securely set provider-specific API keys for robust statement parsing and portfolio insights.
@@ -304,6 +311,8 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                   <option value="gemini">Google Gemini</option>
                   <option value="openai">OpenAI (ChatGPT)</option>
                   <option value="anthropic">Anthropic (Claude)</option>
+                  <option value="groq">Groq</option>
+                  <option value="openrouter">OpenRouter</option>
                 </select>
               </div>
 
@@ -335,6 +344,26 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                     value={anthropicApiKey}
                     onChange={(e) => setAnthropicApiKey(e.target.value)}
                     placeholder="sk-ant-..." 
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Groq API Key</label>
+                  <input 
+                    type="password"
+                    value={groqApiKey}
+                    onChange={(e) => setGroqApiKey(e.target.value)}
+                    placeholder="gsk_..." 
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">OpenRouter API Key</label>
+                  <input 
+                    type="password"
+                    value={openrouterApiKey}
+                    onChange={(e) => setOpenrouterApiKey(e.target.value)}
+                    placeholder="or-..." 
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
                   />
                 </div>
