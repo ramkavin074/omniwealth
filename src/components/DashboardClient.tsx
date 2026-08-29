@@ -696,8 +696,8 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       id: 'perf-growth',
       type: 'success',
       icon: <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />,
-      title: 'Portfolio Progress Update',
-      message: `Great job! Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
+      title: 'Portfolio Growth',
+      message: `Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
       badge: 'Performance',
       border: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20',
     });
@@ -708,7 +708,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       id: `milestone-${asset.id}`,
       type: 'milestone',
       icon: <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-      title: `Future Income Stream: ${asset.name}`,
+      title: asset.name,
       message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
       badge: 'Milestone',
       border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
@@ -720,7 +720,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
       id: 'vault-empty',
       type: 'warning',
       icon: <Lock className="w-4 h-4 text-amber-700 dark:text-amber-400" />,
-      title: 'Secure Document Vault Empty',
+      title: 'Secure Vault Empty',
       message: 'You have not uploaded any wills, trust deeds, or physical statements to your AES-256 encrypted vault yet.',
       badge: 'Action Required',
       border: 'border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20',
@@ -759,21 +759,23 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
         ) : (
           activeFeedItems.map((item) => (
             <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all shadow-sm ${item.border}`}>
-              <div className="flex items-start gap-3.5 min-w-0">
+              <div className="flex items-start gap-3.5 min-w-0 flex-1">
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shrink-0 mt-0.5 shadow-sm">
                   {item.icon}
                 </div>
-                <div className="space-y-1 min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{item.title}</h4>
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 inline-block">
                       {item.badge}
                     </span>
                   </div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
+                    {item.title}
+                  </h4>
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{item.message}</p>
                 </div>
               </div>
-              <button onClick={() => handleDismiss(item.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+              <button onClick={() => handleDismiss(item.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -783,7 +785,6 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
     </div>
   );
 }
-
 function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLiability }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number }; onAddLiability: () => void }) {
   const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
    
