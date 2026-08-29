@@ -9,11 +9,11 @@ import {
   deleteFamilyMemberAction, 
   updateHouseholdLegacyPillarsAction, 
   updateHouseholdBaseCurrencyAction,
-  updateUserApiKeyAction // Action to save BYOK key
+  updateUserAiPreferencesAction // Action to save all 5 AI fields
 } from '@/actions/vault';
 import { 
   Users, User, Plus, X, CheckCircle2, Lock, Target, 
-  UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut, Key, Moon, Sun 
+  UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut, Key, Moon, Sun, Cpu 
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 
@@ -24,7 +24,11 @@ interface ProfileClientProps {
       fullName: string;
       email: string;
       role: string;
-      apiKey?: string;
+      aiProvider?: string;
+      aiApiKey?: string;
+      geminiApiKey?: string;
+      openaiApiKey?: string;
+      anthropicApiKey?: string;
       [key: string]: any;
     };
     household: {
@@ -50,10 +54,14 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
   const [pillarSuccess, setPillarSuccess] = useState('');
   
-  // BYOK State
-  const [apiKey, setApiKey] = useState(session.user.apiKey || '');
-  const [apiKeySuccess, setApiKeySuccess] = useState('');
-  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  // AI Provider & 5 Key Fields State
+  const [aiProvider, setAiProvider] = useState(session.user.aiProvider || 'gemini');
+  const [aiApiKey, setAiApiKey] = useState(session.user.aiApiKey || '');
+  const [geminiApiKey, setGeminiApiKey] = useState(session.user.geminiApiKey || '');
+  const [openaiApiKey, setOpenaiApiKey] = useState(session.user.openaiApiKey || '');
+  const [anthropicApiKey, setAnthropicApiKey] = useState(session.user.anthropicApiKey || '');
+  const [aiPreferencesSuccess, setAiPreferencesSuccess] = useState('');
+  const [aiPreferencesLoading, setAiPreferencesLoading] = useState(false);
 
   // Theme State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -150,20 +158,29 @@ export default function ProfileClient({ session, initialFamilyMembers, household
     }
   }
 
-  async function handleApiKeySave(e: React.FormEvent<HTMLFormElement>) {
+  async function handleAiPreferencesSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setApiKeyLoading(true);
-    setApiKeySuccess('');
+    setAiPreferencesLoading(true);
+    setAiPreferencesSuccess('');
     try {
-      const res = await updateUserApiKeyAction(apiKey);
+      const formData = new FormData();
+      formData.append('aiProvider', aiProvider);
+      formData.append('aiApiKey', aiApiKey);
+      formData.append('geminiApiKey', geminiApiKey);
+      formData.append('openaiApiKey', openaiApiKey);
+      formData.append('anthropicApiKey', anthropicApiKey);
+
+      const res = await updateUserAiPreferencesAction(formData);
       if (res.success) {
-        setApiKeySuccess('API Key successfully saved!');
-        setTimeout(() => setApiKeySuccess(''), 3000);
+        setAiPreferencesSuccess('AI preferences and API keys successfully saved!');
+        setTimeout(() => setAiPreferencesSuccess(''), 3000);
+      } else {
+        alert(res.error || 'Failed to save AI preferences.');
       }
     } catch (err) {
-      alert('Failed to save API key.');
+      alert('Failed to save AI preferences.');
     } finally {
-      setApiKeyLoading(false);
+      setAiPreferencesLoading(false);
     }
   }
 
@@ -214,7 +231,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Profile &amp; Family Management</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View account details, customize legacy pillars, configure BYOK, and manage members.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View account details, customize legacy pillars, configure multi-provider AI preferences, and manage members.</p>
             </div>
 
             <div className="flex items-center gap-2.5">
@@ -260,36 +277,82 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
-          {/* BYOK (Bring Your Own Key) Settings */}
+          {/* AI Provider & 5 Key Fields Configuration */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
-              <Key className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Bring Your Own Key (BYOK) - AI API Configuration</h2>
+              <Cpu className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">AI Model Preferences &amp; API Keys (5 Key Fields)</h2>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              Provide your personal OpenAI or Gemini API key to power the AI Statement Reader and Intelligence Feed without rate limits.
+              Configure your primary AI provider and securely set provider-specific API keys for robust statement parsing and portfolio insights.
             </p>
 
-            {apiKeySuccess && (
+            {aiPreferencesSuccess && (
               <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {apiKeySuccess}
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {aiPreferencesSuccess}
               </div>
             )}
 
-            <form onSubmit={handleApiKeySave} className="space-y-4 text-xs">
+            <form onSubmit={handleAiPreferencesSave} className="space-y-4 text-xs">
               <div>
-                <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Custom API Key (OpenAI / Gemini)</label>
-                <input 
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..." 
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
-                />
+                <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Preferred AI Provider</label>
+                <select 
+                  value={aiProvider}
+                  onChange={(e) => setAiProvider(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-medium shadow-sm focus:outline-none focus:border-teal-600 cursor-pointer"
+                >
+                  <option value="gemini">Google Gemini</option>
+                  <option value="openai">OpenAI (ChatGPT)</option>
+                  <option value="anthropic">Anthropic (Claude)</option>
+                </select>
               </div>
-              <div className="flex justify-end">
-                <button type="submit" disabled={apiKeyLoading} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition">
-                  {apiKeyLoading ? 'Saving Key...' : 'Save API Key'}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Gemini API Key</label>
+                  <input 
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="AIzaSy..." 
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">OpenAI API Key</label>
+                  <input 
+                    type="password"
+                    value={openaiApiKey}
+                    onChange={(e) => setOpenaiApiKey(e.target.value)}
+                    placeholder="sk-..." 
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Anthropic API Key</label>
+                  <input 
+                    type="password"
+                    value={anthropicApiKey}
+                    onChange={(e) => setAnthropicApiKey(e.target.value)}
+                    placeholder="sk-ant-..." 
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">General Fallback API Key</label>
+                  <input 
+                    type="password"
+                    value={aiApiKey}
+                    onChange={(e) => setAiApiKey(e.target.value)}
+                    placeholder="General fallback key..." 
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600" 
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button type="submit" disabled={aiPreferencesLoading} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition">
+                  {aiPreferencesLoading ? 'Saving AI Settings...' : 'Save AI Preferences'}
                 </button>
               </div>
             </form>
