@@ -343,118 +343,224 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
-          {/* 4. Multi-AI Free-First Cascade BYOK Settings Card (Placed right before security) */}
-          <AiSettingsCard 
-            initialGroq={Boolean(session.user.groqApiKey)}
-            initialOpenrouter={Boolean(session.user.openrouterApiKey)}
-            initialGemini={Boolean(session.user.geminiApiKey || session.user.aiApiKey)}
-            initialOpenai={Boolean(session.user.openaiApiKey)}
-            initialAnthropic={Boolean(session.user.anthropicApiKey)}
-          />
+          'use client';
 
-          {/* 5. Security & Password Change */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
-              <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Security &amp; Password Change</h2>
+import { useState } from 'react';
+import { Cpu, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { updateAiKeysAction } from '@/actions/vault'; // adjust import path as needed
+
+interface AiSettingsCardProps {
+  initialGroq: boolean;
+  initialOpenrouter: boolean;
+  initialGemini: boolean;
+  initialOpenai: boolean;
+  initialAnthropic: boolean;
+}
+
+export default function AiSettingsCard({
+  initialGroq,
+  initialOpenrouter,
+  initialGemini,
+  initialOpenai,
+  initialAnthropic,
+}: AiSettingsCardProps) {
+  const [groq, setGroq] = useState('');
+  const [openrouter, setOpenrouter] = useState('');
+  const [gemini, setGemini] = useState('');
+  const [openai, setOpenai] = useState('');
+  const [anthropic, setAnthropic] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+
+  const [hasGroq, setHasGroq] = useState(initialGroq);
+  const [hasOpenrouter, setHasOpenrouter] = useState(initialOpenrouter);
+  const [hasGemini, setHasGemini] = useState(initialGemini);
+  const [hasOpenai, setHasOpenai] = useState(initialOpenai);
+  const [hasAnthropic, setHasAnthropic] = useState(initialAnthropic);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await updateAiKeysAction({
+        groqApiKey: groq || undefined,
+        openrouterApiKey: openrouter || undefined,
+        geminiApiKey: gemini || undefined,
+        openaiApiKey: openai || undefined,
+        anthropicApiKey: anthropic || undefined,
+      });
+
+      if (res.success) {
+        setSuccess('AI API keys securely updated and encrypted!');
+        if (groq) setHasGroq(true);
+        if (openrouter) setHasOpenrouter(true);
+        if (gemini) setHasGemini(true);
+        if (openai) setHasOpenai(true);
+        if (anthropic) setHasAnthropic(true);
+        setGroq('');
+        setOpenrouter('');
+        setGemini('');
+        setOpenai('');
+        setAnthropic('');
+      } else {
+        setError(res.error || 'Failed to update API keys.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <Cpu className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            Multi-AI Free-First Cascade Settings (BYOK)
+          </h2>
+        </div>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+          Encrypted Storage
+        </span>
+      </div>
+
+      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+        Configure your API keys below. The vault automatically prioritizes free providers first (<strong className="text-slate-900 dark:text-white">Groq → OpenRouter → Gemini</strong>), cascading to paid backups only if needed.
+      </p>
+
+      {error && (
+        <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
+          <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" /> {success}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Groq */}
+          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300">
+                1. Groq API Key (Free Tier - Ultra Fast Llama)
+              </label>
+              {hasGroq && (
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-full">
+                  Stored in DB
+                </span>
+              )}
             </div>
-
-            {pwdError && <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs p-3 rounded-xl shadow-sm">{pwdError}</div>}
-            {pwdSuccess && <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {pwdSuccess}</div>}
-
-            <form onSubmit={handlePasswordChange} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Current Password</label>
-                  <input name="currentPassword" type="password" required placeholder="••••••••" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white shadow-sm focus:outline-none focus:border-teal-600" />
-                </div>
-                <div>
-                  <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">New Password</label>
-                  <input name="newPassword" type="password" required placeholder="••••••••" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white shadow-sm focus:outline-none focus:border-teal-600" />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <button type="submit" disabled={pwdLoading} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition">
-                  {pwdLoading ? 'Updating...' : 'Update Password'}
-                </button>
-              </div>
-            </form>
+            <input
+              type="password"
+              value={groq}
+              onChange={(e) => setGroq(e.target.value)}
+              placeholder={hasGroq ? '•••••••••••••••• (Stored)' : 'gsk_...'}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Get a free key at console.groq.com (No credit card required)
+            </p>
           </div>
 
-          {isOpen && (
-            <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl space-y-4">
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-teal-700 dark:text-teal-400" /> Add Family Member
-                  </h3>
-                  <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {error && (
-                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
-                    <AlertCircle className="w-4 h-4" /> {error}
-                  </div>
-                )}
-
-                <form onSubmit={handleAddMember} className="space-y-4 text-xs">
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">Full Name</label>
-                    <input
-                      name="fullName"
-                      required
-                      placeholder="e.g. Jane Doe"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-teal-600 shadow-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">Email Address (For Invitation &amp; Login)</label>
-                    <input
-                      name="email"
-                      type="email"
-                      required
-                      placeholder="jane@family.com"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-teal-600 font-mono shadow-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">Role</label>
-                    <select
-                      name="role"
-                      defaultValue="MEMBER"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 cursor-pointer font-medium shadow-sm"
-                    >
-                      <option value="MEMBER" className="bg-white dark:bg-slate-900">Member</option>
-                      <option value="OWNER" className="bg-white dark:bg-slate-900">Owner / Admin</option>
-                    </select>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => setIsOpen(false)}
-                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-semibold cursor-pointer transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-semibold cursor-pointer shadow-sm disabled:opacity-50 transition"
-                    >
-                      {loading ? 'Sending Invite...' : 'Add & Send Invite'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+          {/* OpenRouter */}
+          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300">
+                2. OpenRouter API Key (Free Models Router)
+              </label>
+              {hasOpenrouter && (
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-full">
+                  Stored in DB
+                </span>
+              )}
             </div>
-          )}
+            <input
+              type="password"
+              value={openrouter}
+              onChange={(e) => setOpenrouter(e.target.value)}
+              placeholder={hasOpenrouter ? '•••••••••••••••• (Stored)' : 'or-v1-...'}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Get a free key at openrouter.ai (Access to rotating free models)
+            </p>
+          </div>
+
+          {/* Gemini */}
+          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300">
+                3. Gemini API Key (Google AI Studio)
+              </label>
+              {hasGemini && (
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-full">
+                  Stored in DB
+                </span>
+              )}
+            </div>
+            <input
+              type="password"
+              value={gemini}
+              onChange={(e) => setGemini(e.target.value)}
+              placeholder={hasGemini ? '•••••••••••••••• (Stored)' : 'AIza...'}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Get a key at aistudio.google.com
+            </p>
+          </div>
+
+          {/* OpenAI */}
+          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-2 shadow-sm">
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300">
+                4. OpenAI API Key (Paid Backup)
+              </label>
+              {hasOpenai && (
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-full">
+                  Stored in DB
+                </span>
+              )}
+            </div>
+            <input
+              type="password"
+              value={openai}
+              onChange={(e) => setOpenai(e.target.value)}
+              placeholder={hasOpenai ? '•••••••••••••••• (Stored)' : 'sk-...'}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono shadow-sm focus:outline-none focus:border-teal-600"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Optional paid fallback for high-capacity tasks
+            </p>
+          </div>
+
         </div>
-      </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition"
+          >
+            {loading ? 'Saving Keys...' : 'Save AI Keys'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
       <Footer />
     </main>
