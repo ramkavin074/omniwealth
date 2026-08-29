@@ -12,6 +12,17 @@ import {
 } from '@/actions/vault';
 import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, FileText, Menu, Sun, Moon } from 'lucide-react';
 
+const FX_RATES: { [key: string]: number } = {
+  USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
+};
+
+function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates: { [key: string]: number } = FX_RATES): number {
+  if (fromCurr === toCurr) return amount;
+  const rateFrom = rates[fromCurr] || 1;
+  const rateTo = rates[toCurr] || 1;
+  return (amount * rateTo) / rateFrom;
+}
+
 function formatCategoryName(cat: string): string {
   if (!cat) return 'Individual';
   const upper = cat.toUpperCase();
@@ -30,7 +41,7 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
-export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
+export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
   const router = useRouter();
   const [isRefreshing, startRefreshTransition] = useTransition();
 
@@ -53,10 +64,12 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
 
   initialAssets.forEach((a: any) => {
     const val = parseFloat(a.nativeValue || '0');
+    const curr = a.nativeCurrency || 'USD';
+    const baseVal = convertCurrency(val, curr, baseCurrency, liveRates);
     const type = (a.assetType || '').toUpperCase();
     const rawCat = a.accountCategory || 'INDIVIDUAL';
     const isLiability = type === 'LIABILITY' || type === 'DEBT' || rawCat === 'LIABILITY';
-    const netVal = isLiability ? -Math.abs(val) : Math.abs(val);
+    const netVal = isLiability ? -Math.abs(baseVal) : Math.abs(baseVal);
 
     totalNetWorth += netVal;
     const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
