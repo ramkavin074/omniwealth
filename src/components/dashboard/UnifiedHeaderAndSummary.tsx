@@ -124,6 +124,13 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
                 <Settings className="w-4 h-4" />
               </Link>
 
+              {/* Super Admin Portal Button (Visible only for SUPER_ADMIN role) */}
+              {session?.user?.role === 'SUPER_ADMIN' && (
+                <Link href="/admin" title="Super Admin Portal" className="p-2 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-xl border border-purple-200 dark:border-purple-900 transition cursor-pointer shadow-sm">
+                  <Shield className="w-4 h-4" />
+                </Link>
+              )}
+
               <ThemeToggleButton />
 
               <form action={logoutAction}>

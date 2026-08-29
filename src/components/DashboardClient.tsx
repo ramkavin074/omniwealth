@@ -167,8 +167,16 @@ export default function DashboardClient({
                   <button onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <TrendingUp className="w-4 h-4" /><span>Intelligence Feed</span>
                   </button>
+
+                  {/* Super Admin Portal Link (Visible only for SUPER_ADMIN role) */}
+                  {session?.user?.role === 'SUPER_ADMIN' && (
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors">
+                      <Shield className="w-4 h-4" /><span>Super Admin Portal</span>
+                    </Link>
+                  )}
+
                   <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
-                    <Settings className="w-4 h-4" /><span>Household Settings &amp; Admin</span>
+                    <Settings className="w-4 h-4" /><span>Household Settings</span>
                   </Link>
                 </nav>
               </div>
