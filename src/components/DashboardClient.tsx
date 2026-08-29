@@ -33,7 +33,7 @@ import {
 import { 
   Globe, Home, Plus, Sparkles, X, Check, CheckCheck, 
   Trash2, Cpu, Users, Target, ChevronDown, ChevronUp, FileText, 
-  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, Lock, Menu, TrendingUp, Calendar, ArrowRight, Sun, Moon 
+  Edit3, LogOut, Shield, Wallet, Coins, PieChart, RefreshCw, ClipboardPaste, FileUp, CreditCard, Settings, Lock, Menu, TrendingUp, Calendar, Sun, Moon 
 } from 'lucide-react';
 
 const FX_RATES: { [key: string]: number } = {
@@ -226,8 +226,9 @@ export default function DashboardClient({
           onOpenAiReader={() => setIsAiReaderOpen(true)}
           onSelectTab={(tab: any) => setActiveTab(tab)}
         />
+        
         {activeTab === 'wealth' && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-6 animate-fadeIn max-w-7xl mx-auto px-4 md:px-8 pt-6">
             <div className="hidden print:block space-y-2 mb-6">
               <div className="border-b-2 border-slate-900 pb-3">
                 <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
@@ -372,14 +373,6 @@ export default function DashboardClient({
           </div>
 
           <div className="space-y-6">
-            {activeTab === 'wealth' && (
-              <div className="space-y-6 animate-fadeIn">
-                <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
-                <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
-                <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
-              </div>
-            )}
-
             {activeTab === 'liabilities' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
                 <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} onAddLiability={() => setIsAddLiabilityOpen(true)} />
@@ -1563,12 +1556,6 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: { item: any; 
 }
 
 function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates }: { assets: any[]; baseCurrency: string; legacyPillars: { name: string; description: string }[]; liveRates: { [key: string]: number } }) {
-  const [expM, setExpM] = useState<{ [key: string]: boolean }>({});
-  const [expP, setExpP] = useState<{ [key: string]: boolean }>({});
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
-
   const { sortedMembers, sortedPurposes } = useMemo(() => {
     const memberMap: { [key: string]: { total: number; assets: any[] } } = {};
     assets.forEach((a) => {
@@ -1577,14 +1564,11 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
       const name = a.user?.fullName || 'Family General';
       if (!memberMap[name]) memberMap[name] = { total: 0, assets: [] };
-      memberMap[name].total += getBaseVal(a);
+      const baseVal = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
+      memberMap[name].total += Math.abs(baseVal);
       memberMap[name].assets.push(a);
     });
 
-    Object.keys(memberMap).forEach(name => {
-      memberMap[name].assets = groupAssets(memberMap[name].assets);
-      memberMap[name].assets.sort((a, b) => getBaseVal(b) - getBaseVal(a));
-    });
     const sMembers = Object.entries(memberMap).sort((a, b) => b[1].total - a[1].total);
 
     const purposeMap: { [key: string]: { total: number; assets: any[] } } = {};
@@ -1594,18 +1578,15 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
       if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' || cat === 'DEBT') return;
       const p = a.rationale || legacyPillars[0]?.name || 'General Long-Term Growth';
       if (!purposeMap[p]) purposeMap[p] = { total: 0, assets: [] };
-      purposeMap[p].total += getBaseVal(a);
+      const baseVal = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
+      purposeMap[p].total += Math.abs(baseVal);
       purposeMap[p].assets.push(a);
     });
 
-    Object.keys(purposeMap).forEach(p => {
-      purposeMap[p].assets = groupAssets(purposeMap[p].assets);
-      purposeMap[p].assets.sort((a, b) => getBaseVal(b) - getBaseVal(a));
-    });
     const sPurposes = Object.entries(purposeMap).sort((a, b) => b[1].total - a[1].total);
 
     return { sortedMembers: sMembers, sortedPurposes: sPurposes };
-  }, [assets, baseCurrency, legacyPillars, liveRates, getBaseVal]);
+  }, [assets, baseCurrency, legacyPillars, liveRates]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:grid-cols-1">
@@ -1738,7 +1719,7 @@ function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLi
         </div>
       ) : (
         <div className="space-y-3">
-          {liabilities.map((item) => (
+          {liabilities.link?.length === 0 || liabilities.map((item) => (
             <div key={item.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm min-w-0">
               <div className="min-w-0 pr-2">
                 <div className="font-bold text-slate-900 dark:text-white text-sm break-words">{item.name}</div>
