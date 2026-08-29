@@ -544,7 +544,11 @@ export async function parseStatementAction(formData: FormData) {
   const ai = new GoogleGenAI({ apiKey });
   let totalCount = 0;
 
-  const extractionPrompt = 'Extract only investment assets, stock holdings, crypto positions, cash balances, or real estate line items from the provided text. Detect native currency (USD, EUR, INR, GBP, CNY, etc.).';
+  const extractionPrompt = `Extract all investment assets, stock holdings, crypto positions, mutual funds, cash balances, and real estate line items from the provided text or document. 
+CRITICAL INSTRUCTIONS:
+1. Always extract the exact number of shares, units, or tokens as the 'quantity' (do not default to 1 if shares/units are listed).
+2. Extract the price per unit and the total native value.
+3. Detect the correct native currency (USD, EUR, INR, GBP, CNY, etc.).`;
 
   if (pastedText) {
     try {
@@ -829,20 +833,6 @@ export async function updateAssetAction(id: string, formData: FormData) {
   const qtyVal = formData.get('quantity') as string;
   const assetTypeVal = formData.get('assetType') ? (formData.get('assetType') as string).toUpperCase().trim() : existing.assetType;
 
-  // Clean up extra underlying consolidated rows if merging
-  const extraAssetIdsStr = formData.get('extraAssetIds') as string;
-  if (extraAssetIdsStr) {
-    try {
-      const extraIds = JSON.parse(extraAssetIdsStr);
-      for (const extraId of extraIds) {
-        await db.delete(transactions).where(eq(transactions.assetId, extraId));
-        await db.delete(assets).where(eq(assets.id, extraId));
-      }
-    } catch (e) {
-      console.warn('Failed to clean up extra consolidated asset IDs:', e);
-    }
-  }
-
   await db.update(assets).set({
     name: nameVal || existing.name,
     ticker: formData.get('ticker') !== null ? (formData.get('ticker') as string) || null : existing.ticker,
@@ -1059,6 +1049,7 @@ export async function deleteDocumentAction(documentId: string) {
     return { success: false, error: error.message };
   }
 }
+
 export async function updateThemePreferenceAction(theme: 'light' | 'dark') {
   const session = await getSessionUserAction();
   if (!session || !session.user?.id) {
