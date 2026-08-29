@@ -8,7 +8,8 @@ import {
   addFamilyMemberAction, 
   deleteFamilyMemberAction, 
   updateHouseholdLegacyPillarsAction, 
-  updateHouseholdBaseCurrencyAction 
+  updateHouseholdBaseCurrencyAction,
+  updateThemePreferenceAction
 } from '@/actions/vault';
 import { 
   Users, User, Plus, X, CheckCircle2, Lock, Target, 
@@ -24,6 +25,7 @@ interface ProfileClientProps {
       fullName: string;
       email: string;
       role: string;
+      themePreference?: string;
       aiProvider?: string;
       aiApiKey?: string;
       geminiApiKey?: string;
@@ -64,15 +66,24 @@ export default function ProfileClient({ session, initialFamilyMembers, household
     setIsDarkMode(isDark);
   }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = async () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
+    const themeString = newMode ? 'dark' : 'light';
+
     if (newMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+    }
+
+    // Save preference to database profile in the background
+    try {
+      await updateThemePreferenceAction(themeString as 'light' | 'dark');
+    } catch (err) {
+      console.error('Failed to sync theme preference to database:', err);
     }
   };
 
@@ -254,7 +265,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
-         {/* 2. Legacy & Wealth Pillars */}
+          {/* 2. Legacy & Wealth Pillars */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -307,6 +318,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               </div>
             </form>
           </div>
+
           {/* 3. Family Members */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -343,7 +355,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
 
-          {/* 4. Multi-AI Free-First Cascade BYOK Settings Card (Placed right before security) */}
+          {/* 4. Multi-AI Free-First Cascade BYOK Settings Card */}
           <AiSettingsCard 
             initialGroq={Boolean(session.user.groqApiKey)}
             initialOpenrouter={Boolean(session.user.openrouterApiKey)}

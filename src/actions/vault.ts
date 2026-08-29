@@ -1045,3 +1045,21 @@ export async function deleteDocumentAction(documentId: string) {
     return { success: false, error: error.message };
   }
 }
+export async function updateThemePreferenceAction(theme: 'light' | 'dark') {
+  const session = await getSessionUserAction();
+  if (!session || !session.user?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    await db
+      .update(users)
+      .set({ themePreference: theme, updatedAt: new Date() } as any)
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath('/profile');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to update theme preference' };
+  }
+}

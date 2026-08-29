@@ -24,6 +24,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   fullName: text('full_name').notNull(),
   role: text('role').notNull().default('MEMBER'), // OWNER, ADMIN, MEMBER, VIEWER
+themePreference: text('theme_preference').default('light').notNull(),
   
   aiProvider: text('ai_provider').default('gemini'),
   aiApiKey: text('ai_api_key'),

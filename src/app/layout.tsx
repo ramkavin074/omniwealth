@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PortfolioAIChat from "@/components/PortfolioAIChat";
+import { getSessionUserAction } from "@/actions/vault";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,20 +37,42 @@ export const viewport: Viewport = {
   themeColor: "#4f46e5",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSessionUserAction();
+  const themePreference = session?.user?.themePreference || "light";
+
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ${
+        themePreference === "dark" ? "dark" : ""
+      }`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen flex flex-col bg-[#090d16] text-slate-100 selection:bg-indigo-500 selection:text-white">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const persistedTheme = localStorage.getItem('theme');
+                if (persistedTheme === 'dark' || (!persistedTheme && '${themePreference}' === 'dark')) {
+                  document.documentElement.classList.add('dark');
+                } else if (persistedTheme === 'light' || (!persistedTheme && '${themePreference}' === 'light')) {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-teal-600 selection:text-white transition-colors">
         {children}
         <PortfolioAIChat />
       </body>
     </html>
   );
-}	
+}
