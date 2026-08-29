@@ -3,9 +3,17 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { updatePasswordAction } from '@/actions/auth';
-import { addFamilyMemberAction, deleteFamilyMemberAction, updateHouseholdLegacyPillarsAction, updateHouseholdBaseCurrencyAction } from '@/actions/vault';
-import { Users, User, Plus, X, CheckCircle2, Lock, Target, UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut } from 'lucide-react';
+import { updatePasswordAction, logoutAction } from '@/actions/auth';
+import { 
+  addFamilyMemberAction, 
+  deleteFamilyMemberAction, 
+  updateHouseholdLegacyPillarsAction, 
+  updateHouseholdBaseCurrencyAction 
+} from '@/actions/vault';
+import { 
+  Users, User, Plus, X, CheckCircle2, Lock, Target, 
+  UserPlus, AlertCircle, Trash2, ArrowLeft, Coins, LogOut 
+} from 'lucide-react';
 import Footer from '@/components/Footer';
 
 interface ProfileClientProps {
@@ -141,7 +149,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
               <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
 
-              <form action="/api/auth/logout" method="POST">
+              <form action={logoutAction}>
                 <button type="submit" title="Logout" className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200 transition cursor-pointer shadow-sm">
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -350,7 +358,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                       type="email"
                       required
                       placeholder="jane@family.com"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 font-mono shadow-sm"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 font-mono shadow-sm"
                     />
                   </div>
 
