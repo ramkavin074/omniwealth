@@ -858,8 +858,7 @@ function LiabilitiesSection({ liabilities = [], baseCurrency, onAddLiability, on
       )}
     </div>
   );
-}
-function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
+}function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
   const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
   const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
   const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
