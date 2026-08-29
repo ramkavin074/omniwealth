@@ -38,31 +38,29 @@ export default async function ProfilePage() {
 
   const baseCurrency = householdDetails?.baseCurrency || 'USD';
 
+  // Ensure exact match with home page title format ("Kavin Family Vault")
   const rawHouseholdName = householdDetails?.name 
     ? householdDetails.name.replace(/(\s+Vault|\s+Command|\s+Command Center)$/i, '') 
-    : 'Private Family';
-  
-  const householdTitle = rawHouseholdName.toLowerCase().includes('family') 
-    ? rawHouseholdName 
-    : `${rawHouseholdName} Family`;
+    : 'Kavin Family';
+  const householdTitle = `${rawHouseholdName} Vault`;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans">
       <div>
-        {/* CONSISTENT TOP HEADER */}
+        {/* EXACT HOME PAGE HEADER STYLING */}
         <header className="bg-white border-b border-slate-200/85 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex items-center justify-between w-full md:w-auto gap-4">
-              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+              <Link href="/" className="flex items-center gap-3 group cursor-pointer min-w-0">
                 <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center shadow-sm">
                   <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" priority />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-900 text-sm md:text-base tracking-tight truncate">
+                  <div className="font-bold text-slate-900 text-sm md:text-base tracking-tight truncate group-hover:text-teal-700 transition-colors">
                     {householdTitle}
                   </div>
-                  <div className="text-[11px] uppercase tracking-wider text-teal-700 font-semibold font-mono">
-                    Command Center
+                  <div className="text-[10px] uppercase tracking-wider text-teal-700 font-bold font-mono">
+                    COMMAND CENTER
                   </div>
                 </div>
               </Link>
@@ -75,9 +73,9 @@ export default async function ProfilePage() {
             </div>
 
             <div className="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none border-t md:border-t-0 border-slate-200 pt-2 md:pt-0">
-              <div className="flex items-center gap-2.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 
-                {/* Server action form for currency switcher */}
+                {/* Currency Switcher */}
                 <form 
                   action={async (formData) => {
                     'use server';
@@ -86,13 +84,13 @@ export default async function ProfilePage() {
                       await updateHouseholdBaseCurrencyAction(curr);
                     }
                   }}
-                  className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0 shadow-sm"
+                  className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0 shadow-sm"
                 >
                   <Coins className="w-4 h-4 text-slate-500" />
                   <select 
                     name="currency"
                     defaultValue={baseCurrency}
-                    className="bg-transparent border-0 text-xs text-slate-800 font-mono font-bold focus:outline-none cursor-pointer"
+                    className="bg-transparent border-0 text-xs text-slate-900 font-mono font-bold focus:outline-none cursor-pointer"
                   >
                     {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
                       <option key={c} value={c} className="bg-white text-slate-900">{c}</option>
@@ -106,6 +104,7 @@ export default async function ProfilePage() {
                   </button>
                 </form>
 
+                {/* Sync Prices */}
                 <form 
                   action={async () => {
                     'use server';
@@ -115,21 +114,21 @@ export default async function ProfilePage() {
                   <button 
                     type="submit"
                     title="Sync Prices"
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
+                    className="flex items-center justify-center p-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
                   >
                     <RefreshCw className="w-4 h-4 text-slate-500" />
-                    <span className="hidden sm:inline">Sync Prices</span>
                   </button>
                 </form>
               </div>
 
+              {/* Logout */}
               <div className="flex items-center gap-2 shrink-0">
                 <form action={async () => { 
                   'use server';
                   redirect('/login'); 
-                }} className="hidden md:block shrink-0">
-                  <button type="submit" className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-colors cursor-pointer text-xs font-semibold shadow-sm" title="Log Out">
-                    <LogOut className="w-4 h-4" /> <span>Logout</span>
+                }} className="block shrink-0">
+                  <button type="submit" className="flex items-center justify-center p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl transition-colors cursor-pointer shadow-sm" title="Log Out">
+                    <LogOut className="w-4 h-4" />
                   </button>
                 </form>
               </div>
