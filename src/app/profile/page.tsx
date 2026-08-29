@@ -134,8 +134,8 @@ export default async function ProfilePage() {
           </div>
         </header>
 
-        {/* PAGE CONTENT CONTAINER */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+        {/* PAGE CONTENT CONTAINER - Updated to max-w-7xl */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
           
           {/* 1. Core Profile & Family Management */}
           <ProfileClient 
@@ -167,7 +167,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* PROFESSIONAL FOOTER */}
-      <footer className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-20 pt-8 border-t border-slate-200 text-slate-500 text-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-20 pt-8 border-t border-slate-200 text-slate-500 text-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div>&copy; 2026 OmniWealth Private Office. All rights reserved.</div>
         <div className="flex items-center gap-4 text-slate-700 font-medium">
           <Link href="/" className="hover:text-slate-900 transition-colors">Dashboard</Link>
