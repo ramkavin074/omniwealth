@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { logoutAction } from '@/actions/auth';
 import { updateHouseholdBaseCurrencyAction, updateThemePreferenceAction } from '@/actions/vault';
-import { ArrowLeft, Coins, LogOut, Moon, Sun, Shield, Lock, Plus } from 'lucide-react';
+import { ArrowLeft, Coins, LogOut, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2, FileText } from 'lucide-react';
 import Footer from '@/components/Footer';
 import AiSettingsCard from '@/components/AiSettingsCard';
 
@@ -46,6 +46,7 @@ interface ProfileClientProps {
 
 export default function ProfileClient({ session, initialFamilyMembers, householdDetails }: ProfileClientProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [success, setSuccess] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -81,10 +82,18 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       <div className="space-y-6">
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
-            <div className="flex items-center min-w-0 flex-1">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition shrink-0"
+                aria-label="Open Menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+
               <Link
                 href="/"
-                className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer min-w-0 flex-1"
+                className="flex items-center gap-2.5 group cursor-pointer min-w-0 flex-1"
               >
                 <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
                   <Image
@@ -97,11 +106,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                 </div>
 
                 <div className="min-w-0 flex-1 leading-tight">
-                  <div className="font-bold text-[10px] sm:text-xs md:text-base lg:text-lg text-slate-900 dark:text-white tracking-tight break-words">
+                  <div className="font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-slate-900 dark:text-white truncate">
                     Family Wealth Hub
                   </div>
 
-                  <div className="text-[8px] sm:text-[10px] md:text-xs uppercase tracking-wide text-teal-700 dark:text-teal-400 font-semibold font-mono break-words">
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
                     {householdTitle}
                   </div>
                 </div>
@@ -146,6 +155,60 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             </div>
           </div>
         </header>
+
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden print:hidden">
+            <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
+            <div className="relative w-4/5 max-w-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white h-full shadow-2xl z-10 flex flex-col justify-between p-6 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                      <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs tracking-tight truncate">
+                        Family Wealth Hub
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
+                        {householdTitle}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer shrink-0">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <nav className="flex flex-col space-y-1.5 pt-2">
+                  <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                    <Home className="w-4 h-4" /><span>Dashboard</span>
+                  </Link>
+                  <Link href="/vault" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                    <Lock className="w-4 h-4" /><span>Document Vault</span>
+                  </Link>
+                  <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                    <Settings2 className="w-4 h-4" /><span>Profile &amp; Family</span>
+                  </Link>
+
+                  {session?.user?.role === 'SUPER_ADMIN' && (
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors">
+                      <Shield className="w-4 h-4" /><span>Super Admin Portal</span>
+                    </Link>
+                  )}
+                </nav>
+              </div>
+
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                <form action={logoutAction} className="pt-1">
+                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-sm font-semibold rounded-xl border border-rose-200 dark:border-rose-900 cursor-pointer transition">
+                    <LogOut className="w-4 h-4" /> Logout
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="max-w-7xl mx-auto w-full px-4 md:px-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
