@@ -17,6 +17,7 @@ import {
   fetchNetWorthTrendAction,
   refreshLiveMarketPricesAction,
   fetchLiveExchangeRatesAction,
+  uploadDocumentAction,
   logoutAction 
 } from '@/actions/vault';
 import { 
@@ -155,6 +156,7 @@ export default function DashboardClient({
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
+  const [isVaultUploadOpen, setIsVaultUploadOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'faq' | 'about' | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
@@ -403,7 +405,7 @@ export default function DashboardClient({
               <div className="space-y-6 animate-fadeIn">
                 <FutureMilestonesAndDirectives assets={initialAssets} />
                 <AccountInstructionsHub assets={initialAssets} />
-                <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsAiReaderOpen(true)} />
+                <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} />
               </div>
             )}
 
@@ -428,6 +430,10 @@ export default function DashboardClient({
 
       {isAiReaderOpen && (
         <StatementUploadModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAiReaderOpen(false)} />
+      )}
+
+      {isVaultUploadOpen && (
+        <VaultUploadModal onClose={() => setIsVaultUploadOpen(false)} />
       )}
 
       {activeModal && (
@@ -795,6 +801,89 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function VaultUploadModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const res = await uploadDocumentAction(formData);
+
+    setLoading(false);
+    if (res.success) {
+      onClose();
+      router.refresh();
+    } else {
+      setError(res.error || 'Failed to encrypt and upload document.');
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-xl space-y-4 text-slate-900">
+        <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+          <h3 className="text-sm font-bold flex items-center gap-2">
+            <Lock className="w-4 h-4 text-teal-700" /> Secure AES-256 Vault Upload
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3 rounded-xl flex items-center gap-2">
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-600 mb-1 font-medium">Document Name</label>
+            <input
+              name="name"
+              required
+              placeholder="e.g. Living Trust Deed 2026"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-700 shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-600 mb-1 font-medium">Select File (PDF, Image, Doc)</label>
+            <input
+              name="file"
+              type="file"
+              required
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-700 file:text-white hover:file:bg-teal-800 cursor-pointer shadow-sm"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold cursor-pointer transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-semibold cursor-pointer shadow-sm disabled:opacity-50 transition"
+            >
+              {loading ? 'Encrypting File...' : 'Upload to Vault'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
