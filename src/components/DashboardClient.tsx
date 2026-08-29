@@ -213,7 +213,7 @@ export default function DashboardClient({
   }, [session?.household?.legacyPillars]);
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors print:bg-white print:text-slate-900 print:pb-0">
       <div>
         <UnifiedHeaderAndSummary
           session={session}
@@ -242,7 +242,7 @@ export default function DashboardClient({
         )}
          
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex md:hidden">
+          <div className="fixed inset-0 z-50 flex md:hidden print:hidden">
             <div 
               className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity" 
               onClick={() => setIsMobileMenuOpen(false)} 
@@ -353,7 +353,7 @@ export default function DashboardClient({
         )}
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
-          <div className="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-sm">
+          <div className="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-sm print:hidden">
             <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
             </button>
@@ -381,13 +381,13 @@ export default function DashboardClient({
             )}
 
             {activeTab === 'liabilities' && (
-              <div className="space-y-6 animate-fadeIn">
+              <div className="space-y-6 animate-fadeIn print:hidden">
                 <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} onAddLiability={() => setIsAddLiabilityOpen(true)} />
               </div>
             )}
 
             {activeTab === 'retirement' && (
-              <div className="space-y-6 animate-fadeIn">
+              <div className="space-y-6 animate-fadeIn print:hidden">
                 <RetirementCalculator 
                   currentTotalValue={totalLiquidWealth} 
                   baseCurrency={baseCurrency}
@@ -400,7 +400,7 @@ export default function DashboardClient({
             )}
 
             {activeTab === 'directives' && (
-              <div className="space-y-6 animate-fadeIn">
+              <div className="space-y-6 animate-fadeIn print:hidden">
                 <FutureMilestonesAndDirectives assets={initialAssets} />
                 <AccountInstructionsHub assets={initialAssets} />
                 <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} />
@@ -408,7 +408,7 @@ export default function DashboardClient({
             )}
 
             {activeTab === 'feed' && (
-              <div className="space-y-6 animate-fadeIn">
+              <div className="space-y-6 animate-fadeIn print:hidden">
                 <IntelligenceFeed assets={initialAssets} trendData={trendData} baseCurrency={baseCurrency} documents={initialDocuments} />
               </div>
             )}
@@ -416,7 +416,9 @@ export default function DashboardClient({
         </div>
       </div>
 
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
 
       {isAddAssetOpen && (
         <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} isLiability={false} />
@@ -517,7 +519,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
 
   return (
     <div className="space-y-4">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm transition-colors">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 shadow-sm transition-colors print:hidden">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button 
@@ -599,7 +601,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </header>
 
-      <div className="block md:hidden px-4 pt-4">
+      <div className="block md:hidden px-4 pt-4 print:hidden">
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
           <div className="min-w-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Global Net Worth</span>
@@ -620,20 +622,20 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </div>
 
-      <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8 pt-2">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+      <div className="block max-w-7xl mx-auto px-4 md:px-8 pt-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:border-none print:shadow-none print:p-0">
           <div className="shrink-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1.5">
-              <Wallet className="w-4 h-4 text-slate-400" /> Global Household Net Worth
+              <Wallet className="w-4 h-4 text-slate-400 print:hidden" /> Global Household Net Worth
             </span>
             <div className="text-4xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
               {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-600 dark:text-teal-500 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl print:grid-cols-3">
             {sortedCategories.map(([cat, val]) => (
-              <div key={cat} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0">
+              <div key={cat} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0 print:border-slate-300 print:bg-white">
                 <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] block font-medium truncate">{formatCategoryName(cat)}</span>
                 <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
                   {Math.round(val).toLocaleString()} <span className="text-[11px] font-sans font-normal text-slate-500 dark:text-slate-400">{baseCurrency}</span>
@@ -684,445 +686,6 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
   );
 }
 
-function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { assets: any[]; trendData: { month: string; value: number }[]; baseCurrency: string; documents: any[] }) {
-  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('omniwealth_dismissed_feed');
-        return saved ? JSON.parse(saved) : [];
-      } catch (err) {
-        console.warn('Failed to load dismissed feed from storage:', err);
-        return [];
-      }
-    }
-    return [];
-  });
-
-  const handleDismiss = (id: string) => {
-    const updated = [...dismissedIds, id];
-    setDismissedIds(updated);
-    if (typeof window !== 'undefined') {
-      try { 
-        localStorage.setItem('omniwealth_dismissed_feed', JSON.stringify(updated)); 
-      } catch (err) {
-        console.warn('Failed to save dismissed feed to storage:', err);
-      }
-    }
-  };
-
-  const safeData = Array.isArray(trendData) ? trendData : [];
-  const currentVal = safeData[safeData.length - 1]?.value || 0;
-  const previousVal = safeData[safeData.length - 2]?.value || currentVal;
-  const growthAmount = currentVal - previousVal;
-  const growthPercent = previousVal > 0 ? (growthAmount / previousVal) * 100 : 0;
-  const isGrowthRealistic = growthAmount > 0 && growthAmount <= currentVal && growthPercent <= 100;
-  const milestoneAssets = assets.filter(a => ['SOCIAL_SECURITY', 'PENSION', 'PPF'].includes(a.accountCategory));
-
-  const feedItems = [];
-  if (isGrowthRealistic) {
-    feedItems.push({
-      id: 'perf-growth',
-      type: 'success',
-      icon: <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />,
-      title: 'Portfolio Growth',
-      message: `Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
-      badge: 'Performance',
-      border: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20',
-    });
-  }
-
-  milestoneAssets.forEach((asset) => {
-    feedItems.push({
-      id: `milestone-${asset.id}`,
-      type: 'milestone',
-      icon: <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-      title: `Future Income Stream: ${asset.name}`,
-      message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
-      badge: 'Milestone',
-      border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
-    });
-  });
-
-  if (documents.length === 0) {
-    feedItems.push({
-      id: 'vault-empty',
-      type: 'warning',
-      icon: <Lock className="w-4 h-4 text-amber-700 dark:text-amber-400" />,
-      title: 'Secure Vault Empty',
-      message: 'You have not uploaded any wills, trust deeds, or physical statements to your AES-256 encrypted vault yet.',
-      badge: 'Action Required',
-      border: 'border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20',
-    });
-  } else {
-    feedItems.push({
-      id: 'vault-active',
-      type: 'info',
-      icon: <Lock className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-      title: 'Encrypted Vault Secure',
-      message: `${documents.length} document(s) safely stored under cryptographic family protection.`,
-      badge: 'Security',
-      border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
-    });
-  }
-
-  const activeFeedItems = feedItems.filter(item => !dismissedIds.includes(item.id));
-
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Intelligence &amp; Family Feed</h3>
-        </div>
-        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-          Live Analysis
-        </span>
-      </div>
-
-      <div className="space-y-3 pt-1">
-        {activeFeedItems.length === 0 ? (
-          <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400 font-mono">
-            No active intelligence alerts or all items have been dismissed.
-          </div>
-        ) : (
-          activeFeedItems.map((item) => (
-            <div key={item.id} className={`border rounded-xl p-4 flex items-start justify-between gap-3.5 transition-all shadow-sm ${item.border}`}>
-              <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shrink-0 mt-0.5 shadow-sm">
-                  {item.icon}
-                </div>
-                <div className="space-y-1.5 min-w-0 flex-1">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 inline-block">
-                      {item.badge}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
-                    {item.title}
-                  </h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{item.message}</p>
-                </div>
-              </div>
-              <button onClick={() => handleDismiss(item.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer shrink-0">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
-  const ssnAssets = assets.filter(a => a.accountCategory === 'SOCIAL_SECURITY');
-  const pensionAssets = assets.filter(a => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
-  const ppfAssets = assets.filter(a => a.accountCategory === 'PPF');
-  const [customData, setCustomData] = useState<{ [key: string]: { amount: number; instruction: string; editing: boolean } }>({});
-
-  if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
-    return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
-        </div>
-        <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-          No pension, provident fund, or social security assets logged yet. Add them to view milestones.
-        </div>
-      </div>
-    );
-  }
-
-  const getDefaultInstruction = (category: string) => {
-    if (category === 'SOCIAL_SECURITY') return 'Sovereign monthly pension stream tracked separately. Excluded from liquid net worth.';
-    if (category === 'PENSION') return 'Guaranteed monthly pension tier claimable upon reaching maturity.';
-    return 'Family Claiming Instruction: Submit forms at the designated branch upon maturity.';
-  };
-
-  const getAmount = (asset: any) => customData[asset.id]?.amount !== undefined ? customData[asset.id].amount : parseFloat(asset.nativeValue || '0');
-  const getInstruction = (asset: any) => customData[asset.id]?.instruction !== undefined ? customData[asset.id].instruction : getDefaultInstruction(asset.accountCategory);
-  const isEditing = (assetId: string) => customData[assetId]?.editing || false;
-
-  const setEditing = (assetId: string, editing: boolean) => {
-    setCustomData(prev => ({
-      ...prev,
-      [assetId]: {
-        amount: prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0'),
-        instruction: prev[assetId]?.instruction ?? getDefaultInstruction(assets.find(a => a.id === assetId)?.accountCategory),
-        editing
-      }
-    }));
-  };
-
-  const updateField = (assetId: string, field: 'amount' | 'instruction', value: any) => {
-    setCustomData(prev => ({
-      ...prev,
-      [assetId]: {
-        amount: field === 'amount' ? value : (prev[assetId]?.amount ?? parseFloat(assets.find(a => a.id === assetId)?.nativeValue || '0')),
-        instruction: field === 'instruction' ? value : (prev[assetId]?.instruction ?? getDefaultInstruction(assets.find(a => a.id === assetId)?.accountCategory)),
-        editing: true
-      }
-    }));
-  };
-
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
-        </div>
-      </div>
-      <div className="space-y-3">
-        {ssnAssets.concat(pensionAssets, ppfAssets).map((asset) => {
-          const cur = asset.nativeCurrency || 'USD';
-          return (
-            <div key={asset.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-4 shadow-sm">
-              <div>
-                <div className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{asset.name || 'Income Stream'}</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
-                  Owner: <span className="text-slate-700 dark:text-slate-300 font-medium">{asset.user?.fullName || 'Family Member'}</span>
-                </div>
-                {isEditing(asset.id) ? (
-                  <textarea
-                    value={getInstruction(asset)}
-                    onChange={(e) => updateField(asset.id, 'instruction', e.target.value)}
-                    className="w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none resize-none shadow-sm"
-                    rows={2}
-                  />
-                ) : (
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{getInstruction(asset)}</div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl flex-1 shadow-sm">
-                  <span className="text-[10px] text-slate-400 uppercase block font-medium">Target Value / Payout</span>
-                  {isEditing(asset.id) ? (
-                    <div className="flex items-center gap-1 mt-1">
-                      <input
-                        type="number"
-                        value={getAmount(asset)}
-                        onChange={(e) => updateField(asset.id, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-full max-w-[120px] bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 text-xs font-mono text-slate-900 dark:text-white font-bold focus:outline-none"
-                      />
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{cur}</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm font-mono text-slate-900 dark:text-white font-bold">{getAmount(asset).toLocaleString()} {cur}</span>
-                  )}
-                </div>
-                <button 
-                  onClick={() => setEditing(asset.id, !isEditing(asset.id))} 
-                  className="p-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl cursor-pointer shadow-sm transition shrink-0 flex items-center justify-center"
-                  title="Edit Milestone"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any[]; onOpenUpload: () => void }) {
-  const router = useRouter();
-  const [viewingId, setViewingId] = useState<string | null>(null);
-
-  async function handleView(docId: string) {
-    setViewingId(docId);
-    try {
-      const res = await fetchDocumentDownloadUrlAction(docId);
-      if (res.success && res.dataUri) {
-        const newWindow = window.open();
-        if (newWindow) {
-          newWindow.document.write(`
-            <html>
-              <head><title>${res.name || 'Secure Document'}</title></head>
-              <body style="margin:0; background:#0f172a; display:flex; align-items:center; justify-content:center; height:100vh;">
-                <iframe src="${res.dataUri}" style="width:100%; height:100%; border:none;"></iframe>
-              </body>
-            </html>
-          `);
-        } else {
-          const a = document.createElement('a');
-          a.href = res.dataUri;
-          a.download = res.name || 'document';
-          a.click();
-        }
-      } else {
-        alert(res.error || 'Failed to decrypt document.');
-      }
-    } catch (err) {
-      console.error('An error occurred while opening the document:', err);
-      alert('An error occurred while opening the document.');
-    } finally {
-      setViewingId(null);
-    }
-  }
-
-  async function handleDelete(docId: string) {
-    if (confirm('Are you sure you want to delete this document from the secure vault?')) {
-      try {
-        const res = await deleteDocumentAction(docId);
-        if (res.success) {
-          router.refresh();
-        } else {
-          alert(res.error || 'Failed to delete document');
-        }
-      } catch (err) {
-        console.error('Failed to delete document:', err);
-      }
-    }
-  }
-
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
-        </div>
-        <button 
-          onClick={onOpenUpload}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-sm"
-        >
-          <Plus className="w-4 h-4" /><span>Upload Document</span>
-        </button>
-      </div>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
-        Securely stored legal wills, trust deeds, property deeds, and financial statements protected with AES-256 encryption.
-      </p>
-
-      {documents.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center space-y-3">
-          <div className="text-slate-800 dark:text-slate-200 font-bold text-sm">No documents uploaded to vault yet</div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            Upload statements, wills, or trust deeds using the button below.
-          </p>
-          <button 
-            onClick={onOpenUpload}
-            className="mt-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-sm inline-flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" /> Upload First Document
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {documents.map((doc) => (
-            <div key={doc.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 shrink-0 shadow-sm">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-900 dark:text-white text-sm truncate">{doc.name}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                    {doc.fileType || 'PDF'} {doc.fileSize ? `• ${doc.fileSize}` : ''} • {new Date(doc.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-               
-              <div className="flex items-center gap-2 shrink-0">
-                <button 
-                  onClick={() => handleView(doc.id)}
-                  disabled={viewingId === doc.id}
-                  className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-colors border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {viewingId === doc.id ? 'Decrypting...' : 'View'}
-                </button>
-                <button 
-                  onClick={() => handleDelete(doc.id)}
-                  title="Delete Document"
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AccountInstructionsHub({ assets }: { assets: any[] }) {
-  const [selectedAccount, setSelectedAccount] = useState<string>('');
-  const [instructionsMap, setInstructionsMap] = useState<{ [key: string]: string }>({});
-  const [editingNote, setEditingNote] = useState('');
-  const uniqueAccounts = useMemo(() => Array.from(new Set(assets.map(a => `${formatCategoryName(a.accountCategory)} (${a.accountNumber || 'Primary'})`))), [assets]);
-
-  if (uniqueAccounts.length === 0) return null;
-
-  return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4 transition-colors">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
-        <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400 shrink-0" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
-          Institution &amp; Account-Level Family Directives
-        </h3>
-      </div>
-       
-      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-        Write overarching login protocols, broker contact details, and succession steps for entire accounts.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-        <div className="space-y-2">
-          <label className="block text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider">
-            Select Account / Institution
-          </label>
-          <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1 mt-2">
-            {uniqueAccounts.map((acct) => (
-              <button
-                key={acct}
-                onClick={() => { setSelectedAccount(acct); setEditingNote(instructionsMap[acct] || ''); }}
-                className={`w-full text-left px-3.5 py-3 rounded-xl text-xs font-mono transition-colors cursor-pointer border break-words ${selectedAccount === acct ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-              >
-                {acct}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="md:col-span-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-sm">
-          {selectedAccount ? (
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-900 dark:text-white break-words">
-                Directives for: <span className="text-teal-700 dark:text-teal-400 font-mono">{selectedAccount}</span>
-              </div>
-              <textarea
-                value={editingNote}
-                onChange={(e) => setEditingNote(e.target.value)}
-                placeholder="Enter succession notes, broker estate desk info, or multi-stock transfer instructions..."
-                rows={5}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-teal-600 resize-none shadow-sm leading-relaxed"
-              />
-              <div className="flex justify-end">
-                <button
-                  onClick={() => { setInstructionsMap(prev => ({ ...prev, [selectedAccount]: editingNote })); alert('Account instructions saved!'); }}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl cursor-pointer shadow-sm transition-colors"
-                >
-                  Save Account Notes
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-xs text-slate-400 dark:text-slate-500 py-12 text-center px-4">
-              Select an account from the left list to view or edit master family instructions.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: { trendData: { month: string; value: number }[]; baseCurrency: string; timeRange: string; setTimeRange: (val: string) => void }) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => {
@@ -1155,13 +718,13 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
   }, [rawData]);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 print:border-slate-300 print:shadow-none">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-3">
         <div className="flex items-center gap-2">
-          <Globe className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <Globe className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Historical Net Worth Trend</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 print:hidden">
           <span className="text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Timeline:</span>
           <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 font-mono font-bold focus:outline-none cursor-pointer shadow-sm">
             <option value="3m">Last 3 Months</option>
@@ -1180,7 +743,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
           <div className="h-52 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
         ) : (
           <>
-            <div className="hidden md:block relative w-full overflow-hidden rounded-xl">
+            <div className="block relative w-full overflow-hidden rounded-xl">
               <svg viewBox="0 0 700 180" className="w-full h-52 overflow-visible">
                 <defs>
                   <linearGradient id="areaGradientDesktop" x1="0" y1="0" x2="0" y2="1">
@@ -1192,31 +755,9 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
                 <path d={desktopChart.pathString} fill="none" stroke="#0f766e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 {desktopChart.points.map((pt, idx) => (
                   <g key={idx} className="group cursor-pointer">
-                    <circle cx={pt.x} cy={pt.y} r="5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
-                    <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
+                    <circle cx={pt.x} cy={pt.y} r="5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2" />
+                    <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-700 dark:fill-slate-300 font-semibold">{formatCompactValue(pt.value)}</text>
                     <text x={pt.x} y={170} textAnchor="middle" className="text-[9px] font-mono fill-slate-400">{pt.month}</text>
-                    <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
-                  </g>
-                ))}
-              </svg>
-            </div>
-
-            <div className="block md:hidden relative w-full overflow-hidden rounded-xl">
-              <svg viewBox="0 0 400 280" className="w-full h-72 overflow-visible">
-                <defs>
-                  <linearGradient id="areaGradientMobile" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0f766e" stopOpacity="0.18" />
-                    <stop offset="100%" stopColor="#0f766e" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path d={mobileChart.areaString} fill="url(#areaGradientMobile)" />
-                <path d={mobileChart.pathString} fill="none" stroke="#0f766e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                {mobileChart.points.map((pt, idx) => (
-                  <g key={idx} className="group cursor-pointer">
-                    <circle cx={pt.x} cy={pt.y} r="6" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-[2.5] transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
-                    <text x={pt.x} y={pt.y - 14} textAnchor="middle" className="text-[11px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-bold transition-colors">{formatCompactValue(pt.value)}</text>
-                    <text x={pt.x} y={265} textAnchor="middle" className="text-[10px] font-mono fill-slate-400 font-medium">{pt.month}</text>
-                    <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
                   </g>
                 ))}
               </svg>
@@ -1262,9 +803,9 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 print:border-slate-300 print:shadow-none">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
-        <PieChart className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+        <PieChart className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
         <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Asset Class Allocation</h3>
       </div>
       {sortedEntries.length === 0 ? (
@@ -1274,37 +815,30 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
           <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex border border-slate-200 dark:border-slate-700 shadow-inner">
             {sortedEntries.map(([type, val]) => {
               const pct = (val / positiveNetWorth) * 100;
-              const formattedName = formatAssetTypeName(type);
               const colorClass = assetColors[type] || 'bg-slate-500';
               return (
                 <div 
                   key={type} 
                   style={{ width: `${Math.max(pct, 2)}%` }} 
-                  className={`${colorClass} hover:opacity-85 transition-all duration-300 cursor-help relative group`} 
-                >
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-20 pointer-events-none">
-                    <div className="bg-slate-900 text-white text-[10px] font-mono px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                      {formattedName}: {pct.toFixed(1)}% ({Math.round(val).toLocaleString()} {baseCurrency})
-                    </div>
-                  </div>
-                </div>
+                  className={`${colorClass} transition-all duration-300`} 
+                />
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pt-2 print:grid-cols-3">
             {sortedEntries.map(([type, val]) => {
               const pct = positiveNetWorth > 0 ? ((val / positiveNetWorth) * 100).toFixed(1) : '0';
               const formattedName = formatAssetTypeName(type);
               const colorClass = assetColors[type] || 'bg-slate-500';
               return (
-                <div key={type} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-1.5 shadow-sm min-w-0">
+                <div key={type} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-1.5 shadow-sm min-w-0 print:border-slate-300 print:bg-white">
                   <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="flex items-start gap-2 min-w-0">
                       <span className={`w-3 h-3 rounded-full ${colorClass} shrink-0 mt-1`} />
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase leading-snug break-words">{formattedName}</span>
                     </div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono shrink-0">{pct}% of portfolio</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono shrink-0">{pct}%</span>
                   </div>
                   <div className="font-mono text-base sm:text-lg text-slate-900 dark:text-white font-bold mt-1">
                     {Math.round(val).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-500">{baseCurrency}</span>
@@ -1321,7 +855,7 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
 
 function AddAssetModal({ legacyPillars, members, onClose, isLiability }: { legacyPillars: { name: string; description: string }[]; members: any[]; onClose: () => void; isLiability: boolean }) {
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4 print:hidden">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl my-auto text-slate-900 dark:text-white">
         <div className="flex justify-between items-center pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-base font-bold text-slate-900 dark:text-white">{isLiability ? 'Add Liability / Debt' : 'Add Asset Manually'}</h2>
@@ -1450,7 +984,7 @@ function StatementUploadModal({ legacyPillars, members, onClose }: { legacyPilla
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4 print:hidden">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-xl max-h-[90vh] overflow-y-auto my-auto relative text-slate-900 dark:text-white">
         {uploading && (
           <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs z-30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6">
@@ -1635,100 +1169,39 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
   }, [assets, baseCurrency, legacyPillars, liveRates, getBaseVal]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:grid-cols-1">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm print:border-slate-300 print:shadow-none">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <Users className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Wealth by Family Member</h3>
         </div>
         <div className="space-y-3">
           {sortedMembers.map(([name, data]) => (
-            <div key={name} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
-              <button 
-                onClick={() => setExpM(p => ({ ...p, [name]: !p[name] }))} 
-                className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
-              >
+            <div key={name} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm print:border-slate-300 print:bg-white">
+              <div className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left min-w-0 gap-3">
                 <div className="min-w-0 pr-2">
                   <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">{name}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{data.assets.length} consolidated holding(s)</div>
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                   <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
-                  {expM[name] ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
                 </div>
-              </button>
-              {expM[name] && (
-                <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-2.5 bg-white dark:bg-slate-900">
-                  {data.assets.map((asset) => {
-                    const val = getBaseVal(asset);
-                    return (
-                      <div key={asset.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl text-xs flex justify-between items-center min-w-0 shadow-sm">
-                        {editingId === asset.id ? (
-                          <form action={async (fd) => { 
-                            try {
-                              await updateAssetAction(asset.id, fd); 
-                              setEditingId(null); 
-                            } catch (err) {
-                              console.error('Failed to update asset:', err);
-                            }
-                          }} className="w-full space-y-2">
-                            <input name="name" defaultValue={asset.name} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-slate-900 dark:text-white text-sm shadow-sm" />
-                            <div className="grid grid-cols-2 gap-2">
-                              <input name="nativeValue" type="number" step="any" defaultValue={asset.nativeValue} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-slate-900 dark:text-white text-sm font-mono shadow-sm" />
-                              <select name="rationale" defaultValue={asset.rationale} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 text-slate-900 dark:text-white text-sm cursor-pointer shadow-sm">
-                                {legacyPillars.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                              </select>
-                            </div>
-                            <div className="flex justify-end gap-1.5"><button type="button" onClick={() => setEditingId(null)} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300 text-xs shadow-sm"><X className="w-3.5 h-3.5" /></button><button type="submit" className="px-2 py-1 bg-emerald-700 rounded text-white text-xs shadow-sm"><Check className="w-3.5 h-3.5" /></button></div>
-                          </form>
-                        ) : (
-                          <>
-                            <div className="min-w-0 pr-2">
-                              <span className="font-bold text-slate-900 dark:text-white text-sm break-words block">
-                                {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
-                              </span>
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
-                                Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              <span className={`font-mono font-semibold text-sm ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
-                              <button onClick={() => setEditingId(asset.id)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1"><Edit3 className="w-4 h-4" /></button>
-                              <button onClick={async () => { 
-                                try {
-                                  await deleteAssetAction(asset.id); 
-                                } catch (err) {
-                                  console.error('Failed to delete asset:', err);
-                                }
-                              }} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm print:border-slate-300 print:shadow-none">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <Target className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3>
         </div>
         <div className="space-y-3">
           {sortedPurposes.map(([purposeName, data]) => {
-            const matchedPillar = legacyPillars.find(p => p.name === purposeName);
-            const description = matchedPillar?.description;
             return (
-              <div key={purposeName} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm">
-                <button 
-                  onClick={() => setExpP(p => ({ ...p, [purposeName]: !p[purposeName] }))} 
-                  className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 cursor-pointer min-w-0 transition gap-3"
-                >
+              <div key={purposeName} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden min-w-0 shadow-sm print:border-slate-300 print:bg-white">
+                <div className="w-full p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-left min-w-0 gap-3">
                   <div className="min-w-0 pr-2">
                     <div className="font-bold text-slate-900 dark:text-white text-sm leading-snug break-words">
                       {purposeName}
@@ -1737,38 +1210,8 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
-                    {expP[purposeName] ? <ChevronUp className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
                   </div>
-                </button>
-                {expP[purposeName] && (
-                  <div className="border-t border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-white dark:bg-slate-900 text-xs">
-                    {description && (
-                      <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-slate-700 dark:text-slate-300 space-y-1 shadow-sm">
-                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-bold mb-1">
-                          <FileText className="w-4 h-4" />
-                          <span className="uppercase text-xs">Legacy Directive:</span>
-                        </div>
-                        <p className="text-slate-800 dark:text-slate-200 text-sm font-medium">{description}</p>
-                      </div>
-                    )}
-                    {data.assets.map(asset => {
-                      const val = getBaseVal(asset);
-                      return (
-                        <div key={asset.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 min-w-0 shadow-sm">
-                          <div className="min-w-0 pr-2">
-                            <span className="font-bold text-slate-900 dark:text-white text-sm break-words block">
-                              {asset.name} {asset.ticker ? `(${asset.ticker})` : ''}
-                            </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              Accounts: {asset.accounts.join(', ')} {asset.totalQty > 1 ? `• Total Qty: ${asset.totalQty}` : ''}
-                            </span>
-                          </div>
-                          <span className={`font-mono font-semibold text-sm shrink-0 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>{Math.round(val).toLocaleString()} {baseCurrency}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                </div>
               </div>
             );
           })}
@@ -1781,7 +1224,7 @@ function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates
 function LegalInfoModal({ type, onClose }: { type: 'privacy' | 'terms' | 'faq' | 'about'; onClose: () => void }) {
   const titles = { about: 'About OmniWealth', faq: 'Frequently Asked Questions (FAQ)', privacy: 'Privacy Policy', terms: 'Terms of Service' };
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:hidden">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[85vh] overflow-y-auto my-auto text-slate-800 dark:text-slate-200 text-sm space-y-4">
         <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-base font-bold text-slate-900 dark:text-white">{titles[type]}</h2>
