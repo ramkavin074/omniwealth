@@ -4,7 +4,6 @@ import { users, households } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSessionUserAction } from '@/actions/vault';
 import ProfileClient from '@/components/ProfileClient';
-import AiSettingsCard from '@/components/AiSettingsCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,23 +50,10 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="space-y-8 pb-12">
-      <ProfileClient 
-        session={formattedSession} 
-        initialFamilyMembers={initialFamilyMembers} 
-        householdDetails={householdDetails} 
-      />
-
-      {/* Multi-AI Free-First Cascade BYOK Settings Card */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <AiSettingsCard 
-          initialGroq={Boolean(session.user.groqApiKey)}
-          initialOpenrouter={Boolean(session.user.openrouterApiKey)}
-          initialGemini={Boolean(session.user.geminiApiKey || session.user.aiApiKey)}
-          initialOpenai={Boolean(session.user.openaiApiKey)}
-          initialAnthropic={Boolean(session.user.anthropicApiKey)}
-        />
-      </div>
-    </div>
+    <ProfileClient 
+      session={formattedSession} 
+      initialFamilyMembers={initialFamilyMembers} 
+      householdDetails={householdDetails} 
+    />
   );
 }
