@@ -1142,8 +1142,8 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return val.toString();
   };
   
-  // Increased height and padding for a taller, more prominent chart view
-  const width = 700; const height = 230; const padding = 45;
+  // Adjusted aspect ratio for a much taller, larger display on mobile screens
+  const width = 450; const height = 280; const padding = 45;
   
   const values = safeData.map(d => d.value);
   const minVal = values.length > 0 ? Math.min(...values) * 0.95 : 0;
@@ -1155,7 +1155,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return { x, y, ...d };
   });
   const pathString = points.reduce((acc, pt, idx) => idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`, '');
-  const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 10} L ${points[0].x} ${height - 10} Z` : '';
+  const areaString = points.length > 0 ? `${pathString} L ${points[points.length - 1].x} ${height - 15} L ${points[0].x} ${height - 15} Z` : '';
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
@@ -1181,24 +1181,24 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
       </div>
       <div className="pt-4 pb-2 px-1 border-b border-slate-100 dark:border-slate-800">
         {safeData.length === 0 ? (
-          <div className="h-72 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
+          <div className="h-80 flex items-center justify-center text-xs text-slate-400 font-mono">Loading timeline data...</div>
         ) : (
           <div className="relative w-full overflow-hidden rounded-xl">
-            {/* Increased display height class from h-52 to h-72 for mobile visibility */}
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-72 sm:h-64 overflow-visible">
+            {/* Taller container class to give the chart plenty of height */}
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-80 sm:h-72 overflow-visible">
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0f766e" stopOpacity="0.15" />
+                  <stop offset="0%" stopColor="#0f766e" stopOpacity="0.18" />
                   <stop offset="100%" stopColor="#0f766e" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <path d={areaString} fill="url(#areaGradient)" />
-              <path d={pathString} fill="none" stroke="#0f766e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d={pathString} fill="none" stroke="#0f766e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
               {points.map((pt, idx) => (
                 <g key={idx} className="group cursor-pointer">
-                  <circle cx={pt.x} cy={pt.y} r="5.5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2 transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
-                  <text x={pt.x} y={pt.y - 14} textAnchor="middle" className="text-[11px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-semibold transition-colors">{formatCompactValue(pt.value)}</text>
-                  <text x={pt.x} y={height - 8} textAnchor="middle" className="text-[10px] font-mono fill-slate-400">{pt.month}</text>
+                  <circle cx={pt.x} cy={pt.y} r="6" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-[2.5] transition-all group-hover:scale-150 group-hover:stroke-emerald-600" />
+                  <text x={pt.x} y={pt.y - 14} textAnchor="middle" className="text-[12px] font-mono fill-slate-700 dark:fill-slate-300 group-hover:fill-emerald-600 font-bold transition-colors">{formatCompactValue(pt.value)}</text>
+                  <text x={pt.x} y={height - 10} textAnchor="middle" className="text-[11px] font-mono fill-slate-400 font-medium">{pt.month}</text>
                   <title>{`${pt.month}: ${pt.value.toLocaleString()} ${baseCurrency}`}</title>
                 </g>
               ))}
