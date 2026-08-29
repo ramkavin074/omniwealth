@@ -81,16 +81,16 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       <div className="space-y-6">
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0 overflow-hidden">
                 <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
                   <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
                 </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs md:text-base tracking-tight truncate">
+                <div className="min-w-0 overflow-hidden">
+                  <div className="font-bold text-slate-900 dark:text-white text-[11px] sm:text-xs md:text-base tracking-tight truncate max-w-[120px] sm:max-w-none">
                     Family Wealth Hub
                   </div>
-                  <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
+                  <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate max-w-[120px] sm:max-w-none">
                     {householdTitle}
                   </div>
                 </div>
