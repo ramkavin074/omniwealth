@@ -141,7 +141,7 @@ export default function DashboardClient({
                     <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800">
                       <Image src="/omniwealth.jpg" alt="OmniWealth" width={28} height={28} className="object-cover w-full h-full" />
                     </div>
-                    <span className="font-bold text-sm tracking-wide text-slate-950 dark:text-white">OmniWealth Office</span>
+                    <span className="font-bold text-sm tracking-wide text-slate-950 dark:text-white">Family Wealth Hub</span>
                   </div>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">
                     <X className="w-5 h-5" />
@@ -167,6 +167,9 @@ export default function DashboardClient({
                   <button onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <TrendingUp className="w-4 h-4" /><span>Intelligence Feed</span>
                   </button>
+                  <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                    <Settings className="w-4 h-4" /><span>Household Settings &amp; Admin</span>
+                  </Link>
                 </nav>
               </div>
 
