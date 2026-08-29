@@ -114,24 +114,24 @@ export default function ProfileClient({ session, initialFamilyMembers, household
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-8 py-6">
       {/* Header with Page Title and Quick Action Buttons */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-800 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white">Profile &amp; Family Management</h1>
-          <p className="text-xs text-slate-400 mt-1">View account details, customize legacy pillars, and manage members.</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Profile &amp; Family Management</h1>
+          <p className="text-xs text-slate-500 mt-1">View account details, customize legacy pillars, and manage members.</p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <Link 
             href="/vault" 
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 hover:text-white font-semibold text-xs rounded-xl transition-colors shadow-md"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 font-semibold text-xs rounded-xl transition-colors shadow-sm"
           >
-            <Lock className="w-4 h-4 text-indigo-400" /> Document Vault
+            <Lock className="w-4 h-4 text-slate-500" /> Document Vault
           </Link>
           <button 
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-md"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
           >
             <Plus className="w-4 h-4" /> Add Family Member
           </button>
@@ -139,49 +139,49 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       </div>
 
       {success && (
-        <div className="bg-emerald-950/50 border border-emerald-800 text-emerald-400 text-xs p-3 rounded-xl flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" /> {success}
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {success}
         </div>
       )}
 
       {/* Account Details Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-          <User className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">My Account Details</h2>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
+          <User className="w-5 h-5 text-slate-500" />
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">My Account Details</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-1">
-            <span className="text-slate-500 uppercase text-[10px] block">Full Name</span>
-            <div className="font-bold text-white text-sm">{session.user.fullName}</div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1 shadow-sm">
+            <span className="text-slate-500 uppercase text-[10px] block font-medium">Full Name</span>
+            <div className="font-bold text-slate-900 text-sm">{session.user.fullName}</div>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-1">
-            <span className="text-slate-500 uppercase text-[10px] block">Email Address</span>
-            <div className="font-mono text-slate-300 text-sm">{session.user.email}</div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1 shadow-sm">
+            <span className="text-slate-500 uppercase text-[10px] block font-medium">Email Address</span>
+            <div className="font-mono text-slate-700 text-sm">{session.user.email}</div>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-1">
-            <span className="text-slate-500 uppercase text-[10px] block">Role</span>
-            <div className="font-mono text-indigo-300 font-bold uppercase">{session.user.role}</div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1 shadow-sm">
+            <span className="text-slate-500 uppercase text-[10px] block font-medium">Role</span>
+            <div className="font-mono text-teal-700 font-bold uppercase">{session.user.role}</div>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-1">
-            <span className="text-slate-500 uppercase text-[10px] block">Household Base Currency</span>
-            <div className="font-mono text-emerald-400 font-bold">{session.household.baseCurrency}</div>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1 shadow-sm">
+            <span className="text-slate-500 uppercase text-[10px] block font-medium">Household Base Currency</span>
+            <div className="font-mono text-teal-700 font-bold">{session.household.baseCurrency}</div>
           </div>
         </div>
       </div>
 
       {/* Customizable Legacy Pillars Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-          <Target className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Customizable Legacy &amp; Wealth Pillars</h2>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
+          <Target className="w-5 h-5 text-slate-500" />
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Customizable Legacy &amp; Wealth Pillars</h2>
         </div>
-        <p className="text-xs text-slate-400">Define up to 4 core pillars with dedicated names and estate directives.</p>
+        <p className="text-xs text-slate-600">Define up to 4 core pillars with dedicated names and estate directives.</p>
 
         {pillarSuccess && (
-          <div className="bg-emerald-950/50 border border-emerald-800 text-emerald-400 text-xs p-3 rounded-xl flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" /> {pillarSuccess}
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {pillarSuccess}
           </div>
         )}
 
@@ -190,25 +190,25 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             {[0, 1, 2, 3].map((idx) => {
               const item = currentPillars[idx] || { name: '', description: '' };
               return (
-                <div key={idx} className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                  <div className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Pillar {idx + 1}</div>
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm">
+                  <div className="text-[10px] uppercase font-bold text-teal-700 tracking-wider">Pillar {idx + 1}</div>
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-[10px] uppercase text-slate-400 mb-1">Pillar Name</label>
+                      <label className="block text-[10px] uppercase text-slate-500 mb-1 font-medium">Pillar Name</label>
                       <input 
                         name={`pillar_name_${idx}`} 
                         defaultValue={item.name} 
                         placeholder="e.g. Next Generation Family Trust" 
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-indigo-500" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-semibold focus:outline-none focus:border-teal-600 shadow-sm" 
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] uppercase text-slate-400 mb-1">Description / Directive</label>
+                      <label className="block text-[10px] uppercase text-slate-500 mb-1 font-medium">Description / Directive</label>
                       <input 
                         name={`pillar_desc_${idx}`} 
                         defaultValue={item.description} 
                         placeholder="e.g. Disbursed upon reaching age 35 for education and housing" 
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-300 focus:outline-none focus:border-indigo-500" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-teal-600 shadow-sm" 
                       />
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             })}
           </div>
           <div className="flex justify-end pt-2">
-            <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl cursor-pointer transition-colors shadow-md">
+            <button type="submit" className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer transition-colors shadow-sm">
               Save Pillars
             </button>
           </div>
@@ -225,28 +225,28 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       </div>
 
       {/* Change Password Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-          <Lock className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Security &amp; Password Change</h2>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
+          <Lock className="w-5 h-5 text-slate-500" />
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Security &amp; Password Change</h2>
         </div>
 
-        {pwdError && <div className="bg-rose-950/50 border border-rose-800 text-rose-400 text-xs p-3 rounded-xl">{pwdError}</div>}
-        {pwdSuccess && <div className="bg-emerald-950/50 border border-emerald-800 text-emerald-400 text-xs p-3 rounded-xl flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {pwdSuccess}</div>}
+        {pwdError && <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3 rounded-xl shadow-sm">{pwdError}</div>}
+        {pwdSuccess && <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm"><CheckCircle2 className="w-4 h-4 text-emerald-600" /> {pwdSuccess}</div>}
 
         <form onSubmit={handlePasswordChange} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] uppercase font-semibold text-slate-400 mb-1">Current Password</label>
-              <input name="currentPassword" type="password" required placeholder="••••••••" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white" />
+              <label className="block text-[10px] uppercase font-semibold text-slate-500 mb-1">Current Password</label>
+              <input name="currentPassword" type="password" required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 shadow-sm focus:outline-none focus:border-teal-600" />
             </div>
             <div>
-              <label className="block text-[10px] uppercase font-semibold text-slate-400 mb-1">New Password</label>
-              <input name="newPassword" type="password" required placeholder="••••••••" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white" />
+              <label className="block text-[10px] uppercase font-semibold text-slate-500 mb-1">New Password</label>
+              <input name="newPassword" type="password" required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 shadow-sm focus:outline-none focus:border-teal-600" />
             </div>
           </div>
           <div className="flex justify-end">
-            <button type="submit" disabled={pwdLoading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50">
+            <button type="submit" disabled={pwdLoading} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition">
               {pwdLoading ? 'Updating...' : 'Update Password'}
             </button>
           </div>
@@ -254,26 +254,26 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       </div>
 
       {/* Registered Members List with Deletion Provision */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-          <Users className="w-5 h-5 text-indigo-400" />
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Registered Family Members ({initialFamilyMembers.length})</h2>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
+          <Users className="w-5 h-5 text-slate-500" />
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Registered Family Members ({initialFamilyMembers.length})</h2>
         </div>
         <div className="space-y-3">
           {initialFamilyMembers.map((member) => (
-            <div key={member.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex justify-between items-center text-xs">
+            <div key={member.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex justify-between items-center text-xs shadow-sm">
               <div>
-                <div className="font-bold text-white text-sm">{member.fullName}</div>
-                <div className="text-slate-400">{member.email}</div>
+                <div className="font-bold text-slate-900 text-sm">{member.fullName}</div>
+                <div className="text-slate-500">{member.email}</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
+                <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded bg-teal-50 text-teal-800 border border-teal-200 font-bold">
                   {member.role}
                 </span>
                 {member.id !== session.user.id && (
                   <button
                     onClick={() => handleDeleteMember(member.id)}
-                    className="p-1.5 bg-slate-900 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-800 rounded-lg cursor-pointer transition-colors"
+                    className="p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 rounded-lg cursor-pointer transition-colors shadow-sm"
                     title="Remove Family Member"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -287,69 +287,69 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
       {/* Add Family Member Modal Popup */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-indigo-400" /> Add Family Member
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-xl space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-teal-700" /> Add Family Member
               </h3>
-              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
+              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {error && (
-              <div className="bg-rose-950/50 border border-rose-800 text-rose-300 text-xs p-3 rounded-xl flex items-center gap-2">
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3 rounded-xl flex items-center gap-2 shadow-sm">
                 <AlertCircle className="w-4 h-4" /> {error}
               </div>
             )}
 
             <form onSubmit={handleAddMember} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Full Name</label>
+                <label className="block text-slate-600 mb-1 font-medium">Full Name</label>
                 <input
                   name="fullName"
                   required
                   placeholder="e.g. Jane Doe"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Email Address (For Invitation &amp; Login)</label>
+                <label className="block text-slate-600 mb-1 font-medium">Email Address (For Invitation &amp; Login)</label>
                 <input
                   name="email"
                   type="email"
                   required
                   placeholder="jane@family.com"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 font-mono shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">Role</label>
+                <label className="block text-slate-600 mb-1 font-medium">Role</label>
                 <select
                   name="role"
                   defaultValue="MEMBER"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500 cursor-pointer font-medium"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600 cursor-pointer font-medium shadow-sm"
                 >
                   <option value="MEMBER">Member</option>
                   <option value="OWNER">Owner / Admin</option>
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold cursor-pointer transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold cursor-pointer shadow-md disabled:opacity-50"
+                  className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-semibold cursor-pointer shadow-sm disabled:opacity-50 transition"
                 >
                   {loading ? 'Sending Invite...' : 'Add & Send Invite'}
                 </button>
