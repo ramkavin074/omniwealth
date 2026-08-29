@@ -224,24 +224,8 @@ export default function DashboardClient({
           onOpenAddAsset={() => setIsAddAssetOpen(true)}
           onOpenLiability={() => setIsAddLiabilityOpen(true)}
           onOpenAiReader={() => setIsAiReaderOpen(true)}
-          onSelectTab={(tab: any) => setActiveTab(tab)}
         />
         
-        {activeTab === 'wealth' && (
-          <div className="space-y-6 animate-fadeIn max-w-7xl mx-auto px-4 md:px-8 pt-6">
-            <div className="hidden print:block space-y-2 mb-6">
-              <div className="border-b-2 border-slate-900 pb-3">
-                <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
-                <p className="text-xs text-slate-600 font-mono mt-0.5">Generated on {new Date().toLocaleDateString()} • Confidential Asset &amp; Estate Summary</p>
-              </div>
-            </div>
-
-            <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
-            <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
-            <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
-          </div>
-        )}
-         
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden print:hidden">
             <div 
@@ -354,6 +338,7 @@ export default function DashboardClient({
         )}
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 space-y-6">
+          {/* Navigation Tabs Restored at the Top */}
           <div className="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-sm print:hidden">
             <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
               <Wallet className="w-4 h-4" /> Wealth &amp; Assets
@@ -373,6 +358,21 @@ export default function DashboardClient({
           </div>
 
           <div className="space-y-6">
+            {activeTab === 'wealth' && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="hidden print:block space-y-2 mb-6">
+                  <div className="border-b-2 border-slate-900 pb-3">
+                    <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
+                    <p className="text-xs text-slate-600 font-mono mt-0.5">Generated on {new Date().toLocaleDateString()} • Confidential Asset &amp; Estate Summary</p>
+                  </div>
+                </div>
+
+                <WealthSummaryDashboard assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} />
+                <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+                <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+              </div>
+            )}
+
             {activeTab === 'liabilities' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
                 <LiabilitiesManagementSection assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} onAddLiability={() => setIsAddLiabilityOpen(true)} />
@@ -615,7 +615,7 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
         </div>
       </div>
 
-      <div className="block max-w-7xl mx-auto px-4 md:px-8 pt-2">
+      <div className="hidden md:block max-w-7xl mx-auto px-4 md:px-8 pt-2">
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:border-none print:shadow-none print:p-0">
           <div className="shrink-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1.5">
@@ -1126,7 +1126,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return val.toString();
   };
 
-  const { desktopChart, mobileChart } = useMemo(() => {
+  const { desktopChart } = useMemo(() => {
     const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
       const data = rawData.length <= maxPoints ? rawData : rawData.filter((_, idx) => idx % Math.ceil(rawData.length / (maxPoints - 1)) === 0 || idx === rawData.length - 1);
       const values = data.map(d => d.value);
@@ -1144,8 +1144,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     };
 
     return {
-      desktopChart: generateChartData(12, 700, 180, 40),
-      mobileChart: generateChartData(6, 400, 280, 45)
+      desktopChart: generateChartData(12, 700, 180, 40)
     };
   }, [rawData]);
 
