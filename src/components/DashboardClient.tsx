@@ -459,7 +459,7 @@ function ThemeToggleButton() {
     const isDarkMode = document.documentElement.classList.contains('dark') || 
       localStorage.getItem('theme') === 'dark' ||
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
+     
     setIsDark(isDarkMode);
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -556,10 +556,8 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
 
           <div className="flex items-center gap-2.5 shrink-0">
             <CurrencySwitcherForm currentCurrency={baseCurrency} />
-            
+             
             <div className="hidden md:flex items-center gap-2">
-              <ThemeToggleButton />
-
               <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
                 <Plus className="w-4 h-4" /><span>Add Asset</span>
               </button>
@@ -590,6 +588,9 @@ function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRat
                   <Shield className="w-4 h-4" />
                 </Link>
               )}
+
+              {/* Theme Toggle placed right next to Logout */}
+              <ThemeToggleButton />
 
               <form action={logoutAction}>
                 <button type="submit" title="Logout" className="p-2 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 transition cursor-pointer shadow-sm">
@@ -807,7 +808,7 @@ function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: { asse
 
 function LiabilitiesManagementSection({ assets, baseCurrency, liveRates, onAddLiability }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number }; onAddLiability: () => void }) {
   const { getBaseVal } = useAssetValuation(assets, baseCurrency, liveRates);
-  
+   
   const liabilities = assets.filter(a => {
     const type = (a.assetType || '').toUpperCase();
     const cat = (a.accountCategory || '').toUpperCase();
@@ -969,6 +970,7 @@ function FutureMilestonesAndDirectives({ assets }: { assets: any[] }) {
     </div>
   );
 }
+
 function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any[]; onOpenUpload: () => void }) {
   const router = useRouter();
   const [viewingId, setViewingId] = useState<string | null>(null);
@@ -1061,7 +1063,7 @@ function SecureDocumentsVault({ documents = [], onOpenUpload }: { documents: any
                   </div>
                 </div>
               </div>
-              
+               
               <div className="flex items-center gap-2 shrink-0">
                 <button 
                   onClick={() => handleView(doc.id)}
@@ -1228,7 +1230,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
 function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets: any[]; baseCurrency: string; liveRates: { [key: string]: number } }) {
   const { totalNetWorth } = useAssetValuation(assets, baseCurrency, liveRates);
   const typeMap: { [key: string]: number } = {};
-  
+   
   assets.forEach((a) => {
     let t = (a.assetType || 'OTHER').toUpperCase().trim();
     if (t === 'LIABILITY' || t === 'DEBT') return;
@@ -1236,9 +1238,9 @@ function AssetAllocationVisualizer({ assets, baseCurrency, liveRates }: { assets
     const val = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
     typeMap[t] = (typeMap[t] || 0) + val;
   });
-  
+   
   const sortedEntries = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
-  
+   
   const assetColors: { [key: string]: string } = {
     STOCK: 'bg-teal-700',
     STOCKS: 'bg-teal-700',
