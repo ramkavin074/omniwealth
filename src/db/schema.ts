@@ -59,12 +59,11 @@ export const assets = pgTable('assets', {
   accountNumber: text('account_number').notNull(),
   rationale: text('rationale').notNull(),
   nativeCurrency: text('native_currency').notNull(),
-  quantity: text('quantity').default('1'),
+  quantity: text('quantity'),
   nativeValue: text('native_value').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
-
 export const transactions = pgTable('transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
   assetId: uuid('asset_id').notNull(),

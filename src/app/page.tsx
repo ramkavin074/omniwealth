@@ -40,6 +40,7 @@ export default async function DashboardPage() {
       accountCategory: assets.accountCategory,
       accountNumber: assets.accountNumber,
       rationale: assets.rationale,
+      quantity: assets.quantity,
       nativeValue: assets.nativeValue,
       nativeCurrency: assets.nativeCurrency,
       user: { fullName: users.fullName },
