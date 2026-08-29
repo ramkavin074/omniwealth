@@ -1136,7 +1136,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return val.toString();
   };
 
-  // Helper generator to calculate points for any dimension
+  // Helper generator to calculate points for any dimension and max point cap
   const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
     const data = rawData.length <= maxPoints ? rawData : rawData.filter((_, idx) => idx % Math.ceil(rawData.length / (maxPoints - 1)) === 0 || idx === rawData.length - 1);
     const values = data.map(d => d.value);
@@ -1153,9 +1153,9 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
     return { points, pathString, areaString };
   };
 
-  // Separate configurations: Wide for desktop, tall for mobile
+  // Desktop keeps up to 12 points, Mobile is capped strictly at 6 points to prevent overlapping dates
   const desktopChart = generateChartData(12, 700, 180, 40);
-  const mobileChart = generateChartData(8, 400, 280, 45);
+  const mobileChart = generateChartData(6, 400, 280, 45);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
@@ -1206,7 +1206,7 @@ function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRa
               </svg>
             </div>
 
-            {/* Mobile View (Taller and easier to read on small screens) */}
+            {/* Mobile View (Capped at 6 points for clean, non-overlapping dates) */}
             <div className="block md:hidden relative w-full overflow-hidden rounded-xl">
               <svg viewBox="0 0 400 280" className="w-full h-72 overflow-visible">
                 <defs>
