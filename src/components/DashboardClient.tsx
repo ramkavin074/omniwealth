@@ -34,6 +34,17 @@ import {
   Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu, LogOut 
 } from 'lucide-react';
 
+const FX_RATES: { [key: string]: number } = {
+  USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
+};
+
+function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates: { [key: string]: number } = FX_RATES): number {
+  if (fromCurr === toCurr) return amount;
+  const rateFrom = rates[fromCurr] || 1;
+  const rateTo = rates[toCurr] || 1;
+  return (amount * rateTo) / rateFrom;
+}
+
 interface DashboardClientProps {
   session: any;
   initialAssets: any[];
@@ -47,7 +58,7 @@ export default function DashboardClient({
   initialAssets, 
   baseCurrency, 
   initialDocuments = [],
-  initialLiveRates = {}
+  initialLiveRates = FX_RATES
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives' | 'feed'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
@@ -93,15 +104,18 @@ export default function DashboardClient({
     ];
   }, [session?.household?.legacyPillars]);
 
-  // Compute total liquid wealth for retirement calculator
+  // Compute total liquid wealth correctly converted to baseCurrency for retirement calculator
   const totalLiquidWealth = useMemo(() => {
     return initialAssets.reduce((s, a) => {
       const type = (a.assetType || '').toUpperCase();
       const cat = (a.accountCategory || '').toUpperCase();
       if (type === 'REAL_ESTATE' || cat === 'SOCIAL_SECURITY' || type === 'LIABILITY' || type === 'DEBT') return s;
-      return s + parseFloat(a.nativeValue || '0');
+      
+      const val = parseFloat(a.nativeValue || '0');
+      const baseVal = convertCurrency(val, a.nativeCurrency || 'USD', baseCurrency, liveRates);
+      return s + Math.abs(baseVal);
     }, 0);
-  }, [initialAssets]);
+  }, [initialAssets, baseCurrency, liveRates]);
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors print:bg-white print:text-slate-900 print:pb-0">
