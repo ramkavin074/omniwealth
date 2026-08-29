@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { prisma } from '../../lib/db';
-import { getSession } from '../../lib/auth';
+import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import ProfileClient from './ProfileClient';
 
 export const dynamic = 'force-dynamic';
