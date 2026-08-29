@@ -238,7 +238,7 @@ export default function DashboardClient({
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-sm text-white flex items-center gap-1.5">
-                    AI Statement Reader <span className="bg-amber-500/20 text-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-amber-500/30">NEW</span>
+                    AI Statement Reader
                   </div>
                   <div className="text-xs text-slate-400 truncate">Upload PDF statements or paste holdings instantly</div>
                 </div>
@@ -306,7 +306,6 @@ export default function DashboardClient({
                       <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       <span>AI Statement Reader</span>
                     </div>
-                    <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded">NEW</span>
                   </button>
 
                   <button 
