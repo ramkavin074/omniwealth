@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { X, CheckCircle2, Wallet, CreditCard, Building2 } from 'lucide-react';
 import { updateAssetAction } from '@/actions/vault';
 
@@ -16,20 +16,29 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Track editable state for multi-account rows if consolidated
-  const isConsolidated = asset?.rawAssets && asset.rawAssets.length > 1;
   const [subRows, setSubRows] = useState<any[]>([]);
+  const [singleValue, setSingleValue] = useState('');
+  const [singleQty, setSingleQty] = useState('');
+  const [singleCurrency, setSingleCurrency] = useState('USD');
 
-  // Initialize sub-rows when asset changes
-  useState(() => {
-    if (asset?.rawAssets) {
-      setSubRows(asset.rawAssets.map((r: any) => ({ ...r })));
+  // Sync state cleanly whenever the selected asset changes
+  useEffect(() => {
+    if (asset) {
+      if (asset.rawAssets && Array.isArray(asset.rawAssets) && asset.rawAssets.length > 0) {
+        setSubRows(asset.rawAssets.map((r: any) => ({ ...r })));
+      } else {
+        setSubRows([{ ...asset }]);
+      }
+      setSingleValue(asset.totalNative ?? asset.nativeValue ?? '0');
+      setSingleQty(asset.totalQty ?? asset.quantity ?? '1');
+      setSingleCurrency(asset.nativeCurrency || 'USD');
     }
-  });
+  }, [asset]);
 
   if (!isOpen || !asset) return null;
 
   const isLiability = asset.assetType === 'LIABILITY' || asset.assetType === 'DEBT' || asset.accountCategory === 'LIABILITY';
+  const isConsolidated = subRows.length > 1;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,26 +53,30 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
     startTransition(async () => {
       let res;
       if (isConsolidated) {
-        // Update each underlying account row individually
+        // Update each underlying account row individually with its custom quantity & value
         for (const row of subRows) {
           const rowFormData = new FormData();
           rowFormData.set('name', formData.get('name') as string);
           rowFormData.set('ticker', formData.get('ticker') as string || '');
-          rowFormData.set('nativeValue', row.nativeValue.toString());
-          rowFormData.set('nativeCurrency', row.nativeCurrency || asset.nativeCurrency);
+          rowFormData.set('nativeValue', row.nativeValue?.toString() || '0');
+          rowFormData.set('nativeCurrency', row.nativeCurrency || asset.nativeCurrency || 'USD');
           rowFormData.set('quantity', row.quantity?.toString() || '1');
           rowFormData.set('rationale', formData.get('rationale') as string);
-          rowFormData.set('assetType', asset.assetType);
-          rowFormData.set('accountCategory', row.accountCategory);
-          rowFormData.set('accountNumber', row.accountNumber);
+          rowFormData.set('assetType', asset.assetType || 'STOCK');
+          rowFormData.set('accountCategory', row.accountCategory || 'INDIVIDUAL');
+          rowFormData.set('accountNumber', row.accountNumber || 'DEFAULT');
 
           res = await updateAssetAction(row.id, rowFormData);
           if (!res?.success) break;
         }
       } else {
         // Single asset update
-        const primaryId = asset.rawAssets?.[0]?.id || asset.id;
-        res = await updateAssetAction(primaryId, formData);
+        formData.set('nativeValue', singleValue);
+        formData.set('quantity', singleQty);
+        formData.set('nativeCurrency', singleCurrency);
+
+        const targetId = subRows[0]?.id || asset.id;
+        res = await updateAssetAction(targetId, formData);
       }
 
       if (res?.success) {
@@ -90,7 +103,7 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
               <Wallet className="w-5 h-5 text-teal-600 dark:text-teal-400" />
             )}
             <h2 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
-              Edit {isLiability ? 'Liability' : 'Asset'} {isConsolidated && '(Consolidated Accounts)'}
+              Edit {isLiability ? 'Liability' : 'Asset'} {isConsolidated && `(Consolidated • ${subRows.length} Accounts)`}
             </h2>
           </div>
           <button onClick={onClose} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer">
@@ -125,7 +138,7 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
               <input 
                 name="ticker" 
                 defaultValue={asset.ticker || ''} 
-                placeholder="e.g. AAPL"
+                placeholder="e.g. NVDA"
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono uppercase" 
               />
             </div>
@@ -144,43 +157,47 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
             </select>
           </div>
 
-          {/* If consolidated across multiple accounts, show account-by-account breakdown */}
+          {/* Account Breakdown or Single Asset Inputs */}
           {isConsolidated ? (
             <div className="space-y-3 pt-2">
               <div className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5" /> Breakdown by Account ({subRows.length} accounts)
+                <Building2 className="w-3.5 h-3.5" /> Breakdown by Account &amp; Type ({subRows.length} holding source{subRows.length > 1 ? 's' : ''})
               </div>
+              
               {subRows.map((row, idx) => (
                 <div key={row.id || idx} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2.5">
-                  <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono">
-                    <span>Account: <strong>{row.accountNumber || 'Default'}</strong></span>
-                    <span className="bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-700 dark:text-slate-300">{row.accountCategory}</span>
+                  <div className="flex flex-wrap justify-between items-center gap-2 text-[11px] text-slate-500 font-mono">
+                    <span>Acc #: <strong className="text-slate-800 dark:text-slate-200">{row.accountNumber || 'DEFAULT'}</strong></span>
+                    <span className="bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-900 px-2 py-0.5 rounded font-sans font-semibold">
+                      Type: {row.accountCategory || 'INDIVIDUAL'}
+                    </span>
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[9px] uppercase text-slate-400 mb-1">Value ({row.nativeCurrency})</label>
+                      <label className="block text-[9px] uppercase text-slate-400 mb-1">Value ({row.nativeCurrency || asset.nativeCurrency})</label>
                       <input 
                         type="number"
                         step="any"
-                        value={row.nativeValue}
+                        value={row.nativeValue ?? ''}
                         onChange={(e) => {
                           const val = e.target.value;
                           setSubRows(prev => prev.map((item, i) => i === idx ? { ...item, nativeValue: val } : item));
                         }}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-mono text-xs"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-mono text-xs text-slate-900 dark:text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-[9px] uppercase text-slate-400 mb-1">Quantity</label>
+                      <label className="block text-[9px] uppercase text-slate-400 mb-1">Quantity (Shares)</label>
                       <input 
                         type="number"
                         step="any"
-                        value={row.quantity}
+                        value={row.quantity ?? ''}
                         onChange={(e) => {
                           const qty = e.target.value;
                           setSubRows(prev => prev.map((item, i) => i === idx ? { ...item, quantity: qty } : item));
                         }}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-mono text-xs"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 font-mono text-xs text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
@@ -188,15 +205,14 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
               ))}
             </div>
           ) : (
-            // Standard single asset inputs
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Value</label>
+                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Total Value</label>
                 <input 
-                  name="nativeValue" 
                   type="number" 
                   step="any"
-                  defaultValue={asset.totalNative ?? asset.nativeValue ?? '0'} 
+                  value={singleValue} 
+                  onChange={(e) => setSingleValue(e.target.value)}
                   required
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono" 
                 />
@@ -204,20 +220,21 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
               <div>
                 <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Currency</label>
                 <select 
-                  name="nativeCurrency" 
-                  defaultValue={asset.nativeCurrency || 'USD'} 
+                  value={singleCurrency} 
+                  onChange={(e) => setSingleCurrency(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono"
                 >
                   {['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Quantity</label>
+                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Quantity / Shares</label>
                 <input 
-                  name="quantity" 
                   type="number" 
                   step="any"
-                  defaultValue={asset.totalQty ?? asset.quantity ?? '1'} 
+                  value={singleQty} 
+                  onChange={(e) => setSingleQty(e.target.value)}
+                  required
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono" 
                 />
               </div>
