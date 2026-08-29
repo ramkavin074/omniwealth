@@ -200,37 +200,6 @@ export async function updateUserApiKeyAction(apiKey: string) {
   }
 }
 
-export async function updateUserAiPreferencesAction(formData: FormData) {
-  try {
-    const session = await getSessionUserAction();
-    if (!session || !session.user?.id) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    const aiProvider = (formData.get('aiProvider') as string) || 'gemini';
-    const aiApiKey = (formData.get('aiApiKey') as string) || '';
-    const geminiApiKey = (formData.get('geminiApiKey') as string) || '';
-    const openaiApiKey = (formData.get('openaiApiKey') as string) || '';
-    const anthropicApiKey = (formData.get('anthropicApiKey') as string) || '';
-
-    await db.update(users)
-      .set({ 
-        aiProvider,
-        aiApiKey,
-        geminiApiKey,
-        openaiApiKey,
-        anthropicApiKey,
-        updatedAt: new Date() 
-      } as any)
-      .where(eq(users.id, session.user.id));
-
-    revalidatePath('/profile');
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to save AI preferences' };
-  }
-}
-
 // --- Family Members & Email Invites ---
 
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
@@ -569,22 +538,8 @@ export async function parseStatementAction(formData: FormData) {
     return { success: false, error: 'No files uploaded or text provided' };
   }
 
-  // Multi-provider key resolution logic based on user profile settings
-  const provider = session.user.aiProvider || 'gemini';
-  let apiKey = '';
-
-  if (provider === 'openai') {
-    apiKey = session.user.openaiApiKey || session.user.aiApiKey || process.env.OPENAI_API_KEY || '';
-  } else if (provider === 'anthropic') {
-    apiKey = session.user.anthropicApiKey || session.user.aiApiKey || process.env.ANTHROPIC_API_KEY || '';
-  } else {
-    // Default to gemini
-    apiKey = session.user.geminiApiKey || session.user.aiApiKey || process.env.GEMINI_API_KEY || '';
-  }
-
-  if (!apiKey) {
-    return { success: false, error: `API key for ${provider} is not configured. Add it in your profile settings or .env` };
-  }
+  const apiKey = session.user.aiApiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) return { success: false, error: 'Gemini API key is not configured. Add it in your profile settings or .env' };
 
   const ai = new GoogleGenAI({ apiKey });
   let totalCount = 0;
