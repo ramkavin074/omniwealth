@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
+import { toNumeric } from '@/lib/num';
 import {
   canWrite,
   canManageHousehold,
@@ -255,7 +256,7 @@ export async function refreshLiveMarketPricesAction() {
 
       if (livePrice !== null && livePrice > 0) {
         const qty = parseFloat(asset.quantity && asset.quantity.trim() !== '' ? asset.quantity : '1') || 1;
-        const newTotalValue = (qty * livePrice).toString();
+        const newTotalValue = toNumeric(qty * livePrice, '0');
 
         await db.update(assets)
           .set({ nativeValue: newTotalValue, updatedAt: new Date() })
@@ -481,9 +482,9 @@ CRITICAL INSTRUCTIONS:
           accountCategory: item.accountCategory || 'INDIVIDUAL',
           accountNumber: item.accountNumber || 'DEFAULT',
           rationale: item.rationale || 'General Long-Term Growth',
-          quantity: item.quantity ? item.quantity.toString() : '1',
-          pricePerUnit: item.pricePerUnit ? item.pricePerUnit.toString() : item.totalNativeValue.toString(),
-          totalNativeValue: item.totalNativeValue.toString(),
+          quantity: toNumeric(item.quantity, '1'),
+          pricePerUnit: toNumeric(item.pricePerUnit ?? item.totalNativeValue, '0'),
+          totalNativeValue: toNumeric(item.totalNativeValue, '0'),
           nativeCurrency: item.nativeCurrency || 'USD',
           status: 'PENDING',
         });
@@ -543,9 +544,9 @@ CRITICAL INSTRUCTIONS:
           accountCategory: item.accountCategory || 'INDIVIDUAL',
           accountNumber: item.accountNumber || 'DEFAULT',
           rationale: item.rationale || 'General Long-Term Growth',
-          quantity: item.quantity ? item.quantity.toString() : '1',
-          pricePerUnit: item.pricePerUnit ? item.pricePerUnit.toString() : item.totalNativeValue.toString(),
-          totalNativeValue: item.totalNativeValue.toString(),
+          quantity: toNumeric(item.quantity, '1'),
+          pricePerUnit: toNumeric(item.pricePerUnit ?? item.totalNativeValue, '0'),
+          totalNativeValue: toNumeric(item.totalNativeValue, '0'),
           nativeCurrency: item.nativeCurrency || 'USD',
           status: 'PENDING',
         });
@@ -593,13 +594,13 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   let targetAssetId: string;
 
   if (existingAsset) {
-    await db.update(assets).set({ 
-      nativeValue: draft.totalNativeValue, 
-      quantity: draft.quantity || existingAsset.quantity,
-      accountCategory: finalCategory, 
-      rationale: finalRationale, 
+    await db.update(assets).set({
+      nativeValue: toNumeric(draft.totalNativeValue, '0'),
+      quantity: toNumeric(draft.quantity ?? existingAsset.quantity, '1'),
+      accountCategory: finalCategory,
+      rationale: finalRationale,
       assetType: finalAssetType,
-      updatedAt: new Date() 
+      updatedAt: new Date()
     }).where(eq(assets.id, existingAsset.id));
     targetAssetId = existingAsset.id;
   } else {
@@ -618,8 +619,8 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
       accountNumber: finalAccountNumber,
       rationale: finalRationale,
       nativeCurrency: draft.nativeCurrency,
-      quantity: draft.quantity || '1',
-      nativeValue: draft.totalNativeValue,
+      quantity: toNumeric(draft.quantity, '1'),
+      nativeValue: toNumeric(draft.totalNativeValue, '0'),
     }).returning();
     targetAssetId = newAsset.id;
   }
@@ -627,8 +628,8 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   await db.insert(transactions).values({
     assetId: targetAssetId,
     type: 'STATEMENT_IMPORT',
-    quantity: draft.quantity || '1',
-    nativePrice: draft.pricePerUnit || draft.totalNativeValue,
+    quantity: toNumeric(draft.quantity, '1'),
+    nativePrice: toNumeric(draft.pricePerUnit ?? draft.totalNativeValue, '0'),
     nativeCurrency: draft.nativeCurrency,
     fxRateToBaseOnDate: fxRate.toFixed(6),
     transactionDate: new Date(),
@@ -670,8 +671,8 @@ export async function addAssetAction(formData: FormData) {
   const accountCategory = formData.get('accountCategory') as string;
   const accountNumber = formData.get('accountNumber') as string;
   const rationale = formData.get('rationale') as string;
-  const quantity = (formData.get('quantity') as string) || '1';
-  const nativeValue = formData.get('nativeValue') as string;
+  const quantity = toNumeric(formData.get('quantity'), '1');
+  const nativeValue = toNumeric(formData.get('nativeValue'), '0');
   const nativeCurrency = formData.get('nativeCurrency') as string;
   const requestedUserId = (formData.get('userId') as string) || session.user.id;
 
@@ -710,11 +711,12 @@ export async function addAssetAction(formData: FormData) {
   }).returning();
 
   const fxRate = await getExchangeRate(nativeCurrency || 'USD', session.household.baseCurrency);
+  const qtyNum = parseFloat(quantity) || 1;
   await db.insert(transactions).values({
     assetId: newAsset.id,
     type: 'MANUAL_ADD',
     quantity,
-    nativePrice: (parseFloat(nativeValue) / parseFloat(quantity || '1')).toString(),
+    nativePrice: toNumeric(parseFloat(nativeValue) / qtyNum, '0'),
     nativeCurrency: nativeCurrency || 'USD',
     fxRateToBaseOnDate: fxRate.toFixed(6),
     transactionDate: new Date(),
@@ -749,8 +751,8 @@ export async function updateAssetAction(id: string, formData: FormData) {
     accountNumber: (formData.get('accountNumber') as string) || existing.accountNumber,
     rationale: rationaleVal || existing.rationale,
     nativeCurrency: (formData.get('nativeCurrency') as string) || existing.nativeCurrency,
-    quantity: qtyVal || existing.quantity,
-    nativeValue: valueVal ? valueVal : existing.nativeValue,
+    quantity: toNumeric(qtyVal || existing.quantity, existing.quantity ?? '1'),
+    nativeValue: toNumeric(valueVal || existing.nativeValue, existing.nativeValue),
     updatedAt: new Date(),
   }).where(eq(assets.id, id));
 

@@ -6,6 +6,7 @@ import { getSessionUserAction } from './auth';
 import { getExchangeRate } from '@/lib/fx';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { canWrite, READ_ONLY_ERROR } from '@/lib/permissions';
+import { toNumeric } from '@/lib/num';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -90,9 +91,9 @@ export async function parseStatementAction(formData: FormData) {
           accountCategory: item.accountCategory || 'INDIVIDUAL',
           accountNumber: item.accountNumber || 'DEFAULT',
           rationale: item.rationale || 'General Long-Term Growth',
-          quantity: item.quantity ? item.quantity.toString() : '1',
-          pricePerUnit: item.pricePerUnit ? item.pricePerUnit.toString() : item.totalNativeValue.toString(),
-          totalNativeValue: item.totalNativeValue.toString(),
+          quantity: toNumeric(item.quantity, '1'),
+          pricePerUnit: toNumeric(item.pricePerUnit ?? item.totalNativeValue, '0'),
+          totalNativeValue: toNumeric(item.totalNativeValue, '0'),
           nativeCurrency: item.nativeCurrency || session.household.baseCurrency || 'USD',
           status: 'PENDING',
         });
@@ -205,7 +206,9 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   const finalCategory = selectedCategory || draft.accountCategory || 'INDIVIDUAL';
   const finalAccountNumber = selectedAccountNumber || draft.accountNumber || 'DEFAULT';
   const finalRationale = selectedRationale || draft.rationale || 'General Long-Term Growth';
-  const assetQuantity = draft.quantity ? draft.quantity.toString() : '1';
+  const assetQuantity = toNumeric(draft.quantity, '1');
+  const draftValue = toNumeric(draft.totalNativeValue, '0');
+  const draftPrice = toNumeric(draft.pricePerUnit ?? draft.totalNativeValue, '0');
 
   let [existingAsset] = draft.ticker
     ? await db.select().from(assets).where(and(eq(assets.userId, targetUserId), eq(assets.accountNumber, finalAccountNumber), eq(assets.ticker, draft.ticker)))
@@ -221,7 +224,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   if (existingAsset) {
     await db.update(assets).set({ 
       quantity: assetQuantity,
-      nativeValue: draft.totalNativeValue, 
+      nativeValue: draftValue, 
       accountCategory: finalCategory, 
       rationale: finalRationale, 
       updatedAt: new Date() 
@@ -243,7 +246,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
       accountNumber: finalAccountNumber,
       rationale: finalRationale,
       nativeCurrency: draft.nativeCurrency,
-      nativeValue: draft.totalNativeValue,
+      nativeValue: draftValue,
       quantity: assetQuantity,
     }).returning();
     targetAssetId = newAsset.id;
@@ -253,7 +256,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
     assetId: targetAssetId,
     type: 'STATEMENT_IMPORT',
     quantity: assetQuantity,
-    nativePrice: draft.pricePerUnit || draft.totalNativeValue,
+    nativePrice: draftPrice,
     nativeCurrency: draft.nativeCurrency,
     fxRateToBaseOnDate: fxRate.toFixed(6),
     transactionDate: new Date(),

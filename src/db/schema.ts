@@ -5,9 +5,16 @@ import {
   timestamp,
   boolean,
   integer,
+  numeric,
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
+
+/**
+ * Money / quantity columns are `numeric` (arbitrary precision). The pg
+ * driver returns them as strings, so JS-side `parseFloat(...)` and
+ * client sorting are unaffected; SQL comparisons/ORDER BY become correct.
+ */
 
 /**
  * ============================================================
@@ -32,7 +39,7 @@ export const households = pgTable(
 
     retirementAge: integer('retirement_age').default(65).notNull(),
 
-    desiredIncome: text('desired_income').default('60000').notNull(),
+    desiredIncome: numeric('desired_income').default('60000').notNull(),
 
     retirementCountry: text('retirement_country').default('US').notNull(),
 
@@ -349,9 +356,9 @@ export const assets = pgTable(
 
     nativeCurrency: text('native_currency').notNull(),
 
-    quantity: text('quantity'),
+    quantity: numeric('quantity'),
 
-    nativeValue: text('native_value').notNull(),
+    nativeValue: numeric('native_value').notNull(),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
 
@@ -392,13 +399,13 @@ export const transactions = pgTable(
 
     type: text('type').notNull(),
 
-    quantity: text('quantity').notNull(),
+    quantity: numeric('quantity').notNull(),
 
-    nativePrice: text('native_price').notNull(),
+    nativePrice: numeric('native_price').notNull(),
 
     nativeCurrency: text('native_currency').notNull(),
 
-    fxRateToBaseOnDate: text('fx_rate_to_base_on_date').notNull(),
+    fxRateToBaseOnDate: numeric('fx_rate_to_base_on_date').notNull(),
 
     transactionDate: timestamp('transaction_date')
       .defaultNow()
@@ -449,11 +456,11 @@ export const draftLineItems = pgTable(
 
     rationale: text('rationale').notNull(),
 
-    quantity: text('quantity').default('1'),
+    quantity: numeric('quantity').default('1'),
 
-    pricePerUnit: text('price_per_unit'),
+    pricePerUnit: numeric('price_per_unit'),
 
-    totalNativeValue: text('total_native_value').notNull(),
+    totalNativeValue: numeric('total_native_value').notNull(),
 
     nativeCurrency: text('native_currency').notNull(),
 
