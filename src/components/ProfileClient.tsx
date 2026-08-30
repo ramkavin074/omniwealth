@@ -283,11 +283,14 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
           {/* 4. Multi-AI Free-First Cascade BYOK Settings Card */}
           <AiSettingsCard
-            initialGroq={session.user.hasGroqKey}
-            initialOpenrouter={session.user.hasOpenrouterKey}
-            initialGemini={session.user.hasGeminiKey || session.user.hasAiApiKey}
-            initialOpenai={session.user.hasOpenaiKey}
-            initialAnthropic={session.user.hasAnthropicKey}
+            configured={{
+              groqApiKey: session.user.hasGroqKey,
+              cerebrasApiKey: session.user.hasCerebrasKey,
+              openrouterApiKey: session.user.hasOpenrouterKey,
+              geminiApiKey: session.user.hasGeminiKey || session.user.hasAiApiKey,
+              openaiApiKey: session.user.hasOpenaiKey,
+              anthropicApiKey: session.user.hasAnthropicKey,
+            }}
           />
 
           {/* 5. Security Card */}

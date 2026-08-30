@@ -795,6 +795,7 @@ export async function getSessionUserAction() {
     hasOpenaiKey: hasValue(user.openaiApiKey),
     hasAnthropicKey: hasValue(user.anthropicApiKey),
     hasGroqKey: hasValue(user.groqApiKey),
+    hasCerebrasKey: hasValue(user.cerebrasApiKey),
     hasOpenrouterKey: hasValue(user.openrouterApiKey),
   };
 

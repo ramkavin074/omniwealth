@@ -41,6 +41,7 @@ export default async function ProfilePage() {
       hasOpenaiKey: session.user.hasOpenaiKey,
       hasAnthropicKey: session.user.hasAnthropicKey,
       hasGroqKey: session.user.hasGroqKey,
+      hasCerebrasKey: session.user.hasCerebrasKey,
       hasOpenrouterKey: session.user.hasOpenrouterKey,
     },
     household: {

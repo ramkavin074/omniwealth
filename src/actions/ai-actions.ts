@@ -28,6 +28,7 @@ export async function updateAiSettingsAction(formData: FormData) {
   if (!session) return { success: false, error: 'Unauthorized' };
 
   const groqApiKey = (formData.get('groqApiKey') as string || '').trim();
+  const cerebrasApiKey = (formData.get('cerebrasApiKey') as string || '').trim();
   const openrouterApiKey = (formData.get('openrouterApiKey') as string || '').trim();
   const geminiApiKey = (formData.get('geminiApiKey') as string || '').trim();
   const openaiApiKey = (formData.get('openaiApiKey') as string || '').trim();
@@ -35,6 +36,7 @@ export async function updateAiSettingsAction(formData: FormData) {
 
   const updateData: Record<string, any> = { updatedAt: new Date() };
   if (groqApiKey) updateData.groqApiKey = encryptSecret(groqApiKey);
+  if (cerebrasApiKey) updateData.cerebrasApiKey = encryptSecret(cerebrasApiKey);
   if (openrouterApiKey) updateData.openrouterApiKey = encryptSecret(openrouterApiKey);
   if (geminiApiKey) updateData.geminiApiKey = encryptSecret(geminiApiKey);
   if (openaiApiKey) updateData.openaiApiKey = encryptSecret(openaiApiKey);
@@ -66,8 +68,8 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   const openaiOwn = decryptSecret(currentUser?.openaiApiKey);
   const anthropicOwn = decryptSecret(currentUser?.anthropicApiKey);
 
-  // Cerebras is shared-key only for now (no per-user column yet).
-  const cerebrasKey = process.env.CEREBRAS_API_KEY;
+  const cerebrasOwn = decryptSecret(currentUser?.cerebrasApiKey);
+  const cerebrasKey = cerebrasOwn || process.env.CEREBRAS_API_KEY;
 
   const groqKey = groqOwn || process.env.GROQ_API_KEY;
   const openrouterKey = openrouterOwn || process.env.OPENROUTER_API_KEY;
@@ -227,7 +229,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     if (answer) providerUsed = `Groq · ${AI_MODELS.groq} · ${src(groqOwn)}`;
   } else if (forcedProvider === 'cerebras' && cerebrasKey) {
     answer = await runCerebras(cerebrasKey);
-    if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · shared key`;
+    if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · ${src(cerebrasOwn)}`;
   } else if (forcedProvider === 'openrouter' && openrouterKey) {
     answer = await runOpenRouter(openrouterKey);
     if (answer) providerUsed = `OpenRouter · ${AI_MODELS.openrouter} · ${src(openrouterOwn)}`;
@@ -248,7 +250,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     }
     if (cerebrasKey && !answer) {
       answer = await runCerebras(cerebrasKey);
-      if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · shared key`;
+      if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · ${src(cerebrasOwn)}`;
     }
     if (openrouterKey && !answer) {
       answer = await runOpenRouter(openrouterKey);

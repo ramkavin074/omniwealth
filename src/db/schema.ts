@@ -121,6 +121,8 @@ export const users = pgTable(
 
     openrouterApiKey: text('openrouter_api_key'),
 
+    cerebrasApiKey: text('cerebras_api_key'),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
 
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
