@@ -9,6 +9,19 @@ import { revalidatePath } from 'next/cache';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
 
+/**
+ * Provider model IDs. Free/hosted model slugs change often (Groq retires
+ * models, OpenRouter moves ":free" variants to paid), so each is
+ * overridable via env without a code change.
+ */
+const AI_MODELS = {
+  groq: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+  openrouter: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
+  gemini: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+  openai: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+  anthropic: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
+};
+
 export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
@@ -127,7 +140,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     return runOpenAICompatible(
       'Groq',
       'https://api.groq.com/openai/v1/chat/completions',
-      'llama-3.3-70b-versatile',
+      AI_MODELS.groq,
       { Authorization: `Bearer ${key}` },
     );
   }
@@ -136,7 +149,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     return runOpenAICompatible(
       'OpenRouter',
       'https://openrouter.ai/api/v1/chat/completions',
-      'meta-llama/llama-3.3-70b-instruct:free',
+      AI_MODELS.openrouter,
       {
         Authorization: `Bearer ${key}`,
         'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org',
@@ -149,7 +162,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: AI_MODELS.gemini,
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
       return response.text || '';
@@ -164,7 +177,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     return runOpenAICompatible(
       'OpenAI',
       'https://api.openai.com/v1/chat/completions',
-      'gpt-4o-mini',
+      AI_MODELS.openai,
       { Authorization: `Bearer ${key}` },
     );
   }
@@ -175,7 +188,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
+          model: AI_MODELS.anthropic,
           max_tokens: 1024,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }]
@@ -198,40 +211,40 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   // --- FORCED PROVIDER OR AUTO CASCADE ---
   if (forcedProvider === 'groq' && groqKey) {
     answer = await runGroq(groqKey);
-    if (answer) providerUsed = `Groq · llama-3.3-70b-versatile · ${src(groqOwn)}`;
+    if (answer) providerUsed = `Groq · ${AI_MODELS.groq} · ${src(groqOwn)}`;
   } else if (forcedProvider === 'openrouter' && openrouterKey) {
     answer = await runOpenRouter(openrouterKey);
-    if (answer) providerUsed = `OpenRouter · llama-3.3-70b:free · ${src(openrouterOwn)}`;
+    if (answer) providerUsed = `OpenRouter · ${AI_MODELS.openrouter} · ${src(openrouterOwn)}`;
   } else if (forcedProvider === 'gemini' && geminiKey) {
     answer = await runGemini(geminiKey);
-    if (answer) providerUsed = `Google Gemini · gemini-3.6-flash · ${src(geminiOwn)}`;
+    if (answer) providerUsed = `Google Gemini · ${AI_MODELS.gemini} · ${src(geminiOwn)}`;
   } else if (forcedProvider === 'openai' && openaiKey) {
     answer = await runOpenAI(openaiKey);
-    if (answer) providerUsed = `OpenAI · gpt-4o-mini · ${src(openaiOwn)}`;
+    if (answer) providerUsed = `OpenAI · ${AI_MODELS.openai} · ${src(openaiOwn)}`;
   } else if (forcedProvider === 'anthropic' && anthropicKey) {
     answer = await runClaude(anthropicKey);
-    if (answer) providerUsed = `Anthropic · claude-3-5-sonnet · ${src(anthropicOwn)}`;
+    if (answer) providerUsed = `Anthropic · ${AI_MODELS.anthropic} · ${src(anthropicOwn)}`;
   } else {
     // --- AUTO FREE-FIRST CASCADE ---
     if (groqKey && !answer) {
       answer = await runGroq(groqKey);
-      if (answer) providerUsed = `Groq · llama-3.3-70b-versatile · ${src(groqOwn)}`;
+      if (answer) providerUsed = `Groq · ${AI_MODELS.groq} · ${src(groqOwn)}`;
     }
     if (openrouterKey && !answer) {
       answer = await runOpenRouter(openrouterKey);
-      if (answer) providerUsed = `OpenRouter · llama-3.3-70b:free · ${src(openrouterOwn)}`;
+      if (answer) providerUsed = `OpenRouter · ${AI_MODELS.openrouter} · ${src(openrouterOwn)}`;
     }
     if (geminiKey && !answer) {
       answer = await runGemini(geminiKey);
-      if (answer) providerUsed = `Google Gemini · gemini-3.6-flash · ${src(geminiOwn)}`;
+      if (answer) providerUsed = `Google Gemini · ${AI_MODELS.gemini} · ${src(geminiOwn)}`;
     }
     if (openaiKey && !answer) {
       answer = await runOpenAI(openaiKey);
-      if (answer) providerUsed = `OpenAI · gpt-4o-mini · ${src(openaiOwn)}`;
+      if (answer) providerUsed = `OpenAI · ${AI_MODELS.openai} · ${src(openaiOwn)}`;
     }
     if (anthropicKey && !answer) {
       answer = await runClaude(anthropicKey);
-      if (answer) providerUsed = `Anthropic · claude-3-5-sonnet · ${src(anthropicOwn)}`;
+      if (answer) providerUsed = `Anthropic · ${AI_MODELS.anthropic} · ${src(anthropicOwn)}`;
     }
   }
 
