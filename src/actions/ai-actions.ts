@@ -27,12 +27,17 @@ export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
 
-  const groqApiKey = (formData.get('groqApiKey') as string || '').trim();
-  const cerebrasApiKey = (formData.get('cerebrasApiKey') as string || '').trim();
-  const openrouterApiKey = (formData.get('openrouterApiKey') as string || '').trim();
-  const geminiApiKey = (formData.get('geminiApiKey') as string || '').trim();
-  const openaiApiKey = (formData.get('openaiApiKey') as string || '').trim();
-  const anthropicApiKey = (formData.get('anthropicApiKey') as string || '').trim();
+  // API keys are short; reject anything that clearly isn't one.
+  const key = (name: string) => {
+    const v = (formData.get(name) as string || '').trim();
+    return v.length > 400 ? '' : v;
+  };
+  const groqApiKey = key('groqApiKey');
+  const cerebrasApiKey = key('cerebrasApiKey');
+  const openrouterApiKey = key('openrouterApiKey');
+  const geminiApiKey = key('geminiApiKey');
+  const openaiApiKey = key('openaiApiKey');
+  const anthropicApiKey = key('anthropicApiKey');
 
   const updateData: Record<string, any> = { updatedAt: new Date() };
   if (groqApiKey) updateData.groqApiKey = encryptSecret(groqApiKey);
@@ -47,9 +52,12 @@ export async function updateAiSettingsAction(formData: FormData) {
   return { success: true };
 }
 
-export async function askPortfolioAIAction(userPrompt: string, forcedProvider: string = 'auto') {
+export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: string = 'auto') {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+
+  const userPrompt = String(rawPrompt ?? '').trim().slice(0, 4000);
+  if (!userPrompt) return { success: false, error: 'Ask a question first.' };
 
   // Protect the shared/fallback API keys from a runaway session.
   const limit = await checkRateLimit(`ai-chat:${session.user.id}`, 30, 60);
