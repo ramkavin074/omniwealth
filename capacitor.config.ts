@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appName: 'omniwealth',
   webDir: 'public',
   server: {
-    url: 'https://www.omniwealth.org',
+   url: 'https://www.omniwealth.org',
     cleartext: true,
     allowNavigation: [
       'www.omniwealth.org',

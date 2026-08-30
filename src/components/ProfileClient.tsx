@@ -82,11 +82,12 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       <div className="space-y-6">
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+            {/* Left side: Sandwich Menu + Logo / Title */}
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 transition shrink-0"
-                aria-label="Open Menu"
+                className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition shrink-0 shadow-sm"
+                aria-label="Open Navigation Menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
@@ -117,6 +118,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               </Link>
             </div>
 
+            {/* Right side controls */}
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
 
@@ -156,6 +158,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           </div>
         </header>
 
+        {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden print:hidden">
             <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
@@ -190,6 +193,17 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                   <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
                     <Settings2 className="w-4 h-4" /><span>Profile &amp; Family</span>
                   </Link>
+
+                  {/* Theme Switcher inside Mobile Drawer */}
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer text-left"
+                  >
+                    <span className="flex items-center space-x-3.5">
+                      {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                      <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                    </span>
+                  </button>
 
                   {session?.user?.role === 'SUPER_ADMIN' && (
                     <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors">
@@ -301,7 +315,7 @@ function CurrencySwitcherForm({ currentCurrency }: { currentCurrency: string }) 
         disabled={isPending}
         className="bg-transparent border-0 text-xs text-slate-800 dark:text-slate-200 font-mono font-bold focus:outline-none cursor-pointer disabled:opacity-50"
       >
-        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY',].map((c) => (
+        {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY'].map((c) => (
           <option key={c} value={c} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{c}</option>
         ))}
       </select>
