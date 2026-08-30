@@ -29,7 +29,8 @@ import VaultUploadModal from '@/components/VaultUploadModal';
 import { 
   fetchFamilyMembersAction, 
   fetchNetWorthTrendAction,
-  logoutAction 
+  logoutAction,
+  updateThemePreferenceAction
 } from '@/actions/vault';
 import { 
   Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu, LogOut 
@@ -71,10 +72,36 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [timeRange, setTimeRange] = useState('6m');
   const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(initialLiveRates);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Edit Asset / Liability Modal State
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+
+  const toggleTheme = async () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    const themeString = newMode ? 'dark' : 'light';
+
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+
+    try {
+      await updateThemePreferenceAction(themeString as 'light' | 'dark');
+    } catch (err) {
+      console.error('Failed to sync theme preference to database:', err);
+    }
+  };
 
   useEffect(() => {
     fetchFamilyMembersAction().then(setMembers).catch(err => console.warn('Failed to fetch family members:', err));
@@ -178,6 +205,17 @@ export default function DashboardClient({
                   </button>
                   <button onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <TrendingUp className="w-4 h-4" /><span>Intelligence Feed</span>
+                  </button>
+
+                  {/* Theme Switcher inside Mobile Drawer */}
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer text-left"
+                  >
+                    <span className="flex items-center space-x-3.5">
+                      {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                      <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                    </span>
                   </button>
 
                   {session?.user?.role === 'SUPER_ADMIN' && (

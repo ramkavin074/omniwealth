@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { logoutAction } from '@/actions/auth';
 import { updateHouseholdBaseCurrencyAction, updateThemePreferenceAction } from '@/actions/vault';
-import { ArrowLeft, Coins, LogOut, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2, FileText } from 'lucide-react';
+import { ArrowLeft, Coins, LogOut, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import AiSettingsCard from '@/components/AiSettingsCard';
 
@@ -81,9 +81,9 @@ export default function ProfileClient({ session, initialFamilyMembers, household
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
       <div className="space-y-6">
         <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             {/* Left side: Sandwich Menu + Logo / Title */}
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition shrink-0 shadow-sm"
@@ -94,20 +94,20 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
               <Link
                 href="/"
-                className="flex items-center gap-2.5 group cursor-pointer min-w-0 flex-1"
+                className="flex items-center gap-2 group cursor-pointer min-w-0 flex-1"
               >
-                <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
                   <Image
                     src="/omniwealth.jpg"
                     alt="OmniWealth"
-                    width={36}
-                    height={36}
+                    width={32}
+                    height={32}
                     className="object-cover w-full h-full"
                   />
                 </div>
 
                 <div className="min-w-0 flex-1 leading-tight">
-                  <div className="font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-slate-900 dark:text-white truncate">
+                  <div className="font-extrabold text-xs sm:text-sm md:text-base tracking-tight text-slate-900 dark:text-white truncate">
                     Family Wealth Hub
                   </div>
 
@@ -118,9 +118,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               </Link>
             </div>
 
-            {/* Right side controls */}
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-              <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
+            {/* Right side controls (Currency & Theme visible on desktop, hidden on mobile to keep mobile header clean) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="hidden sm:block">
+                <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
+              </div>
 
               <button
                 onClick={toggleTheme}
@@ -143,10 +145,10 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               <Link 
                 href="/" 
                 title="Back to Dashboard"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 px-2.5 sm:px-3 py-2 rounded-xl transition border border-slate-200 dark:border-slate-700 shadow-sm"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-xl transition border border-slate-200 dark:border-slate-700 shadow-sm"
               >
                 <ArrowLeft className="w-4 h-4 shrink-0" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span>Back to Dashboard</span>
               </Link>
 
               <form action={logoutAction}>
@@ -158,7 +160,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           </div>
         </header>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Navigation Drawer (Includes Theme Switcher & Currency Switcher) */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden print:hidden">
             <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
@@ -204,6 +206,15 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                       <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
                     </span>
                   </button>
+
+                  {/* Currency Switcher inside Mobile Drawer */}
+                  <div className="py-2 px-3.5 flex items-center justify-between rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    <span className="flex items-center space-x-3.5 text-sm font-semibold">
+                      <Coins className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                      <span>Base Currency</span>
+                    </span>
+                    <CurrencySwitcherForm currentCurrency={session.household.baseCurrency} />
+                  </div>
 
                   {session?.user?.role === 'SUPER_ADMIN' && (
                     <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-colors">

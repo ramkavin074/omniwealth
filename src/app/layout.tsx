@@ -4,6 +4,7 @@ import "./globals.css";
 import PortfolioAIChat from "@/components/PortfolioAIChat";
 import { getSessionUserAction } from "@/actions/vault";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,6 +75,7 @@ export default async function RootLayout({
         {children}
         <PortfolioAIChat />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
