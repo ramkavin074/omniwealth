@@ -9,6 +9,7 @@ import { updateHouseholdBaseCurrencyAction, updateThemePreferenceAction } from '
 import { ArrowLeft, Coins, LogOut, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import AiSettingsCard from '@/components/AiSettingsCard';
+import { canManageHousehold } from '@/lib/permissions';
 
 import AccountDetailsCard from '@/components/profile/AccountDetailsCard';
 import LegacyPillarsCard from '@/components/profile/LegacyPillarsCard';
@@ -249,12 +250,14 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               >
                 <Lock className="w-4 h-4 text-slate-500 dark:text-slate-400" /> Document Vault
               </Link>
-              <button 
-                onClick={() => setIsOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
-              >
-                <Plus className="w-4 h-4" /> Add Family Member
-              </button>
+              {canManageHousehold(session.user.role) && (
+                <button
+                  onClick={() => setIsOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add Family Member
+                </button>
+              )}
             </div>
           </div>
 
@@ -271,6 +274,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           <FamilyMembersCard
             initialFamilyMembers={initialFamilyMembers}
             currentUserId={session.user.id}
+            currentUserRole={session.user.role}
             onOpenAddModal={() => setIsOpen(true)}
           />
 

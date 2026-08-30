@@ -19,6 +19,8 @@ interface LiabilitiesManagementSectionProps {
   assets: any[];
   baseCurrency: string;
   liveRates?: { [key: string]: number };
+  canAdd?: boolean;
+  canManage?: boolean;
   onAddLiability: () => void;
   onEditAsset?: (asset: any) => void;
 }
@@ -27,6 +29,8 @@ export default function LiabilitiesManagementSection({
   assets,
   baseCurrency,
   liveRates = FX_RATES,
+  canAdd = true,
+  canManage = true,
   onAddLiability,
   onEditAsset,
 }: LiabilitiesManagementSectionProps) {
@@ -62,12 +66,14 @@ export default function LiabilitiesManagementSection({
             {Math.round(totalLiabilitiesBase).toLocaleString()} <span className="text-base font-normal text-slate-500">{baseCurrency}</span>
           </div>
         </div>
-        <button
-          onClick={onAddLiability}
-          className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Add Liability / Loan
-        </button>
+        {canAdd && (
+          <button
+            onClick={onAddLiability}
+            className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Add Liability / Loan
+          </button>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
@@ -112,7 +118,7 @@ export default function LiabilitiesManagementSection({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-slate-800 pl-3">
+                    <div className={`flex items-center gap-1.5 pl-3 ${canManage ? 'border-l border-slate-200 dark:border-slate-800' : ''}`}>
                       {onEditAsset && (
                         <button
                           onClick={() => onEditAsset(item)}
@@ -122,6 +128,7 @@ export default function LiabilitiesManagementSection({
                           <Edit3 className="w-4 h-4" />
                         </button>
                       )}
+                      {canManage && (
                       <button
                         onClick={() => handleDelete(item.id)}
                         disabled={isPending}
@@ -130,6 +137,7 @@ export default function LiabilitiesManagementSection({
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                      )}
                     </div>
                   </div>
                 </div>

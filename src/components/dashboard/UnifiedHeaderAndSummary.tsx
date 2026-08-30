@@ -42,7 +42,7 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
-export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
+export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
   const router = useRouter();
   const [isRefreshing, startRefreshTransition] = useTransition();
 
@@ -122,15 +122,28 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
             </button>
              
             <div className="hidden md:flex items-center gap-2">
-              <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
-                <Plus className="w-4 h-4" /><span>Add Asset</span>
-              </button>
-              <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
-                <CreditCard className="w-4 h-4" /><span>Add Liability</span>
-              </button>
-              <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 dark:bg-slate-800 text-white border border-slate-800 dark:border-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
-                <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
-              </button>
+              <span
+                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400"
+                title="Signed in"
+              >
+                <span className="max-w-[10rem] truncate">{session?.user?.fullName}</span>
+                <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                  {session?.user?.role}
+                </span>
+              </span>
+              {canAdd && (
+                <>
+                  <button onClick={onOpenAddAsset} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                    <Plus className="w-4 h-4" /><span>Add Asset</span>
+                  </button>
+                  <button onClick={onOpenLiability} className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-700 hover:bg-rose-800 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                    <CreditCard className="w-4 h-4" /><span>Add Liability</span>
+                  </button>
+                  <button onClick={onOpenAiReader} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 dark:bg-slate-800 text-white border border-slate-800 dark:border-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+                    <Sparkles className="w-4 h-4 text-amber-400" /><span>AI Reader</span>
+                  </button>
+                </>
+              )}
               <button onClick={() => window.print()} title="Export Report / Save as PDF" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                 <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
               </button>

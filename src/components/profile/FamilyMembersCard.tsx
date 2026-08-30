@@ -2,14 +2,18 @@
 
 import { Users, Trash2 } from 'lucide-react';
 import { deleteFamilyMemberAction } from '@/actions/vault';
+import { canManageHousehold, canDeleteMember } from '@/lib/permissions';
 
 interface FamilyMembersCardProps {
   initialFamilyMembers: any[];
   currentUserId: string;
+  currentUserRole: string;
   onOpenAddModal: () => void;
 }
 
-export default function FamilyMembersCard({ initialFamilyMembers, currentUserId, onOpenAddModal }: FamilyMembersCardProps) {
+export default function FamilyMembersCard({ initialFamilyMembers, currentUserId, currentUserRole, onOpenAddModal }: FamilyMembersCardProps) {
+  const canManage = canManageHousehold(currentUserRole);
+
   async function handleDeleteMember(memberId: string) {
     if (!confirm('Are you sure you want to remove this family member from the household?')) return;
     const res = await deleteFamilyMemberAction(memberId);
@@ -27,12 +31,14 @@ export default function FamilyMembersCard({ initialFamilyMembers, currentUserId,
           <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Registered Family Members ({initialFamilyMembers.length})</h2>
         </div>
-        <button
-          onClick={onOpenAddModal}
-          className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
-        >
-          Add Member
-        </button>
+        {canManage && (
+          <button
+            onClick={onOpenAddModal}
+            className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer shadow-sm"
+          >
+            Add Member
+          </button>
+        )}
       </div>
       <div className="space-y-3">
         {initialFamilyMembers.map((member) => (
@@ -49,15 +55,16 @@ export default function FamilyMembersCard({ initialFamilyMembers, currentUserId,
               }`}>
                 {member.role}
               </span>
-              {member.id !== currentUserId && (
-                <button
-                  onClick={() => handleDeleteMember(member.id)}
-                  className="p-1.5 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer transition-colors shadow-sm"
-                  title="Remove Family Member"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+              {member.id !== currentUserId &&
+                canDeleteMember(currentUserRole, member.role) && (
+                  <button
+                    onClick={() => handleDeleteMember(member.id)}
+                    className="p-1.5 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer transition-colors shadow-sm"
+                    title="Remove Family Member"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
             </div>
           </div>
         ))}

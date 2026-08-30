@@ -32,9 +32,10 @@ import {
   logoutAction,
   updateThemePreferenceAction
 } from '@/actions/vault';
-import { 
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu, LogOut 
+import {
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu, LogOut
 } from 'lucide-react';
+import { canWrite, canManageHousehold } from '@/lib/permissions';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -62,6 +63,10 @@ export default function DashboardClient({
   initialDocuments = [],
   initialLiveRates = FX_RATES
 }: DashboardClientProps) {
+  const role = session?.user?.role;
+  const canAdd = canWrite(role);
+  const canManage = canManageHousehold(role);
+
   const [activeTab, setActiveTab] = useState<'wealth' | 'liabilities' | 'retirement' | 'directives' | 'feed'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
@@ -157,6 +162,7 @@ export default function DashboardClient({
           initialAssets={initialAssets}
           baseCurrency={baseCurrency}
           liveRates={liveRates}
+          canAdd={canAdd}
           onOpenMenu={() => setIsMobileMenuOpen(true)}
           onOpenAddAsset={() => setIsAddAssetOpen(true)}
           onOpenLiability={() => setIsAddLiabilityOpen(true)}
@@ -193,12 +199,16 @@ export default function DashboardClient({
                   </button>
 
                   {/* Add Asset & AI Statement Reader Actions */}
-                  <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-700 dark:text-teal-400 transition-colors">
-                    <Plus className="w-4 h-4" /><span>Add Asset</span>
-                  </button>
-                  <button onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
-                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" /><span>AI Statement Reader</span>
-                  </button>
+                  {canAdd && (
+                    <>
+                      <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-700 dark:text-teal-400 transition-colors">
+                        <Plus className="w-4 h-4" /><span>Add Asset</span>
+                      </button>
+                      <button onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                        <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" /><span>AI Statement Reader</span>
+                      </button>
+                    </>
+                  )}
 
                   <button onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <CreditCard className="w-4 h-4" /><span>Liabilities &amp; Debt</span>
@@ -277,15 +287,15 @@ export default function DashboardClient({
                   </div>
                 </div>
 
-                <WealthSummaryDashboard 
-                  assets={initialAssets} 
-                  baseCurrency={baseCurrency} 
-                  legacyPillars={legacyPillars} 
-                  liveRates={liveRates} 
-                  onEditAsset={(asset: any) => {
+                <WealthSummaryDashboard
+                  assets={initialAssets}
+                  baseCurrency={baseCurrency}
+                  legacyPillars={legacyPillars}
+                  liveRates={liveRates}
+                  onEditAsset={canManage ? (asset: any) => {
                     setEditingAsset(asset);
                     setIsEditModalOpen(true);
-                  }}
+                  } : undefined}
                 />
                 <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
@@ -294,15 +304,17 @@ export default function DashboardClient({
 
             {activeTab === 'liabilities' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
-                <LiabilitiesManagementSection 
-                  assets={initialAssets} 
-                  baseCurrency={baseCurrency} 
-                  liveRates={liveRates} 
-                  onAddLiability={() => setIsAddLiabilityOpen(true)} 
-                  onEditAsset={(asset: any) => {
+                <LiabilitiesManagementSection
+                  assets={initialAssets}
+                  baseCurrency={baseCurrency}
+                  liveRates={liveRates}
+                  canAdd={canAdd}
+                  canManage={canManage}
+                  onAddLiability={() => setIsAddLiabilityOpen(true)}
+                  onEditAsset={canManage ? (asset: any) => {
                     setEditingAsset(asset);
                     setIsEditModalOpen(true);
-                  }}
+                  } : undefined}
                 />
               </div>
             )}

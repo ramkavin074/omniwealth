@@ -35,5 +35,21 @@ export function canManageHousehold(role: string | null | undefined): boolean {
   return roleRank(role) >= RANK.ADMIN;
 }
 
+/**
+ * May `viewerRole` remove a member whose role is `targetRole`?
+ *  - must be ADMIN+
+ *  - only a SUPER_ADMIN may remove a SUPER_ADMIN
+ *  - only OWNER+ may remove an OWNER
+ */
+export function canDeleteMember(
+  viewerRole: string | null | undefined,
+  targetRole: string | null | undefined,
+): boolean {
+  if (!canManageHousehold(viewerRole)) return false;
+  if (targetRole === 'SUPER_ADMIN') return viewerRole === 'SUPER_ADMIN';
+  if (roleRank(targetRole) >= RANK.OWNER) return roleRank(viewerRole) >= RANK.OWNER;
+  return true;
+}
+
 export const READ_ONLY_ERROR = 'Your account has view-only access.';
 export const FORBIDDEN_ERROR = 'You do not have permission to do that.';

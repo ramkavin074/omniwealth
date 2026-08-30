@@ -12,6 +12,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import {
   canWrite,
   canManageHousehold,
+  canDeleteMember,
   READ_ONLY_ERROR,
   FORBIDDEN_ERROR,
 } from '@/lib/permissions';
@@ -143,21 +144,12 @@ export async function fetchFamilyMembersAction() {
   return await db.select().from(users).where(eq(users.householdId, session.household.id));
 }
 
-// Roles allowed to add/remove household members.
-const CAN_MANAGE_MEMBERS = ['SUPER_ADMIN', 'OWNER', 'ADMIN'];
-// Roles treated as "owner tier" for privilege comparisons.
-const IS_OWNER_TIER = ['SUPER_ADMIN', 'OWNER'];
-
 // addFamilyMemberAction is re-exported from ./auth above (token-based
 // invitation flow).
 
 export async function deleteFamilyMemberAction(memberId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-
-  if (!CAN_MANAGE_MEMBERS.includes(session.user.role)) {
-    return { success: false, error: 'Only household owners and admins can remove members.' };
-  }
 
   const [targetUser] = await db.select().from(users).where(eq(users.id, memberId));
   if (!targetUser) return { success: false, error: 'User not found' };
@@ -167,15 +159,11 @@ export async function deleteFamilyMemberAction(memberId: string) {
   }
 
   if (targetUser.householdId !== session.household.id) {
-    return { success: false, error: 'Unauthorized action.' };
+    return { success: false, error: 'User not found' };
   }
 
-  // An ADMIN cannot remove an owner-tier account; only owner-tier can.
-  if (
-    !IS_OWNER_TIER.includes(session.user.role) &&
-    IS_OWNER_TIER.includes(targetUser.role)
-  ) {
-    return { success: false, error: 'You do not have permission to remove an owner.' };
+  if (!canDeleteMember(session.user.role, targetUser.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
   }
 
   await db.delete(users).where(eq(users.id, memberId));
@@ -738,17 +726,12 @@ export async function addAssetAction(formData: FormData) {
 export async function updateAssetAction(id: string, formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
+  // Editing an existing asset is an owner/admin action.
+  if (!canManageHousehold(session.user.role)) return { success: false, error: FORBIDDEN_ERROR };
 
   const [existing] = await db.select().from(assets).where(eq(assets.id, id));
-  if (!existing) return { success: false, error: 'Asset not found' };
-
-  // Must be an asset in this household, and a member may only edit their own.
-  if (existing.householdId !== session.household.id) {
+  if (!existing || existing.householdId !== session.household.id) {
     return { success: false, error: 'Asset not found' };
-  }
-  if (existing.userId !== session.user.id && !canManageHousehold(session.user.role)) {
-    return { success: false, error: FORBIDDEN_ERROR };
   }
 
   const nameVal = formData.get('name') as string;
@@ -777,14 +760,12 @@ export async function updateAssetAction(id: string, formData: FormData) {
 export async function deleteAssetAction(assetId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
+  // Deleting an asset is an owner/admin action.
+  if (!canManageHousehold(session.user.role)) return { success: false, error: FORBIDDEN_ERROR };
 
   const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
   if (!existing || existing.householdId !== session.household.id) {
     return { success: false, error: 'Asset not found' };
-  }
-  if (existing.userId !== session.user.id && !canManageHousehold(session.user.role)) {
-    return { success: false, error: FORBIDDEN_ERROR };
   }
 
   await db.delete(transactions).where(eq(transactions.assetId, assetId));
@@ -976,16 +957,13 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
 export async function deleteDocumentAction(documentId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
+  if (!canManageHousehold(session.user.role)) return { success: false, error: FORBIDDEN_ERROR };
 
   const [doc] = await db
     .select()
     .from(documents)
     .where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
   if (!doc) return { success: false, error: 'Document not found' };
-  if (doc.userId !== session.user.id && !canManageHousehold(session.user.role)) {
-    return { success: false, error: FORBIDDEN_ERROR };
-  }
 
   try {
     await db.delete(documents).where(eq(documents.id, documentId));
