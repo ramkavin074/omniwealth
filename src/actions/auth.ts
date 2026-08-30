@@ -1359,6 +1359,34 @@ export async function loginAction(formData: FormData) {
       };
     }
 
+    /*
+     * Brute-force protection. Limit attempts per client IP and per
+     * target email within a rolling 15-minute window. A successful
+     * login clears the email counter and refunds the IP attempt
+     * (see below), so a legitimate user who mistypes is not locked out.
+     */
+    const clientIp = await getClientIp();
+    const ipRateKey = `login:ip:${clientIp}`;
+    const emailRateKey = `login:email:${email}`;
+
+    const ipRate = await checkAndIncrementRateLimit(ipRateKey, 20, 15);
+    if (!ipRate.allowed) {
+      return {
+        success: false,
+        error:
+          'Too many sign-in attempts from this device. Please wait a few minutes and try again.',
+      };
+    }
+
+    const emailRate = await checkAndIncrementRateLimit(emailRateKey, 5, 15);
+    if (!emailRate.allowed) {
+      return {
+        success: false,
+        error:
+          'Too many sign-in attempts for this account. Please wait a few minutes and try again.',
+      };
+    }
+
     const [user] = await db
       .select()
       .from(users)
@@ -1446,6 +1474,16 @@ export async function loginAction(formData: FormData) {
      * hashed token), not a raw user id.
      */
     await createSession(user.id);
+
+    /*
+     * Successful login: reset this account's brute-force counter and
+     * refund the IP attempt this request consumed, without wiping the
+     * IP's wider history.
+     */
+    await Promise.all([
+      clearRateLimit(emailRateKey),
+      decrementRateLimitAttempt(ipRateKey),
+    ]);
 
     /*
      * Revalidate dashboard.
