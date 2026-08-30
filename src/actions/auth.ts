@@ -4303,6 +4303,57 @@ export async function revokeOtherSessionsAction() {
 }
 
 /**
+ * Permanently delete the current user's account after a password
+ * re-confirmation. If they are the household's last member the whole
+ * household is removed (cascading its data); if they are the last
+ * owner-tier account but other members remain, deletion is refused.
+ */
+export async function deleteAccountAction(formData: FormData) {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  const password = String(formData.get('password') || '');
+  if (!password) return { success: false, error: 'Enter your password to confirm.' };
+
+  const [user] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+  if (!user) return { success: false, error: 'Account not found.' };
+
+  const isBcrypt = /^\$2[aby]\$/.test(user.passwordHash);
+  const ok = isBcrypt ? await bcrypt.compare(password, user.passwordHash) : false;
+  if (!ok) return { success: false, error: 'Incorrect password.' };
+
+  const householdId = session.household.id;
+  const members = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(eq(users.householdId, householdId));
+  const others = members.filter((m) => m.id !== user.id);
+  const otherOwners = others.filter((m) => ['SUPER_ADMIN', 'OWNER'].includes(m.role));
+
+  if (
+    others.length > 0 &&
+    otherOwners.length === 0 &&
+    ['SUPER_ADMIN', 'OWNER'].includes(user.role)
+  ) {
+    return {
+      success: false,
+      error: 'You are the only owner. Promote another member to owner before deleting your account.',
+    };
+  }
+
+  if (others.length === 0) {
+    await db.delete(households).where(eq(households.id, householdId));
+  } else {
+    await db.delete(users).where(eq(users.id, user.id));
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE_NAME);
+  revalidatePath('/', 'layout');
+  redirect('/login');
+}
+
+/**
  * ============================================================
  * REGISTER HOUSEHOLD OWNER
  * ============================================================
