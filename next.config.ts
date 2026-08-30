@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Conservative baseline security headers. No Content-Security-Policy yet —
 // the app relies on inline scripts, third-party analytics, Google Fonts and
@@ -34,4 +35,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wraps the config for error/perf monitoring. Source-map upload is
+// skipped unless SENTRY_AUTH_TOKEN + org/project are set; the SDK still
+// captures errors at runtime whenever SENTRY_DSN / NEXT_PUBLIC_SENTRY_DSN
+// are present.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  telemetry: false,
+});

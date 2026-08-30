@@ -51,6 +51,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptSecret } from '@/lib/crypto';
+import { logError } from '@/lib/log';
 
 /**
  * ============================================================
@@ -1502,7 +1503,7 @@ export async function loginAction(formData: FormData) {
       role: user.role,
     };
   } catch (error) {
-    console.error('loginAction error:', error);
+    logError('loginAction', error);
 
     return {
       success: false,
