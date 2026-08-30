@@ -1436,49 +1436,29 @@ export async function loginAction(formData: FormData) {
       };
     }
 
-    if (!user.passwordHash) {
+    const isBcryptHash =
+      user.passwordHash.startsWith('$2a$') ||
+      user.passwordHash.startsWith('$2b$') ||
+      user.passwordHash.startsWith('$2y$');
+
+    if (!user.passwordHash || !isBcryptHash) {
+      /*
+       * No usable bcrypt password: an invite that was never completed,
+       * or a legacy plaintext record. Equalize timing, then fail — the
+       * account must go through password reset.
+       */
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+
       return {
         success: false,
         error: INVALID_CREDENTIALS_ERROR,
       };
     }
 
-    let isValid = false;
-
-    /*
-     * Support bcrypt passwords.
-     */
-    if (
-      user.passwordHash.startsWith('$2a$') ||
-      user.passwordHash.startsWith('$2b$') ||
-      user.passwordHash.startsWith('$2y$')
-    ) {
-      isValid = await bcrypt.compare(
-        password,
-        user.passwordHash
-      );
-    } else {
-      /*
-       * Legacy plaintext password support.
-       *
-       * This is intentionally retained so an existing account
-       * can still log in. After successful login, upgrade it
-       * automatically to bcrypt.
-       */
-      isValid = user.passwordHash === password;
-
-      if (isValid) {
-        const upgradedHash = await bcrypt.hash(password, 12);
-
-        await db
-          .update(users)
-          .set({
-            passwordHash: upgradedHash,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, user.id));
-      }
-    }
+    const isValid = await bcrypt.compare(
+      password,
+      user.passwordHash
+    );
 
     if (!isValid) {
       return {

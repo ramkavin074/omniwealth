@@ -57,18 +57,19 @@ export async function updatePasswordAction(formData: FormData) {
   const [user] = await db.select().from(users).where(eq(users.id, session.user.id));
   if (!user) return { success: false, error: 'User not found.' };
 
-  let isValid = false;
-  if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
-    isValid = await bcrypt.compare(currentPassword, user.passwordHash);
-  } else {
-    isValid = user.passwordHash === currentPassword;
-  }
+  const isBcryptHash =
+    user.passwordHash.startsWith('$2a$') ||
+    user.passwordHash.startsWith('$2b$') ||
+    user.passwordHash.startsWith('$2y$');
+  const isValid = isBcryptHash
+    ? await bcrypt.compare(currentPassword, user.passwordHash)
+    : false;
 
   if (!isValid) {
     return { success: false, error: 'Incorrect current password.' };
   }
 
-  const newPasswordHash = await bcrypt.hash(newPassword, 10);
+  const newPasswordHash = await bcrypt.hash(newPassword, 12);
   await db.update(users).set({ passwordHash: newPasswordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
 
   revalidatePath('/profile');
