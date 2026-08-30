@@ -66,6 +66,13 @@ export async function updatePasswordAction(formData: FormData) {
     return { success: false, error: 'Please fill in both current and new passwords.' };
   }
 
+  if (newPassword.length < 8) {
+    return { success: false, error: 'New password must be at least 8 characters.' };
+  }
+  if (newPassword === currentPassword) {
+    return { success: false, error: 'New password must be different from the current one.' };
+  }
+
   const [user] = await db.select().from(users).where(eq(users.id, session.user.id));
   if (!user) return { success: false, error: 'User not found.' };
 
