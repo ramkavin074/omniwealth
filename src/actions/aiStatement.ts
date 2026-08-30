@@ -5,6 +5,7 @@ import { draftLineItems, assets, transactions, portfolios } from '@/db/schema';
 import { getSessionUserAction } from './auth';
 import { getExchangeRate } from '@/lib/fx';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { canWrite, READ_ONLY_ERROR } from '@/lib/permissions';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -26,6 +27,7 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 3, dela
 export async function parseStatementAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const limit = await checkRateLimit(`ai-statement:${session.user.id}`, 15, 60);
   if (!limit.allowed) {
@@ -194,6 +196,7 @@ export async function fetchDraftLineItemsAction() {
 export async function approveDraftLineItemAction(draftId: string, selectedCategory?: string, selectedUserId?: string, selectedAccountNumber?: string, selectedRationale?: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const [draft] = await db.select().from(draftLineItems).where(and(eq(draftLineItems.id, draftId), eq(draftLineItems.householdId, session.household.id)));
   if (!draft) return { success: false, error: 'Draft not found' };
@@ -264,6 +267,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
 export async function approveAllDraftLineItemsAction(bulkUserId?: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const drafts = await db.select().from(draftLineItems).where(and(eq(draftLineItems.householdId, session.household.id), eq(draftLineItems.status, 'PENDING')));
   for (const draft of drafts) {
@@ -276,7 +280,10 @@ export async function approveAllDraftLineItemsAction(bulkUserId?: string) {
 export async function rejectDraftLineItemAction(draftId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-  await db.delete(draftLineItems).where(eq(draftLineItems.id, draftId));
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
+  await db
+    .delete(draftLineItems)
+    .where(and(eq(draftLineItems.id, draftId), eq(draftLineItems.householdId, session.household.id)));
   revalidatePath('/');
   return { success: true };
 }

@@ -9,6 +9,12 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { checkRateLimit } from '@/lib/rate-limit';
+import {
+  canWrite,
+  canManageHousehold,
+  READ_ONLY_ERROR,
+  FORBIDDEN_ERROR,
+} from '@/lib/permissions';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
@@ -216,6 +222,7 @@ export async function getExchangeRate(fromCurrency: string, toCurrency: string):
 export async function refreshLiveMarketPricesAction() {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const householdAssets = await db
     .select()
@@ -409,6 +416,7 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, dela
 export async function parseStatementAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   // Statement parsing is an expensive AI call — cap it per user.
   const limit = await checkRateLimit(`ai-statement:${session.user.id}`, 15, 60);
@@ -665,6 +673,7 @@ export async function rejectDraftLineItemAction(draftId: string) {
 export async function addAssetAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const name = formData.get('name') as string;
   const ticker = formData.get('ticker') as string;
@@ -675,7 +684,21 @@ export async function addAssetAction(formData: FormData) {
   const quantity = (formData.get('quantity') as string) || '1';
   const nativeValue = formData.get('nativeValue') as string;
   const nativeCurrency = formData.get('nativeCurrency') as string;
-  const userId = (formData.get('userId') as string) || session.user.id;
+  const requestedUserId = (formData.get('userId') as string) || session.user.id;
+
+  // A member may only add assets to their own portfolio; ADMIN+ may add
+  // for anyone in the household. Either way the target must be a member.
+  if (requestedUserId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
+  }
+  const [targetUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, requestedUserId), eq(users.householdId, session.household.id)));
+  if (!targetUser) {
+    return { success: false, error: 'Selected user does not belong to this household.' };
+  }
+  const userId = requestedUserId;
 
   let [portfolio] = await db.select().from(portfolios).where(eq(portfolios.userId, userId));
   if (!portfolio) {
@@ -715,9 +738,18 @@ export async function addAssetAction(formData: FormData) {
 export async function updateAssetAction(id: string, formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const [existing] = await db.select().from(assets).where(eq(assets.id, id));
   if (!existing) return { success: false, error: 'Asset not found' };
+
+  // Must be an asset in this household, and a member may only edit their own.
+  if (existing.householdId !== session.household.id) {
+    return { success: false, error: 'Asset not found' };
+  }
+  if (existing.userId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
+  }
 
   const nameVal = formData.get('name') as string;
   const valueVal = formData.get('nativeValue') as string;
@@ -745,7 +777,16 @@ export async function updateAssetAction(id: string, formData: FormData) {
 export async function deleteAssetAction(assetId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-   
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
+
+  const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
+  if (!existing || existing.householdId !== session.household.id) {
+    return { success: false, error: 'Asset not found' };
+  }
+  if (existing.userId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
+  }
+
   await db.delete(transactions).where(eq(transactions.assetId, assetId));
   await db.delete(assets).where(eq(assets.id, assetId));
 
@@ -757,6 +798,9 @@ export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
   const session = await getSessionUserAction();
   if (!session || !session.household?.id) {
     throw new Error("Unauthorized");
+  }
+  if (!canManageHousehold(session.user.role)) {
+    throw new Error(FORBIDDEN_ERROR);
   }
 
   await db
@@ -770,6 +814,7 @@ export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
 export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canManageHousehold(session.user.role)) return { success: false, error: FORBIDDEN_ERROR };
 
   const pillars = [];
   for (let i = 0; i < 4; i++) {
@@ -800,6 +845,9 @@ export async function updateRetirementPreferencesAction(data: {
   const session = await getSessionUserAction();
   if (!session || !session.household?.id) {
     return { success: false, error: 'Unauthorized' };
+  }
+  if (!canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
   }
 
   try {
@@ -865,6 +913,7 @@ export async function fetchHouseholdDocumentsAction() {
 export async function uploadDocumentAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const file = formData.get('file') as File;
   const name = (formData.get('name') as string) || file?.name || 'Untitled Document';
@@ -927,14 +976,19 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
 export async function deleteDocumentAction(documentId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
+
+  const [doc] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
+  if (!doc) return { success: false, error: 'Document not found' };
+  if (doc.userId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
+  }
 
   try {
-    await db.delete(documents).where(
-      and(
-        eq(documents.id, documentId),
-        eq(documents.householdId, session.household.id)
-      )
-    );
+    await db.delete(documents).where(eq(documents.id, documentId));
     revalidatePath('/');
     return { success: true };
   } catch (error: any) {
