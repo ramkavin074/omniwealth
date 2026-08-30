@@ -46,11 +46,20 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
 
   const [currentUser] = await db.select().from(users).where(eq(users.id, session.user.id));
   
-  const groqKey = decryptSecret(currentUser?.groqApiKey) || process.env.GROQ_API_KEY;
-  const openrouterKey = decryptSecret(currentUser?.openrouterApiKey) || process.env.OPENROUTER_API_KEY;
-  const geminiKey = decryptSecret(currentUser?.geminiApiKey) || process.env.GEMINI_API_KEY;
-  const openaiKey = decryptSecret(currentUser?.openaiApiKey) || process.env.OPENAI_API_KEY;
-  const anthropicKey = decryptSecret(currentUser?.anthropicApiKey) || process.env.ANTHROPIC_API_KEY;
+  const groqOwn = decryptSecret(currentUser?.groqApiKey);
+  const openrouterOwn = decryptSecret(currentUser?.openrouterApiKey);
+  const geminiOwn = decryptSecret(currentUser?.geminiApiKey);
+  const openaiOwn = decryptSecret(currentUser?.openaiApiKey);
+  const anthropicOwn = decryptSecret(currentUser?.anthropicApiKey);
+
+  const groqKey = groqOwn || process.env.GROQ_API_KEY;
+  const openrouterKey = openrouterOwn || process.env.OPENROUTER_API_KEY;
+  const geminiKey = geminiOwn || process.env.GEMINI_API_KEY;
+  const openaiKey = openaiOwn || process.env.OPENAI_API_KEY;
+  const anthropicKey = anthropicOwn || process.env.ANTHROPIC_API_KEY;
+
+  // "your key" = saved in this user's profile, "shared key" = server .env fallback
+  const src = (own: string) => (own ? 'your key' : 'shared key');
 
   // Gather portfolio context
   const householdAssets = await db.select().from(assets).where(eq(assets.householdId, session.household.id));
@@ -189,40 +198,40 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   // --- FORCED PROVIDER OR AUTO CASCADE ---
   if (forcedProvider === 'groq' && groqKey) {
     answer = await runGroq(groqKey);
-    if (answer) providerUsed = 'Groq (Llama 3.3)';
+    if (answer) providerUsed = `Groq · llama-3.3-70b-versatile · ${src(groqOwn)}`;
   } else if (forcedProvider === 'openrouter' && openrouterKey) {
     answer = await runOpenRouter(openrouterKey);
-    if (answer) providerUsed = 'OpenRouter (Free Router)';
+    if (answer) providerUsed = `OpenRouter · llama-3.3-70b:free · ${src(openrouterOwn)}`;
   } else if (forcedProvider === 'gemini' && geminiKey) {
     answer = await runGemini(geminiKey);
-    if (answer) providerUsed = 'Google Gemini (3.6 Flash)';
+    if (answer) providerUsed = `Google Gemini · gemini-3.6-flash · ${src(geminiOwn)}`;
   } else if (forcedProvider === 'openai' && openaiKey) {
     answer = await runOpenAI(openaiKey);
-    if (answer) providerUsed = 'OpenAI (GPT-4o-mini)';
+    if (answer) providerUsed = `OpenAI · gpt-4o-mini · ${src(openaiOwn)}`;
   } else if (forcedProvider === 'anthropic' && anthropicKey) {
     answer = await runClaude(anthropicKey);
-    if (answer) providerUsed = 'Anthropic Claude';
+    if (answer) providerUsed = `Anthropic · claude-3-5-sonnet · ${src(anthropicOwn)}`;
   } else {
     // --- AUTO FREE-FIRST CASCADE ---
     if (groqKey && !answer) {
       answer = await runGroq(groqKey);
-      if (answer) providerUsed = 'Groq (Llama 3.3)';
+      if (answer) providerUsed = `Groq · llama-3.3-70b-versatile · ${src(groqOwn)}`;
     }
     if (openrouterKey && !answer) {
       answer = await runOpenRouter(openrouterKey);
-      if (answer) providerUsed = 'OpenRouter (Free Router)';
+      if (answer) providerUsed = `OpenRouter · llama-3.3-70b:free · ${src(openrouterOwn)}`;
     }
     if (geminiKey && !answer) {
       answer = await runGemini(geminiKey);
-      if (answer) providerUsed = 'Google Gemini (3.6 Flash)';
+      if (answer) providerUsed = `Google Gemini · gemini-3.6-flash · ${src(geminiOwn)}`;
     }
     if (openaiKey && !answer) {
       answer = await runOpenAI(openaiKey);
-      if (answer) providerUsed = 'OpenAI (GPT-4o-mini)';
+      if (answer) providerUsed = `OpenAI · gpt-4o-mini · ${src(openaiOwn)}`;
     }
     if (anthropicKey && !answer) {
       answer = await runClaude(anthropicKey);
-      if (answer) providerUsed = 'Anthropic Claude';
+      if (answer) providerUsed = `Anthropic · claude-3-5-sonnet · ${src(anthropicOwn)}`;
     }
   }
 

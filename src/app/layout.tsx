@@ -76,7 +76,9 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-teal-600 selection:text-white transition-colors">
         {children}
-        <PortfolioAIChat />
+        {/* Keyed by user id so the chat state is dropped on logout / user switch,
+            and only rendered for an authenticated session. */}
+        {session?.user?.id && <PortfolioAIChat key={session.user.id} />}
         <Analytics />
         <SpeedInsights />
       </body>

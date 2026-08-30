@@ -4242,6 +4242,10 @@ export async function logoutAction() {
     SESSION_COOKIE_NAME
   );
 
+  // Re-render the root layout so the (now unauthenticated) session is
+  // reflected and layout-level UI like the AI chat unmounts.
+  revalidatePath('/', 'layout');
+
   redirect('/login');
 }
 
