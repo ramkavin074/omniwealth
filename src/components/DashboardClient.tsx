@@ -191,9 +191,15 @@ export default function DashboardClient({
                   <button onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <Home className="w-4 h-4" /><span>Portfolio Overview</span>
                   </button>
+
+                  {/* Add Asset & AI Statement Reader Actions */}
+                  <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-700 dark:text-teal-400 transition-colors">
+                    <Plus className="w-4 h-4" /><span>Add Asset</span>
+                  </button>
                   <button onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
                     <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" /><span>AI Statement Reader</span>
                   </button>
+
                   <button onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <CreditCard className="w-4 h-4" /><span>Liabilities &amp; Debt</span>
                   </button>
