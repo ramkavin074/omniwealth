@@ -93,7 +93,7 @@ export async function updateUserApiKeyAction(apiKey: string) {
 export async function sendInviteEmail(toEmail: string, householdName: string, inviteCode?: string) {
   try {
     const response = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Global Family Vault <vault@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'Global Family Vault <onboarding@resend.dev>',
       to: [toEmail],
       subject: `Welcome to ${householdName} Wealth Command Center`,
       html: `

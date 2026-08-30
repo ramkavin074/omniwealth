@@ -1067,7 +1067,7 @@ export async function addFamilyMemberAction(
 
   const senderAddress =
     process.env.RESEND_FROM_EMAIL ||
-    'Global Family Vault <vault@resend.dev>';
+    'Global Family Vault <onboarding@resend.dev>';
 
   try {
     const resend =
@@ -1544,7 +1544,7 @@ export async function sendInviteEmail(
       await resend.emails.send({
         from:
           process.env.RESEND_FROM_EMAIL ||
-          'Global Family Vault <vault@resend.dev>',
+          'Global Family Vault <onboarding@resend.dev>',
 
         to: [toEmail],
 
@@ -5569,7 +5569,7 @@ export async function requestPasswordResetAction(
       await resend.emails.send({
         from:
           process.env.RESEND_FROM_EMAIL ||
-          'Global Family Vault <vault@resend.dev>',
+          'Global Family Vault <onboarding@resend.dev>',
         to: [email],
         subject:
           'Reset your password',
