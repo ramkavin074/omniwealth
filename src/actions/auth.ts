@@ -705,23 +705,11 @@ export async function getSessionUserAction() {
     return null;
   }
 
+  // Full row: callers historically read extra columns off session.user
+  // (per-provider API keys, retirement prefs live on households, etc.).
   const [user] =
     await db
-      .select({
-        id: users.id,
-        householdId:
-          users.householdId,
-        email: users.email,
-        fullName:
-          users.fullName,
-        role: users.role,
-        themePreference:
-          users.themePreference,
-        aiProvider:
-          users.aiProvider,
-        aiApiKey:
-          users.aiApiKey,
-      })
+      .select()
       .from(users)
       .where(
         eq(
@@ -750,14 +738,7 @@ export async function getSessionUserAction() {
 
   const [household] =
     await db
-      .select({
-        id: households.id,
-        name: households.name,
-        baseCurrency:
-          households.baseCurrency,
-        inviteCode:
-          households.inviteCode,
-      })
+      .select()
       .from(households)
       .where(
         eq(
@@ -1350,7 +1331,12 @@ export async function acceptInviteAction(
 /**
  * Returns the currently authenticated user and household.
  *
- * Authentication is based on the httpOnly vault_user_id cookie.
+ * Authentication is based on the httpOnly `vault_session` cookie, whose
+ * value is a random token; its SHA-256 hash is looked up in the `sessions`
+ * table (see getSessionUserAction / createSession above).
+ *
+ * This is the single source of truth for sessions — `@/actions/vault`
+ * re-exports getSessionUserAction/loginAction/logoutAction from here.
  *
  * No middleware.js is required for this approach.
  */

@@ -3,9 +3,7 @@
 import { db } from '@/db';
 import { households, users, portfolios, assets, transactions, draftLineItems, documents } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { GoogleGenAI, Type } from '@google/genai';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -13,142 +11,32 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
-const SESSION_COOKIE_OPTIONS = {
-  path: '/',
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 60 * 60 * 24 * 30, // 30 days
-};
-
 // --- Auth & Session Actions ---
+//
+// These were previously implemented here with a parallel `vault_user_id`
+// cookie scheme that did NOT interoperate with the token/`sessions`-table
+// implementation in ./auth. Because the login page calls ./auth's
+// `loginAction` while the page guards imported `getSessionUserAction` from
+// here, every login produced an immediate redirect back to /login.
+//
+// The canonical implementations now live in ./auth. They are imported and
+// re-exported here so existing `@/actions/vault` import paths keep working
+// and every caller shares one session mechanism.
+import {
+  getSessionUserAction,
+  loginAction,
+  logoutAction,
+  registerOwnerAction,
+  registerMemberWithCodeAction,
+} from './auth';
 
-export async function getSessionUserAction() {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get('vault_user_id')?.value;
-  if (!userId) return null;
-
-  const [user] = await db.select().from(users).where(eq(users.id, userId));
-  if (!user) return null;
-
-  const [household] = await db.select().from(households).where(eq(households.id, user.householdId));
-  return { user, household };
-}
-
-export async function loginAction(formData: FormData) {
-  const email = (formData.get('email') as string || '').trim();
-  const password = (formData.get('password') as string || '').trim();
-
-  if (!email || !password) {
-    return { success: false, error: 'Please enter both email and password.' };
-  }
-
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  if (!user) {
-    return { success: false, error: 'No account found with this email.' };
-  }
-
-  let isValid = false;
-  if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
-    isValid = await bcrypt.compare(password, user.passwordHash);
-  } else {
-    isValid = user.passwordHash === password;
-  }
-
-  if (!isValid) {
-    return { success: false, error: 'Incorrect password.' };
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
-
-  revalidatePath('/');
-  return { success: true, role: user.role };
-}
-
-export async function logoutAction() {
-  const cookieStore = await cookies();
-  cookieStore.delete('vault_user_id');
-  redirect('/login');
-}
-
-export async function registerOwnerAction(formData: FormData) {
-  const fullName = (formData.get('fullName') as string || '').trim();
-  const householdName = (formData.get('householdName') as string || '').trim();
-  const email = (formData.get('email') as string || '').trim();
-  const password = (formData.get('password') as string || '').trim();
-  const baseCurrency = (formData.get('baseCurrency') as string || 'USD').trim();
-
-  if (!fullName || !householdName || !email || !password) {
-    return { success: false, error: 'All fields are required.' };
-  }
-
-  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-  if (existingUser) {
-    return { success: false, error: 'An account with this email already exists.' };
-  }
-
-  const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-
-  const [household] = await db.insert(households).values({
-    name: householdName,
-    baseCurrency,
-    inviteCode,
-  } as any).returning();
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const [user] = await db.insert(users).values({
-    householdId: household.id,
-    email,
-    passwordHash,
-    fullName,
-    role: 'OWNER',
-  }).returning();
-
-  const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
-
-  revalidatePath('/');
-  return { success: true, role: user.role };
-}
-
-export async function registerMemberWithCodeAction(formData: FormData) {
-  const fullName = (formData.get('fullName') as string || '').trim();
-  const inviteCode = (formData.get('inviteCode') as string || '').trim();
-  const email = (formData.get('email') as string || '').trim();
-  const password = (formData.get('password') as string || '').trim();
-
-  if (!fullName || !inviteCode || !email || !password) {
-    return { success: false, error: 'All fields are required.' };
-  }
-
-  const [household] = await db.select().from(households).where(eq((households as any).inviteCode, inviteCode));
-  if (!household) {
-    return { success: false, error: 'Invalid household invite code.' };
-  }
-
-  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-  if (existingUser) {
-    return { success: false, error: 'An account with this email already exists.' };
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const [user] = await db.insert(users).values({
-    householdId: household.id,
-    email,
-    passwordHash,
-    fullName,
-    role: 'MEMBER',
-  }).returning();
-
-  const cookieStore = await cookies();
-  cookieStore.set('vault_user_id', user.id, SESSION_COOKIE_OPTIONS);
-
-  revalidatePath('/');
-  return { success: true, role: user.role };
-}
+export {
+  getSessionUserAction,
+  loginAction,
+  logoutAction,
+  registerOwnerAction,
+  registerMemberWithCodeAction,
+};
 
 export async function updatePasswordAction(formData: FormData) {
   const session = await getSessionUserAction();
