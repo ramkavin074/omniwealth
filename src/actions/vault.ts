@@ -944,10 +944,14 @@ export async function updateThemePreferenceAction(theme: 'light' | 'dark') {
     return { success: false, error: 'Unauthorized' };
   }
 
+  // Never trust the client value: the DB value is interpolated into an
+  // inline <script> in the root layout, so clamp to a strict allow-list.
+  const safeTheme = theme === 'dark' ? 'dark' : 'light';
+
   try {
     await db
       .update(users)
-      .set({ themePreference: theme, updatedAt: new Date() } as any)
+      .set({ themePreference: safeTheme, updatedAt: new Date() } as any)
       .where(eq(users.id, session.user.id));
 
     revalidatePath('/profile');

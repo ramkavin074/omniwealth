@@ -4135,12 +4135,16 @@ export async function updateThemePreferenceAction(
     };
   }
 
+  // Never trust the client value: the DB value is interpolated into an
+  // inline <script> in the root layout, so clamp to a strict allow-list.
+  const safeTheme = theme === 'dark' ? 'dark' : 'light';
+
   try {
     await db
       .update(users)
       .set({
         themePreference:
-          theme,
+          safeTheme,
 
         updatedAt:
           new Date(),

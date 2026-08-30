@@ -45,7 +45,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSessionUserAction();
-  const themePreference = session?.user?.themePreference || "light";
+  // Interpolated into an inline <script> below — must be a fixed literal,
+  // never a raw DB string.
+  const themePreference =
+    session?.user?.themePreference === "dark" ? "dark" : "light";
 
   return (
     <html
