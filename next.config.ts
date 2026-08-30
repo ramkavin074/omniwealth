@@ -1,9 +1,25 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Conservative baseline security headers. No Content-Security-Policy yet —
-// the app relies on inline scripts, third-party analytics, Google Fonts and
-// several external API hosts, so a CSP needs its own dedicated pass.
+// Content-Security-Policy in REPORT-ONLY mode: nothing is blocked, browsers
+// just log what a real CSP would reject (DevTools console). Tighten and
+// flip to enforcing `Content-Security-Policy` once the reports are clean.
+// External AI / FX / price APIs are called server-side, so they don't need
+// connect-src entries here.
+const cspReportOnly = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self' https://*.sentry.io https://vitals.vercel-insights.com https://*.vercel-storage.com",
+  "frame-src 'self' blob: data:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -19,6 +35,7 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=31536000; includeSubDomains",
   },
+  { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
 ];
 
 const nextConfig: NextConfig = {
