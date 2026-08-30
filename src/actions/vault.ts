@@ -167,6 +167,13 @@ export async function addFamilyMemberAction(formData: FormData) {
     return { success: false, error: 'A user with this email already exists.' };
   }
 
+  // Send the invite first — if it fails we return without creating an
+  // orphaned, un-loginable user row.
+  const emailResult = await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
+  if (!emailResult.success) {
+    return { success: false, error: `Could not send the invitation email: ${JSON.stringify(emailResult.error)}` };
+  }
+
   const tempPasswordHash = crypto.randomBytes(8).toString('hex');
 
   await db.insert(users).values({
@@ -176,11 +183,6 @@ export async function addFamilyMemberAction(formData: FormData) {
     passwordHash: tempPasswordHash,
     role,
   });
-
-  const emailResult = await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
-  if (!emailResult.success) {
-    return { success: false, error: `User added, but email failed: ${JSON.stringify(emailResult.error)}` };
-  }
 
   revalidatePath('/profile');
   return { success: true };
