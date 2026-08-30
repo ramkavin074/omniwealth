@@ -11,6 +11,8 @@ import { Resend } from 'resend';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
 import { toNumeric } from '@/lib/num';
+import { logError } from '@/lib/log';
+import { put, del } from '@vercel/blob';
 import {
   canWrite,
   canManageHousehold,
@@ -928,6 +930,18 @@ function decryptFileBuffer(payload: string, ctx: VaultCtx): Buffer {
   return Buffer.concat([decipher.update(encrypted), decipher.final()]);
 }
 
+// The encrypted payload lives either in Vercel Blob (fileUrl is an https
+// URL) or, for pre-blob documents / when no BLOB token is configured,
+// inline in fileUrl itself.
+async function loadDocPayload(fileUrl: string): Promise<string> {
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    const res = await fetch(fileUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`blob fetch failed: ${res.status}`);
+    return res.text();
+  }
+  return fileUrl;
+}
+
 export async function fetchHouseholdDocumentsAction() {
   const session = await getSessionUserAction();
   if (!session) return [];
@@ -956,7 +970,19 @@ export async function uploadDocumentAction(formData: FormData) {
     const bytes = await file.arrayBuffer();
     const rawBuffer = Buffer.from(bytes);
 
-    const encryptedBase64Payload = encryptFileBuffer(rawBuffer, session.household.id);
+    const payload = encryptFileBuffer(rawBuffer, session.household.id);
+
+    // Prefer Vercel Blob; fall back to storing the payload inline when no
+    // blob token is configured (keeps local/dev working).
+    let fileUrl = payload;
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const blob = await put(
+        `documents/${session.household.id}/${crypto.randomUUID()}`,
+        payload,
+        { access: 'public', contentType: 'text/plain', addRandomSuffix: false },
+      );
+      fileUrl = blob.url;
+    }
 
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
 
@@ -965,7 +991,7 @@ export async function uploadDocumentAction(formData: FormData) {
       userId: session.user.id,
       assetId: assetId || null,
       name,
-      fileUrl: encryptedBase64Payload,
+      fileUrl,
       fileType: file.type || 'application/pdf',
       fileSize: fileSizeMB,
     });
@@ -993,7 +1019,8 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
     .where(eq(users.id, doc.userId));
 
   try {
-    const decryptedBuffer = decryptFileBuffer(doc.fileUrl, {
+    const payload = await loadDocPayload(doc.fileUrl);
+    const decryptedBuffer = decryptFileBuffer(payload, {
       userId: doc.userId,
       email: uploader?.email ?? session.user.email,
       householdId: session.household.id,
@@ -1002,7 +1029,8 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
     const dataUri = `data:${doc.fileType};base64,${decryptedBuffer.toString('base64')}`;
     return { success: true, dataUri, name: doc.name, fileType: doc.fileType };
   } catch (err) {
-    return { success: false, error: 'Decryption failed. Security context mismatch.' };
+    logError('fetchDocumentDownloadUrlAction', err, { documentId });
+    return { success: false, error: 'Could not open this document.' };
   }
 }
 
@@ -1018,6 +1046,9 @@ export async function deleteDocumentAction(documentId: string) {
   if (!doc) return { success: false, error: 'Document not found' };
 
   try {
+    if (doc.fileUrl.startsWith('https://') && process.env.BLOB_READ_WRITE_TOKEN) {
+      await del(doc.fileUrl).catch((e) => logError('deleteDocument.blob', e));
+    }
     await db.delete(documents).where(eq(documents.id, documentId));
     revalidatePath('/');
     return { success: true };
