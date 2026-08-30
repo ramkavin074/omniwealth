@@ -267,15 +267,15 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           {/* 1. Account Details Card */}
           <AccountDetailsCard session={session} />
 
-          {/* 2. Legacy & Wealth Pillars Card */}
-          <LegacyPillarsCard householdDetails={householdDetails} />
-
-          {/* 3. Family Members Card */}
-          <FamilyMembersCard 
-            initialFamilyMembers={initialFamilyMembers} 
-            currentUserId={session.user.id} 
-            onOpenAddModal={() => setIsOpen(true)} 
+          {/* 2. Family Members Card */}
+          <FamilyMembersCard
+            initialFamilyMembers={initialFamilyMembers}
+            currentUserId={session.user.id}
+            onOpenAddModal={() => setIsOpen(true)}
           />
+
+          {/* 3. Legacy & Wealth Pillars Card */}
+          <LegacyPillarsCard householdDetails={householdDetails} />
 
           {/* 4. Multi-AI Free-First Cascade BYOK Settings Card */}
           <AiSettingsCard
