@@ -77,42 +77,63 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   let providerUsed = '';
 
   // --- HELPER EXECUTION FUNCTIONS (Guaranteed string return) ---
-  async function runGroq(key: string): Promise<string> {
+  const providerErrors: string[] = [];
+
+  async function runOpenAICompatible(
+    label: string,
+    url: string,
+    model: string,
+    headers: Record<string, string>,
+  ): Promise<string> {
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-        })
+          model,
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+        }),
       });
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || '';
-    } catch {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = JSON.stringify(data).slice(0, 400);
+        console.error(`[ai] ${label} ${res.status}: ${detail}`);
+        providerErrors.push(`${label} ${res.status}`);
+        return '';
+      }
+      const content = data.choices?.[0]?.message?.content || '';
+      if (!content) {
+        console.error(`[ai] ${label} returned no content:`, JSON.stringify(data).slice(0, 400));
+        providerErrors.push(`${label} empty`);
+      }
+      return content;
+    } catch (err) {
+      console.error(`[ai] ${label} request threw:`, err);
+      providerErrors.push(`${label} threw`);
       return '';
     }
   }
 
+  async function runGroq(key: string): Promise<string> {
+    return runOpenAICompatible(
+      'Groq',
+      'https://api.groq.com/openai/v1/chat/completions',
+      'llama-3.3-70b-versatile',
+      { Authorization: `Bearer ${key}` },
+    );
+  }
+
   async function runOpenRouter(key: string): Promise<string> {
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${key}`, 
-          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org' 
-        },
-        body: JSON.stringify({
-          model: 'meta-llama/llama-3.3-70b-instruct:free',
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-        })
-      });
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || '';
-    } catch {
-      return '';
-    }
+    return runOpenAICompatible(
+      'OpenRouter',
+      'https://openrouter.ai/api/v1/chat/completions',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      {
+        Authorization: `Bearer ${key}`,
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org',
+        'X-Title': 'OmniWealth',
+      },
+    );
   }
 
   async function runGemini(key: string): Promise<string> {
@@ -123,26 +144,20 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
       return response.text || '';
-    } catch {
+    } catch (err) {
+      console.error('[ai] Gemini request threw:', err);
+      providerErrors.push('Gemini threw');
       return '';
     }
   }
 
   async function runOpenAI(key: string): Promise<string> {
-    try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
-        })
-      });
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || '';
-    } catch {
-      return '';
-    }
+    return runOpenAICompatible(
+      'OpenAI',
+      'https://api.openai.com/v1/chat/completions',
+      'gpt-4o-mini',
+      { Authorization: `Bearer ${key}` },
+    );
   }
 
   async function runClaude(key: string): Promise<string> {
@@ -157,9 +172,16 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
           messages: [{ role: 'user', content: userPrompt }]
         })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        console.error(`[ai] Claude ${res.status}: ${JSON.stringify(data).slice(0, 400)}`);
+        providerErrors.push(`Claude ${res.status}`);
+        return '';
+      }
       return data.content?.[0]?.text || '';
-    } catch {
+    } catch (err) {
+      console.error('[ai] Claude request threw:', err);
+      providerErrors.push('Claude threw');
       return '';
     }
   }
@@ -205,7 +227,22 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   }
 
   if (!answer) {
-    return { success: false, error: 'Selected AI provider failed or is unavailable.' };
+    const anyKey = groqKey || openrouterKey || geminiKey || openaiKey || anthropicKey;
+    console.error('[ai] askPortfolioAIAction: no provider produced an answer.', {
+      forcedProvider,
+      tried: providerErrors,
+      hasGroq: Boolean(groqKey),
+      hasOpenRouter: Boolean(openrouterKey),
+      hasGemini: Boolean(geminiKey),
+      hasOpenAI: Boolean(openaiKey),
+      hasAnthropic: Boolean(anthropicKey),
+    });
+    return {
+      success: false,
+      error: !anyKey
+        ? 'No AI provider key is configured. Add one in Profile → AI settings.'
+        : `AI request failed (${providerErrors.join(', ') || 'no response'}). Check your provider keys.`,
+    };
   }
 
   return { success: true, answer, providerUsed };
