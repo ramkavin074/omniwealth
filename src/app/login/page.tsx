@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
 registerOwnerAction,
 registerMemberWithCodeAction,
 loginAction,
 } from '@/actions/auth';
 import { useRouter } from 'next/navigation';
+import AcceptInviteCard from './AcceptInviteCard';
 import {
 Cpu,
 Users,
@@ -40,8 +41,22 @@ const [error, setError] = useState('');
 const [showPassword, setShowPassword] = useState(false);
 const [password, setPassword] = useState('');
 const [capsLockOn, setCapsLockOn] = useState(false);
+const [inviteToken, setInviteToken] = useState<string | null>(null);
 
 const router = useRouter();
+
+useEffect(() => {
+// One-time read of the ?invite= param, which is not available during SSR.
+// Doing this in an effect (rather than a lazy initializer) keeps the
+// server and first client render identical, avoiding a hydration mismatch.
+try {
+const t = new URLSearchParams(window.location.search).get('invite');
+// eslint-disable-next-line react-hooks/set-state-in-effect
+if (t) setInviteToken(t);
+} catch {
+// ignore — no invite param
+}
+}, []);
 
 const changeTab = (newTab: 'signin' | 'register' | 'invite') => {
 setTab(newTab);
@@ -166,6 +181,11 @@ setCapsLockOn(e.getModifierState('CapsLock'));
 const handlePasswordBlur = () => {
 setCapsLockOn(false);
 };
+
+// Invitation acceptance is a distinct flow: /login?invite=<token>
+if (inviteToken) {
+return <AcceptInviteCard token={inviteToken} />;
+}
 
 return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-teal-600 selection:text-white"> <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
 

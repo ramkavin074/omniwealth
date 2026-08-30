@@ -28,6 +28,7 @@ import {
   logoutAction,
   registerOwnerAction,
   registerMemberWithCodeAction,
+  addFamilyMemberAction,
 } from './auth';
 
 export {
@@ -36,6 +37,10 @@ export {
   logoutAction,
   registerOwnerAction,
   registerMemberWithCodeAction,
+  // Token-based invitation flow (invitations table + /login?invite=<token>
+  // + acceptInviteAction). The old local implementation created an
+  // un-loginable user row up front; this one does not.
+  addFamilyMemberAction,
 };
 
 export async function updatePasswordAction(formData: FormData) {
@@ -135,58 +140,8 @@ const CAN_MANAGE_MEMBERS = ['SUPER_ADMIN', 'OWNER', 'ADMIN'];
 // Roles treated as "owner tier" for privilege comparisons.
 const IS_OWNER_TIER = ['SUPER_ADMIN', 'OWNER'];
 
-export async function addFamilyMemberAction(formData: FormData) {
-  const session = await getSessionUserAction();
-  if (!session) return { success: false, error: 'Unauthorized' };
-
-  if (!CAN_MANAGE_MEMBERS.includes(session.user.role)) {
-    return { success: false, error: 'Only household owners and admins can add members.' };
-  }
-
-  const fullName = (formData.get('fullName') as string || '').trim();
-  const email = (formData.get('email') as string || '').trim();
-  const requestedRole = (formData.get('role') as string || 'MEMBER').trim().toUpperCase();
-
-  if (!fullName || !email) {
-    return { success: false, error: 'Name and email are required.' };
-  }
-
-  /*
-   * Role assignment is privilege-bounded and never SUPER_ADMIN via this
-   * path: only an owner-tier caller may create OWNER/ADMIN accounts;
-   * an ADMIN caller can only add MEMBER/VIEWER. Anything else falls back
-   * to MEMBER rather than being rejected.
-   */
-  const assignableRoles = IS_OWNER_TIER.includes(session.user.role)
-    ? ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']
-    : ['MEMBER', 'VIEWER'];
-  const role = assignableRoles.includes(requestedRole) ? requestedRole : 'MEMBER';
-
-  const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-  if (existingUser) {
-    return { success: false, error: 'A user with this email already exists.' };
-  }
-
-  // Send the invite first — if it fails we return without creating an
-  // orphaned, un-loginable user row.
-  const emailResult = await sendInviteEmail(email, session.household.name, session.household.inviteCode || undefined);
-  if (!emailResult.success) {
-    return { success: false, error: `Could not send the invitation email: ${JSON.stringify(emailResult.error)}` };
-  }
-
-  const tempPasswordHash = crypto.randomBytes(8).toString('hex');
-
-  await db.insert(users).values({
-    householdId: session.household.id,
-    fullName,
-    email,
-    passwordHash: tempPasswordHash,
-    role,
-  });
-
-  revalidatePath('/profile');
-  return { success: true };
-}
+// addFamilyMemberAction is re-exported from ./auth above (token-based
+// invitation flow).
 
 export async function deleteFamilyMemberAction(memberId: string) {
   const session = await getSessionUserAction();
