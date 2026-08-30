@@ -49,6 +49,7 @@ import {
 import { GoogleGenAI, Type } from '@google/genai';
 
 import { checkRateLimit } from '@/lib/rate-limit';
+import { decryptSecret } from '@/lib/crypto';
 
 /**
  * ============================================================
@@ -842,18 +843,8 @@ export async function getServerAiApiKey(): Promise<
     return null;
   }
 
-  try {
-    return decrypt(
-      user.aiApiKey
-    );
-  } catch (error) {
-    console.error(
-      'Failed to decrypt API key:',
-      error
-    );
-
-    return null;
-  }
+  // decryptSecret tolerates legacy plaintext and a missing ENCRYPTION_KEY.
+  return decryptSecret(user.aiApiKey) || null;
 }
 
 /**
@@ -2320,7 +2311,7 @@ export async function parseStatementAction(
       );
 
   const apiKey =
-    apiKeyRow?.aiApiKey ||
+    decryptSecret(apiKeyRow?.aiApiKey) ||
     process.env.GEMINI_API_KEY;
 
   if (!apiKey) {

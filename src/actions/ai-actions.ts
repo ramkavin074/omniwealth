@@ -7,6 +7,7 @@ import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
 import { GoogleGenAI } from '@google/genai';
 import { revalidatePath } from 'next/cache';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { encryptSecret, decryptSecret } from '@/lib/crypto';
 
 export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
@@ -19,11 +20,11 @@ export async function updateAiSettingsAction(formData: FormData) {
   const anthropicApiKey = (formData.get('anthropicApiKey') as string || '').trim();
 
   const updateData: Record<string, any> = { updatedAt: new Date() };
-  if (groqApiKey) updateData.groqApiKey = groqApiKey;
-  if (openrouterApiKey) updateData.openrouterApiKey = openrouterApiKey;
-  if (geminiApiKey) updateData.geminiApiKey = geminiApiKey;
-  if (openaiApiKey) updateData.openaiApiKey = openaiApiKey;
-  if (anthropicApiKey) updateData.anthropicApiKey = anthropicApiKey;
+  if (groqApiKey) updateData.groqApiKey = encryptSecret(groqApiKey);
+  if (openrouterApiKey) updateData.openrouterApiKey = encryptSecret(openrouterApiKey);
+  if (geminiApiKey) updateData.geminiApiKey = encryptSecret(geminiApiKey);
+  if (openaiApiKey) updateData.openaiApiKey = encryptSecret(openaiApiKey);
+  if (anthropicApiKey) updateData.anthropicApiKey = encryptSecret(anthropicApiKey);
 
   await db.update(users).set(updateData as any).where(eq(users.id, session.user.id));
   revalidatePath('/profile');
@@ -45,11 +46,11 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
 
   const [currentUser] = await db.select().from(users).where(eq(users.id, session.user.id));
   
-  const groqKey = currentUser?.groqApiKey || process.env.GROQ_API_KEY;
-  const openrouterKey = currentUser?.openrouterApiKey || process.env.OPENROUTER_API_KEY;
-  const geminiKey = currentUser?.geminiApiKey || process.env.GEMINI_API_KEY;
-  const openaiKey = currentUser?.openaiApiKey || process.env.OPENAI_API_KEY;
-  const anthropicKey = currentUser?.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
+  const groqKey = decryptSecret(currentUser?.groqApiKey) || process.env.GROQ_API_KEY;
+  const openrouterKey = decryptSecret(currentUser?.openrouterApiKey) || process.env.OPENROUTER_API_KEY;
+  const geminiKey = decryptSecret(currentUser?.geminiApiKey) || process.env.GEMINI_API_KEY;
+  const openaiKey = decryptSecret(currentUser?.openaiApiKey) || process.env.OPENAI_API_KEY;
+  const anthropicKey = decryptSecret(currentUser?.anthropicApiKey) || process.env.ANTHROPIC_API_KEY;
 
   // Gather portfolio context
   const householdAssets = await db.select().from(assets).where(eq(assets.householdId, session.household.id));

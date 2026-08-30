@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { encryptSecret, decryptSecret } from '@/lib/crypto';
 import {
   canWrite,
   canManageHousehold,
@@ -92,7 +93,7 @@ export async function updateUserApiKeyAction(apiKey: string) {
     }
 
     await db.update(users)
-      .set({ aiApiKey: apiKey, updatedAt: new Date() } as any)
+      .set({ aiApiKey: encryptSecret(apiKey), updatedAt: new Date() } as any)
       .where(eq(users.id, session.user.id));
 
     revalidatePath('/profile');
@@ -426,7 +427,7 @@ export async function parseStatementAction(formData: FormData) {
     .select({ aiApiKey: users.aiApiKey })
     .from(users)
     .where(eq(users.id, session.user.id));
-  const apiKey = keyRow?.aiApiKey || process.env.GEMINI_API_KEY;
+  const apiKey = decryptSecret(keyRow?.aiApiKey) || process.env.GEMINI_API_KEY;
   if (!apiKey) return { success: false, error: 'Gemini API key is not configured. Add it in your profile settings or .env' };
 
   const ai = new GoogleGenAI({ apiKey });
