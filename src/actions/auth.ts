@@ -11,6 +11,11 @@ import {
   invitations,
   rateLimits,
   passwordResets,
+  portfolios,
+  assets,
+  transactions,
+  draftLineItems,
+  documents,
 } from '@/db/schema';
 
 import {
@@ -40,6 +45,8 @@ import crypto from 'crypto';
 import {
   Resend,
 } from 'resend';
+
+import { GoogleGenAI, Type } from '@google/genai';
 
 /**
  * ============================================================
@@ -94,6 +101,10 @@ function getResendClient(): Resend {
 
   return new Resend(apiKey);
 }
+
+const resend = new Resend(
+  process.env.RESEND_API_KEY || 're_placeholder'
+);
 
 /**
  * ============================================================
@@ -708,6 +719,8 @@ export async function getSessionUserAction() {
           users.themePreference,
         aiProvider:
           users.aiProvider,
+        aiApiKey:
+          users.aiApiKey,
       })
       .from(users)
       .where(
@@ -1330,53 +1343,6 @@ export async function acceptInviteAction(
   };
 }
 
-/**
- * ============================================================
- * LOGIN
- * ============================================================
- */
-
-'use server';
-
-import { db } from '@/db';
-import {
-  households,
-  users,
-  portfolios,
-  assets,
-  transactions,
-  draftLineItems,
-  documents,
-} from '@/db/schema';
-
-import { eq, and } from 'drizzle-orm';
-import { cookies } from 'next/headers';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-
-import { GoogleGenAI, Type } from '@google/genai';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import { Resend } from 'resend';
-
-const resend = new Resend(
-  process.env.RESEND_API_KEY || 're_placeholder'
-);
-
-/* ============================================================
-   SESSION CONFIGURATION
-   ============================================================ */
-
-const SESSION_COOKIE_NAME = 'vault_user_id';
-
-const SESSION_COOKIE_OPTIONS = {
-  path: '/',
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  maxAge: 60 * 60 * 24 * 30, // 30 days
-};
-
 /* ============================================================
    AUTH / SESSION
    ============================================================ */
@@ -1388,49 +1354,6 @@ const SESSION_COOKIE_OPTIONS = {
  *
  * No middleware.js is required for this approach.
  */
-export async function getSessionUserAction() {
-  try {
-    const cookieStore = await cookies();
-
-    const userId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-
-    if (!userId) {
-      return null;
-    }
-
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (!user) {
-      // Remove stale/invalid cookie.
-      cookieStore.delete(SESSION_COOKIE_NAME);
-      return null;
-    }
-
-    const [household] = await db
-      .select()
-      .from(households)
-      .where(eq(households.id, user.householdId))
-      .limit(1);
-
-    if (!household) {
-      // User exists but household no longer exists.
-      cookieStore.delete(SESSION_COOKIE_NAME);
-      return null;
-    }
-
-    return {
-      user,
-      household,
-    };
-  } catch (error) {
-    console.error('getSessionUserAction error:', error);
-    return null;
-  }
-}
 
 /**
  * Login
@@ -1531,18 +1454,12 @@ export async function loginAction(formData: FormData) {
     }
 
     /*
-     * Set authentication cookie.
-     *
-     * This is the cookie DashboardPage -> getSessionUserAction()
-     * uses to determine whether the user is logged in.
+     * Create a proper server-side session record and set the
+     * hashed session cookie. This must match the mechanism
+     * getSessionUserAction() reads from (sessions table +
+     * hashed token), not a raw user id.
      */
-    const cookieStore = await cookies();
-
-    cookieStore.set(
-      SESSION_COOKIE_NAME,
-      user.id,
-      SESSION_COOKIE_OPTIONS
-    );
+    await createSession(user.id);
 
     /*
      * Revalidate dashboard.
@@ -1560,414 +1477,6 @@ export async function loginAction(formData: FormData) {
     return {
       success: false,
       error: 'Unable to sign in right now. Please try again.',
-    };
-  }
-}
-
-/**
- * Logout
- */
-export async function logoutAction() {
-  const cookieStore = await cookies();
-
-  cookieStore.delete(SESSION_COOKIE_NAME);
-
-  redirect('/login');
-}
-
-/* ============================================================
-   REGISTRATION
-   ============================================================ */
-
-export async function registerOwnerAction(formData: FormData) {
-  try {
-    const fullName = String(
-      formData.get('fullName') || ''
-    ).trim();
-
-    const householdName = String(
-      formData.get('householdName') || ''
-    ).trim();
-
-    const email = String(
-      formData.get('email') || ''
-    )
-      .trim()
-      .toLowerCase();
-
-    const password = String(
-      formData.get('password') || ''
-    );
-
-    const baseCurrency = String(
-      formData.get('baseCurrency') || 'USD'
-    ).trim();
-
-    if (
-      !fullName ||
-      !householdName ||
-      !email ||
-      !password
-    ) {
-      return {
-        success: false,
-        error: 'All fields are required.',
-      };
-    }
-
-    if (password.length < 8) {
-      return {
-        success: false,
-        error: 'Password must be at least 8 characters.',
-      };
-    }
-
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    if (existingUser) {
-      return {
-        success: false,
-        error: 'An account with this email already exists.',
-      };
-    }
-
-    const inviteCode = crypto
-      .randomBytes(4)
-      .toString('hex')
-      .toUpperCase();
-
-    const [household] = await db
-      .insert(households)
-      .values({
-        name: householdName,
-        baseCurrency,
-        inviteCode,
-      } as any)
-      .returning();
-
-    if (!household) {
-      return {
-        success: false,
-        error: 'Failed to create household.',
-      };
-    }
-
-    const passwordHash = await bcrypt.hash(
-      password,
-      12
-    );
-
-    const [user] = await db
-      .insert(users)
-      .values({
-        householdId: household.id,
-        email,
-        passwordHash,
-        fullName,
-        role: 'OWNER',
-      })
-      .returning();
-
-    if (!user) {
-      return {
-        success: false,
-        error: 'Failed to create user account.',
-      };
-    }
-
-    /*
-     * Automatically authenticate newly registered owner.
-     */
-    const cookieStore = await cookies();
-
-    cookieStore.set(
-      SESSION_COOKIE_NAME,
-      user.id,
-      SESSION_COOKIE_OPTIONS
-    );
-
-    revalidatePath('/');
-
-    return {
-      success: true,
-      role: user.role,
-    };
-  } catch (error) {
-    console.error(
-      'registerOwnerAction error:',
-      error
-    );
-
-    return {
-      success: false,
-      error: 'Unable to create household. Please try again.',
-    };
-  }
-}
-
-/* ============================================================
-   MEMBER REGISTRATION
-   ============================================================ */
-
-export async function registerMemberWithCodeAction(
-  formData: FormData
-) {
-  try {
-    const fullName = String(
-      formData.get('fullName') || ''
-    ).trim();
-
-    const inviteCode = String(
-      formData.get('inviteCode') || ''
-    )
-      .trim()
-      .toUpperCase();
-
-    const email = String(
-      formData.get('email') || ''
-    )
-      .trim()
-      .toLowerCase();
-
-    const password = String(
-      formData.get('password') || ''
-    );
-
-    if (
-      !fullName ||
-      !inviteCode ||
-      !email ||
-      !password
-    ) {
-      return {
-        success: false,
-        error: 'All fields are required.',
-      };
-    }
-
-    if (password.length < 8) {
-      return {
-        success: false,
-        error: 'Password must be at least 8 characters.',
-      };
-    }
-
-    const [household] = await db
-      .select()
-      .from(households)
-      .where(
-        eq(
-          households.inviteCode as any,
-          inviteCode
-        )
-      )
-      .limit(1);
-
-    if (!household) {
-      return {
-        success: false,
-        error: 'Invalid household invite code.',
-      };
-    }
-
-    const [existingUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    if (existingUser) {
-      return {
-        success: false,
-        error: 'An account with this email already exists.',
-      };
-    }
-
-    const passwordHash = await bcrypt.hash(
-      password,
-      12
-    );
-
-    const [user] = await db
-      .insert(users)
-      .values({
-        householdId: household.id,
-        email,
-        passwordHash,
-        fullName,
-        role: 'MEMBER',
-      })
-      .returning();
-
-    if (!user) {
-      return {
-        success: false,
-        error: 'Failed to create member account.',
-      };
-    }
-
-    const cookieStore = await cookies();
-
-    cookieStore.set(
-      SESSION_COOKIE_NAME,
-      user.id,
-      SESSION_COOKIE_OPTIONS
-    );
-
-    revalidatePath('/');
-
-    return {
-      success: true,
-      role: user.role,
-    };
-  } catch (error) {
-    console.error(
-      'registerMemberWithCodeAction error:',
-      error
-    );
-
-    return {
-      success: false,
-      error: 'Unable to join household. Please try again.',
-    };
-  }
-}
-
-/* ============================================================
-   PASSWORD
-   ============================================================ */
-
-export async function updatePasswordAction(
-  formData: FormData
-) {
-  const session = await getSessionUserAction();
-
-  if (!session) {
-    return {
-      success: false,
-      error: 'Unauthorized',
-    };
-  }
-
-  const currentPassword = String(
-    formData.get('currentPassword') || ''
-  );
-
-  const newPassword = String(
-    formData.get('newPassword') || ''
-  );
-
-  if (!currentPassword || !newPassword) {
-    return {
-      success: false,
-      error:
-        'Please fill in both current and new passwords.',
-    };
-  }
-
-  if (newPassword.length < 8) {
-    return {
-      success: false,
-      error:
-        'New password must be at least 8 characters.',
-    };
-  }
-
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  if (!user) {
-    return {
-      success: false,
-      error: 'User not found.',
-    };
-  }
-
-  let isValid = false;
-
-  if (
-    user.passwordHash.startsWith('$2a$') ||
-    user.passwordHash.startsWith('$2b$') ||
-    user.passwordHash.startsWith('$2y$')
-  ) {
-    isValid = await bcrypt.compare(
-      currentPassword,
-      user.passwordHash
-    );
-  } else {
-    isValid =
-      user.passwordHash === currentPassword;
-  }
-
-  if (!isValid) {
-    return {
-      success: false,
-      error: 'Incorrect current password.',
-    };
-  }
-
-  const newPasswordHash = await bcrypt.hash(
-    newPassword,
-    12
-  );
-
-  await db
-    .update(users)
-    .set({
-      passwordHash: newPasswordHash,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, user.id));
-
-  return {
-    success: true,
-  };
-}
-
-/* ============================================================
-   USER API KEY
-   ============================================================ */
-
-export async function updateUserApiKeyAction(
-  apiKey: string
-) {
-  try {
-    const session =
-      await getSessionUserAction();
-
-    if (!session?.user?.id) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    await db
-      .update(users)
-      .set({
-        aiApiKey: apiKey,
-        updatedAt: new Date(),
-      } as any)
-      .where(eq(users.id, session.user.id));
-
-    revalidatePath('/profile');
-
-    return {
-      success: true,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error:
-        error?.message ||
-        'Failed to save API key',
     };
   }
 }
@@ -2055,175 +1564,8 @@ export async function sendInviteEmail(
   }
 }
 
-export async function fetchFamilyMembersAction() {
-  const session =
-    await getSessionUserAction();
 
-  if (!session) {
-    return [];
-  }
 
-  return await db
-    .select()
-    .from(users)
-    .where(
-      eq(
-        users.householdId,
-        session.household.id
-      )
-    );
-}
-
-export async function addFamilyMemberAction(
-  formData: FormData
-) {
-  const session =
-    await getSessionUserAction();
-
-  if (!session) {
-    return {
-      success: false,
-      error: 'Unauthorized',
-    };
-  }
-
-  const fullName = String(
-    formData.get('fullName') || ''
-  ).trim();
-
-  const email = String(
-    formData.get('email') || ''
-  )
-    .trim()
-    .toLowerCase();
-
-  const role = String(
-    formData.get('role') || 'MEMBER'
-  ).trim();
-
-  if (!fullName || !email) {
-    return {
-      success: false,
-      error: 'Name and email are required.',
-    };
-  }
-
-  const [existingUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-
-  if (existingUser) {
-    return {
-      success: false,
-      error:
-        'A user with this email already exists.',
-    };
-  }
-
-  /*
-   * Generate a random temporary password.
-   */
-  const temporaryPassword =
-    crypto.randomBytes(12).toString('base64url');
-
-  const tempPasswordHash =
-    await bcrypt.hash(
-      temporaryPassword,
-      12
-    );
-
-  await db.insert(users).values({
-    householdId:
-      session.household.id,
-    fullName,
-    email,
-    passwordHash: tempPasswordHash,
-    role,
-  });
-
-  const emailResult =
-    await sendInviteEmail(
-      email,
-      session.household.name,
-      session.household.inviteCode ||
-        undefined
-    );
-
-  if (!emailResult.success) {
-    return {
-      success: false,
-      error:
-        `User added, but email failed: ${JSON.stringify(
-          emailResult.error
-        )}`,
-    };
-  }
-
-  revalidatePath('/profile');
-
-  return {
-    success: true,
-  };
-}
-
-export async function deleteFamilyMemberAction(
-  memberId: string
-) {
-  const session =
-    await getSessionUserAction();
-
-  if (!session) {
-    return {
-      success: false,
-      error: 'Unauthorized',
-    };
-  }
-
-  const [targetUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, memberId))
-    .limit(1);
-
-  if (!targetUser) {
-    return {
-      success: false,
-      error: 'User not found',
-    };
-  }
-
-  if (
-    targetUser.id === session.user.id
-  ) {
-    return {
-      success: false,
-      error:
-        'You cannot remove your own account from the household.',
-    };
-  }
-
-  if (
-    targetUser.householdId !==
-    session.household.id
-  ) {
-    return {
-      success: false,
-      error: 'Unauthorized action.',
-    };
-  }
-
-  await db
-    .delete(users)
-    .where(eq(users.id, memberId));
-
-  revalidatePath('/profile');
-
-  return {
-    success: true,
-  };
-}
 
 /* ============================================================
    EXCHANGE RATES
@@ -4799,42 +4141,6 @@ export async function updateThemePreferenceAction(
         'Failed to update theme preference',
     };
   }
-}    );
-
-  if (!isValid) {
-    return genericAuthError;
-  }
-
-  await decrementRateLimitAttempt(
-    emailKey
-  );
-
-  await decrementRateLimitAttempt(
-    ipKey
-  );
-
-  await db
-    .delete(sessions)
-    .where(
-      and(
-        eq(
-          sessions.userId,
-          user.id
-        ),
-        sql`${sessions.expiresAt} <= NOW()`
-      )
-    );
-
-  await createSession(
-    user.id
-  );
-
-  revalidatePath('/');
-
-  return {
-    success: true,
-    role: user.role,
-  };
 }
 
 /**
