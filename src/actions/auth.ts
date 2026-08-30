@@ -70,6 +70,15 @@ const SESSION_COOKIE_OPTIONS = {
 
 const BCRYPT_ROUNDS = 12;
 
+// Single generic message for every login failure — never reveal whether
+// an email is registered.
+const INVALID_CREDENTIALS_ERROR = 'Invalid email or password.';
+
+// Pre-computed bcrypt hash (cost 12) compared against when no user matches,
+// so response time does not betray which emails exist.
+const DUMMY_PASSWORD_HASH =
+  '$2b$12$sII16HU35Cfh93dmpt3ABuB8x8.LpJEceoXPj8dnmEprjnuYipT/y';
+
 const EMAIL_REGEX =
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -1419,16 +1428,18 @@ export async function loginAction(formData: FormData) {
       .limit(1);
 
     if (!user) {
+      // Spend the same time a real bcrypt check would, then fail generically.
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
       return {
         success: false,
-        error: 'No account found with this email.',
+        error: INVALID_CREDENTIALS_ERROR,
       };
     }
 
     if (!user.passwordHash) {
       return {
         success: false,
-        error: 'This account does not have a valid password.',
+        error: INVALID_CREDENTIALS_ERROR,
       };
     }
 
@@ -1472,7 +1483,7 @@ export async function loginAction(formData: FormData) {
     if (!isValid) {
       return {
         success: false,
-        error: 'Incorrect password.',
+        error: INVALID_CREDENTIALS_ERROR,
       };
     }
 
