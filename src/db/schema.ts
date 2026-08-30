@@ -535,3 +535,38 @@ export const documents = pgTable(
     ),
   })
 );
+/**
+ * ============================================================
+ * AUDIT LOG (append-only)
+ * ============================================================
+ *
+ * No FK constraints on purpose — the trail must survive deletion of the
+ * user / household it refers to. actorEmail is denormalized for the same
+ * reason.
+ */
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    householdId: uuid('household_id'),
+
+    actorUserId: uuid('actor_user_id'),
+
+    actorEmail: text('actor_email'),
+
+    action: text('action').notNull(),
+
+    targetType: text('target_type'),
+
+    targetId: text('target_id'),
+
+    meta: text('meta'),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('audit_log_household_id_idx').on(table.householdId),
+    createdAtIdx: index('audit_log_created_at_idx').on(table.createdAt),
+  })
+);

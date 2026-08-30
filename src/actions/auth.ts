@@ -52,6 +52,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptSecret } from '@/lib/crypto';
 import { logError } from '@/lib/log';
+import { logAudit } from '@/lib/audit';
 
 /**
  * ============================================================
@@ -4316,6 +4317,16 @@ export async function deleteAccountAction(formData: FormData) {
       error: 'You are the only owner. Promote another member to owner before deleting your account.',
     };
   }
+
+  await logAudit({
+    actorUserId: user.id,
+    actorEmail: user.email,
+    householdId,
+    action: 'account.delete',
+    targetType: 'user',
+    targetId: user.id,
+    meta: { removedHousehold: others.length === 0 },
+  });
 
   if (others.length === 0) {
     await db.delete(households).where(eq(households.id, householdId));

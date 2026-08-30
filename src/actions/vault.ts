@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/db';
-import { households, users, portfolios, assets, transactions, draftLineItems, documents } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { households, users, portfolios, assets, transactions, draftLineItems, documents, auditLog } from '@/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
 import bcrypt from 'bcryptjs';
@@ -12,7 +12,27 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
 import { toNumeric } from '@/lib/num';
 import { logError } from '@/lib/log';
+import { logAudit } from '@/lib/audit';
 import { put, del } from '@vercel/blob';
+
+// Shorthand for an audit entry scoped to the acting session.
+function audit(
+  session: any,
+  action: string,
+  targetType?: string,
+  targetId?: string | null,
+  meta?: Record<string, unknown>,
+) {
+  return logAudit({
+    actorUserId: session?.user?.id,
+    actorEmail: session?.user?.email,
+    householdId: session?.household?.id,
+    action,
+    targetType,
+    targetId: targetId ?? null,
+    meta,
+  });
+}
 import {
   canWrite,
   canManageHousehold,
@@ -92,6 +112,7 @@ export async function updatePasswordAction(formData: FormData) {
 
   const newPasswordHash = await bcrypt.hash(newPassword, 12);
   await db.update(users).set({ passwordHash: newPasswordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+  await audit(session, 'account.password_change');
 
   // Changing the password signs out every other device.
   await revokeOtherSessionsAction();
@@ -160,6 +181,22 @@ export async function fetchFamilyMembersAction() {
   return await db.select().from(users).where(eq(users.householdId, session.household.id));
 }
 
+export async function fetchAuditLogAction(limit = 50) {
+  const session = await getSessionUserAction();
+  if (!session) return [];
+  try {
+    return await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.householdId, session.household.id))
+      .orderBy(desc(auditLog.createdAt))
+      .limit(Math.min(Math.max(limit, 1), 200));
+  } catch {
+    // audit_log table not created yet
+    return [];
+  }
+}
+
 // addFamilyMemberAction is re-exported from ./auth above (token-based
 // invitation flow).
 
@@ -183,6 +220,7 @@ export async function deleteFamilyMemberAction(memberId: string) {
   }
 
   await db.delete(users).where(eq(users.id, memberId));
+  await audit(session, 'member.remove', 'user', memberId, { email: targetUser.email, role: targetUser.role });
   revalidatePath('/profile');
   return { success: true };
 }
@@ -787,6 +825,7 @@ export async function deleteAssetAction(assetId: string) {
 
   await db.delete(transactions).where(eq(transactions.assetId, assetId));
   await db.delete(assets).where(eq(assets.id, assetId));
+  await audit(session, 'asset.delete', 'asset', assetId, { name: existing.name });
 
   revalidatePath('/');
   return { success: true };
@@ -805,6 +844,7 @@ export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
     .update(households)
     .set({ baseCurrency: newCurrency })
     .where(eq(households.id, session.household.id));
+  await audit(session, 'household.currency_change', 'household', session.household.id, { to: newCurrency });
 
   revalidatePath('/');
 }
@@ -828,6 +868,7 @@ export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
   await db.update(households)
     .set({ legacyPillars: JSON.stringify(pillars), updatedAt: new Date() } as any)
     .where(eq(households.id, session.household.id));
+  await audit(session, 'household.pillars_update', 'household', session.household.id);
 
   revalidatePath('/');
   revalidatePath('/profile');
@@ -859,6 +900,7 @@ export async function updateRetirementPreferencesAction(data: {
         updatedAt: new Date(),
       })
       .where(eq(households.id, session.household.id));
+    await audit(session, 'household.retirement_update', 'household', session.household.id);
 
     revalidatePath('/');
     return { success: true };
@@ -995,6 +1037,7 @@ export async function uploadDocumentAction(formData: FormData) {
       fileType: file.type || 'application/pdf',
       fileSize: fileSizeMB,
     });
+    await audit(session, 'document.upload', 'document', null, { name, size: fileSizeMB });
 
     revalidatePath('/');
     return { success: true };
@@ -1050,6 +1093,7 @@ export async function deleteDocumentAction(documentId: string) {
       await del(doc.fileUrl).catch((e) => logError('deleteDocument.blob', e));
     }
     await db.delete(documents).where(eq(documents.id, documentId));
+    await audit(session, 'document.delete', 'document', documentId, { name: doc.name });
     revalidatePath('/');
     return { success: true };
   } catch (error: any) {
