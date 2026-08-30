@@ -4,11 +4,12 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  updateHouseholdBaseCurrencyAction, 
+import {
+  updateHouseholdBaseCurrencyAction,
   refreshLiveMarketPricesAction,
   fetchLiveExchangeRatesAction,
-  logoutAction 
+  logoutAction,
+  updateThemePreferenceAction
 } from '@/actions/vault';
 import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, FileText, Menu, Sun, Moon } from 'lucide-react';
 
@@ -211,6 +212,7 @@ function ThemeToggleButton() {
   const toggleTheme = () => {
     const nextDark = !isDark;
     setIsDark(nextDark);
+    const themeString = nextDark ? 'dark' : 'light';
     if (nextDark) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -218,6 +220,9 @@ function ThemeToggleButton() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+    updateThemePreferenceAction(themeString).catch((err) =>
+      console.error('Failed to sync theme preference to database:', err)
+    );
   };
 
   return (
