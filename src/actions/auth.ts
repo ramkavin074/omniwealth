@@ -705,8 +705,6 @@ export async function getSessionUserAction() {
     return null;
   }
 
-  // Full row: callers historically read extra columns off session.user
-  // (per-provider API keys, retirement prefs live on households, etc.).
   const [user] =
     await db
       .select()
@@ -765,8 +763,35 @@ export async function getSessionUserAction() {
     return null;
   }
 
+  /*
+   * This object is passed into client components and serialized to the
+   * browser. Expose an explicit allow-list only — never the password
+   * hash or raw API keys. API-key presence is surfaced as booleans;
+   * server code that needs an actual key value queries `users` directly.
+   */
+  const hasValue = (v: unknown): boolean =>
+    typeof v === 'string' && v.trim().length > 0;
+
+  const safeUser = {
+    id: user.id,
+    householdId: user.householdId,
+    email: user.email,
+    fullName: user.fullName,
+    role: user.role,
+    themePreference: user.themePreference,
+    aiProvider: user.aiProvider,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    hasAiApiKey: hasValue(user.aiApiKey),
+    hasGeminiKey: hasValue(user.geminiApiKey),
+    hasOpenaiKey: hasValue(user.openaiApiKey),
+    hasAnthropicKey: hasValue(user.anthropicApiKey),
+    hasGroqKey: hasValue(user.groqApiKey),
+    hasOpenrouterKey: hasValue(user.openrouterApiKey),
+  };
+
   return {
-    user,
+    user: safeUser,
     household,
   };
 }
@@ -2275,8 +2300,21 @@ export async function parseStatementAction(
     };
   }
 
+  const [apiKeyRow] =
+    await db
+      .select({
+        aiApiKey: users.aiApiKey,
+      })
+      .from(users)
+      .where(
+        eq(
+          users.id,
+          session.user.id
+        )
+      );
+
   const apiKey =
-    session.user.aiApiKey ||
+    apiKeyRow?.aiApiKey ||
     process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
