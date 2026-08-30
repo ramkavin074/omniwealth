@@ -442,7 +442,7 @@ CRITICAL INSTRUCTIONS:
   if (pastedText) {
     try {
       const response = await generateWithRetry(ai, {
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [
           { text: `${extractionPrompt}\n\nHere is the pasted statement text:\n${pastedText}` },
         ],
@@ -502,7 +502,7 @@ CRITICAL INSTRUCTIONS:
       const mimeType = file.type || 'application/pdf';
 
       const response = await generateWithRetry(ai, {
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [
           { inlineData: { mimeType, data: buffer.toString('base64') } },
           { text: extractionPrompt },

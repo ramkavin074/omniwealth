@@ -2354,7 +2354,7 @@ CRITICAL INSTRUCTIONS:
           ai,
           {
             model:
-              'gemini-2.5-flash',
+              'gemini-3.6-flash',
 
             contents: [
               {
@@ -2538,7 +2538,7 @@ CRITICAL INSTRUCTIONS:
           ai,
           {
             model:
-              'gemini-2.5-flash',
+              'gemini-3.6-flash',
 
             contents: [
               {

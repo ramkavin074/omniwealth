@@ -140,7 +140,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
       return response.text || '';
