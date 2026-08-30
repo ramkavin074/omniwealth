@@ -58,7 +58,8 @@ export default function PortfolioAIChat() {
                 className="bg-slate-900 border border-slate-700 text-slate-300 text-[10px] rounded-lg px-2 py-1 focus:outline-none"
               >
                 <option value="auto">Auto (Free-First Cascade)</option>
-                <option value="groq">Groq (Llama 3.3)</option>
+                <option value="groq">Groq (Llama)</option>
+                <option value="cerebras">Cerebras (Free)</option>
                 <option value="openrouter">OpenRouter (Free)</option>
                 <option value="gemini">Google Gemini</option>
                 <option value="openai">OpenAI (GPT-4o-mini)</option>

@@ -16,6 +16,7 @@ import { encryptSecret, decryptSecret } from '@/lib/crypto';
  */
 const AI_MODELS = {
   groq: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+  cerebras: process.env.CEREBRAS_MODEL || 'llama-3.3-70b',
   openrouter: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
   gemini: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
   openai: process.env.OPENAI_MODEL || 'gpt-4o-mini',
@@ -64,6 +65,9 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   const geminiOwn = decryptSecret(currentUser?.geminiApiKey);
   const openaiOwn = decryptSecret(currentUser?.openaiApiKey);
   const anthropicOwn = decryptSecret(currentUser?.anthropicApiKey);
+
+  // Cerebras is shared-key only for now (no per-user column yet).
+  const cerebrasKey = process.env.CEREBRAS_API_KEY;
 
   const groqKey = groqOwn || process.env.GROQ_API_KEY;
   const openrouterKey = openrouterOwn || process.env.OPENROUTER_API_KEY;
@@ -145,6 +149,15 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     );
   }
 
+  async function runCerebras(key: string): Promise<string> {
+    return runOpenAICompatible(
+      'Cerebras',
+      'https://api.cerebras.ai/v1/chat/completions',
+      AI_MODELS.cerebras,
+      { Authorization: `Bearer ${key}` },
+    );
+  }
+
   async function runOpenRouter(key: string): Promise<string> {
     return runOpenAICompatible(
       'OpenRouter',
@@ -212,6 +225,9 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   if (forcedProvider === 'groq' && groqKey) {
     answer = await runGroq(groqKey);
     if (answer) providerUsed = `Groq · ${AI_MODELS.groq} · ${src(groqOwn)}`;
+  } else if (forcedProvider === 'cerebras' && cerebrasKey) {
+    answer = await runCerebras(cerebrasKey);
+    if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · shared key`;
   } else if (forcedProvider === 'openrouter' && openrouterKey) {
     answer = await runOpenRouter(openrouterKey);
     if (answer) providerUsed = `OpenRouter · ${AI_MODELS.openrouter} · ${src(openrouterOwn)}`;
@@ -229,6 +245,10 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     if (groqKey && !answer) {
       answer = await runGroq(groqKey);
       if (answer) providerUsed = `Groq · ${AI_MODELS.groq} · ${src(groqOwn)}`;
+    }
+    if (cerebrasKey && !answer) {
+      answer = await runCerebras(cerebrasKey);
+      if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · shared key`;
     }
     if (openrouterKey && !answer) {
       answer = await runOpenRouter(openrouterKey);
@@ -249,11 +269,12 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
   }
 
   if (!answer) {
-    const anyKey = groqKey || openrouterKey || geminiKey || openaiKey || anthropicKey;
+    const anyKey = groqKey || cerebrasKey || openrouterKey || geminiKey || openaiKey || anthropicKey;
     console.error('[ai] askPortfolioAIAction: no provider produced an answer.', {
       forcedProvider,
       tried: providerErrors,
       hasGroq: Boolean(groqKey),
+      hasCerebras: Boolean(cerebrasKey),
       hasOpenRouter: Boolean(openrouterKey),
       hasGemini: Boolean(geminiKey),
       hasOpenAI: Boolean(openaiKey),
