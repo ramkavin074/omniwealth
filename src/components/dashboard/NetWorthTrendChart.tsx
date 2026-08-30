@@ -2,14 +2,11 @@
 
 import { useMemo } from 'react';
 import { Globe } from 'lucide-react';
+import { formatCompact, formatFull } from '@/lib/format';
 
 export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: any) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
-  const formatCompactValue = (val: number) => {
-    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
-    if (val >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
-    return val.toString();
-  };
+  const formatCompactValue = (val: number) => formatCompact(val, baseCurrency);
 
   const { desktopChart, mobileChart } = useMemo(() => {
     const generateChartData = (maxPoints: number, width: number, height: number, padding: number) => {
@@ -49,7 +46,7 @@ export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeR
       {chart.points.map((pt: any, idx: number) => (
         <g key={idx} className="group cursor-pointer">
           {/* Restored tooltips and hover effects */}
-          <title>{`${pt.month}: ${Math.round(pt.value).toLocaleString()} ${baseCurrency}`}</title>
+          <title>{`${pt.month}: ${formatFull(pt.value, baseCurrency)} ${baseCurrency}`}</title>
           <circle cx={pt.x} cy={pt.y} r="5" className="fill-white dark:fill-slate-900 stroke-teal-700 stroke-2 group-hover:r-6 group-hover:fill-teal-700 transition-all duration-200" />
           <text x={pt.x} y={pt.y - 12} textAnchor="middle" className="text-[10px] font-mono fill-slate-700 dark:fill-slate-300 font-semibold opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
             {formatCompactValue(pt.value)}

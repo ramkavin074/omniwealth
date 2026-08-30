@@ -12,6 +12,7 @@ import {
   updateThemePreferenceAction
 } from '@/actions/vault';
 import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, FileText, Menu, Sun, Moon } from 'lucide-react';
+import { formatCompact, formatFull } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -175,8 +176,8 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
       <div className="block md:hidden px-4 pt-4 print:hidden">
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
           <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Global Net Worth</span>
-          <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate mt-0.5">
-            {Math.round(totalNetWorth).toLocaleString()} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
+          <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate mt-0.5" title={`${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`}>
+            {formatCompact(totalNetWorth, baseCurrency)} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
           </div>
         </div>
       </div>
@@ -187,8 +188,8 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
             <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-slate-400 print:hidden" /> Global Household Net Worth
             </span>
-            <div className="text-4xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
-              {Math.round(totalNetWorth).toLocaleString()} <span className="text-teal-600 dark:text-teal-500 text-lg font-sans">{baseCurrency}</span>
+            <div className="text-4xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1" title={`${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`}>
+              {formatCompact(totalNetWorth, baseCurrency)} <span className="text-teal-600 dark:text-teal-500 text-lg font-sans">{baseCurrency}</span>
             </div>
           </div>
 
@@ -196,8 +197,8 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
             {sortedCategories.map(([cat, val]) => (
               <div key={cat} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0 print:border-slate-300 print:bg-white">
                 <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] block font-medium truncate">{formatCategoryName(cat)}</span>
-                <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
-                  {Math.round(val).toLocaleString()} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
+                <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`} title={`${formatFull(val, baseCurrency)} ${baseCurrency}`}>
+                  {formatCompact(val, baseCurrency)} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
                 </span>
               </div>
             ))}

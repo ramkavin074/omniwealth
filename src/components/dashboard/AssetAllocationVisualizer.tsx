@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { PieChart } from 'lucide-react';
+import { formatCompact } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -83,7 +84,7 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
               return (
                 <div 
                   key={type} 
-                  title={`${formatAssetTypeName(type)}: ${pct}% (${Math.round(val).toLocaleString()} ${baseCurrency})`}
+                  title={`${formatAssetTypeName(type)}: ${pct}% (${formatCompact(val, baseCurrency)} ${baseCurrency})`}
                   style={{ width: `${Math.max(parseFloat(pct), 2)}%` }} 
                   className={`${colorClass.split(' ')[0]} transition-all duration-300 cursor-pointer`} 
                 />
@@ -106,7 +107,7 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
                     <span className="text-xs text-slate-500 dark:text-slate-400 font-mono shrink-0">{pct}%</span>
                   </div>
                   <div className="font-mono text-base sm:text-lg text-slate-900 dark:text-white font-bold mt-1">
-                    {Math.round(val).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-500">{baseCurrency}</span>
+                    {formatCompact(val, baseCurrency)} <span className="text-xs font-sans font-normal text-slate-500">{baseCurrency}</span>
                   </div>
                 </div>
               );

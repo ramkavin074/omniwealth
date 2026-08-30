@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Users, Target, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
+import { formatCompact } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -146,7 +147,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{formatCompact(data.total, baseCurrency)} {baseCurrency}</span>
                   </div>
                 </button>
 
@@ -165,7 +166,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                           <span className="font-mono font-bold text-slate-900 dark:text-white">
-                            {Math.round(item.totalBase).toLocaleString()} {baseCurrency}
+                            {formatCompact(item.totalBase, baseCurrency)} {baseCurrency}
                           </span>
                           <div className="flex items-center gap-1">
                             {onEditAsset && (
@@ -216,7 +217,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{Math.round(data.total).toLocaleString()} {baseCurrency}</span>
+                    <span className="font-mono text-slate-900 dark:text-white font-semibold text-sm">{formatCompact(data.total, baseCurrency)} {baseCurrency}</span>
                   </div>
                 </button>
 
@@ -235,7 +236,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                           <span className="font-mono font-bold text-slate-900 dark:text-white">
-                            {Math.round(item.totalBase).toLocaleString()} {baseCurrency}
+                            {formatCompact(item.totalBase, baseCurrency)} {baseCurrency}
                           </span>
                           <div className="flex items-center gap-1">
                             {onEditAsset && (

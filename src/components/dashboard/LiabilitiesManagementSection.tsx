@@ -1,6 +1,7 @@
 'use client';
 
 import { CreditCard, Plus, Edit3, Trash2 } from 'lucide-react';
+import { formatCompact } from '@/lib/format';
 import { deleteAssetAction } from '@/actions/vault';
 import { useTransition } from 'react';
 
@@ -63,7 +64,7 @@ export default function LiabilitiesManagementSection({
         <div>
           <div className="text-xs uppercase tracking-wider text-rose-600 dark:text-rose-400 font-bold font-mono">Total Outstanding Debt</div>
           <div className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono">
-            {Math.round(totalLiabilitiesBase).toLocaleString()} <span className="text-base font-normal text-slate-500">{baseCurrency}</span>
+            {formatCompact(totalLiabilitiesBase, baseCurrency)} <span className="text-base font-normal text-slate-500">{baseCurrency}</span>
           </div>
         </div>
         {canAdd && (
@@ -109,11 +110,11 @@ export default function LiabilitiesManagementSection({
                   <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                     <div className="text-right font-mono">
                       <div className="font-bold text-slate-900 dark:text-white text-sm">
-                        {Math.round(baseVal).toLocaleString()} {baseCurrency}
+                        {formatCompact(baseVal, baseCurrency)} {baseCurrency}
                       </div>
                       {item.nativeCurrency !== baseCurrency && (
                         <div className="text-[10px] text-slate-500">
-                          ({nativeVal.toLocaleString()} {item.nativeCurrency})
+                          ({formatCompact(nativeVal, item.nativeCurrency)} {item.nativeCurrency})
                         </div>
                       )}
                     </div>
