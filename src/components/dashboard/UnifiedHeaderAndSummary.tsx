@@ -123,10 +123,10 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
              
             <div className="hidden md:flex items-center gap-2">
               <span
-                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400"
-                title="Signed in"
+                className="hidden xl:flex items-center gap-1.5 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0"
+                title={`Signed in as ${session?.user?.fullName} (${session?.user?.role})`}
               >
-                <span className="max-w-[10rem] truncate">{session?.user?.fullName}</span>
+                <span className="max-w-[7rem] truncate">{session?.user?.fullName}</span>
                 <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                   {session?.user?.role}
                 </span>

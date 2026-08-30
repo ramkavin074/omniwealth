@@ -193,6 +193,13 @@ export default function DashboardClient({
                   </button>
                 </div>
 
+                <div className="flex items-center gap-2 px-1 pt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="truncate">{session?.user?.fullName}</span>
+                  <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                    {session?.user?.role}
+                  </span>
+                </div>
+
                 <nav className="flex flex-col space-y-1.5 pt-2">
                   <button onClick={() => { setActiveTab('wealth'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <Home className="w-4 h-4" /><span>Portfolio Overview</span>
