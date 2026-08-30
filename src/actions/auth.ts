@@ -739,48 +739,22 @@ export async function getSessionUserAction() {
     return null;
   }
 
-  const [user] =
+  // One round-trip for the user + their household.
+  const [row] =
     await db
-      .select()
+      .select({ user: users, household: households })
       .from(users)
-      .where(
-        eq(
-          users.id,
-          activeSession.userId
-        )
+      .leftJoin(
+        households,
+        eq(households.id, users.householdId)
       )
+      .where(eq(users.id, activeSession.userId))
       .limit(1);
 
-  if (!user) {
-    await db
-      .delete(sessions)
-      .where(
-        eq(
-          sessions.id,
-          activeSession.id
-        )
-      );
+  const user = row?.user;
+  const household = row?.household;
 
-    cookieStore.delete(
-      SESSION_COOKIE_NAME
-    );
-
-    return null;
-  }
-
-  const [household] =
-    await db
-      .select()
-      .from(households)
-      .where(
-        eq(
-          households.id,
-          user.householdId
-        )
-      )
-      .limit(1);
-
-  if (!household) {
+  if (!user || !household) {
     await db
       .delete(sessions)
       .where(
