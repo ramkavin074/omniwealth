@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { draftLineItems, assets, transactions, portfolios } from '@/db/schema';
 import { getSessionUserAction } from './auth';
 import { getExchangeRate } from '@/lib/fx';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -25,6 +26,14 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 3, dela
 export async function parseStatementAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+
+  const limit = await checkRateLimit(`ai-statement:${session.user.id}`, 15, 60);
+  if (!limit.allowed) {
+    return {
+      success: false,
+      error: `Statement import limit reached. Try again in about ${limit.retryAfterMinutes} minute(s).`,
+    };
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return { success: false, error: 'GEMINI_API_KEY is not configured in .env' };

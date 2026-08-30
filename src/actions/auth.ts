@@ -48,6 +48,8 @@ import {
 
 import { GoogleGenAI, Type } from '@google/genai';
 
+import { checkRateLimit } from '@/lib/rate-limit';
+
 /**
  * ============================================================
  * CONSTANTS
@@ -2264,6 +2266,19 @@ export async function parseStatementAction(
     return {
       success: false,
       error: 'Unauthorized',
+    };
+  }
+
+  const aiLimit = await checkRateLimit(
+    `ai-statement:${session.user.id}`,
+    15,
+    60
+  );
+
+  if (!aiLimit.allowed) {
+    return {
+      success: false,
+      error: `Statement import limit reached. Try again in about ${aiLimit.retryAfterMinutes} minute(s).`,
     };
   }
 

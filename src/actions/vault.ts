@@ -8,6 +8,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
@@ -408,6 +409,15 @@ async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 5, dela
 export async function parseStatementAction(formData: FormData) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+
+  // Statement parsing is an expensive AI call — cap it per user.
+  const limit = await checkRateLimit(`ai-statement:${session.user.id}`, 15, 60);
+  if (!limit.allowed) {
+    return {
+      success: false,
+      error: `Statement import limit reached. Try again in about ${limit.retryAfterMinutes} minute(s).`,
+    };
+  }
 
   const files = formData.getAll('files') as File[];
   const pastedText = (formData.get('pastedText') as string || '').trim();

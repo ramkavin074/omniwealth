@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { getSessionUserAction, getExchangeRate } from '@/actions/vault';
 import { GoogleGenAI } from '@google/genai';
 import { revalidatePath } from 'next/cache';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function updateAiSettingsAction(formData: FormData) {
   const session = await getSessionUserAction();
@@ -32,6 +33,15 @@ export async function updateAiSettingsAction(formData: FormData) {
 export async function askPortfolioAIAction(userPrompt: string, forcedProvider: string = 'auto') {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
+
+  // Protect the shared/fallback API keys from a runaway session.
+  const limit = await checkRateLimit(`ai-chat:${session.user.id}`, 30, 60);
+  if (!limit.allowed) {
+    return {
+      success: false,
+      error: `AI assistant limit reached. Try again in about ${limit.retryAfterMinutes} minute(s).`,
+    };
+  }
 
   const [currentUser] = await db.select().from(users).where(eq(users.id, session.user.id));
   
