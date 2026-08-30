@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { fetchDraftLineItemsAction } from '@/actions/aiStatement';
 import { ShieldAlert, Users, Database, FileCode, CheckCircle } from 'lucide-react';
 
@@ -39,12 +40,12 @@ export default function AdminDashboardClient() {
             </p>
           </div>
         </div>
-        <a
+        <Link
           href="/"
           className="text-xs font-semibold bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-slate-300 hover:text-white"
         >
           <span>Back to Family Dashboard</span>
-        </a>
+        </Link>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
