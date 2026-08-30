@@ -941,6 +941,9 @@ export async function uploadDocumentAction(formData: FormData) {
   const assetId = (formData.get('assetId') as string) || null;
 
   if (!file) return { success: false, error: 'No file provided' };
+  if (file.size > 5 * 1024 * 1024) {
+    return { success: false, error: 'File too large. Maximum size is 5 MB.' };
+  }
 
   try {
     const bytes = await file.arrayBuffer();
