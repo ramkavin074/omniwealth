@@ -82,7 +82,7 @@ export default function PortfolioAIChat() {
                 }`}>
                   {m.text}
                 </div>
-                {m.provider && m.sender === 'ai' && (
+                {m.provider && m.sender === 'ai' && m.provider !== 'System' && (
                   <span className="text-[10px] text-slate-400 mt-1 px-1 flex items-center gap-1">
                     <Cpu className="w-3 h-3 shrink-0" /> {m.provider}
                   </span>
