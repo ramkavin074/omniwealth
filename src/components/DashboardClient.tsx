@@ -208,8 +208,8 @@ export default function DashboardClient({
                   {/* Add Asset & AI Statement Reader Actions */}
                   {canAdd && (
                     <>
-                      <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-700 dark:text-teal-400 transition-colors">
-                        <Plus className="w-4 h-4" /><span>Add Asset</span>
+                      <button onClick={() => { setIsAddAssetOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                        <Plus className="w-4 h-4 text-teal-600 dark:text-teal-400" /><span>Add Asset</span>
                       </button>
                       <button onClick={() => { setIsAiReaderOpen(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
                         <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" /><span>AI Statement Reader</span>
