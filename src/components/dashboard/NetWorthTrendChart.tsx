@@ -78,6 +78,9 @@ export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeR
             <div className="hidden sm:block relative w-full h-52 overflow-hidden rounded-xl">
               {renderChart(desktopChart)}
             </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-2">
+              Historical points are estimated from current holdings and recorded transactions, not month-by-month snapshots.
+            </p>
           </>
         )}
       </div>
