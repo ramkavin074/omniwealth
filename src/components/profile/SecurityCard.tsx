@@ -1,13 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, CheckCircle2 } from 'lucide-react';
-import { updatePasswordAction } from '@/actions/auth';
+import { Lock, CheckCircle2, LogOut } from 'lucide-react';
+import { updatePasswordAction, revokeOtherSessionsAction } from '@/actions/auth';
 
 export default function SecurityCard() {
   const [pwdError, setPwdError] = useState('');
   const [pwdSuccess, setPwdSuccess] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
+  const [sessionMsg, setSessionMsg] = useState('');
+  const [sessionLoading, setSessionLoading] = useState(false);
+
+  async function handleRevokeOthers() {
+    if (!confirm('Sign out all other devices? You will stay signed in here.')) return;
+    setSessionLoading(true);
+    setSessionMsg('');
+    try {
+      const res = await revokeOtherSessionsAction();
+      setSessionMsg(
+        res.success
+          ? `Signed out ${res.count ?? 0} other session(s).`
+          : res.error || 'Failed to sign out other devices.',
+      );
+    } catch {
+      setSessionMsg('Failed to sign out other devices.');
+    } finally {
+      setSessionLoading(false);
+    }
+  }
 
   async function handlePasswordChange(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,6 +74,27 @@ export default function SecurityCard() {
           </button>
         </div>
       </form>
+
+      <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Active sessions</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Sign out everywhere else if a device was lost or shared.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRevokeOthers}
+            disabled={sessionLoading}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 transition"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            {sessionLoading ? 'Working…' : 'Sign out other devices'}
+          </button>
+        </div>
+        {sessionMsg && (
+          <p className="text-[11px] text-slate-600 dark:text-slate-300">{sessionMsg}</p>
+        )}
+      </div>
     </div>
   );
 }

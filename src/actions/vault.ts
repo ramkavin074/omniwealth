@@ -39,6 +39,7 @@ import {
   registerOwnerAction,
   registerMemberWithCodeAction,
   addFamilyMemberAction,
+  revokeOtherSessionsAction,
 } from './auth';
 
 export {
@@ -51,6 +52,7 @@ export {
   // + acceptInviteAction). The old local implementation created an
   // un-loginable user row up front; this one does not.
   addFamilyMemberAction,
+  revokeOtherSessionsAction,
 };
 
 export async function updatePasswordAction(formData: FormData) {
@@ -81,6 +83,9 @@ export async function updatePasswordAction(formData: FormData) {
 
   const newPasswordHash = await bcrypt.hash(newPassword, 12);
   await db.update(users).set({ passwordHash: newPasswordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+
+  // Changing the password signs out every other device.
+  await revokeOtherSessionsAction();
 
   revalidatePath('/profile');
   return { success: true };

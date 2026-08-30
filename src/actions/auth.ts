@@ -22,6 +22,7 @@ import {
   and,
   eq,
   gt,
+  ne,
   sql,
 } from 'drizzle-orm';
 
@@ -59,8 +60,13 @@ import { decryptSecret } from '@/lib/crypto';
 
 const SESSION_COOKIE_NAME = 'vault_session';
 
+// Session lifetime, overridable via SESSION_MAX_AGE_DAYS (default 30).
 const SESSION_MAX_AGE_SECONDS =
-  60 * 60 * 24 * 30; // 30 days
+  60 * 60 * 24 * (Number(process.env.SESSION_MAX_AGE_DAYS) || 30);
+
+// Keep at most this many active sessions per user; older ones are pruned
+// on each new login.
+const MAX_SESSIONS_PER_USER = 10;
 
 const SESSION_COOKIE_OPTIONS = {
   path: '/',
@@ -655,6 +661,22 @@ async function createSession(
       tokenHash,
       expiresAt,
     });
+
+  // Housekeeping: drop this user's expired sessions and cap active
+  // sessions to the most recent MAX_SESSIONS_PER_USER devices.
+  await db.execute(sql`
+    DELETE FROM sessions
+    WHERE user_id = ${userId}
+      AND (
+        expires_at <= now()
+        OR id NOT IN (
+          SELECT id FROM sessions
+          WHERE user_id = ${userId}
+          ORDER BY created_at DESC
+          LIMIT ${MAX_SESSIONS_PER_USER}
+        )
+      )
+  `);
 
   const cookieStore =
     await cookies();
@@ -4247,6 +4269,37 @@ export async function logoutAction() {
   revalidatePath('/', 'layout');
 
   redirect('/login');
+}
+
+/**
+ * Revoke every session for the current user except the one making this
+ * request ("sign out other devices"). Also called after a password change.
+ */
+export async function revokeOtherSessionsAction() {
+  const session = await getSessionUserAction();
+  if (!session) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const cookieStore = await cookies();
+  const rawToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const currentHash = rawToken
+    ? crypto.createHash('sha256').update(rawToken).digest('hex')
+    : null;
+
+  const deleted = await db
+    .delete(sessions)
+    .where(
+      currentHash
+        ? and(
+            eq(sessions.userId, session.user.id),
+            ne(sessions.tokenHash, currentHash),
+          )
+        : eq(sessions.userId, session.user.id),
+    )
+    .returning({ id: sessions.id });
+
+  return { success: true, count: deleted.length };
 }
 
 /**
