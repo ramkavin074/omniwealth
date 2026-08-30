@@ -93,7 +93,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
           'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org' 
         },
         body: JSON.stringify({
-          model: 'openrouter/free',
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
         })
       });
@@ -108,7 +108,7 @@ export async function askPortfolioAIAction(userPrompt: string, forcedProvider: s
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         contents: [{ text: `${systemPrompt}\n\nUser Question: ${userPrompt}` }]
       });
       return response.text || '';

@@ -40,7 +40,7 @@ export async function parseStatementAction(formData: FormData) {
   if (pastedText && pastedText.trim().length > 0) {
     try {
       const response = await generateWithRetry(ai, {
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           { text: `${basePrompt}\n\nHere is the pasted statement text:\n${pastedText}` }
         ],
@@ -103,7 +103,7 @@ export async function parseStatementAction(formData: FormData) {
         const mimeType = file.type || 'application/pdf';
 
         const response = await generateWithRetry(ai, {
-          model: 'gemini-3.6-flash',
+          model: 'gemini-2.5-flash',
           contents: [
             { inlineData: { mimeType, data: buffer.toString('base64') } },
             { text: basePrompt },
