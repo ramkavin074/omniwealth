@@ -860,32 +860,64 @@ export async function updateRetirementPreferencesAction(data: {
 
 // --- Secure Document Vault & Encryption Helpers ---
 
-function getVaultEncryptionKey(userId: string, email: string, householdId: string) {
-  const serverSecret = process.env.SESSION_SECRET || 'omniwealth-secure-vault-fallback-secret';
-  return crypto.scryptSync(`${userId}:${email}:${householdId}:${serverSecret}`, 'salt-omniwealth', 32);
+type VaultCtx = { userId: string; email: string; householdId: string };
+
+const VAULT_V2_PREFIX = 'v2:';
+
+function vaultServerSecret(): string {
+  const s = process.env.SESSION_SECRET || process.env.ENCRYPTION_KEY;
+  if (!s) {
+    throw new Error('SESSION_SECRET or ENCRYPTION_KEY must be set to encrypt documents.');
+  }
+  return s;
 }
 
-function encryptFileBuffer(buffer: Buffer, userId: string, email: string, householdId: string): string {
+// v2: household-scoped (any member can open), per-document random salt, no
+// hardcoded fallback secret.
+function deriveVaultKeyV2(householdId: string, salt: Buffer): Buffer {
+  return crypto.scryptSync(`vault:${householdId}:${vaultServerSecret()}`, salt, 32);
+}
+
+// v1 legacy: per-uploader, static salt, weak hardcoded fallback. Read-only
+// path for documents encrypted before v2.
+function deriveVaultKeyV1(ctx: VaultCtx): Buffer {
+  const serverSecret = process.env.SESSION_SECRET || 'omniwealth-secure-vault-fallback-secret';
+  return crypto.scryptSync(
+    `${ctx.userId}:${ctx.email}:${ctx.householdId}:${serverSecret}`,
+    'salt-omniwealth',
+    32,
+  );
+}
+
+function encryptFileBuffer(buffer: Buffer, householdId: string): string {
+  const salt = crypto.randomBytes(16);
   const iv = crypto.randomBytes(16);
-  const key = getVaultEncryptionKey(userId, email, householdId);
+  const key = deriveVaultKeyV2(householdId, salt);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-   
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
   const tag = cipher.getAuthTag();
-
-  return Buffer.concat([iv, tag, encrypted]).toString('base64');
+  return VAULT_V2_PREFIX + Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
 }
 
-function decryptFileBuffer(encryptedBase64: string, userId: string, email: string, householdId: string): Buffer {
-  const data = Buffer.from(encryptedBase64, 'base64');
+function decryptFileBuffer(payload: string, ctx: VaultCtx): Buffer {
+  if (payload.startsWith(VAULT_V2_PREFIX)) {
+    const data = Buffer.from(payload.slice(VAULT_V2_PREFIX.length), 'base64');
+    const salt = data.subarray(0, 16);
+    const iv = data.subarray(16, 32);
+    const tag = data.subarray(32, 48);
+    const encrypted = data.subarray(48);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', deriveVaultKeyV2(ctx.householdId, salt), iv);
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+  }
+
+  // Legacy v1 payload.
+  const data = Buffer.from(payload, 'base64');
   const iv = data.subarray(0, 16);
   const tag = data.subarray(16, 32);
   const encrypted = data.subarray(32);
-
-  const key = getVaultEncryptionKey(userId, email, householdId);
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', deriveVaultKeyV1(ctx), iv);
   decipher.setAuthTag(tag);
-
   return Buffer.concat([decipher.update(encrypted), decipher.final()]);
 }
 
@@ -914,12 +946,7 @@ export async function uploadDocumentAction(formData: FormData) {
     const bytes = await file.arrayBuffer();
     const rawBuffer = Buffer.from(bytes);
 
-    const encryptedBase64Payload = encryptFileBuffer(
-      rawBuffer, 
-      session.user.id, 
-      session.user.email, 
-      session.household.id
-    );
+    const encryptedBase64Payload = encryptFileBuffer(rawBuffer, session.household.id);
 
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
 
@@ -947,13 +974,20 @@ export async function fetchDocumentDownloadUrlAction(documentId: string) {
   const [doc] = await db.select().from(documents).where(and(eq(documents.id, documentId), eq(documents.householdId, session.household.id)));
   if (!doc) return { success: false, error: 'Document not found' };
 
+  // Legacy (v1) documents are keyed to the original uploader's identity;
+  // reconstruct it so any household member can open them. v2 documents
+  // ignore userId/email and key off the household.
+  const [uploader] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, doc.userId));
+
   try {
-    const decryptedBuffer = decryptFileBuffer(
-      doc.fileUrl,
-      session.user.id,
-      session.user.email,
-      session.household.id
-    );
+    const decryptedBuffer = decryptFileBuffer(doc.fileUrl, {
+      userId: doc.userId,
+      email: uploader?.email ?? session.user.email,
+      householdId: session.household.id,
+    });
 
     const dataUri = `data:${doc.fileType};base64,${decryptedBuffer.toString('base64')}`;
     return { success: true, dataUri, name: doc.name, fileType: doc.fileType };
