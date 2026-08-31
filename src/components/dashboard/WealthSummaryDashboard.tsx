@@ -66,7 +66,7 @@ function groupAssets(rawAssets: any[], baseCurrency: string, liveRates: { [key: 
   return Object.values(map).sort((a: any, b: any) => b.totalBase - a.totalBase);
 }
 
-export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates = FX_RATES, onEditAsset, forceExpanded = false, only }: any) {
+export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates = FX_RATES, onEditAsset, only }: any) {
   const [expandedMembers, setExpandedMembers] = useState<{ [key: string]: boolean }>({});
   const [expandedPurposes, setExpandedPurposes] = useState<{ [key: string]: boolean }>({});
 
@@ -130,7 +130,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
         )}
         <div className="space-y-3">
           {sortedMembers.map(([name, data]: [string, any]) => {
-            const isExpanded = forceExpanded || expandedMembers[name];
+            const isExpanded = expandedMembers[name];
             const grouped = groupAssets(data.assets, baseCurrency, liveRates);
 
             return (
@@ -204,7 +204,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
         )}
         <div className="space-y-3">
           {sortedPurposes.map(([purposeName, data]: [string, any]) => {
-            const isExpanded = forceExpanded || expandedPurposes[purposeName];
+            const isExpanded = expandedPurposes[purposeName];
             const grouped = groupAssets(data.assets, baseCurrency, liveRates);
 
             return (

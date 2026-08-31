@@ -82,7 +82,6 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [trendEstimated, setTrendEstimated] = useState(true);
   const [timeRange, setTimeRange] = useState('6m');
-  const [printExpandAll, setPrintExpandAll] = useState(false);
   const [liveRates] = useState<{ [key: string]: number }>(initialLiveRates);
   const [isDarkMode, setIsDarkMode] = useState(false);
   
@@ -221,19 +220,6 @@ export default function DashboardClient({
           onOpenAddAsset={() => setIsAddAssetOpen(true)}
           onOpenLiability={() => setIsAddLiabilityOpen(true)}
           onOpenAiReader={() => setIsAiReaderOpen(true)}
-          onExport={() => {
-            // Only the Wealth tab is laid out for print — switch to it and
-            // expand every accordion, let it render, then open the print
-            // dialog. afterprint collapses things back.
-            setActiveTab('wealth');
-            setPrintExpandAll(true);
-            const done = () => {
-              setPrintExpandAll(false);
-              window.removeEventListener('afterprint', done);
-            };
-            window.addEventListener('afterprint', done);
-            setTimeout(() => window.print(), 250);
-          }}
         />
         
         {isMobileMenuOpen && (
@@ -368,11 +354,11 @@ export default function DashboardClient({
                   return (
                     <>
                       <CollapsibleSection id="by-member" title="Wealth by Family Member" icon={<Users className="w-5 h-5" />}>
-                        <WealthSummaryDashboard only="members" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} forceExpanded={printExpandAll} onEditAsset={editHandler} />
+                        <WealthSummaryDashboard only="members" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
                       </CollapsibleSection>
 
                       <CollapsibleSection id="by-purpose" title="Wealth by Purpose" icon={<Target className="w-5 h-5" />}>
-                        <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} forceExpanded={printExpandAll} onEditAsset={editHandler} />
+                        <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
                       </CollapsibleSection>
                     </>
                   );

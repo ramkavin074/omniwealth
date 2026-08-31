@@ -11,7 +11,7 @@ import {
   logoutAction,
   updateThemePreferenceAction
 } from '@/actions/vault';
-import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, FileText, Menu, Sun, Moon } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, Menu, Sun, Moon } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
@@ -43,7 +43,7 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
-export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader, onExport }: any) {
+export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
   const router = useRouter();
   const [isRefreshing, startRefreshTransition] = useTransition();
 
@@ -149,9 +149,6 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
                   </button>
                 </>
               )}
-              <button onClick={() => (onExport ? onExport() : window.print())} title="Export Report / Save as PDF" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
-                <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-              </button>
               <button onClick={handleRefreshPrices} disabled={isRefreshing} title="Refresh Live Market Prices" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:opacity-50 shadow-sm">
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
