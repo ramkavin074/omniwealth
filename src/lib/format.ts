@@ -35,6 +35,20 @@ export function formatCompact(amount: number, currency = 'USD'): string {
   return `${sign}${n.toLocaleString('en-US')}`;
 }
 
+/**
+ * Holding quantity for display. Whole/large counts round to 2 decimals
+ * with grouping (100, 10.5, 12,345); sub-unit holdings (crypto) keep 4
+ * significant figures so they don't collapse to 0 (0.00347, 0.0000123).
+ */
+export function formatQty(value: number | string): string {
+  const n = typeof value === 'string' ? parseFloat(value) : value;
+  if (!Number.isFinite(n) || n === 0) return '0';
+  if (Math.abs(n) >= 1) {
+    return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }
+  return n.toLocaleString('en-US', { maximumSignificantDigits: 4 });
+}
+
 /** Full grouped number for tooltips / print, locale-aware. */
 export function formatFull(amount: number, currency = 'USD'): string {
   if (!Number.isFinite(amount)) return '0';

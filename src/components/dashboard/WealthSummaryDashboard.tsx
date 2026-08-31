@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Users, Target, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
-import { formatCompact } from '@/lib/format';
+import { formatCompact, formatQty } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -163,7 +163,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                             {item.ticker && <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400">{item.ticker}</span>}
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            Accounts: {item.accounts.join(', ')} • Qty: {Number(item.totalQty).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                            Accounts: {item.accounts.join(', ')} • Qty: {formatQty(item.totalQty)}
                           </div>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
@@ -237,7 +237,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                             {item.ticker && <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400">{item.ticker}</span>}
                           </div>
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            Owner: {item.user?.fullName || 'Family Member'} • Qty: {Number(item.totalQty).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                            Owner: {item.user?.fullName || 'Family Member'} • Qty: {formatQty(item.totalQty)}
                           </div>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
