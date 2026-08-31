@@ -24,6 +24,7 @@ export default function AppLock() {
     if (authing.current) return;
     authing.current = true;
     try {
+      console.info('[applock] unlock authenticate…');
       await withTimeout(
         BiometricAuth.authenticate({
           reason: 'Unlock OmniWealth',
@@ -34,8 +35,10 @@ export default function AppLock() {
           iosFallbackTitle: 'Use passcode',
         }),
       );
+      console.info('[applock] unlock ok');
       setLocked(false);
-    } catch {
+    } catch (err: any) {
+      console.warn('[applock] unlock failed:', err?.message || err?.code || String(err), err);
       // stay locked; the Unlock button lets the user retry
     } finally {
       authing.current = false;

@@ -38,7 +38,10 @@ export default function SecurityCard() {
     setLockBusy(true);
     beginInternalAuth();
     try {
-      const { isAvailable } = await BiometricAuth.checkBiometry();
+      console.info('[applock] checkBiometry…');
+      const bio = await BiometricAuth.checkBiometry();
+      console.info('[applock] checkBiometry ok', JSON.stringify(bio));
+      console.info('[applock] authenticate…');
       await withTimeout(
         BiometricAuth.authenticate({
           reason: 'Confirm to enable app lock',
@@ -46,11 +49,14 @@ export default function SecurityCard() {
           androidTitle: 'OmniWealth',
         }),
       );
+      console.info('[applock] authenticate ok');
       localStorage.setItem(APP_LOCK_KEY, '1');
       setLockOn(true);
-      if (!isAvailable) setLockMsg('Enabled using your device PIN/pattern.');
-    } catch {
-      setLockMsg('Could not verify — app lock not enabled.');
+      if (!bio.isAvailable) setLockMsg('Enabled using your device PIN/pattern.');
+    } catch (err: any) {
+      const detail = err?.message || err?.code || String(err);
+      console.warn('[applock] toggle failed:', detail, err);
+      setLockMsg(`App lock not enabled — ${detail}`);
     } finally {
       endInternalAuth();
       setLockBusy(false);
