@@ -663,9 +663,15 @@ export async function getSessionUserAction() {
       .limit(1);
 
   if (!activeSession) {
-    cookieStore.delete(
-      SESSION_COOKIE_NAME
-    );
+    // This function is also called during server-component render (layout,
+    // pages), where cookie mutation throws. The stale cookie is harmless —
+    // its session row is already expired/gone — so a no-op here is fine;
+    // it gets cleared on the next real action / route handler.
+    try {
+      cookieStore.delete(SESSION_COOKIE_NAME);
+    } catch {
+      /* not in an action/route-handler context */
+    }
 
     return null;
   }
@@ -695,9 +701,11 @@ export async function getSessionUserAction() {
         )
       );
 
-    cookieStore.delete(
-      SESSION_COOKIE_NAME
-    );
+    try {
+      cookieStore.delete(SESSION_COOKIE_NAME);
+    } catch {
+      /* called during render — cookie can't be cleared here */
+    }
 
     return null;
   }
