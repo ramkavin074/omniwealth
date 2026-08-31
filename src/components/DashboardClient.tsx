@@ -17,6 +17,7 @@ import IntelligenceFeed from '@/components/dashboard/IntelligenceFeed';
 import ActivityLog from '@/components/dashboard/ActivityLog';
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
+import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import AccountInstructionsHub from '@/components/dashboard/AccountInstructionsHub';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
@@ -334,6 +335,7 @@ export default function DashboardClient({
                 </div>
 
                 <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+                <StaleValueNudge assets={initialAssets} />
                 <WealthSummaryDashboard
                   assets={initialAssets}
                   baseCurrency={baseCurrency}
