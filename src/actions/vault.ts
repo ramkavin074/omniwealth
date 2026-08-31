@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db';
-import { households, users, portfolios, assets, transactions, draftLineItems, documents, auditLog } from '@/db/schema';
+import { households, users, portfolios, assets, transactions, draftLineItems, documents, auditLog, netWorthSnapshots } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -426,6 +426,34 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
 
     return results;
   } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Real recorded net-worth history for the current household, oldest first.
+ * Populated by the daily /api/cron/net-worth-snapshot job. Returns [] when
+ * no snapshots exist yet (caller falls back to the estimated trend).
+ */
+export async function fetchNetWorthSnapshotsAction(): Promise<
+  { date: string; value: number }[]
+> {
+  try {
+    const session = await getSessionUserAction();
+    if (!session) return [];
+
+    const rows = await db
+      .select()
+      .from(netWorthSnapshots)
+      .where(eq(netWorthSnapshots.householdId, session.household.id))
+      .orderBy(netWorthSnapshots.snapshotDate);
+
+    return rows.map((r) => ({
+      date: r.snapshotDate,
+      value: Math.round(parseFloat(r.total || '0')),
+    }));
+  } catch (err) {
+    logError('fetchNetWorthSnapshotsAction', err);
     return [];
   }
 }

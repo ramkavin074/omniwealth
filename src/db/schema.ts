@@ -6,6 +6,7 @@ import {
   boolean,
   integer,
   numeric,
+  date,
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
@@ -568,5 +569,35 @@ export const auditLog = pgTable(
   (table) => ({
     householdIdx: index('audit_log_household_id_idx').on(table.householdId),
     createdAtIdx: index('audit_log_created_at_idx').on(table.createdAt),
+  })
+);
+
+/**
+ * Daily net-worth snapshots. Written once per day per household by the
+ * /api/cron/net-worth-snapshot route so the trend chart can show real
+ * history instead of values reconstructed from current holdings.
+ * One row per (household, date) — the cron upserts on that pair.
+ */
+export const netWorthSnapshots = pgTable(
+  'net_worth_snapshots',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    householdId: uuid('household_id').notNull(),
+
+    // Base currency the total was computed in, at snapshot time.
+    currency: text('currency').notNull(),
+
+    total: numeric('total').notNull(),
+
+    snapshotDate: date('snapshot_date', { mode: 'string' }).notNull(),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdDateIdx: uniqueIndex('nws_household_date_idx').on(
+      table.householdId,
+      table.snapshotDate,
+    ),
   })
 );
