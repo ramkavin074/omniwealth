@@ -5,7 +5,14 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { Lock } from 'lucide-react';
-import { APP_LOCK_KEY, lockEnabled, isInternalAuth, withTimeout } from '@/lib/applock';
+import {
+  APP_LOCK_KEY,
+  lockEnabled,
+  beginInternalAuth,
+  endInternalAuth,
+  isInternalAuth,
+  withTimeout,
+} from '@/lib/applock';
 
 export { APP_LOCK_KEY };
 
@@ -18,11 +25,15 @@ export default function AppLock() {
   const isNative = Capacitor.isNativePlatform();
   const [locked, setLocked] = useState(isNative && lockEnabled());
   const authing = useRef(false);
-  const lastTrigger = useRef(0);
+  const unlockedAt = useRef(0);
 
   const unlock = useCallback(async () => {
     if (authing.current) return;
     authing.current = true;
+    // The plugin's auth dialog / AuthActivity backgrounds then foregrounds
+    // the app. Mark that as an internal auth so the appStateChange handler
+    // below doesn't treat the return as a fresh "re-lock and prompt again".
+    beginInternalAuth();
     try {
       console.info('[applock] unlock authenticate…');
       await withTimeout(
@@ -36,22 +47,25 @@ export default function AppLock() {
         }),
       );
       console.info('[applock] unlock ok');
+      unlockedAt.current = Date.now();
       setLocked(false);
     } catch (err: any) {
       console.warn('[applock] unlock failed:', err?.message || err?.code || String(err), err);
       // stay locked; the Unlock button lets the user retry
     } finally {
+      endInternalAuth();
       authing.current = false;
     }
   }, []);
 
-  // Lock + prompt, but not while a Settings-initiated prompt is running
-  // and not twice inside the same second (foreground events can double up).
+  // Lock + prompt on cold start / return-from-background. Skips while an
+  // internal auth is running (settings toggle, or our own prompt above)
+  // and for a few seconds after a successful unlock, so the trailing
+  // foreground event doesn't immediately re-lock.
   const engage = useCallback(() => {
-    if (!lockEnabled() || isInternalAuth()) return;
-    const now = Date.now();
-    if (now - lastTrigger.current < 1000) return;
-    lastTrigger.current = now;
+    if (!lockEnabled()) return;
+    if (authing.current || isInternalAuth()) return;
+    if (Date.now() - unlockedAt.current < 3000) return;
     setLocked(true);
     void unlock();
   }, [unlock]);
