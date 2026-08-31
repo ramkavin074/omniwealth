@@ -754,6 +754,8 @@ export async function addAssetAction(formData: FormData) {
   const quantity = toNumeric(formData.get('quantity'), '1');
   const nativeValue = toNumeric(formData.get('nativeValue'), '0');
   const nativeCurrency = formData.get('nativeCurrency') as string;
+  const beneficiary = ((formData.get('beneficiary') as string) || '').trim() || null;
+  const accessNotes = ((formData.get('accessNotes') as string) || '').trim() || null;
   const requestedUserId = (formData.get('userId') as string) || session.user.id;
 
   // A member may only add assets to their own portfolio; ADMIN+ may add
@@ -788,6 +790,8 @@ export async function addAssetAction(formData: FormData) {
     nativeCurrency: nativeCurrency || 'USD',
     quantity,
     nativeValue,
+    beneficiary,
+    accessNotes,
   }).returning();
 
   const fxRate = await getExchangeRate(nativeCurrency || 'USD', session.household.baseCurrency);
@@ -833,6 +837,14 @@ export async function updateAssetAction(id: string, formData: FormData) {
     nativeCurrency: (formData.get('nativeCurrency') as string) || existing.nativeCurrency,
     quantity: toNumeric(qtyVal || existing.quantity, existing.quantity ?? '1'),
     nativeValue: toNumeric(valueVal || existing.nativeValue, existing.nativeValue),
+    beneficiary:
+      formData.get('beneficiary') !== null
+        ? ((formData.get('beneficiary') as string) || '').trim() || null
+        : existing.beneficiary,
+    accessNotes:
+      formData.get('accessNotes') !== null
+        ? ((formData.get('accessNotes') as string) || '').trim() || null
+        : existing.accessNotes,
     updatedAt: new Date(),
   }).where(eq(assets.id, id));
 

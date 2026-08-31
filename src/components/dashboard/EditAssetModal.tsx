@@ -103,6 +103,8 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
           rowFormData.set('assetType', asset.assetType || 'STOCK');
           rowFormData.set('accountCategory', row.accountCategory || 'INDIVIDUAL');
           rowFormData.set('accountNumber', row.accountNumber || 'DEFAULT');
+          rowFormData.set('beneficiary', (formData.get('beneficiary') as string) || '');
+          rowFormData.set('accessNotes', (formData.get('accessNotes') as string) || '');
 
           res = await updateAssetAction(row.id, rowFormData);
           if (!res?.success) break;
@@ -192,6 +194,31 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
                 <option key={p.name} value={p.name}>{p.name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">
+                Beneficiary <span className="normal-case font-normal text-slate-400">— optional</span>
+              </label>
+              <input
+                name="beneficiary"
+                defaultValue={asset.beneficiary || ''}
+                placeholder="e.g. Spouse — Priya"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">
+                Access notes <span className="normal-case font-normal text-slate-400">— optional</span>
+              </label>
+              <input
+                name="accessNotes"
+                defaultValue={asset.accessNotes || ''}
+                placeholder="Where the login / paperwork lives"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+              />
+            </div>
           </div>
 
           {isConsolidated ? (

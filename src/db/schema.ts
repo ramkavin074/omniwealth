@@ -366,6 +366,11 @@ export const assets = pgTable(
 
     nativeValue: numeric('native_value').notNull(),
 
+    // Estate-planning metadata — optional free text.
+    beneficiary: text('beneficiary'),
+
+    accessNotes: text('access_notes'),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
 
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
