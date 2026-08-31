@@ -379,17 +379,17 @@ export default function DashboardClient({
                 })()}
 
                 <CollapsibleSection id="allocation" title="Asset Class Allocation" icon={<PieChart className="w-5 h-5" />}>
-                  <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} noHeader />
+                  <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
                 </CollapsibleSection>
 
                 {currencyCount >= 2 && (
                   <CollapsibleSection id="fx" title="Currency Exposure" icon={<Globe className="w-5 h-5" />}>
-                    <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} noHeader />
+                    <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
                   </CollapsibleSection>
                 )}
 
                 <CollapsibleSection id="trend" title="Net Worth Trend" icon={<TrendingUp className="w-5 h-5" />}>
-                  <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} />
+                  <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} embedded />
                 </CollapsibleSection>
               </div>
             )}
@@ -429,11 +429,11 @@ export default function DashboardClient({
                 <EstateReadinessCard assets={initialAssets} />
 
                 <CollapsibleSection id="milestones" title="Future Milestones & Directives" icon={<Shield className="w-5 h-5" />}>
-                  <FutureMilestonesAndDirectives assets={initialAssets} />
+                  <FutureMilestonesAndDirectives assets={initialAssets} embedded />
                 </CollapsibleSection>
 
                 <CollapsibleSection id="documents" title="Document Vault" icon={<Lock className="w-5 h-5" />}>
-                  <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} />
+                  <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} embedded />
                 </CollapsibleSection>
               </div>
             )}

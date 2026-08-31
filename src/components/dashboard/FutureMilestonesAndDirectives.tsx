@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { Shield, Edit3, Check } from 'lucide-react';
 import { formatCompact } from '@/lib/format';
 
-export default function FutureMilestonesAndDirectives({ assets }: any) {
+export default function FutureMilestonesAndDirectives({ assets, embedded = false }: any) {
+  const rootCls = embedded
+    ? 'space-y-4'
+    : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4';
   const ssnAssets = assets.filter((a: any) => a.accountCategory === 'SOCIAL_SECURITY');
   const pensionAssets = assets.filter((a: any) => a.accountCategory === 'PENSION' || a.assetType === 'PENSION');
   const ppfAssets = assets.filter((a: any) => a.accountCategory === 'PPF');
@@ -12,11 +15,13 @@ export default function FutureMilestonesAndDirectives({ assets }: any) {
 
   if (ssnAssets.length === 0 && pensionAssets.length === 0 && ppfAssets.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
-        </div>
+      <div className={rootCls}>
+        {!embedded && (
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+          </div>
+        )}
         <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
           No pension, provident fund, or social security assets logged yet. Add them to view milestones.
         </div>
@@ -57,13 +62,15 @@ export default function FutureMilestonesAndDirectives({ assets }: any) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+    <div className={rootCls}>
+      {!embedded && (
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+          </div>
         </div>
-      </div>
+      )}
       <div className="space-y-4">
         {ssnAssets.concat(pensionAssets, ppfAssets).map((asset: any) => {
           const cur = asset.nativeCurrency || 'USD';

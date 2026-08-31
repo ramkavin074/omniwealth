@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { formatCompact, formatFull } from '@/lib/format';
 
-export default function NetWorthTrendChart({ trendData = [], baseCurrency, estimated = true }: any) {
+export default function NetWorthTrendChart({ trendData = [], baseCurrency, estimated = true, embedded = false }: any) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => formatCompact(val, baseCurrency);
 
@@ -59,7 +59,7 @@ export default function NetWorthTrendChart({ trendData = [], baseCurrency, estim
   );
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 print:border-slate-300 print:shadow-none">
+    <div className={embedded ? 'space-y-6' : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 print:border-slate-300 print:shadow-none'}>
       {/* ... header and select dropdown ... */}
       
       <div className="pt-4 pb-2 px-1 border-b border-slate-100 dark:border-slate-800">

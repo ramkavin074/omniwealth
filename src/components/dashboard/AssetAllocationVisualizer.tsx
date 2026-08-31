@@ -31,7 +31,7 @@ function formatAssetTypeName(type: string): string {
   return upper.replace(/_/g, ' ');
 }
 
-export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRates = FX_RATES, noHeader = false }: any) {
+export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRates = FX_RATES, embedded = false }: any) {
   const { totalNetWorth, sortedEntries } = useMemo(() => {
     let netWorth = 0;
     const typeMap: { [key: string]: number } = {};
@@ -68,8 +68,8 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 print:border-slate-300 print:shadow-none">
-      {!noHeader && (
+    <div className={embedded ? 'space-y-4' : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 print:border-slate-300 print:shadow-none'}>
+      {!embedded && (
         <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
           <PieChart className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Asset Class Allocation</h3>

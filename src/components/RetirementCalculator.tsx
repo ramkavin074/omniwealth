@@ -218,140 +218,6 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      {/* Grouped Input Section */}
-      <div className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
-        <button
-          type="button"
-          onClick={() => setShowParams((v) => !v)}
-          aria-expanded={showParams}
-          className="w-full flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800 cursor-pointer"
-        >
-          <span>Simulation Parameters</span>
-          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showParams ? 'rotate-180' : ''}`} />
-        </button>
-        {showParams && (
-        <>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          {/* Ages in a clean 2-column row */}
-          <div className="space-y-1">
-            <label className="block text-slate-500 dark:text-slate-400 font-medium">Current Age ({cAge} yrs)</label>
-            <input 
-              type="number" 
-              value={currentAge} 
-              onChange={(e) => setCurrentAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-slate-500 dark:text-slate-400 font-medium">Target Retirement Age ({rAge} yrs)</label>
-            <input 
-              type="number" 
-              value={retirementAge} 
-              onChange={(e) => setRetirementAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-slate-500 dark:text-slate-400 font-medium">Current Liquid Savings ({country.symbol})</label>
-            <input 
-              type="number" 
-              value={currentSavings} 
-              onChange={(e) => setCurrentSavings(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-teal-700 dark:text-teal-400 font-mono font-bold focus:outline-none focus:border-teal-600 shadow-sm" 
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-slate-500 dark:text-slate-400 font-medium">Monthly Contribution ({country.symbol})</label>
-            <input 
-              type="number" 
-              value={monthlyContribution} 
-              onChange={(e) => setMonthlyContribution(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
-            />
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <label className="block text-slate-500 dark:text-slate-400 font-medium">Desired Annual Income ({country.symbol})</label>
-            <input 
-              type="number" 
-              value={desiredAnnualIncome} 
-              onChange={(e) => setDesiredAnnualIncome(e.target.value === '' ? '' : parseFloat(e.target.value))} 
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
-            />
-          </div>
-        </div>
-
-        {/* Stacked Sliders for Clean Mobile Spacing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
-            <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
-              <span>Expected Return</span>
-              <span className="font-mono font-bold text-teal-700 dark:text-teal-400">{rRate}%</span>
-            </div>
-            <input 
-              type="range" 
-              min="1" 
-              max="15" 
-              step="0.5" 
-              value={rRate} 
-              onChange={(e) => setReturnRate(parseFloat(e.target.value))} 
-              className="w-full accent-teal-700 cursor-pointer" 
-              title="Return Rate"
-            />
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
-            <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
-              <span>Inflation Rate</span>
-              <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{inflationRate}%</span>
-            </div>
-            <input 
-              type="range" 
-              min="0" 
-              max="10" 
-              step="0.5" 
-              value={inflationRate === '' ? 0 : inflationRate} 
-              onChange={(e) => setInflationRate(parseFloat(e.target.value))} 
-              className="w-full accent-rose-700 cursor-pointer" 
-              title="Inflation Rate"
-            />
-          </div>
-        </div>
-
-        {/* Horizon Slider */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-          <div className="flex justify-between items-center">
-            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-              Additional Future Simulation Horizon (+{additionalYears} Years)
-            </label>
-            <span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
-              Retiring at Age {effectiveRetirementAge}
-            </span>
-          </div>
-          <input 
-            type="range" 
-            min="0" 
-            max="20" 
-            step="1" 
-            value={additionalYears} 
-            onChange={(e) => setAdditionalYears(parseInt(e.target.value) || 0)} 
-            className="w-full accent-teal-700 cursor-pointer" 
-            title="Additional Future Horizon Years"
-          />
-          <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-            <span>0 yrs (At Target Age {rAge})</span>
-            <span>+10 yrs</span>
-            <span>+20 yrs (Age {rAge + 20})</span>
-          </div>
-        </div>
-        </>
-        )}
-      </div>
-
       {/* Results Section */}
       <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-5 shadow-sm">
         <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800">
@@ -545,6 +411,140 @@ export default function RetirementCalculator({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Grouped Input Section */}
+      <div className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setShowParams((v) => !v)}
+          aria-expanded={showParams}
+          className="w-full flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800 cursor-pointer"
+        >
+          <span>Simulation Parameters</span>
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showParams ? 'rotate-180' : ''}`} />
+        </button>
+        {showParams && (
+        <>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          {/* Ages in a clean 2-column row */}
+          <div className="space-y-1">
+            <label className="block text-slate-500 dark:text-slate-400 font-medium">Current Age ({cAge} yrs)</label>
+            <input 
+              type="number" 
+              value={currentAge} 
+              onChange={(e) => setCurrentAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-slate-500 dark:text-slate-400 font-medium">Target Retirement Age ({rAge} yrs)</label>
+            <input 
+              type="number" 
+              value={retirementAge} 
+              onChange={(e) => setRetirementAge(e.target.value === '' ? '' : parseFloat(e.target.value))} 
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-slate-500 dark:text-slate-400 font-medium">Current Liquid Savings ({country.symbol})</label>
+            <input 
+              type="number" 
+              value={currentSavings} 
+              onChange={(e) => setCurrentSavings(e.target.value === '' ? '' : parseFloat(e.target.value))} 
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-teal-700 dark:text-teal-400 font-mono font-bold focus:outline-none focus:border-teal-600 shadow-sm" 
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-slate-500 dark:text-slate-400 font-medium">Monthly Contribution ({country.symbol})</label>
+            <input 
+              type="number" 
+              value={monthlyContribution} 
+              onChange={(e) => setMonthlyContribution(e.target.value === '' ? '' : parseFloat(e.target.value))} 
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            />
+          </div>
+
+          <div className="space-y-1 sm:col-span-2">
+            <label className="block text-slate-500 dark:text-slate-400 font-medium">Desired Annual Income ({country.symbol})</label>
+            <input 
+              type="number" 
+              value={desiredAnnualIncome} 
+              onChange={(e) => setDesiredAnnualIncome(e.target.value === '' ? '' : parseFloat(e.target.value))} 
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm" 
+            />
+          </div>
+        </div>
+
+        {/* Stacked Sliders for Clean Mobile Spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
+            <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
+              <span>Expected Return</span>
+              <span className="font-mono font-bold text-teal-700 dark:text-teal-400">{rRate}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="1" 
+              max="15" 
+              step="0.5" 
+              value={rRate} 
+              onChange={(e) => setReturnRate(parseFloat(e.target.value))} 
+              className="w-full accent-teal-700 cursor-pointer" 
+              title="Return Rate"
+            />
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
+            <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
+              <span>Inflation Rate</span>
+              <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{inflationRate}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="10" 
+              step="0.5" 
+              value={inflationRate === '' ? 0 : inflationRate} 
+              onChange={(e) => setInflationRate(parseFloat(e.target.value))} 
+              className="w-full accent-rose-700 cursor-pointer" 
+              title="Inflation Rate"
+            />
+          </div>
+        </div>
+
+        {/* Horizon Slider */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex justify-between items-center">
+            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+              Additional Future Simulation Horizon (+{additionalYears} Years)
+            </label>
+            <span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
+              Retiring at Age {effectiveRetirementAge}
+            </span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="20" 
+            step="1" 
+            value={additionalYears} 
+            onChange={(e) => setAdditionalYears(parseInt(e.target.value) || 0)} 
+            className="w-full accent-teal-700 cursor-pointer" 
+            title="Additional Future Horizon Years"
+          />
+          <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+            <span>0 yrs (At Target Age {rAge})</span>
+            <span>+10 yrs</span>
+            <span>+20 yrs (Age {rAge + 20})</span>
+          </div>
+        </div>
+        </>
+        )}
       </div>
     </div>
   );

@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 /**
- * Wraps a dashboard card in a tap-to-expand row. Collapsed by default on
- * phones (open on >= md) so the Wealth tab isn't one long scroll; the
- * open/closed choice is remembered per card, per device.
+ * A dashboard card whose header is the expand/collapse control — one
+ * layer, no nested card. Collapsed by default on phones (open on >= md);
+ * the choice is remembered per card, per device. Collapsed content is
+ * still rendered for print.
+ *
+ * The child component should be passed with its own outer chrome and
+ * heading removed (its `embedded` / `only` prop).
  */
 export default function CollapsibleSection({
   id,
@@ -45,12 +49,12 @@ export default function CollapsibleSection({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden print:border-slate-300 print:shadow-none">
       <button
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        className="w-full flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer text-left print:hidden"
+        className="w-full flex items-center gap-2.5 px-5 sm:px-6 py-4 text-left cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors print:hidden"
       >
         {icon && <span className="shrink-0 text-slate-500 dark:text-slate-400">{icon}</span>}
         <span className="flex-1 min-w-0 text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight truncate">
@@ -64,8 +68,15 @@ export default function CollapsibleSection({
         />
       </button>
 
-      {/* Always render for print; on screen, only when expanded. */}
-      <div className={open ? '' : 'hidden print:block'}>{children}</div>
+      <div
+        className={
+          open
+            ? 'px-5 sm:px-6 pb-6 pt-1 border-t border-slate-100 dark:border-slate-800'
+            : 'hidden print:block px-6 pb-6'
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchDocumentDownloadUrlAction, deleteDocumentAction } from '@/actions/vault';
 import { Lock, Plus, FileText, Trash2 } from 'lucide-react';
 
-export default function SecureDocumentsVault({ documents = [], onOpenUpload }: any) {
+export default function SecureDocumentsVault({ documents = [], onOpenUpload, embedded = false }: any) {
   const router = useRouter();
   const [viewingId, setViewingId] = useState<string | null>(null);
 
@@ -57,12 +57,14 @@ export default function SecureDocumentsVault({ documents = [], onOpenUpload }: a
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
-        </div>
+    <div className={embedded ? 'space-y-4' : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4'}>
+      <div className={`flex items-center ${embedded ? 'justify-end' : 'justify-between pb-3 border-b border-slate-200 dark:border-slate-800'}`}>
+        {!embedded && (
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
+          </div>
+        )}
         <button onClick={onOpenUpload} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-sm">
           <Plus className="w-4 h-4" /><span>Upload Document</span>
         </button>
