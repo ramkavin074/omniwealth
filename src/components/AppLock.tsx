@@ -49,7 +49,6 @@ async function runAuth() {
   // handler doesn't treat the return as a fresh lock trigger.
   beginInternalAuth();
   try {
-    console.info('[applock] authenticate…');
     await withTimeout(
       BiometricAuth.authenticate({
         reason: 'Unlock OmniWealth',
@@ -60,12 +59,10 @@ async function runAuth() {
         iosFallbackTitle: 'Use passcode',
       }),
     );
-    console.info('[applock] unlocked');
     locked = false;
     publish();
   } catch (err: any) {
     lastError = err?.message || err?.code || String(err);
-    console.warn('[applock] auth failed:', lastError);
     // stay locked; the Unlock button retries
     publish();
   } finally {

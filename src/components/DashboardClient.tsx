@@ -234,7 +234,7 @@ export default function DashboardClient({
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-slate-900 dark:text-white text-xs tracking-tight truncate">
-                        Family Wealth Hub
+                        OmniWealth
                       </div>
                       <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
                         {session?.household?.name || 'Private Family'}

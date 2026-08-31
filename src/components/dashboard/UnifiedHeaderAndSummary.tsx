@@ -100,7 +100,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
 
               <div className="min-w-0 flex-1">
                 <div className="font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-slate-900 dark:text-white leading-tight truncate">
-                  Family Wealth Hub
+                  OmniWealth
                 </div>
 
                 <div className="text-[10px] sm:text-xs uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono leading-tight truncate">

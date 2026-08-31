@@ -113,7 +113,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
                 <div className="min-w-0 flex-1 leading-tight">
                   <div className="font-extrabold text-xs sm:text-sm md:text-base tracking-tight text-slate-900 dark:text-white truncate">
-                    Family Wealth Hub
+                    OmniWealth
                   </div>
 
                   <div className="text-[10px] sm:text-xs uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
@@ -174,7 +174,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-slate-900 dark:text-white text-xs tracking-tight truncate">
-                        Family Wealth Hub
+                        OmniWealth
                       </div>
                       <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
                         {householdTitle}
