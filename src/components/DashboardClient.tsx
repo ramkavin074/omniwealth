@@ -206,6 +206,12 @@ export default function DashboardClient({
           onOpenAddAsset={() => setIsAddAssetOpen(true)}
           onOpenLiability={() => setIsAddLiabilityOpen(true)}
           onOpenAiReader={() => setIsAiReaderOpen(true)}
+          onExport={() => {
+            // Only the Wealth tab is laid out for print — switch to it,
+            // let it render, then open the print / Save-as-PDF dialog.
+            setActiveTab('wealth');
+            setTimeout(() => window.print(), 150);
+          }}
         />
         
         {isMobileMenuOpen && (
