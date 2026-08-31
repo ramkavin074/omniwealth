@@ -16,6 +16,7 @@ import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesMana
 import IntelligenceFeed from '@/components/dashboard/IntelligenceFeed';
 import ActivityLog from '@/components/dashboard/ActivityLog';
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
+import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import AccountInstructionsHub from '@/components/dashboard/AccountInstructionsHub';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
@@ -344,6 +345,7 @@ export default function DashboardClient({
                   } : undefined}
                 />
                 <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+                <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} />
               </div>
             )}
