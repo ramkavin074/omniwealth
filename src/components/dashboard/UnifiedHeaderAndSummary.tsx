@@ -43,7 +43,7 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
-export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
+export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader, onExport }: any) {
   const router = useRouter();
   const [isRefreshing, startRefreshTransition] = useTransition();
 
@@ -111,7 +111,11 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <CurrencySwitcherForm currentCurrency={baseCurrency} />
+            {/* Currency switcher: only shown here on mobile; the desktop
+                copy lives with the trailing icon controls below. */}
+            <div className="md:hidden">
+              <CurrencySwitcherForm currentCurrency={baseCurrency} />
+            </div>
 
             <button
               onClick={handleRefreshPrices}
@@ -145,12 +149,14 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
                   </button>
                 </>
               )}
-              <button onClick={() => window.print()} title="Export Report / Save as PDF" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
+              <button onClick={() => (onExport ? onExport() : window.print())} title="Export Report / Save as PDF" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                 <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
               </button>
               <button onClick={handleRefreshPrices} disabled={isRefreshing} title="Refresh Live Market Prices" className="p-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer disabled:opacity-50 shadow-sm">
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
+              <CurrencySwitcherForm currentCurrency={baseCurrency} />
+
               <Link href="/profile" title="Household Settings" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                 <Settings className="w-4 h-4" />
               </Link>
