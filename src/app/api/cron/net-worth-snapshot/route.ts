@@ -2,44 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { households, assets, netWorthSnapshots } from '@/db/schema';
 import { fetchLiveExchangeRatesAction } from '@/actions/vault';
+import { netWorthOf } from '@/lib/networth';
 import { logError } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-// Same conversion the dashboard hero uses: rates are USD-based
-// (units of `currency` per 1 USD), so cross-rate = amount * rateTo / rateFrom.
-function convert(
-  amount: number,
-  from: string,
-  to: string,
-  rates: Record<string, number>,
-): number {
-  if (from === to) return amount;
-  const rf = rates[from] || 1;
-  const rt = rates[to] || 1;
-  return (amount * rt) / rf;
-}
-
-// Mirrors UnifiedHeaderAndSummary's totalNetWorth: sum of +|value| for
-// assets and -|value| for liabilities, converted to the base currency.
-function netWorthOf(
-  rows: Array<typeof assets.$inferSelect>,
-  baseCurrency: string,
-  rates: Record<string, number>,
-): number {
-  let total = 0;
-  for (const a of rows) {
-    const val = parseFloat(a.nativeValue || '0');
-    const baseVal = convert(val, a.nativeCurrency || 'USD', baseCurrency, rates);
-    const type = (a.assetType || '').toUpperCase();
-    const rawCat = (a.accountCategory || 'INDIVIDUAL').toUpperCase();
-    const isLiability =
-      type === 'LIABILITY' || type === 'DEBT' || rawCat === 'LIABILITY';
-    total += isLiability ? -Math.abs(baseVal) : Math.abs(baseVal);
-  }
-  return total;
-}
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
