@@ -14,6 +14,7 @@ import AssetAllocationVisualizer from '@/components/dashboard/AssetAllocationVis
 import NetWorthTrendChart from '@/components/dashboard/NetWorthTrendChart';
 import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesManagementSection';
 import IntelligenceFeed from '@/components/dashboard/IntelligenceFeed';
+import ActivityLog from '@/components/dashboard/ActivityLog';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import AccountInstructionsHub from '@/components/dashboard/AccountInstructionsHub';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
@@ -386,6 +387,7 @@ export default function DashboardClient({
             {activeTab === 'feed' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
                 <IntelligenceFeed assets={initialAssets} trendData={trendData} baseCurrency={baseCurrency} documents={initialDocuments} />
+                <ActivityLog />
               </div>
             )}
           </div>
