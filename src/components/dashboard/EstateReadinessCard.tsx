@@ -5,17 +5,54 @@ import { ShieldCheck, ShieldAlert } from 'lucide-react';
 
 const SHOWN = 6;
 
+function catLabel(cat: string): string {
+  const c = (cat || 'INDIVIDUAL').toUpperCase();
+  const map: Record<string, string> = {
+    REAL_ESTATE: 'Real estate',
+    SOCIAL_SECURITY: 'Social Security',
+    ROTH_IRA: 'Roth IRA',
+    IRA: 'Traditional IRA',
+    '401K': '401(k)',
+    PPF: 'PPF',
+    PF: 'PF / EPF',
+    HSA: 'HSA',
+    PENSION: 'Pension',
+    '529': '529 College',
+    TRUST: 'Trust',
+    INDIVIDUAL: 'Individual',
+  };
+  return map[c] || c.replace(/_/g, ' ');
+}
+
 export default function EstateReadinessCard({ assets = [] }: any) {
   const { missing, total } = useMemo(() => {
-    const rows = assets.filter((a: any) => {
+    // Beneficiary / access notes belong to an account, not a single
+    // holding — so group by (category, account number) and check whether
+    // anything in that account carries the info.
+    const accounts = new Map<string, { label: string; covered: boolean }>();
+    for (const a of assets) {
       const type = (a.assetType || '').toUpperCase();
       const cat = (a.accountCategory || '').toUpperCase();
-      return !(type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY');
-    });
-    const gaps = rows.filter(
-      (a: any) => !(a.beneficiary || '').trim() && !(a.accessNotes || '').trim(),
-    );
-    return { missing: gaps, total: rows.length };
+      if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY') continue;
+
+      const num = (a.accountNumber || '').trim();
+      const key = `${cat}|${num}`;
+      const label =
+        num && num.toUpperCase() !== 'DEFAULT'
+          ? `${catLabel(cat)} ·  ${num}`
+          : catLabel(cat);
+
+      const hasInfo = !!(a.beneficiary || '').trim() || !!(a.accessNotes || '').trim();
+      const existing = accounts.get(key);
+      if (existing) {
+        existing.covered = existing.covered || hasInfo;
+      } else {
+        accounts.set(key, { label, covered: hasInfo });
+      }
+    }
+
+    const all = [...accounts.values()];
+    return { missing: all.filter((x) => !x.covered), total: all.length };
   }, [assets]);
 
   if (total === 0) return null;
@@ -46,18 +83,18 @@ export default function EstateReadinessCard({ assets = [] }: any) {
           </h4>
           {allSet ? (
             <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              All {total} holdings have a beneficiary or access note recorded.
+              All {total} account{total === 1 ? '' : 's'} have a beneficiary or access note recorded.
             </p>
           ) : (
             <>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                {missing.length} of {total} holdings have no beneficiary or access instructions.
-                Add them from each asset&rsquo;s Edit dialog.
+                {missing.length} of {total} account{total === 1 ? '' : 's'} have no beneficiary or
+                access instructions. Add them from any holding in the account&rsquo;s Edit dialog.
               </p>
               <ul className="text-sm text-slate-700 dark:text-slate-200 space-y-0.5 pt-0.5">
-                {shown.map((a: any) => (
-                  <li key={a.id} className="truncate">
-                    {a.name || 'Unnamed holding'}
+                {shown.map((acct) => (
+                  <li key={acct.label} className="truncate">
+                    {acct.label}
                   </li>
                 ))}
                 {rest > 0 && (
