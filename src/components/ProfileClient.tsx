@@ -4,10 +4,10 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { logoutAction } from '@/actions/auth';
 import { updateHouseholdBaseCurrencyAction, updateThemePreferenceAction } from '@/actions/vault';
-import { ArrowLeft, Coins, LogOut, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2 } from 'lucide-react';
+import { ArrowLeft, Coins, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import SessionMenuButton from '@/components/SessionMenuButton';
 import AiSettingsCard from '@/components/AiSettingsCard';
 import { canManageHousehold } from '@/lib/permissions';
 
@@ -156,11 +156,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                 <span>Back to Dashboard</span>
               </Link>
 
-              <form action={logoutAction}>
-                <button type="submit" title="Logout" className="p-2 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 transition cursor-pointer shadow-sm flex items-center justify-center">
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </form>
+              <SessionMenuButton iconOnly />
             </div>
           </div>
         </header>
@@ -230,11 +226,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
               </div>
 
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
-                <form action={logoutAction} className="pt-1">
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-sm font-semibold rounded-xl border border-rose-200 dark:border-rose-900 cursor-pointer transition">
-                    <LogOut className="w-4 h-4" /> Logout
-                  </button>
-                </form>
+                <SessionMenuButton />
               </div>
             </div>
           </div>

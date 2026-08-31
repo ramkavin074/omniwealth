@@ -30,16 +30,16 @@ import StatementUploadModal from '@/components/dashboard/StatementUploadModal';
 import RetirementCalculator from '@/components/RetirementCalculator';
 import Footer from '@/components/Footer';
 import VaultUploadModal from '@/components/VaultUploadModal';
+import SessionMenuButton from '@/components/SessionMenuButton';
 
-import { 
+import {
   fetchFamilyMembersAction,
   fetchNetWorthTrendAction,
   fetchNetWorthSnapshotsAction,
-  logoutAction,
   updateThemePreferenceAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu, LogOut
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -295,11 +295,7 @@ export default function DashboardClient({
               </div>
 
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
-                <form action={logoutAction} className="pt-1">
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-sm font-semibold rounded-xl border border-rose-200 dark:border-rose-900 cursor-pointer transition">
-                    <LogOut className="w-4 h-4" /> Logout
-                  </button>
-                </form>
+                <SessionMenuButton />
               </div>
             </div>
           </div>

@@ -107,6 +107,15 @@ export function retryUnlock() {
   void runAuth();
 }
 
+// Re-arm the lock without signing out — used by the "Lock now" menu
+// action when app lock is enabled.
+export function lockNow() {
+  if (!Capacitor.isNativePlatform()) return;
+  lastError = '';
+  locked = true;
+  publish();
+}
+
 /**
  * Native-only screen lock. On web it renders nothing.
  */
