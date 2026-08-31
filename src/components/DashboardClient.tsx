@@ -20,7 +20,6 @@ import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
 import EstateReadinessCard from '@/components/dashboard/EstateReadinessCard';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
-import AccountInstructionsHub from '@/components/dashboard/AccountInstructionsHub';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
 import EditAssetModal from '@/components/dashboard/EditAssetModal';
 
@@ -383,7 +382,6 @@ export default function DashboardClient({
               <div className="space-y-6 animate-fadeIn print:hidden">
                 <FutureMilestonesAndDirectives assets={initialAssets} />
                 <EstateReadinessCard assets={initialAssets} />
-                <AccountInstructionsHub assets={initialAssets} />
                 <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} />
               </div>
             )}
