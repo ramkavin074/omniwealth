@@ -9,6 +9,7 @@ import {
   rejectDraftLineItemAction 
 } from '@/actions/aiStatement';
 import { Cpu, X, Sparkles, FileUp, ClipboardPaste, CheckCheck, Check, Trash2 } from 'lucide-react';
+import { formatCompact } from '@/lib/format';
 
 export default function StatementUploadModal({ legacyPillars, members, onClose }: any) {
   const [uploading, setUploading] = useState(false);
@@ -144,7 +145,7 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: any) {
       <div className="flex justify-between items-center">
         <div>
           <span className="font-bold text-slate-900 dark:text-white text-sm">{item.assetName}</span> {item.ticker && <span className="text-xs font-mono text-slate-600 dark:text-slate-400">({item.ticker})</span>}
-          <div className="text-xs font-mono text-slate-900 dark:text-white font-semibold">{parseFloat(item.totalNativeValue).toLocaleString()} {item.nativeCurrency}</div>
+          <div className="text-xs font-mono text-slate-900 dark:text-white font-semibold">{formatCompact(parseFloat(item.totalNativeValue), item.nativeCurrency)} {item.nativeCurrency}</div>
         </div>
         <div className="flex gap-2">
           <button onClick={async () => { 

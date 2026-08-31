@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Sparkles, TrendingUp, Calendar, Lock, X } from 'lucide-react';
+import { formatCompact } from '@/lib/format';
 
 export default function IntelligenceFeed({ assets, trendData, baseCurrency, documents }: any) {
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
@@ -44,7 +45,7 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
       type: 'success',
       icon: <TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />,
       title: 'Portfolio Growth',
-      message: `Your household net worth grew by +${growthPercent.toFixed(1)}% (${Math.round(growthAmount).toLocaleString()} ${baseCurrency}) this month.`,
+      message: `Your household net worth grew by +${growthPercent.toFixed(1)}% (${formatCompact(growthAmount, baseCurrency)} ${baseCurrency}) this month.`,
       badge: 'Performance',
       border: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20',
     });
@@ -56,7 +57,7 @@ export default function IntelligenceFeed({ assets, trendData, baseCurrency, docu
       type: 'milestone',
       icon: <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
       title: `Future Income Stream: ${asset.name}`,
-      message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${parseFloat(asset.nativeValue || '0').toLocaleString()} ${asset.nativeCurrency || baseCurrency}.`,
+      message: `Owner: ${asset.user?.fullName || 'Family Member'}. Logged value stands at ${formatCompact(parseFloat(asset.nativeValue || '0'), asset.nativeCurrency || baseCurrency)} ${asset.nativeCurrency || baseCurrency}.`,
       badge: 'Milestone',
       border: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
     });

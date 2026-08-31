@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Shield, Edit3, Check } from 'lucide-react';
+import { formatCompact } from '@/lib/format';
 
 export default function FutureMilestonesAndDirectives({ assets }: any) {
   const ssnAssets = assets.filter((a: any) => a.accountCategory === 'SOCIAL_SECURITY');
@@ -103,7 +104,7 @@ export default function FutureMilestonesAndDirectives({ assets }: any) {
                     </div>
                   ) : (
                     <span className="text-sm font-mono text-teal-700 dark:text-teal-400 font-bold block mt-0.5">
-                      {getAmount(asset).toLocaleString()} <span className="text-xs font-sans font-normal text-slate-500">{cur}</span>
+                      {formatCompact(getAmount(asset), cur)} <span className="text-xs font-sans font-normal text-slate-500">{cur}</span>
                     </span>
                   )}
                 </div>
