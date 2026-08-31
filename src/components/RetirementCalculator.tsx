@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp, Calculator, ChevronDown } from 'lucide-react';
 import { updateRetirementPreferencesAction } from '@/actions/vault';
+import { formatCompact } from '@/lib/format';
 
 interface CountryConfig {
   name: string;
@@ -346,7 +347,7 @@ export default function RetirementCalculator({
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
             <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Projected Nest Egg at Age {effectiveRetirementAge}</span>
             <div className="text-2xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
-              {country.symbol}{projectedNestEgg.toLocaleString()}
+              {country.symbol}{formatCompact(projectedNestEgg, country.currency)}
             </div>
           </div>
 
@@ -355,7 +356,7 @@ export default function RetirementCalculator({
               Target Capital Needed ({(country.swr * 100).toFixed(2)}% Rule)
             </span>
             <div className="text-2xl font-extrabold font-mono text-slate-900 dark:text-white mt-1">
-              {country.symbol}{targetNestEgg.toLocaleString()}
+              {country.symbol}{formatCompact(targetNestEgg, country.currency)}
             </div>
           </div>
 
@@ -386,7 +387,7 @@ export default function RetirementCalculator({
               <span className="flex items-center gap-1">
                 <TrendingUp className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" /> Surplus / Generational Wealth Leftover (Beyond Target)
               </span>
-              <span>{country.symbol}{surplusAmount.toLocaleString()}</span>
+              <span>{country.symbol}{formatCompact(surplusAmount, country.currency)}</span>
             </div>
             <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700">
               <div 
@@ -405,7 +406,7 @@ export default function RetirementCalculator({
           )}
           <p className="leading-relaxed">
             {isFullyFunded
-              ? `Your family is fully on track under the ${country.name} economic parameters. Delaying or extending your horizon by ${additionalYears} years brings your effective retirement age to ${effectiveRetirementAge}, yielding an excess surplus of ${country.symbol}${surplusAmount.toLocaleString()}.`
+              ? `Your family is fully on track under the ${country.name} economic parameters. Delaying or extending your horizon by ${additionalYears} years brings your effective retirement age to ${effectiveRetirementAge}, yielding an excess surplus of ${country.symbol}${formatCompact(surplusAmount, country.currency)}.`
               : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
             }
           </p>
@@ -473,11 +474,11 @@ export default function RetirementCalculator({
                       <div className="text-2xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
                         {requiredMonthly <= 0
                           ? 'On track 🎉'
-                          : `${country.symbol}${Math.round(requiredMonthly).toLocaleString()}`}
+                          : `${country.symbol}${formatCompact(requiredMonthly, country.currency)}`}
                       </div>
                       {requiredMonthly > 0 && (
                         <span className="text-[10px] text-slate-400">
-                          {country.symbol}{Math.round(requiredAnnual).toLocaleString()}/yr
+                          {country.symbol}{formatCompact(requiredAnnual, country.currency)}/yr
                         </span>
                       )}
                     </div>
@@ -493,7 +494,7 @@ export default function RetirementCalculator({
                       {requiredMonthly > 0 && (
                         <span className="text-[10px] text-slate-400">
                           {savingsRateOfGross.toFixed(0)}% of gross · take-home {country.symbol}
-                          {Math.round(netIncome).toLocaleString()}/yr
+                          {formatCompact(netIncome, country.currency)}/yr
                         </span>
                       )}
                     </div>
