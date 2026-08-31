@@ -184,38 +184,10 @@ export default function RetirementCalculator({
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 transition-colors">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
-        <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-teal-700 dark:text-teal-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Retirement Readiness &amp; Regional SWR Simulator</h3>
-        </div>
-         
-        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-sm">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Region:</span>
-            <select
-              value={selectedCountryKey}
-              onChange={(e) => handleCountryChange(e.target.value)}
-              className="bg-transparent border-0 text-xs text-teal-700 dark:text-teal-400 font-mono font-bold focus:outline-none cursor-pointer"
-            >
-              {Object.entries(COUNTRIES).map(([key, cfg]) => (
-                <option key={key} value={key} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                  {cfg.name} ({cfg.currency})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            onClick={handleSavePreferences}
-            disabled={isPending}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
-          >
-            {savedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Save className="w-3.5 h-3.5" />}
-            <span>{savedSuccess ? 'Saved!' : 'Save Targets'}</span>
-          </button>
-        </div>
+      {/* Header — slim, so the results sit near the top on mobile */}
+      <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+        <Target className="w-5 h-5 text-teal-700 dark:text-teal-400" />
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Retirement Readiness</h3>
       </div>
 
       {/* Results Section */}
@@ -411,6 +383,33 @@ export default function RetirementCalculator({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Region + save — parameter-level controls, kept next to the inputs */}
+      <div className="flex items-center gap-3 flex-wrap justify-between">
+        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-sm">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">Region:</span>
+          <select
+            value={selectedCountryKey}
+            onChange={(e) => handleCountryChange(e.target.value)}
+            className="bg-transparent border-0 text-xs text-teal-700 dark:text-teal-400 font-mono font-bold focus:outline-none cursor-pointer"
+          >
+            {Object.entries(COUNTRIES).map(([key, cfg]) => (
+              <option key={key} value={key} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                {cfg.name} ({cfg.currency})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={handleSavePreferences}
+          disabled={isPending}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+        >
+          {savedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Save className="w-3.5 h-3.5" />}
+          <span>{savedSuccess ? 'Saved!' : 'Save Targets'}</span>
+        </button>
       </div>
 
       {/* Grouped Input Section */}
