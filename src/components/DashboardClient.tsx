@@ -18,6 +18,7 @@ import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
 import EstateReadinessCard from '@/components/dashboard/EstateReadinessCard';
+import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
 import EditAssetModal from '@/components/dashboard/EditAssetModal';
@@ -37,7 +38,7 @@ import {
   updateThemePreferenceAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -345,20 +346,30 @@ export default function DashboardClient({
 
                 <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <StaleValueNudge assets={initialAssets} />
-                <WealthSummaryDashboard
-                  assets={initialAssets}
-                  baseCurrency={baseCurrency}
-                  legacyPillars={legacyPillars}
-                  liveRates={liveRates}
-                  forceExpanded={printExpandAll}
-                  onEditAsset={canManage ? (asset: any) => {
-                    setEditingAsset(asset);
-                    setIsEditModalOpen(true);
-                  } : undefined}
-                />
-                <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+
+                <CollapsibleSection id="breakdown" title="Wealth Breakdown" icon={<Users className="w-5 h-5" />}>
+                  <WealthSummaryDashboard
+                    assets={initialAssets}
+                    baseCurrency={baseCurrency}
+                    legacyPillars={legacyPillars}
+                    liveRates={liveRates}
+                    forceExpanded={printExpandAll}
+                    onEditAsset={canManage ? (asset: any) => {
+                      setEditingAsset(asset);
+                      setIsEditModalOpen(true);
+                    } : undefined}
+                  />
+                </CollapsibleSection>
+
+                <CollapsibleSection id="allocation" title="Asset Class Allocation" icon={<PieChart className="w-5 h-5" />}>
+                  <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} noHeader />
+                </CollapsibleSection>
+
                 <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
-                <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} />
+
+                <CollapsibleSection id="trend" title="Net Worth Trend" icon={<TrendingUp className="w-5 h-5" />}>
+                  <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} />
+                </CollapsibleSection>
               </div>
             )}
 
