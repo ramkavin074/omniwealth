@@ -425,7 +425,7 @@ export async function fetchNetWorthTrendAction(range: string = '6m') {
     }
 
     return results;
-  } catch (err) {
+  } catch {
     return [];
   }
 }
@@ -1005,7 +1005,7 @@ export async function updateRetirementPreferencesAction(data: {
 
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'Failed to save settings' };
   }
 }

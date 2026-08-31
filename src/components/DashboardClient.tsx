@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { App } from '@capacitor/app';
@@ -38,7 +37,7 @@ import {
   updateThemePreferenceAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Menu
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -82,7 +81,7 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [trendEstimated, setTrendEstimated] = useState(true);
   const [timeRange, setTimeRange] = useState('6m');
-  const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(initialLiveRates);
+  const [liveRates] = useState<{ [key: string]: number }>(initialLiveRates);
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Edit Asset / Liability Modal State

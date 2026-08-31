@@ -1,10 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Globe } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
 
-export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange, estimated = true }: any) {
+export default function NetWorthTrendChart({ trendData = [], baseCurrency, estimated = true }: any) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => formatCompact(val, baseCurrency);
 
