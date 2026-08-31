@@ -5,12 +5,13 @@ import { Lock, CheckCircle2, LogOut, Trash2, Fingerprint } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { updatePasswordAction, revokeOtherSessionsAction, deleteAccountAction } from '@/actions/auth';
-import { APP_LOCK_KEY } from '@/components/AppLock';
+import { APP_LOCK_KEY, beginInternalAuth, endInternalAuth, withTimeout } from '@/lib/applock';
 
 export default function SecurityCard() {
   const [isNative, setIsNative] = useState(false);
   const [lockOn, setLockOn] = useState(false);
   const [lockMsg, setLockMsg] = useState('');
+  const [lockBusy, setLockBusy] = useState(false);
 
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
@@ -22,24 +23,37 @@ export default function SecurityCard() {
   }, []);
 
   async function toggleAppLock() {
+    if (lockBusy) return;
     setLockMsg('');
+
     if (lockOn) {
       try { localStorage.removeItem(APP_LOCK_KEY); } catch {}
       setLockOn(false);
       return;
     }
+
+    // Tell the AppLock overlay to stand down while this prompt runs, so it
+    // doesn't fire a second, competing biometric prompt when the app
+    // backgrounds/foregrounds for the dialog.
+    setLockBusy(true);
+    beginInternalAuth();
     try {
       const { isAvailable } = await BiometricAuth.checkBiometry();
-      await BiometricAuth.authenticate({
-        reason: 'Confirm to enable app lock',
-        allowDeviceCredential: true,
-        androidTitle: 'OmniWealth',
-      });
+      await withTimeout(
+        BiometricAuth.authenticate({
+          reason: 'Confirm to enable app lock',
+          allowDeviceCredential: true,
+          androidTitle: 'OmniWealth',
+        }),
+      );
       localStorage.setItem(APP_LOCK_KEY, '1');
       setLockOn(true);
       if (!isAvailable) setLockMsg('Enabled using your device PIN/pattern.');
     } catch {
       setLockMsg('Could not verify — app lock not enabled.');
+    } finally {
+      endInternalAuth();
+      setLockBusy(false);
     }
   }
 
@@ -168,13 +182,14 @@ export default function SecurityCard() {
             <button
               type="button"
               onClick={toggleAppLock}
-              className={`shrink-0 px-3 py-2 font-semibold text-xs rounded-xl cursor-pointer transition ${
+              disabled={lockBusy}
+              className={`shrink-0 px-3 py-2 font-semibold text-xs rounded-xl cursor-pointer transition disabled:opacity-50 ${
                 lockOn
                   ? 'bg-teal-700 hover:bg-teal-800 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
               }`}
             >
-              {lockOn ? 'On' : 'Off'}
+              {lockBusy ? '…' : lockOn ? 'On' : 'Off'}
             </button>
           </div>
           {lockMsg && <p className="text-[11px] text-slate-600 dark:text-slate-300">{lockMsg}</p>}

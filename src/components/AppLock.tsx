@@ -5,16 +5,9 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { Lock } from 'lucide-react';
+import { APP_LOCK_KEY, lockEnabled, isInternalAuth, withTimeout } from '@/lib/applock';
 
-export const APP_LOCK_KEY = 'omniwealth_app_lock';
-
-function lockEnabled(): boolean {
-  try {
-    return localStorage.getItem(APP_LOCK_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
+export { APP_LOCK_KEY };
 
 /**
  * Native-only screen lock. On web it renders nothing. When enabled, the
@@ -25,47 +18,53 @@ export default function AppLock() {
   const isNative = Capacitor.isNativePlatform();
   const [locked, setLocked] = useState(isNative && lockEnabled());
   const authing = useRef(false);
+  const lastTrigger = useRef(0);
 
   const unlock = useCallback(async () => {
     if (authing.current) return;
     authing.current = true;
     try {
-      await BiometricAuth.authenticate({
-        reason: 'Unlock OmniWealth',
-        cancelTitle: 'Cancel',
-        allowDeviceCredential: true,
-        androidTitle: 'OmniWealth',
-        androidSubtitle: 'Verify it\u2019s you',
-        iosFallbackTitle: 'Use passcode',
-      });
+      await withTimeout(
+        BiometricAuth.authenticate({
+          reason: 'Unlock OmniWealth',
+          cancelTitle: 'Cancel',
+          allowDeviceCredential: true,
+          androidTitle: 'OmniWealth',
+          androidSubtitle: 'Verify it’s you',
+          iosFallbackTitle: 'Use passcode',
+        }),
+      );
       setLocked(false);
     } catch {
-      // stay locked; user can retry
+      // stay locked; the Unlock button lets the user retry
     } finally {
       authing.current = false;
     }
   }, []);
 
+  // Lock + prompt, but not while a Settings-initiated prompt is running
+  // and not twice inside the same second (foreground events can double up).
+  const engage = useCallback(() => {
+    if (!lockEnabled() || isInternalAuth()) return;
+    const now = Date.now();
+    if (now - lastTrigger.current < 1000) return;
+    lastTrigger.current = now;
+    setLocked(true);
+    void unlock();
+  }, [unlock]);
+
   useEffect(() => {
     if (!isNative) return;
 
-    if (lockEnabled()) {
-      setLocked(true);
-      void unlock();
-    }
+    engage();
 
     const sub = App.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) {
-        if (lockEnabled()) {
-          setLocked(true);
-          void unlock();
-        }
-      }
+      if (isActive) engage();
     });
     return () => {
       void sub.then((h) => h.remove());
     };
-  }, [isNative, unlock]);
+  }, [isNative, engage]);
 
   if (!isNative || !locked) return null;
 
