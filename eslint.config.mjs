@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Native Capacitor project — generated + third-party JS, not our source.
+    "android/**",
+    "ios/**",
   ]),
   {
     // Pre-existing debt in this codebase — kept visible as warnings so CI
