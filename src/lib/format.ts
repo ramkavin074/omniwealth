@@ -1,15 +1,21 @@
 // Currencies read in the Indian numbering system (lakh / crore).
 const LAKH_CRORE = new Set(['INR', 'PKR', 'NPR', 'LKR', 'BDT']);
 
-function trim(x: number): string {
-  // 2 decimals, no trailing zeros: 13.37, 4.5, 12
-  return x.toFixed(2).replace(/\.?0+$/, '');
+// Big units (M / B / L / Cr) always carry 2 decimals so amounts line up:
+// 1.20M, 13.37 Cr, 4.50 L, 2.35B.
+function big(x: number): string {
+  return x.toFixed(2);
+}
+
+// K is a smaller magnitude — up to 1 decimal, trailing .0 dropped: 175.5K, 150K.
+function small(x: number): string {
+  return x.toFixed(1).replace(/\.0$/, '');
 }
 
 /**
  * Compact, human-readable form of a monetary amount.
- *   INR family        -> "13.37 Cr", "4.5 L"
- *   everything else    -> "13.4B", "1.2M", "4.5K"
+ *   INR family        -> "13.37 Cr", "4.50 L"
+ *   everything else    -> "2.35B", "1.20M", "175.5K"
  *   below the threshold -> full grouped number
  */
 export function formatCompact(amount: number, currency = 'USD'): string {
@@ -18,14 +24,14 @@ export function formatCompact(amount: number, currency = 'USD'): string {
   const sign = amount < 0 ? '-' : '';
 
   if (LAKH_CRORE.has(currency)) {
-    if (n >= 1_00_00_000) return `${sign}${trim(n / 1_00_00_000)} Cr`;
-    if (n >= 1_00_000) return `${sign}${trim(n / 1_00_000)} L`;
+    if (n >= 1_00_00_000) return `${sign}${big(n / 1_00_00_000)} Cr`;
+    if (n >= 1_00_000) return `${sign}${big(n / 1_00_000)} L`;
     return `${sign}${n.toLocaleString('en-IN')}`;
   }
 
-  if (n >= 1_000_000_000) return `${sign}${trim(n / 1_000_000_000)}B`;
-  if (n >= 1_000_000) return `${sign}${trim(n / 1_000_000)}M`;
-  if (n >= 100_000) return `${sign}${trim(n / 1_000)}K`;
+  if (n >= 1_000_000_000) return `${sign}${big(n / 1_000_000_000)}B`;
+  if (n >= 1_000_000) return `${sign}${big(n / 1_000_000)}M`;
+  if (n >= 100_000) return `${sign}${small(n / 1_000)}K`;
   return `${sign}${n.toLocaleString('en-US')}`;
 }
 
