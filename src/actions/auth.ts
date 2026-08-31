@@ -719,6 +719,7 @@ export async function getSessionUserAction() {
     role: user.role,
     themePreference: user.themePreference,
     aiProvider: user.aiProvider,
+    emailDigest: user.emailDigest ?? false,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     hasAiApiKey: hasValue(user.aiApiKey),

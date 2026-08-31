@@ -15,6 +15,7 @@ import AccountDetailsCard from '@/components/profile/AccountDetailsCard';
 import LegacyPillarsCard from '@/components/profile/LegacyPillarsCard';
 import FamilyMembersCard from '@/components/profile/FamilyMembersCard';
 import SecurityCard from '@/components/profile/SecurityCard';
+import NotificationsCard from '@/components/profile/NotificationsCard';
 import AddFamilyMemberModal from '@/components/profile/AddFamilyMemberModal';
 
 interface ProfileClientProps {
@@ -302,6 +303,9 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
           {/* 5. Security Card */}
           <SecurityCard />
+
+          {/* 6. Notifications Card */}
+          <NotificationsCard initialEmailDigest={session.user.emailDigest ?? false} />
 
           {/* Add Family Member Modal */}
           <AddFamilyMemberModal 

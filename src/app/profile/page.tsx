@@ -42,6 +42,7 @@ export default async function ProfilePage() {
       email: session.user.email,
       role: session.user.role,
       aiProvider: session.user.aiProvider || undefined,
+      emailDigest: session.user.emailDigest ?? false,
       // Presence flags only — raw keys are never sent to the client.
       hasAiApiKey: session.user.hasAiApiKey,
       hasGeminiKey: session.user.hasGeminiKey,

@@ -98,6 +98,9 @@ export const users = pgTable(
       .default('gemini')
       .notNull(),
 
+    // Opt-in to the periodic net-worth summary email. Off by default.
+    emailDigest: boolean('email_digest').default(false).notNull(),
+
     /**
      * Generic encrypted API key.
      *

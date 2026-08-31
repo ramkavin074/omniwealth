@@ -1155,3 +1155,21 @@ export async function updateThemePreferenceAction(theme: 'light' | 'dark') {
     return { success: false, error: error.message || 'Failed to update theme preference' };
   }
 }
+
+export async function updateEmailDigestAction(enabled: boolean) {
+  const session = await getSessionUserAction();
+  if (!session || !session.user?.id) {
+    return { success: false, error: 'Unauthorized' };
+  }
+  try {
+    await db
+      .update(users)
+      .set({ emailDigest: !!enabled, updatedAt: new Date() } as any)
+      .where(eq(users.id, session.user.id));
+    revalidatePath('/profile');
+    return { success: true };
+  } catch (err) {
+    logError('updateEmailDigestAction', err);
+    return { success: false, error: 'Failed to update notification preference.' };
+  }
+}
