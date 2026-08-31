@@ -15,6 +15,7 @@ import NetWorthTrendChart from '@/components/dashboard/NetWorthTrendChart';
 import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesManagementSection';
 import IntelligenceFeed from '@/components/dashboard/IntelligenceFeed';
 import ActivityLog from '@/components/dashboard/ActivityLog';
+import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import AccountInstructionsHub from '@/components/dashboard/AccountInstructionsHub';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
@@ -331,6 +332,7 @@ export default function DashboardClient({
                   </div>
                 </div>
 
+                <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <WealthSummaryDashboard
                   assets={initialAssets}
                   baseCurrency={baseCurrency}
