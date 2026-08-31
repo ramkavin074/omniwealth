@@ -198,11 +198,11 @@ return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-cen
 
       <div>
         <h1 className="text-xl font-bold text-white">
-          OmniWealth Engine
+          OmniWealth
         </h1>
 
         <p className="text-xs text-slate-400">
-          Multi-Currency Family Portal
+          Family wealth portal
         </p>
       </div>
     </div>

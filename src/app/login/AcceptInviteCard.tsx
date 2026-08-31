@@ -83,7 +83,7 @@ export default function AcceptInviteCard({ token }: { token: string }) {
             <Cpu className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">OmniWealth Engine</h1>
+            <h1 className="text-xl font-bold text-white">OmniWealth</h1>
             <p className="text-xs text-slate-400">Accept your invitation</p>
           </div>
         </div>

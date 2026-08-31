@@ -19,7 +19,7 @@ export default function FutureMilestonesAndDirectives({ assets, embedded = false
         {!embedded && (
           <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
             <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Milestones &amp; directives</h3>
           </div>
         )}
         <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
@@ -67,7 +67,7 @@ export default function FutureMilestonesAndDirectives({ assets, embedded = false
         <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Future Income Milestones &amp; Family Directives</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Milestones &amp; directives</h3>
           </div>
         </div>
       )}

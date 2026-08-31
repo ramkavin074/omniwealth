@@ -125,7 +125,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
         {!only && (
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
             <Users className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Wealth by Family Member</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">By family member</h3>
           </div>
         )}
         <div className="space-y-3">
@@ -199,7 +199,7 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
         {!only && (
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
             <Target className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Purpose &amp; Legacy Instructions</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">By purpose</h3>
           </div>
         )}
         <div className="space-y-3">

@@ -235,8 +235,8 @@ export default function ProfileClient({ session, initialFamilyMembers, household
         <div className="max-w-7xl mx-auto w-full px-4 md:px-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-4">
             <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Profile &amp; Family Management</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View account details, customize legacy pillars, configure BYOK, and manage members.</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Settings</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Your account, wealth pillars, AI keys, and family members.</p>
             </div>
 
             <div className="flex items-center gap-2.5">

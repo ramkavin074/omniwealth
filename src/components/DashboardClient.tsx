@@ -285,16 +285,16 @@ export default function DashboardClient({
                   )}
 
                   <button onClick={() => { setActiveTab('liabilities'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                    <CreditCard className="w-4 h-4" /><span>Liabilities &amp; Debt</span>
+                    <CreditCard className="w-4 h-4" /><span>Liabilities</span>
                   </button>
                   <button onClick={() => { setActiveTab('retirement'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'retirement' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                    <Target className="w-4 h-4" /><span>Retirement &amp; Planning</span>
+                    <Target className="w-4 h-4" /><span>Retirement</span>
                   </button>
                   <button onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                    <Shield className="w-4 h-4" /><span>Directives &amp; Vault</span>
+                    <Shield className="w-4 h-4" /><span>Directives</span>
                   </button>
                   <button onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                    <TrendingUp className="w-4 h-4" /><span>Intelligence Feed</span>
+                    <TrendingUp className="w-4 h-4" /><span>Feed</span>
                   </button>
 
                   {/* Theme Switcher inside Mobile Drawer */}
@@ -331,19 +331,19 @@ export default function DashboardClient({
           {/* Navigation Tabs */}
           <div className="hidden md:flex bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-1.5 rounded-2xl items-center gap-2 overflow-x-auto shadow-sm print:hidden">
             <button onClick={() => setActiveTab('wealth')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'wealth' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <Wallet className="w-4 h-4" /> Wealth &amp; Assets
+              <Wallet className="w-4 h-4" /> Wealth
             </button>
             <button onClick={() => setActiveTab('liabilities')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'liabilities' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <CreditCard className="w-4 h-4" /> Liabilities &amp; Debt
+              <CreditCard className="w-4 h-4" /> Liabilities
             </button>
             <button onClick={() => setActiveTab('retirement')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'retirement' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <Target className="w-4 h-4" /> Retirement &amp; Planning
+              <Target className="w-4 h-4" /> Retirement
             </button>
             <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <Shield className="w-4 h-4" /> Directives &amp; Vault
+              <Shield className="w-4 h-4" /> Directives
             </button>
             <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <Sparkles className="w-4 h-4" /> Intelligence Feed
+              <Sparkles className="w-4 h-4" /> Feed
             </button>
           </div>
 
@@ -352,8 +352,8 @@ export default function DashboardClient({
               <div className="space-y-6 animate-fadeIn">
                 <div className="hidden print:block space-y-2 mb-6">
                   <div className="border-b-2 border-slate-900 pb-3">
-                    <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">OmniWealth Executive Family Office Report</h1>
-                    <p className="text-xs text-slate-600 font-mono mt-0.5">Generated on {new Date().toLocaleDateString()} • Confidential Asset &amp; Estate Summary</p>
+                    <h1 className="text-xl font-bold uppercase tracking-wide text-slate-900">Wealth Report</h1>
+                    <p className="text-xs text-slate-600 font-mono mt-0.5">Generated {new Date().toLocaleDateString()}</p>
                   </div>
                 </div>
 
@@ -378,7 +378,7 @@ export default function DashboardClient({
                   );
                 })()}
 
-                <CollapsibleSection id="allocation" title="Asset Class Allocation" icon={<PieChart className="w-5 h-5" />}>
+                <CollapsibleSection id="allocation" title="Allocation" icon={<PieChart className="w-5 h-5" />}>
                   <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
                 </CollapsibleSection>
 
@@ -388,7 +388,7 @@ export default function DashboardClient({
                   </CollapsibleSection>
                 )}
 
-                <CollapsibleSection id="trend" title="Net Worth Trend" icon={<TrendingUp className="w-5 h-5" />}>
+                <CollapsibleSection id="trend" title="Trend" icon={<TrendingUp className="w-5 h-5" />}>
                   <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} embedded />
                 </CollapsibleSection>
               </div>
@@ -428,11 +428,11 @@ export default function DashboardClient({
               <div className="space-y-6 animate-fadeIn print:hidden">
                 <EstateReadinessCard assets={initialAssets} />
 
-                <CollapsibleSection id="milestones" title="Future Milestones & Directives" icon={<Shield className="w-5 h-5" />}>
+                <CollapsibleSection id="milestones" title="Milestones &amp; directives" icon={<Shield className="w-5 h-5" />}>
                   <FutureMilestonesAndDirectives assets={initialAssets} embedded />
                 </CollapsibleSection>
 
-                <CollapsibleSection id="documents" title="Document Vault" icon={<Lock className="w-5 h-5" />}>
+                <CollapsibleSection id="documents" title="Documents" icon={<Lock className="w-5 h-5" />}>
                   <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} embedded />
                 </CollapsibleSection>
               </div>

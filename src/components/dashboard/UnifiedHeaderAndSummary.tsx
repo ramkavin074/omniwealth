@@ -181,7 +181,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
 
       <div className="block md:hidden px-4 pt-4 print:hidden">
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Global Net Worth</span>
+          <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Net worth</span>
           <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate mt-0.5" title={`${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`}>
             {formatCompact(totalNetWorth, baseCurrency)} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
           </div>
@@ -192,7 +192,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 print:border-none print:shadow-none print:p-0">
           <div className="shrink-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1.5">
-              <Wallet className="w-4 h-4 text-slate-400 print:hidden" /> Global Household Net Worth
+              <Wallet className="w-4 h-4 text-slate-400 print:hidden" /> Net worth
             </span>
             <div className="text-4xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1" title={`${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`}>
               {formatCompact(totalNetWorth, baseCurrency)} <span className="text-teal-600 dark:text-teal-500 text-lg font-sans">{baseCurrency}</span>

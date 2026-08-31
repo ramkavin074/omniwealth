@@ -62,7 +62,7 @@ export default function SecureDocumentsVault({ documents = [], onOpenUpload, emb
         {!embedded && (
           <div className="flex items-center gap-2">
             <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Encrypted Family Vault &amp; Documents</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Documents</h3>
           </div>
         )}
         <button onClick={onOpenUpload} className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-sm">

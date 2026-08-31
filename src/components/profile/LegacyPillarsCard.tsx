@@ -117,7 +117,7 @@ export default function LegacyPillarsCard({
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
         <Target className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Legacy &amp; Wealth Pillars</h2>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Wealth pillars</h2>
       </div>
       <p className="text-xs text-slate-600 dark:text-slate-400">Up to 4 core pillars with estate directives. Pick one to edit, then save.</p>
 

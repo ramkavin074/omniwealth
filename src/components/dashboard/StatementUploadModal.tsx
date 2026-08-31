@@ -64,7 +64,7 @@ export default function StatementUploadModal({ legacyPillars, members, onClose }
         <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Cpu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">AI Statement Intelligence &amp; Review Locker</h2>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Import from statement</h2>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
@@ -96,7 +96,7 @@ export default function StatementUploadModal({ legacyPillars, members, onClose }
         </form>
         <div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 pb-2 border-b border-slate-200 dark:border-slate-800 gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Pending Extracted Items ({drafts.length})</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Extracted items ({drafts.length})</h3>
             {drafts.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-medium">Assign Owner For All:</span>

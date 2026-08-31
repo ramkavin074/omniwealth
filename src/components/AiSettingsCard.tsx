@@ -66,7 +66,7 @@ export default function AiSettingsCard({
       <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Cpu className="w-5 h-5 text-teal-700 dark:text-teal-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">AI Provider Keys (BYOK)</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">AI provider keys</h3>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800 px-2.5 py-1 rounded-full font-medium">
           <ShieldCheck className="w-3.5 h-3.5" />

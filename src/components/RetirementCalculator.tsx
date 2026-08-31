@@ -187,13 +187,13 @@ export default function RetirementCalculator({
       {/* Header — slim, so the results sit near the top on mobile */}
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
         <Target className="w-5 h-5 text-teal-700 dark:text-teal-400" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Retirement Readiness</h3>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Retirement</h3>
       </div>
 
       {/* Results Section */}
       <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-5 shadow-sm">
         <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800">
-          Readiness &amp; Projections
+          Projections
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -216,7 +216,7 @@ export default function RetirementCalculator({
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
             <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Readiness Status</span>
             <div className={`text-xl font-bold font-mono mt-1 ${fundingPercentage >= 100 ? 'text-emerald-700 dark:text-emerald-400' : 'text-teal-700 dark:text-teal-400'}`}>
-              {fundingPercentage >= 100 ? '🎉 Goal Achieved!' : `🚀 ${100 - fundingPercentage}% away`}
+              {fundingPercentage >= 100 ? 'On track' : `${100 - fundingPercentage}% short`}
             </div>
           </div>
         </div>
@@ -326,7 +326,7 @@ export default function RetirementCalculator({
                       </span>
                       <div className="text-2xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
                         {requiredMonthly <= 0
-                          ? 'On track 🎉'
+                          ? 'On track'
                           : `${country.symbol}${formatCompact(requiredMonthly, country.currency)}`}
                       </div>
                       {requiredMonthly > 0 && (
@@ -420,7 +420,7 @@ export default function RetirementCalculator({
           aria-expanded={showParams}
           className="w-full flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800 cursor-pointer"
         >
-          <span>Simulation Parameters</span>
+          <span>Assumptions</span>
           <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showParams ? 'rotate-180' : ''}`} />
         </button>
         {showParams && (

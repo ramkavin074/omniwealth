@@ -72,7 +72,7 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
       {!embedded && (
         <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
           <PieChart className="w-5 h-5 text-slate-500 dark:text-slate-400 print:hidden" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Asset Class Allocation</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Allocation</h3>
         </div>
       )}
       {sortedEntries.length === 0 ? (

@@ -80,7 +80,7 @@ export default function LiabilitiesManagementSection({
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
           <CreditCard className="w-5 h-5 text-rose-500" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Active Liabilities &amp; Loans</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Liabilities</h3>
         </div>
 
         {liabilities.length === 0 ? (

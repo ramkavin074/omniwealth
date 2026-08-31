@@ -131,7 +131,7 @@ export default function SecurityCard() {
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-colors">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
         <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Security &amp; Password Change</h2>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Security</h2>
       </div>
 
       {pwdError && <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs p-3 rounded-xl shadow-sm">{pwdError}</div>}

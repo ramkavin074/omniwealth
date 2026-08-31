@@ -29,7 +29,7 @@ export default function FamilyMembersCard({ initialFamilyMembers, currentUserId,
       <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Registered Family Members ({initialFamilyMembers.length})</h2>
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Family members ({initialFamilyMembers.length})</h2>
         </div>
         {canManage && (
           <button
