@@ -871,6 +871,63 @@ export async function deleteAssetAction(assetId: string) {
   return { success: true };
 }
 
+// Read-only export of the household's assets as CSV text. Any signed-in
+// member may export their own household's data.
+export async function exportAssetsCsvAction(): Promise<
+  { success: true; csv: string } | { success: false; error: string }
+> {
+  const session = await getSessionUserAction();
+  if (!session) return { success: false, error: 'Unauthorized' };
+
+  try {
+    const rows = await db
+      .select()
+      .from(assets)
+      .where(eq(assets.householdId, session.household.id))
+      .orderBy(assets.name);
+
+    const members = await db
+      .select({ id: users.id, fullName: users.fullName })
+      .from(users)
+      .where(eq(users.householdId, session.household.id));
+    const nameById = new Map(members.map((m) => [m.id, m.fullName]));
+
+    const headers = [
+      'Name', 'Type', 'Account Category', 'Account Number', 'Currency',
+      'Native Value', 'Quantity', 'Owner', 'Legacy Pillar', 'Beneficiary',
+      'Access Notes', 'Updated At',
+    ];
+
+    const esc = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const lines = [headers.join(',')];
+    for (const a of rows) {
+      lines.push([
+        a.name,
+        a.assetType,
+        a.accountCategory,
+        a.accountNumber,
+        a.nativeCurrency,
+        a.nativeValue,
+        a.quantity ?? '',
+        nameById.get(a.userId) ?? '',
+        a.rationale,
+        a.beneficiary ?? '',
+        a.accessNotes ?? '',
+        a.updatedAt ? new Date(a.updatedAt).toISOString() : '',
+      ].map(esc).join(','));
+    }
+
+    return { success: true, csv: lines.join('\r\n') };
+  } catch (err) {
+    logError('exportAssetsCsvAction', err);
+    return { success: false, error: 'Could not build the export.' };
+  }
+}
+
 export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
   const session = await getSessionUserAction();
   if (!session || !session.household?.id) {
