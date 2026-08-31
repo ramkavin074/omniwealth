@@ -45,4 +45,11 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Required by @aparajita/capacitor-biometric-auth (BiometricPrompt).
+         USE_FINGERPRINT covers Android 6–8; USE_BIOMETRIC covers 9+.
+         Both are install-time permissions (no runtime prompt). Without
+         USE_BIOMETRIC, enabling the app lock crashes on Android 9+. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 </manifest>
