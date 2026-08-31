@@ -43,11 +43,10 @@ export default function AppLock() {
     try {
       console.info('[applock] authenticate…');
       await withTimeout(
-        // Biometric-only (no allowDeviceCredential) → in-place BiometricPrompt,
-        // no separate AuthActivity backgrounding the app.
         BiometricAuth.authenticate({
           reason: 'Unlock OmniWealth',
           cancelTitle: 'Cancel',
+          allowDeviceCredential: true,
           androidTitle: 'OmniWealth',
           androidSubtitle: 'Verify it’s you',
           iosFallbackTitle: 'Use passcode',

@@ -41,24 +41,18 @@ export default function SecurityCard() {
       console.info('[applock] checkBiometry…');
       const bio = await BiometricAuth.checkBiometry();
       console.info('[applock] checkBiometry ok', JSON.stringify(bio));
-      if (!bio.isAvailable) {
-        setLockMsg('No fingerprint/face is set up on this device. Add one in Android settings, then try again.');
-        return;
-      }
       console.info('[applock] authenticate…');
       await withTimeout(
-        // Biometric-only: no allowDeviceCredential, so the plugin uses an
-        // in-place BiometricPrompt rather than a separate AuthActivity that
-        // would background/foreground the app.
         BiometricAuth.authenticate({
           reason: 'Confirm to enable app lock',
+          allowDeviceCredential: true,
           androidTitle: 'OmniWealth',
-          androidSubtitle: 'Verify it’s you',
         }),
       );
       console.info('[applock] authenticate ok');
       localStorage.setItem(APP_LOCK_KEY, '1');
       setLockOn(true);
+      if (!bio.isAvailable) setLockMsg('Enabled using your device PIN/pattern.');
     } catch (err: any) {
       const detail = err?.message || err?.code || String(err);
       console.warn('[applock] toggle failed:', detail, err);
