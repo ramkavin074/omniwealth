@@ -27,13 +27,11 @@ export default function CollapsibleSection({
 }) {
   const [open, setOpen] = useState<boolean>(() => {
     try {
-      const v = localStorage.getItem(`omniwealth_sec_${id}`);
-      if (v === '1') return true;
-      if (v === '0') return false;
+      // Only a deliberate collapse is remembered; default is open.
+      return localStorage.getItem(`omniwealth_sec_${id}`) !== '0';
     } catch {
-      /* ignore */
+      return true;
     }
-    return typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
   });
 
   const toggle = () => {

@@ -80,10 +80,8 @@ export default function RetirementCalculator({
   const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
   const [additionalYears, setAdditionalYears] = useState<number>(0);
 
-  // Inputs open on desktop, collapsed on phones so the results show first.
-  const [showParams, setShowParams] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
-  );
+  // Inputs open by default; collapsible for anyone who wants a shorter view.
+  const [showParams, setShowParams] = useState(true);
 
   // Required-savings planner (opt-in, collapsed by default).
   const [showPlanner, setShowPlanner] = useState(false);
