@@ -1,7 +1,6 @@
 package com.omniwealth.app;
 
 import android.os.Bundle;
-import android.view.View;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -10,11 +9,10 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        }
-    }
+    // NOTE: previously forced getWebView().setLayerType(LAYER_TYPE_SOFTWARE)
+    // in onStart(). That disables hardware acceleration for the WebView and
+    // made the Chromium renderer crash (SIGTRAP in libmonochrome) whenever a
+    // native dialog — e.g. the biometric prompt — caused the WebView to
+    // recomposite, which then aborted the whole app. Removed so the WebView
+    // uses its default hardware layer.
 }
