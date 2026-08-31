@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp } from 'lucide-react';
+import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp, Calculator, ChevronDown } from 'lucide-react';
 import { updateRetirementPreferencesAction } from '@/actions/vault';
 
 interface CountryConfig {
@@ -12,18 +12,23 @@ interface CountryConfig {
   swr: number;
   defaultIncome: number;
   defaultContribution: number;
+  // Rough all-in effective tax on employment income for a mid-career
+  // earner — a starting point the user overrides, not a tax engine.
+  defaultTaxRate: number;
+  // Names of the local tax-advantaged buckets to fill first.
+  taxAdvantaged: string;
 }
 
 const COUNTRIES: { [key: string]: CountryConfig } = {
-  US: { name: 'United States', currency: 'USD', symbol: '$', defaultInflation: 2.5, swr: 0.04, defaultIncome: 60000, defaultContribution: 1500 },
-  UK: { name: 'United Kingdom', currency: 'GBP', symbol: '£', defaultInflation: 2.5, swr: 0.035, defaultIncome: 45000, defaultContribution: 1200 },
-  EU: { name: 'Eurozone', currency: 'EUR', symbol: '€', defaultInflation: 2.2, swr: 0.035, defaultIncome: 50000, defaultContribution: 1250 },
-  China: { name: 'China', currency: 'CNY', symbol: '¥', defaultInflation: 2.3, swr: 0.035, defaultIncome: 350000, defaultContribution: 8000 },
-  India: { name: 'India', currency: 'INR', symbol: '₹', defaultInflation: 6.0, swr: 0.0325, defaultIncome: 1200000, defaultContribution: 25000 },
-  Canada: { name: 'Canada', currency: 'CAD', symbol: 'CA$', defaultInflation: 2.3, swr: 0.04, defaultIncome: 75000, defaultContribution: 1800 },
-  Australia: { name: 'Australia', currency: 'AUD', symbol: 'A$', defaultInflation: 2.8, swr: 0.0375, defaultIncome: 80000, defaultContribution: 2000 },
-  Switzerland: { name: 'Switzerland', currency: 'CHF', symbol: 'CHF ', defaultInflation: 1.5, swr: 0.035, defaultIncome: 90000, defaultContribution: 2000 },
-  Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000 },
+  US: { name: 'United States', currency: 'USD', symbol: '$', defaultInflation: 2.5, swr: 0.04, defaultIncome: 60000, defaultContribution: 1500, defaultTaxRate: 22, taxAdvantaged: '401(k) / IRA / HSA' },
+  UK: { name: 'United Kingdom', currency: 'GBP', symbol: '£', defaultInflation: 2.5, swr: 0.035, defaultIncome: 45000, defaultContribution: 1200, defaultTaxRate: 28, taxAdvantaged: 'workplace pension / SIPP / ISA' },
+  EU: { name: 'Eurozone', currency: 'EUR', symbol: '€', defaultInflation: 2.2, swr: 0.035, defaultIncome: 50000, defaultContribution: 1250, defaultTaxRate: 35, taxAdvantaged: 'occupational pension / PEA-type accounts' },
+  China: { name: 'China', currency: 'CNY', symbol: '¥', defaultInflation: 2.3, swr: 0.035, defaultIncome: 350000, defaultContribution: 8000, defaultTaxRate: 20, taxAdvantaged: 'enterprise annuity / private pension' },
+  India: { name: 'India', currency: 'INR', symbol: '₹', defaultInflation: 6.0, swr: 0.0325, defaultIncome: 1200000, defaultContribution: 25000, defaultTaxRate: 20, taxAdvantaged: 'EPF / PPF / NPS' },
+  Canada: { name: 'Canada', currency: 'CAD', symbol: 'CA$', defaultInflation: 2.3, swr: 0.04, defaultIncome: 75000, defaultContribution: 1800, defaultTaxRate: 25, taxAdvantaged: 'RRSP / TFSA' },
+  Australia: { name: 'Australia', currency: 'AUD', symbol: 'A$', defaultInflation: 2.8, swr: 0.0375, defaultIncome: 80000, defaultContribution: 2000, defaultTaxRate: 30, taxAdvantaged: 'superannuation' },
+  Switzerland: { name: 'Switzerland', currency: 'CHF', symbol: 'CHF ', defaultInflation: 1.5, swr: 0.035, defaultIncome: 90000, defaultContribution: 2000, defaultTaxRate: 22, taxAdvantaged: 'Pillar 2 / Pillar 3a' },
+  Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000, defaultTaxRate: 30, taxAdvantaged: 'iDeCo / NISA' },
 };
 
 const FX_RATES: { [key: string]: number } = {
@@ -73,6 +78,12 @@ export default function RetirementCalculator({
   const [desiredAnnualIncome, setDesiredAnnualIncome] = useState<number | ''>(initialDesiredIncome ?? country.defaultIncome);
   const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
   const [additionalYears, setAdditionalYears] = useState<number>(0);
+
+  // Required-savings planner (opt-in, collapsed by default).
+  const [showPlanner, setShowPlanner] = useState(false);
+  const [annualSalary, setAnnualSalary] = useState<number | ''>(country.defaultIncome);
+  const [otherIncome, setOtherIncome] = useState<number | ''>(0);
+  const [taxRate, setTaxRate] = useState<number | ''>(country.defaultTaxRate);
    
   const [isPending, startTransition] = useTransition();
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -84,6 +95,8 @@ export default function RetirementCalculator({
       setInflationRate(cfg.defaultInflation);
       setDesiredAnnualIncome(cfg.defaultIncome);
       setMonthlyContribution(cfg.defaultContribution);
+      setAnnualSalary(cfg.defaultIncome);
+      setTaxRate(cfg.defaultTaxRate);
       const newSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, cfg.currency));
       setCurrentSavings(newSavings);
     }
@@ -132,6 +145,35 @@ export default function RetirementCalculator({
 
   const surplusAmount = Math.max(0, projectedNestEgg - targetNestEgg);
   const surplusPercentage = targetNestEgg > 0 ? Math.min(Math.round((surplusAmount / targetNestEgg) * 100), 150) : 0;
+
+  // --- Required-savings back-solve ---
+  // What monthly contribution closes the gap between the target corpus and
+  // what current savings alone grow to over the horizon?
+  const sal = annualSalary === '' ? 0 : annualSalary;
+  const other = otherIncome === '' ? 0 : otherIncome;
+  const tax = taxRate === '' ? 0 : taxRate;
+  const grossIncome = sal + other;
+  const netIncome = Math.max(0, grossIncome * (1 - tax / 100));
+
+  const gapToTarget = Math.max(0, targetNestEgg - fvCurrent);
+  const requiredMonthly =
+    gapToTarget <= 0
+      ? 0
+      : monthlyRate > 0
+        ? (gapToTarget * monthlyRate) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
+        : gapToTarget / Math.max(totalMonths, 1);
+  const requiredAnnual = requiredMonthly * 12;
+  const savingsRateOfNet = netIncome > 0 ? (requiredAnnual / netIncome) * 100 : 0;
+  const savingsRateOfGross = grossIncome > 0 ? (requiredAnnual / grossIncome) * 100 : 0;
+  const planFeasible = requiredMonthly <= 0 || (savingsRateOfNet > 0 && savingsRateOfNet <= 50);
+
+  // Age-based glidepath rule of thumb for the horizon length.
+  const glide =
+    totalYearsToRetirement > 20
+      ? { eq: 80, bond: 15, cash: 5 }
+      : totalYearsToRetirement >= 10
+        ? { eq: 65, bond: 25, cash: 10 }
+        : { eq: 50, bond: 35, cash: 15 };
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 transition-colors">
@@ -362,11 +404,130 @@ export default function RetirementCalculator({
             <AlertCircle className="w-4 h-4 text-teal-700 dark:text-teal-400 shrink-0 mt-0.5" />
           )}
           <p className="leading-relaxed">
-            {isFullyFunded 
+            {isFullyFunded
               ? `Your family is fully on track under the ${country.name} economic parameters. Delaying or extending your horizon by ${additionalYears} years brings your effective retirement age to ${effectiveRetirementAge}, yielding an excess surplus of ${country.symbol}${surplusAmount.toLocaleString()}.`
               : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
             }
           </p>
+        </div>
+
+        {/* Required-savings planner — opt-in, collapsed by default */}
+        <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={() => setShowPlanner((v) => !v)}
+            className="flex items-center gap-2 text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wide cursor-pointer"
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            Plan my contributions
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPlanner ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showPlanner && (
+            <div className="mt-4 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-slate-500 dark:text-slate-400 font-medium">Annual Salary, gross ({country.symbol})</label>
+                  <input
+                    type="number"
+                    value={annualSalary}
+                    onChange={(e) => setAnnualSalary(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-slate-500 dark:text-slate-400 font-medium">Other Annual Income — bonus, RSU ({country.symbol})</label>
+                  <input
+                    type="number"
+                    value={otherIncome}
+                    onChange={(e) => setOtherIncome(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 shadow-sm">
+                <div className="flex justify-between text-slate-700 dark:text-slate-300 font-medium">
+                  <span>Effective Tax Rate ({country.name})</span>
+                  <span className="font-mono font-bold text-rose-700 dark:text-rose-400">{tax}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="55"
+                  step="1"
+                  value={taxRate === '' ? 0 : taxRate}
+                  onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                  className="w-full accent-rose-700 cursor-pointer"
+                  title="Effective tax rate"
+                />
+              </div>
+
+              {grossIncome > 0 ? (
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 shadow-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">
+                        Save / Month to Hit Target by Age {effectiveRetirementAge}
+                      </span>
+                      <div className="text-2xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
+                        {requiredMonthly <= 0
+                          ? 'On track 🎉'
+                          : `${country.symbol}${Math.round(requiredMonthly).toLocaleString()}`}
+                      </div>
+                      {requiredMonthly > 0 && (
+                        <span className="text-[10px] text-slate-400">
+                          {country.symbol}{Math.round(requiredAnnual).toLocaleString()}/yr
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Share of Take-Home Pay</span>
+                      <div
+                        className={`text-2xl font-extrabold font-mono mt-1 ${
+                          planFeasible ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                        }`}
+                      >
+                        {requiredMonthly <= 0 ? '0%' : `${savingsRateOfNet.toFixed(0)}%`}
+                      </div>
+                      {requiredMonthly > 0 && (
+                        <span className="text-[10px] text-slate-400">
+                          {savingsRateOfGross.toFixed(0)}% of gross · take-home {country.symbol}
+                          {Math.round(netIncome).toLocaleString()}/yr
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {requiredMonthly > 0 && (
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+                      <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block mb-2">
+                        A common {totalYearsToRetirement}-year-horizon mix (rule of thumb)
+                      </span>
+                      <div className="flex h-3 w-full rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
+                        <div className="bg-teal-700" style={{ width: `${glide.eq}%` }} title={`Equities ${glide.eq}%`} />
+                        <div className="bg-amber-600" style={{ width: `${glide.bond}%` }} title={`Fixed income ${glide.bond}%`} />
+                        <div className="bg-slate-400" style={{ width: `${glide.cash}%` }} title={`Cash ${glide.cash}%`} />
+                      </div>
+                      <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-1.5">
+                        <span>Equities {glide.eq}%</span>
+                        <span>Fixed income {glide.bond}%</span>
+                        <span>Cash {glide.cash}%</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                        Fill your {country.name} tax-advantaged accounts first ({country.taxAdvantaged}), then a taxable
+                        brokerage. Simplified estimate in {country.currency} — not financial advice.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Enter your salary to see the required monthly saving.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
