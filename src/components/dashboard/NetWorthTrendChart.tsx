@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Globe } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
 
-export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange }: any) {
+export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeRange, setTimeRange, estimated = true }: any) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => formatCompact(val, baseCurrency);
 
@@ -75,9 +75,15 @@ export default function NetWorthTrendChart({ trendData = [], baseCurrency, timeR
             <div className="hidden sm:block relative w-full h-52 overflow-hidden rounded-xl">
               {renderChart(desktopChart)}
             </div>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-2">
-              Historical points are estimated from current holdings and recorded transactions, not month-by-month snapshots.
-            </p>
+            {estimated ? (
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-2">
+                Historical points are estimated from current holdings and recorded transactions, not day-by-day snapshots.
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-2">
+                Based on daily recorded snapshots of your net worth.
+              </p>
+            )}
           </>
         )}
       </div>

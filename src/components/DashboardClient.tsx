@@ -27,8 +27,9 @@ import Footer from '@/components/Footer';
 import VaultUploadModal from '@/components/VaultUploadModal';
 
 import { 
-  fetchFamilyMembersAction, 
+  fetchFamilyMembersAction,
   fetchNetWorthTrendAction,
+  fetchNetWorthSnapshotsAction,
   logoutAction,
   updateThemePreferenceAction
 } from '@/actions/vault';
@@ -75,6 +76,7 @@ export default function DashboardClient({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
+  const [trendEstimated, setTrendEstimated] = useState(true);
   const [timeRange, setTimeRange] = useState('6m');
   const [liveRates, setLiveRates] = useState<{ [key: string]: number }>(initialLiveRates);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -113,7 +115,41 @@ export default function DashboardClient({
   }, []);
 
   useEffect(() => {
-    fetchNetWorthTrendAction(timeRange).then(setTrendData).catch(err => console.warn('Failed to fetch net worth trend:', err));
+    let cancelled = false;
+    const rangeDays: Record<string, number> = {
+      '1m': 31, '3m': 93, '6m': 186, '1y': 372, '3y': 1116,
+      '5y': 1860, '10y': 3720, '15y': 5580, '20y': 7440,
+    };
+    Promise.all([
+      fetchNetWorthSnapshotsAction().catch(() => [] as { date: string; value: number }[]),
+      fetchNetWorthTrendAction(timeRange).catch(() => [] as { month: string; value: number }[]),
+    ]).then(([snapshots, estimated]) => {
+      if (cancelled) return;
+      // Prefer real recorded history once we have at least two points.
+      if (Array.isArray(snapshots) && snapshots.length >= 2) {
+        const days = rangeDays[timeRange] ?? 186;
+        const cutoff = Date.now() - days * 86400_000;
+        const windowed = snapshots.filter((s) => new Date(s.date).getTime() >= cutoff);
+        const use = windowed.length >= 2 ? windowed : snapshots;
+        const longRange = days > 400;
+        setTrendData(
+          use.map((s) => {
+            const d = new Date(s.date);
+            return {
+              month: longRange
+                ? d.toLocaleString('default', { month: 'short', year: '2-digit' })
+                : d.toLocaleString('default', { month: 'short', day: 'numeric' }),
+              value: s.value,
+            };
+          }),
+        );
+        setTrendEstimated(false);
+      } else {
+        setTrendData(Array.isArray(estimated) ? estimated : []);
+        setTrendEstimated(true);
+      }
+    });
+    return () => { cancelled = true; };
   }, [timeRange]);
 
   useEffect(() => {
@@ -305,7 +341,7 @@ export default function DashboardClient({
                   } : undefined}
                 />
                 <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
-                <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} />
+                <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} />
               </div>
             )}
 
