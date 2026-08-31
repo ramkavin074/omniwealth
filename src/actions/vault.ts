@@ -887,7 +887,11 @@ export async function updateHouseholdLegacyPillarsAction(formData: FormData) {
     const name = (formData.get(`pillar_name_${i}`) as string || '').trim();
     const description = (formData.get(`pillar_desc_${i}`) as string || '').trim();
     if (name) {
-      pillars.push({ name, description });
+      const rawTarget = parseFloat((formData.get(`pillar_target_${i}`) as string || '').trim());
+      const target = Number.isFinite(rawTarget) && rawTarget > 0 ? rawTarget : null;
+      const rawDate = (formData.get(`pillar_target_date_${i}`) as string || '').trim();
+      const targetDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : null;
+      pillars.push({ name, description, target, targetDate });
     }
   }
 

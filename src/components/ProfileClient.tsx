@@ -43,9 +43,11 @@ interface ProfileClientProps {
   };
   initialFamilyMembers: any[];
   householdDetails: any;
+  assets?: any[];
+  liveRates?: { [key: string]: number };
 }
 
-export default function ProfileClient({ session, initialFamilyMembers, householdDetails }: ProfileClientProps) {
+export default function ProfileClient({ session, initialFamilyMembers, householdDetails, assets = [], liveRates = {} }: ProfileClientProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [success, setSuccess] = useState('');
@@ -279,7 +281,12 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           />
 
           {/* 3. Legacy & Wealth Pillars Card */}
-          <LegacyPillarsCard householdDetails={householdDetails} />
+          <LegacyPillarsCard
+            householdDetails={householdDetails}
+            assets={assets}
+            baseCurrency={householdDetails?.baseCurrency || session.household.baseCurrency || 'USD'}
+            liveRates={liveRates}
+          />
 
           {/* 4. Multi-AI Free-First Cascade BYOK Settings Card */}
           <AiSettingsCard

@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { users, households } from '@/db/schema';
+import { users, households, assets } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getSessionUserAction } from '@/actions/vault';
+import { getSessionUserAction, fetchLiveExchangeRatesAction } from '@/actions/vault';
 import ProfileClient from '@/components/ProfileClient';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,13 @@ export default async function ProfilePage() {
     .select()
     .from(households)
     .where(eq(households.id, householdId));
+
+  // Assets + FX so the pillars card can show progress toward each target.
+  const householdAssets = await db
+    .select()
+    .from(assets)
+    .where(eq(assets.householdId, householdId));
+  const liveRates = await fetchLiveExchangeRatesAction();
 
   // Map session shape, converting database nulls to undefined to satisfy TypeScript
   const formattedSession = {
@@ -52,10 +59,12 @@ export default async function ProfilePage() {
   };
 
   return (
-    <ProfileClient 
-      session={formattedSession} 
-      initialFamilyMembers={initialFamilyMembers} 
-      householdDetails={householdDetails} 
+    <ProfileClient
+      session={formattedSession}
+      initialFamilyMembers={initialFamilyMembers}
+      householdDetails={householdDetails}
+      assets={householdAssets}
+      liveRates={liveRates}
     />
   );
 }
