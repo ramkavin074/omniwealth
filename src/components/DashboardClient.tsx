@@ -38,7 +38,7 @@ import {
   updateThemePreferenceAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -195,6 +195,19 @@ export default function DashboardClient({
     }, 0);
   }, [initialAssets, baseCurrency, liveRates]);
 
+  // How many distinct currencies the (non-liability) holdings span — the
+  // Currency Exposure section only makes sense with more than one.
+  const currencyCount = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of initialAssets as any[]) {
+      const type = (a.assetType || '').toUpperCase();
+      const cat = (a.accountCategory || '').toUpperCase();
+      if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY') continue;
+      set.add((a.nativeCurrency || 'USD').toUpperCase());
+    }
+    return set.size;
+  }, [initialAssets]);
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors print:bg-white print:text-slate-900 print:pb-0">
       <div>
@@ -347,25 +360,33 @@ export default function DashboardClient({
                 <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <StaleValueNudge assets={initialAssets} />
 
-                <CollapsibleSection id="breakdown" title="Wealth Breakdown" icon={<Users className="w-5 h-5" />}>
-                  <WealthSummaryDashboard
-                    assets={initialAssets}
-                    baseCurrency={baseCurrency}
-                    legacyPillars={legacyPillars}
-                    liveRates={liveRates}
-                    forceExpanded={printExpandAll}
-                    onEditAsset={canManage ? (asset: any) => {
-                      setEditingAsset(asset);
-                      setIsEditModalOpen(true);
-                    } : undefined}
-                  />
-                </CollapsibleSection>
+                {(() => {
+                  const editHandler = canManage ? (asset: any) => {
+                    setEditingAsset(asset);
+                    setIsEditModalOpen(true);
+                  } : undefined;
+                  return (
+                    <>
+                      <CollapsibleSection id="by-member" title="Wealth by Family Member" icon={<Users className="w-5 h-5" />}>
+                        <WealthSummaryDashboard only="members" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} forceExpanded={printExpandAll} onEditAsset={editHandler} />
+                      </CollapsibleSection>
+
+                      <CollapsibleSection id="by-purpose" title="Wealth by Purpose" icon={<Target className="w-5 h-5" />}>
+                        <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} forceExpanded={printExpandAll} onEditAsset={editHandler} />
+                      </CollapsibleSection>
+                    </>
+                  );
+                })()}
 
                 <CollapsibleSection id="allocation" title="Asset Class Allocation" icon={<PieChart className="w-5 h-5" />}>
                   <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} noHeader />
                 </CollapsibleSection>
 
-                <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+                {currencyCount >= 2 && (
+                  <CollapsibleSection id="fx" title="Currency Exposure" icon={<Globe className="w-5 h-5" />}>
+                    <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} noHeader />
+                  </CollapsibleSection>
+                )}
 
                 <CollapsibleSection id="trend" title="Net Worth Trend" icon={<TrendingUp className="w-5 h-5" />}>
                   <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} />
@@ -405,9 +426,15 @@ export default function DashboardClient({
 
             {activeTab === 'directives' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
-                <FutureMilestonesAndDirectives assets={initialAssets} />
                 <EstateReadinessCard assets={initialAssets} />
-                <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} />
+
+                <CollapsibleSection id="milestones" title="Future Milestones & Directives" icon={<Shield className="w-5 h-5" />}>
+                  <FutureMilestonesAndDirectives assets={initialAssets} />
+                </CollapsibleSection>
+
+                <CollapsibleSection id="documents" title="Document Vault" icon={<Lock className="w-5 h-5" />}>
+                  <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} />
+                </CollapsibleSection>
               </div>
             )}
 

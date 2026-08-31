@@ -80,6 +80,11 @@ export default function RetirementCalculator({
   const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
   const [additionalYears, setAdditionalYears] = useState<number>(0);
 
+  // Inputs open on desktop, collapsed on phones so the results show first.
+  const [showParams, setShowParams] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
+  );
+
   // Required-savings planner (opt-in, collapsed by default).
   const [showPlanner, setShowPlanner] = useState(false);
   const [annualSalary, setAnnualSalary] = useState<number | ''>(country.defaultIncome);
@@ -215,9 +220,17 @@ export default function RetirementCalculator({
 
       {/* Grouped Input Section */}
       <div className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
-        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800">
-          Simulation Parameters
-        </h4>
+        <button
+          type="button"
+          onClick={() => setShowParams((v) => !v)}
+          aria-expanded={showParams}
+          className="w-full flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800 cursor-pointer"
+        >
+          <span>Simulation Parameters</span>
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showParams ? 'rotate-180' : ''}`} />
+        </button>
+        {showParams && (
+        <>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           {/* Ages in a clean 2-column row */}
@@ -335,6 +348,8 @@ export default function RetirementCalculator({
             <span>+20 yrs (Age {rAge + 20})</span>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Results Section */}
