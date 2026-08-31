@@ -15,7 +15,7 @@ export function lockEnabled(): boolean {
 let internalAuthUntil = 0;
 
 export function beginInternalAuth(): void {
-  internalAuthUntil = Date.now() + 60_000;
+  internalAuthUntil = Date.now() + 30_000;
 }
 
 export function endInternalAuth(): void {

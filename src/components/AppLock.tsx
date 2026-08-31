@@ -16,26 +16,32 @@ import {
 
 export { APP_LOCK_KEY };
 
+// A real background/return is always longer than this. The biometric
+// dialog / permission dialog round-trip is a few hundred ms, so it never
+// crosses the threshold — which is what stops the unlock→resume→re-lock
+// loop seen on Android.
+const MIN_BACKGROUND_MS = 1500;
+
 /**
  * Native-only screen lock. On web it renders nothing. When enabled, the
- * app is covered on cold start and whenever it returns from the
- * background until the user passes biometric / device-credential auth.
+ * app is covered on cold start and whenever it comes back after being
+ * genuinely in the background, until the user passes biometric /
+ * device-credential auth.
  */
 export default function AppLock() {
   const isNative = Capacitor.isNativePlatform();
   const [locked, setLocked] = useState(isNative && lockEnabled());
   const authing = useRef(false);
-  const unlockedAt = useRef(0);
+  const backgroundedAt = useRef(0);
 
   const unlock = useCallback(async () => {
     if (authing.current) return;
     authing.current = true;
-    // The plugin's auth dialog / AuthActivity backgrounds then foregrounds
-    // the app. Mark that as an internal auth so the appStateChange handler
-    // below doesn't treat the return as a fresh "re-lock and prompt again".
+    // The auth dialog itself briefly backgrounds the app; mark it so the
+    // resume handler doesn't treat the return as a new lock trigger.
     beginInternalAuth();
     try {
-      console.info('[applock] unlock authenticate…');
+      console.info('[applock] authenticate…');
       await withTimeout(
         BiometricAuth.authenticate({
           reason: 'Unlock OmniWealth',
@@ -46,11 +52,10 @@ export default function AppLock() {
           iosFallbackTitle: 'Use passcode',
         }),
       );
-      console.info('[applock] unlock ok');
-      unlockedAt.current = Date.now();
+      console.info('[applock] unlocked');
       setLocked(false);
     } catch (err: any) {
-      console.warn('[applock] unlock failed:', err?.message || err?.code || String(err), err);
+      console.warn('[applock] auth failed:', err?.message || err?.code || String(err));
       // stay locked; the Unlock button lets the user retry
     } finally {
       endInternalAuth();
@@ -58,14 +63,8 @@ export default function AppLock() {
     }
   }, []);
 
-  // Lock + prompt on cold start / return-from-background. Skips while an
-  // internal auth is running (settings toggle, or our own prompt above)
-  // and for a few seconds after a successful unlock, so the trailing
-  // foreground event doesn't immediately re-lock.
   const engage = useCallback(() => {
-    if (!lockEnabled()) return;
-    if (authing.current || isInternalAuth()) return;
-    if (Date.now() - unlockedAt.current < 3000) return;
+    if (!lockEnabled() || authing.current || isInternalAuth()) return;
     setLocked(true);
     void unlock();
   }, [unlock]);
@@ -73,10 +72,19 @@ export default function AppLock() {
   useEffect(() => {
     if (!isNative) return;
 
+    // Cold start: lock immediately.
     engage();
 
     const sub = App.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) engage();
+      if (!isActive) {
+        backgroundedAt.current = Date.now();
+        return;
+      }
+      // Resumed. Ignore the trivial round-trip from our own auth dialog,
+      // and only lock if the app was actually away for a real interval.
+      if (isInternalAuth()) return;
+      if (Date.now() - backgroundedAt.current < MIN_BACKGROUND_MS) return;
+      engage();
     });
     return () => {
       void sub.then((h) => h.remove());
