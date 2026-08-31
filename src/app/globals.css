@@ -29,19 +29,31 @@ body {
 
 /* --- Print & PDF Export Styles --- */
 @media print {
+  /* Keep bar charts, badges, progress fills and chart areas visible —
+     browsers drop background colours in print unless told otherwise. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Hide standard app UI, navigation, headers, and buttons during print */
-  header, 
-  nav, 
-  footer, 
-  button, 
+  header,
+  nav,
+  footer,
+  button,
   .no-print {
     display: none !important;
   }
 
-  /* Reset background and text colors for clean white paper print output */
+  /* Print on white paper even if the app is in dark mode. */
   body {
-    background: white !important;
-    color: black !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .dark .bg-slate-900,
+  .dark .bg-slate-950,
+  .dark .bg-slate-900\/50 {
+    background: #ffffff !important;
   }
 
   /* Ensure print layout containers span full width cleanly */

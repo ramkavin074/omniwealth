@@ -81,6 +81,7 @@ export default function DashboardClient({
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [trendEstimated, setTrendEstimated] = useState(true);
   const [timeRange, setTimeRange] = useState('6m');
+  const [printExpandAll, setPrintExpandAll] = useState(false);
   const [liveRates] = useState<{ [key: string]: number }>(initialLiveRates);
   const [isDarkMode, setIsDarkMode] = useState(false);
   
@@ -207,10 +208,17 @@ export default function DashboardClient({
           onOpenLiability={() => setIsAddLiabilityOpen(true)}
           onOpenAiReader={() => setIsAiReaderOpen(true)}
           onExport={() => {
-            // Only the Wealth tab is laid out for print — switch to it,
-            // let it render, then open the print / Save-as-PDF dialog.
+            // Only the Wealth tab is laid out for print — switch to it and
+            // expand every accordion, let it render, then open the print
+            // dialog. afterprint collapses things back.
             setActiveTab('wealth');
-            setTimeout(() => window.print(), 150);
+            setPrintExpandAll(true);
+            const done = () => {
+              setPrintExpandAll(false);
+              window.removeEventListener('afterprint', done);
+            };
+            window.addEventListener('afterprint', done);
+            setTimeout(() => window.print(), 250);
           }}
         />
         
@@ -342,6 +350,7 @@ export default function DashboardClient({
                   baseCurrency={baseCurrency}
                   legacyPillars={legacyPillars}
                   liveRates={liveRates}
+                  forceExpanded={printExpandAll}
                   onEditAsset={canManage ? (asset: any) => {
                     setEditingAsset(asset);
                     setIsEditModalOpen(true);
