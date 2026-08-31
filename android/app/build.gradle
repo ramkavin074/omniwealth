@@ -1,8 +1,31 @@
 apply plugin: 'com.android.application'
 
+// Release signing is driven by android/key.properties (git-ignored). When
+// that file is absent (CI, fresh clone, contributors without the upload
+// key) the release build falls back to the debug signing config so the
+// build still succeeds — it just can't be uploaded to Play.
+def keystorePropsFile = rootProject.file("key.properties")
+def keystoreProps = new Properties()
+def hasReleaseSigning = keystorePropsFile.exists()
+if (hasReleaseSigning) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "com.omniwealth.app"
     compileSdk = rootProject.ext.compileSdkVersion
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
     defaultConfig {
         applicationId "com.omniwealth.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -20,7 +43,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            signingConfig hasReleaseSigning ? signingConfigs.release : signingConfigs.debug
         }
     }
 }
