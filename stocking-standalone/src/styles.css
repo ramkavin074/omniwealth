@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+/* The shared module lives outside this Vite root — tell Tailwind to scan it. */
+@source '../../src/stocking';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  -webkit-tap-highlight-color: transparent;
+}

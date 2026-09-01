@@ -11,7 +11,7 @@ import {
   logoutAction,
   updateThemePreferenceAction
 } from '@/actions/vault';
-import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, Menu, Sun, Moon } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, Menu, Sun, Moon, Package } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
@@ -167,6 +167,12 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
               <Link href="/profile" title="Household Settings" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                 <Settings className="w-4 h-4" />
               </Link>
+
+              {session?.household?.stockingEnabled && (
+                <Link href="/stocking" title="Stock / சரக்கு" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
+                  <Package className="w-4 h-4" />
+                </Link>
+              )}
 
               {session?.user?.role === 'SUPER_ADMIN' && (
                 <Link href="/admin" title="Super Admin Portal" className="p-2 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-xl border border-purple-200 dark:border-purple-900 transition cursor-pointer shadow-sm">

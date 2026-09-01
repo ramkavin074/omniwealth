@@ -53,3 +53,13 @@ export function canDeleteMember(
 
 export const READ_ONLY_ERROR = 'Your account has view-only access.';
 export const FORBIDDEN_ERROR = 'You do not have permission to do that.';
+
+/**
+ * The offline stocking module is an opt-in per household (a pilot flag), not
+ * a role. Any member of an enabled household may use it.
+ */
+export function canUseStocking(
+  household: { stockingEnabled?: boolean | null } | null | undefined,
+): boolean {
+  return household?.stockingEnabled === true;
+}

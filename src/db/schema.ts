@@ -39,6 +39,11 @@ export const households = pgTable(
     // `${accountCategory}|${accountNumber}` (e.g. "INDIVIDUAL|3780").
     accountInstructions: text('account_instructions'),
 
+    // Unlocks the offline barcode stocking module (`/stocking` route + the
+    // standalone com.omniwealth.stocking app). Off for every household
+    // except the pilot shops.
+    stockingEnabled: boolean('stocking_enabled').default(false).notNull(),
+
     // Permanent Retirement Planning Settings
     currentAge: integer('current_age').default(35).notNull(),
 
@@ -612,4 +617,73 @@ export const netWorthSnapshots = pgTable(
       table.snapshotDate,
     ),
   })
+);
+
+/**
+ * ============================================================
+ * STOCKING MODULE — cloud sync targets (LATER PHASE)
+ * ============================================================
+ *
+ * The stocking app is offline-first: IndexedDB on the device is the source of
+ * truth. These tables are the eventual sync destination. Primary keys are the
+ * client-generated UUIDs so a push is a plain upsert; `updatedAt` drives
+ * last-write-wins and `deletedAt` carries tombstones. Nothing writes here
+ * yet — the sync endpoint is a future phase.
+ */
+export const stockProducts = pgTable(
+  'stock_products',
+  {
+    // Client-generated UUID (matches the IndexedDB row id).
+    id: uuid('id').primaryKey(),
+
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+
+    barcode: text('barcode'),
+    name: text('name').notNull(),
+    price: numeric('price').notNull().default('0'),
+    stockQty: numeric('stock_qty').notNull().default('0'),
+    unit: text('unit').notNull().default('piece'),
+    lowStockThreshold: numeric('low_stock_threshold').notNull().default('0'),
+
+    // Epoch-ms mirrors of the device clock (not server time) — the client
+    // owns these so sync ordering is stable across the round trip.
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('stock_products_household_idx').on(table.householdId),
+    householdBarcodeIdx: index('stock_products_household_barcode_idx').on(
+      table.householdId,
+      table.barcode,
+    ),
+  }),
+);
+
+export const stockMovements = pgTable(
+  'stock_movements',
+  {
+    id: uuid('id').primaryKey(),
+
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+
+    productId: uuid('product_id').notNull(),
+
+    delta: numeric('delta').notNull(),
+    reason: text('reason').notNull(),
+    qtyAfter: numeric('qty_after').notNull(),
+    note: text('note'),
+
+    createdAt: numeric('created_at').notNull(),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('stock_movements_household_idx').on(table.householdId),
+    productIdx: index('stock_movements_product_idx').on(table.productId),
+  }),
 );

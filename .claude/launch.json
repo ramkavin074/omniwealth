@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "stocking-standalone",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "stocking:dev"],
+      "port": 5199
     }
   ]
 }

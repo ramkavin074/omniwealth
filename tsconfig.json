@@ -30,5 +30,12 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "capacitor.config.ts", "android"]
+  "exclude": [
+    "node_modules",
+    "capacitor.config.ts",
+    "capacitor.stocking.config.ts",
+    "android",
+    "android-stocking",
+    "stocking-standalone/dist"
+  ]
 }

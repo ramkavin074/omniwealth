@@ -20,6 +20,10 @@
 # production
 /build
 
+# stocking standalone build output + vite cache
+/stocking-standalone/dist
+/node_modules/.vite
+
 # misc
 .DS_Store
 *.pem

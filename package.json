@@ -6,10 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "stocking:dev": "vite --config stocking-standalone/vite.config.ts",
+    "stocking:build": "vite build --config stocking-standalone/vite.config.ts",
+    "stocking:cap": "node scripts/with-stocking-capacitor.mjs",
+    "stocking:add-android": "node scripts/with-stocking-capacitor.mjs add android",
+    "stocking:sync": "npm run stocking:build && node scripts/with-stocking-capacitor.mjs sync android",
+    "stocking:apk": "npm run stocking:sync && cd android-stocking && gradlew.bat assembleDebug"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@capacitor-mlkit/barcode-scanning": "^8.1.1",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
@@ -22,6 +29,8 @@
     "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
     "dotenv": "^17.4.2",
     "lucide-react": "^1.33.0",
     "next": "16.3.2",
@@ -38,11 +47,13 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.3.4",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^6.0.7"
   }
 }
