@@ -113,36 +113,30 @@ const resend = new Resend(
  */
 
 function getAppUrl(): string {
-  const configuredUrl =
-    process.env.NEXT_PUBLIC_APP_URL;
+  const fallback =
+    process.env.NODE_ENV === 'production'
+      ? 'https://www.omniwealth.org'
+      : 'http://localhost:3000';
 
-  if (!configuredUrl) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'NEXT_PUBLIC_APP_URL is not configured.'
-      );
-    }
+  const raw = (process.env.NEXT_PUBLIC_APP_URL || '').trim();
+  if (!raw) return fallback;
 
-    return 'http://localhost:3000';
-  }
+  // Tolerate a value with no scheme ("www.omniwealth.org") — a bad env var
+  // must never break invite / password-reset emails.
+  const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 
   let parsed: URL;
-
   try {
-    parsed = new URL(configuredUrl);
+    parsed = new URL(candidate);
   } catch {
-    throw new Error(
-      'NEXT_PUBLIC_APP_URL is invalid.'
-    );
+    return fallback;
   }
 
   if (
     process.env.NODE_ENV === 'production' &&
     parsed.protocol !== 'https:'
   ) {
-    throw new Error(
-      'NEXT_PUBLIC_APP_URL must use HTTPS in production.'
-    );
+    parsed.protocol = 'https:';
   }
 
   return parsed
