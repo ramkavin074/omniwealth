@@ -78,7 +78,6 @@ export default function RetirementCalculator({
   const [returnRate, setReturnRate] = useState<number | ''>(7);
   const [desiredAnnualIncome, setDesiredAnnualIncome] = useState<number | ''>(initialDesiredIncome ?? country.defaultIncome);
   const [inflationRate, setInflationRate] = useState<number | ''>(country.defaultInflation);
-  const [additionalYears, setAdditionalYears] = useState<number>(0);
 
   // Inputs open by default; collapsible for anyone who wants a shorter view.
   const [showParams, setShowParams] = useState(true);
@@ -130,8 +129,7 @@ export default function RetirementCalculator({
   const dIncome = desiredAnnualIncome === '' ? 0 : desiredAnnualIncome;
 
   const baseYearsToRetirement = Math.max(0, rAge - cAge);
-  const totalYearsToRetirement = baseYearsToRetirement + additionalYears;
-  const effectiveRetirementAge = rAge + additionalYears;
+  const totalYearsToRetirement = baseYearsToRetirement;
 
   const totalMonths = totalYearsToRetirement * 12;
   const monthlyRate = rRate / 100 / 12;
@@ -196,7 +194,7 @@ export default function RetirementCalculator({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
-            <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Projected Nest Egg at Age {effectiveRetirementAge}</span>
+            <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">Projected Nest Egg at Age {rAge}</span>
             <div className="text-2xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
               {country.symbol}{formatCompact(projectedNestEgg, country.currency)}
             </div>
@@ -257,7 +255,7 @@ export default function RetirementCalculator({
           )}
           <p className="leading-relaxed">
             {isFullyFunded
-              ? `Your family is fully on track under the ${country.name} economic parameters. Delaying or extending your horizon by ${additionalYears} years brings your effective retirement age to ${effectiveRetirementAge}, yielding an excess surplus of ${country.symbol}${formatCompact(surplusAmount, country.currency)}.`
+              ? `On track under ${country.name} assumptions, with an excess surplus of ${country.symbol}${formatCompact(surplusAmount, country.currency)}.`
               : `Your family currently has a funding gap for the ${country.name} region. You are ${fundingPercentage}% funded toward your target lifestyle corpus.`
             }
           </p>
@@ -320,7 +318,7 @@ export default function RetirementCalculator({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <span className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-semibold block">
-                        Save / Month to Hit Target by Age {effectiveRetirementAge}
+                        Save / Month to Hit Target by Age {rAge}
                       </span>
                       <div className="text-2xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1">
                         {requiredMonthly <= 0
@@ -514,32 +512,6 @@ export default function RetirementCalculator({
           </div>
         </div>
 
-        {/* Horizon Slider */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-          <div className="flex justify-between items-center">
-            <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-              Additional Future Simulation Horizon (+{additionalYears} Years)
-            </label>
-            <span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-400">
-              Retiring at Age {effectiveRetirementAge}
-            </span>
-          </div>
-          <input 
-            type="range" 
-            min="0" 
-            max="20" 
-            step="1" 
-            value={additionalYears} 
-            onChange={(e) => setAdditionalYears(parseInt(e.target.value) || 0)} 
-            className="w-full accent-teal-700 cursor-pointer" 
-            title="Additional Future Horizon Years"
-          />
-          <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-            <span>0 yrs (At Target Age {rAge})</span>
-            <span>+10 yrs</span>
-            <span>+20 yrs (Age {rAge + 20})</span>
-          </div>
-        </div>
         </>
         )}
       </div>
