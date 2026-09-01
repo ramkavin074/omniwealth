@@ -1,6 +1,6 @@
 'use client';
 
-import { SCREEN_PAD_STYLE } from '../ui';
+import { SCREEN_PAD } from '../ui';
 
 import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
@@ -54,7 +54,7 @@ export default function AdjustScreen({ lang }: Props) {
 
   if (!selected) {
     return (
-      <div className="p-4 space-y-3" style={SCREEN_PAD_STYLE}>
+      <div className={`p-4 space-y-3 ${SCREEN_PAD}`}>
         <input
           autoFocus
           value={term}
@@ -95,7 +95,7 @@ export default function AdjustScreen({ lang }: Props) {
   }
 
   return (
-    <div className="p-4 space-y-5" style={SCREEN_PAD_STYLE}>
+    <div className={`p-4 space-y-5 ${SCREEN_PAD}`}>
       <button
         type="button"
         onClick={() => setSelected(null)}

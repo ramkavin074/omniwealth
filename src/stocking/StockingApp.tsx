@@ -29,7 +29,7 @@ export default function StockingApp() {
   }, []);
 
   return (
-    <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 md:max-w-4xl md:border-x md:border-slate-200 md:dark:border-slate-800">
       <header
         className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
@@ -56,6 +56,28 @@ export default function StockingApp() {
         </div>
       </header>
 
+      {/* Bottom tab bar on phones (fixed, out of flow); a top tab strip on
+          desktop (static, sits here between header and content). */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:static md:max-w-none md:border-t-0 md:border-b"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {TABS.map((name) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => setTab(name)}
+            className={`flex-1 py-3 text-sm font-semibold transition md:flex-none md:px-5 ${
+              tab === name
+                ? 'text-teal-700 dark:text-teal-400 md:border-b-2 md:border-teal-700'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            {t(lang, `tab.${name}`)}
+          </button>
+        ))}
+      </nav>
+
       <main className="flex-1 min-h-0 overflow-y-auto">
         {tab === 'home' && (
           <HomeScreen
@@ -76,26 +98,6 @@ export default function StockingApp() {
           />
         )}
       </main>
-
-      <nav
-        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        {TABS.map((name) => (
-          <button
-            key={name}
-            type="button"
-            onClick={() => setTab(name)}
-            className={`flex-1 py-3 text-sm font-semibold transition ${
-              tab === name
-                ? 'text-teal-700 dark:text-teal-400'
-                : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            {t(lang, `tab.${name}`)}
-          </button>
-        ))}
-      </nav>
 
       {settingsOpen && (
         <SettingsSheet lang={lang} onClose={() => setSettingsOpen(false)} />

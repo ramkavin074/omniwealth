@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import { useNow } from '../hooks';
+import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
 import { UNITS, type Unit } from '../types';
 import {
   APP_VERSION,
@@ -79,9 +80,9 @@ export default function SettingsSheet({ lang, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/40">
+    <div className={`${SHEET_OVERLAY} z-30`}>
       <div
-        className="mx-auto w-full max-w-md rounded-t-2xl bg-white dark:bg-slate-900 p-4 space-y-5"
+        className={`${SHEET_PANEL} max-h-[92vh] space-y-5 overflow-y-auto`}
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         <div className="flex items-center justify-between">

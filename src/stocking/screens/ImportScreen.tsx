@@ -59,7 +59,7 @@ export default function ImportScreen({ lang, onClose }: Props) {
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 md:mx-auto md:max-w-2xl">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">
           {t(lang, 'import.title')}

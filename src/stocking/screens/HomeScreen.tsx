@@ -10,7 +10,7 @@ import {
 import type { Product } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow } from '../hooks';
-import { SCREEN_PAD_STYLE } from '../ui';
+import { SCREEN_PAD } from '../ui';
 import { syncNow } from '../sync';
 
 interface Props {
@@ -55,8 +55,8 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
     '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
   return (
-    <div className="p-4 space-y-4" style={SCREEN_PAD_STYLE}>
-      <div className="grid grid-cols-2 gap-3">
+    <div className={`p-4 space-y-4 md:mx-auto md:max-w-3xl ${SCREEN_PAD}`}>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile label={t(lang, 'home.products')} value={stats?.productCount ?? '—'} />
         <button
           type="button"

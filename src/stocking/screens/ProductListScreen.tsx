@@ -20,7 +20,8 @@ import {
   type ProductSort,
 } from '../db/products';
 import { buildCatalogueCsv, downloadCsv } from '../export';
-import { useDebounced, useLiveQuery } from '../hooks';
+import { useDebounced, useIsDesktop, useLiveQuery } from '../hooks';
+import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
 import LowStockBadge from '../components/LowStockBadge';
 import VirtualList from '../components/VirtualList';
 import ImportScreen from './ImportScreen';
@@ -48,6 +49,8 @@ export default function ProductListScreen({
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
   const debounced = useDebounced(term, 200);
+  const isDesktop = useIsDesktop();
+  const footerPad = isDesktop ? 24 : FOOTER_PAD;
 
   // One live snapshot of the whole catalogue; filter/sort happen in memory.
   const all = useLiveQuery(() => listProducts(), [], [] as Product[]);
@@ -68,38 +71,40 @@ export default function ProductListScreen({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col md:mx-auto md:w-full md:max-w-3xl">
       <div className="shrink-0 space-y-2 p-4 pb-2">
-        <input
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          placeholder={t(lang, 'list.search')}
-          className="w-full h-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-lg text-slate-900 dark:text-slate-50"
-        />
+        <div className="space-y-2 md:flex md:items-center md:gap-2 md:space-y-0">
+          <input
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder={t(lang, 'list.search')}
+            className="w-full h-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-lg text-slate-900 dark:text-slate-50 md:flex-1"
+          />
 
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="h-10 rounded-lg bg-teal-700 text-sm font-semibold text-white"
-          >
-            {t(lang, 'list.addProduct')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setImporting(true)}
-            className="h-10 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-100"
-          >
-            {t(lang, 'import.button')}
-          </button>
-          <button
-            type="button"
-            onClick={exportCsv}
-            disabled={all.length === 0}
-            className="h-10 rounded-lg bg-slate-200 dark:bg-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-100 disabled:opacity-40"
-          >
-            {t(lang, 'export.button')}
-          </button>
+          <div className="grid grid-cols-3 gap-2 md:flex md:shrink-0">
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="h-10 rounded-lg bg-teal-700 px-3 text-sm font-semibold text-white"
+            >
+              {t(lang, 'list.addProduct')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setImporting(true)}
+              className="h-10 rounded-lg bg-slate-200 px-3 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'import.button')}
+            </button>
+            <button
+              type="button"
+              onClick={exportCsv}
+              disabled={all.length === 0}
+              className="h-10 rounded-lg bg-slate-200 px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'export.button')}
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
@@ -144,7 +149,7 @@ export default function ProductListScreen({
           className="flex-1 min-h-0 px-4"
           items={visible}
           rowHeight={ROW_H}
-          footerPad={FOOTER_PAD}
+          footerPad={footerPad}
           getKey={(p) => p.id}
           renderRow={(p) => (
             <button
@@ -189,12 +194,12 @@ export default function ProductListScreen({
       )}
 
       {adding && (
-        <div className="fixed inset-0 z-20 flex flex-col justify-end bg-black/40">
+        <div className={SHEET_OVERLAY}>
           <div
-            className="mx-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white dark:bg-slate-900 p-4"
+            className={`${SHEET_PANEL} max-h-[90vh] overflow-y-auto`}
             style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
           >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700 md:hidden" />
             <NewProductForm
               lang={lang}
               barcode={null}
@@ -262,12 +267,12 @@ function EditSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-end bg-black/40">
+    <div className={SHEET_OVERLAY}>
       <div
-        className="mx-auto w-full max-w-md rounded-t-2xl bg-white dark:bg-slate-900 p-4 space-y-3"
+        className={`${SHEET_PANEL} space-y-3`}
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="mx-auto h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
+        <div className="mx-auto h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700 md:hidden" />
 
         <input
           value={name}

@@ -1,6 +1,6 @@
 'use client';
 
-import { SCREEN_PAD_STYLE } from '../ui';
+import { SCREEN_PAD } from '../ui';
 
 import { useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
@@ -74,7 +74,7 @@ export default function ScanScreen({ lang }: Props) {
 
   if (view.kind === 'notFound') {
     return (
-      <div className="p-4" style={SCREEN_PAD_STYLE}>
+      <div className={`p-4 ${SCREEN_PAD}`}>
         <p className="mb-3 text-slate-600 dark:text-slate-300">
           {t(lang, 'scan.notFound')}
         </p>
@@ -95,7 +95,7 @@ export default function ScanScreen({ lang }: Props) {
   if (view.kind === 'found') {
     const { product, qty, direction } = view;
     return (
-      <div className="p-4 space-y-5" style={SCREEN_PAD_STYLE}>
+      <div className={`p-4 space-y-5 ${SCREEN_PAD}`}>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
             {product.name}
@@ -157,7 +157,7 @@ export default function ScanScreen({ lang }: Props) {
 
   // idle / busy / saved
   return (
-    <div className="p-4 flex flex-col items-center gap-4" style={SCREEN_PAD_STYLE}>
+    <div className={`p-4 flex flex-col items-center gap-4 ${SCREEN_PAD}`}>
       {view.kind === 'saved' && (
         <div className="w-full flex items-center justify-between gap-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 px-4 py-3 text-emerald-800 dark:text-emerald-200">
           <span className="min-w-0 truncate">

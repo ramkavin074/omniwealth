@@ -38,6 +38,19 @@ export function useNow(periodMs = 30_000): number {
   return now;
 }
 
+/** True at the `md` breakpoint and up. */
+export function useIsDesktop(): boolean {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  return desktop;
+}
+
 /** Debounce a fast-changing value (search boxes). */
 export function useDebounced<T>(value: T, ms = 200): T {
   const [debounced, setDebounced] = useState(value);
