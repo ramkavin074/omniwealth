@@ -34,11 +34,17 @@ export interface Product {
   name: string;
   mrp: number; // printed Maximum Retail Price, INR (0 = not set)
   price: number; // actual selling rate, INR 2dp (defaults to mrp)
+  costPrice: number; // latest purchase cost per unit, INR (0 = not set)
   stockQty: number; // supports decimals for kg / liter
   unit: Unit;
   lowStockThreshold: number;
   updatedAt: number; // epoch ms
   deletedAt: number | null; // tombstone for sync; null = live
+}
+
+export function marginPct(p: Pick<Product, 'price' | 'costPrice'>): number | null {
+  if (p.price <= 0 || p.costPrice <= 0) return null;
+  return Math.round(((p.price - p.costPrice) / p.price) * 100);
 }
 
 export interface Movement {
@@ -47,6 +53,8 @@ export interface Movement {
   delta: number; // signed change applied to stockQty
   reason: MovementReason;
   qtyAfter: number; // stockQty immediately after this movement
+  unitCost: number | null; // purchase cost/unit on a stock-in; null otherwise
+  userId: string | null; // who made the change (the audit "who")
   note: string | null;
   createdAt: number; // epoch ms
 }

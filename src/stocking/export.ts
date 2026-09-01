@@ -15,10 +15,12 @@ export function buildCatalogueCsv(products: Product[]): string {
     'name',
     'mrp',
     'price',
+    'cost',
     'unit',
     'stock',
     'low_stock_threshold',
     'stock_value',
+    'stock_cost',
   ];
   const lines = [header.join(',')];
   for (const p of products) {
@@ -28,10 +30,12 @@ export function buildCatalogueCsv(products: Product[]): string {
         p.name,
         p.mrp,
         p.price,
+        p.costPrice || '',
         p.unit,
         p.stockQty,
         p.lowStockThreshold,
         Math.round(p.price * p.stockQty * 100) / 100,
+        p.costPrice ? Math.round(p.costPrice * p.stockQty * 100) / 100 : '',
       ]
         .map(csvCell)
         .join(','),

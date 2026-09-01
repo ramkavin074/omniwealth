@@ -26,6 +26,7 @@ interface InProduct {
   name: string;
   mrp: number;
   price: number;
+  costPrice: number;
   stockQty: number;
   unit: string;
   lowStockThreshold: number;
@@ -39,6 +40,7 @@ interface InMovement {
   delta: number;
   reason: string;
   qtyAfter: number;
+  unitCost: number | null;
   note: string | null;
   createdAt: number;
 }
@@ -87,6 +89,7 @@ export async function POST(request: Request) {
         name: p.name,
         mrp: String(num(p.mrp)),
         price: String(num(p.price)),
+        costPrice: String(num(p.costPrice)),
         stockQty: String(num(p.stockQty)),
         unit: p.unit || 'piece',
         lowStockThreshold: String(num(p.lowStockThreshold)),
@@ -106,6 +109,7 @@ export async function POST(request: Request) {
             name: sql`excluded.name`,
             mrp: sql`excluded.mrp`,
             price: sql`excluded.price`,
+            costPrice: sql`excluded.cost_price`,
             stockQty: sql`excluded.stock_qty`,
             unit: sql`excluded.unit`,
             lowStockThreshold: sql`excluded.low_stock_threshold`,
@@ -133,9 +137,13 @@ export async function POST(request: Request) {
         id: m.id,
         householdId: hh,
         productId: m.productId,
+        // Server-authoritative: the mover is whoever this session belongs to.
+        userId: auth.userId,
         delta: String(num(m.delta)),
         reason: m.reason || 'manual',
         qtyAfter: String(num(m.qtyAfter)),
+        unitCost:
+          m.unitCost == null ? null : String(num(m.unitCost)),
         note: m.note ?? null,
         createdAt: String(num(m.createdAt)),
         syncedAt,
@@ -182,6 +190,7 @@ export async function POST(request: Request) {
         name: p.name,
         mrp: num(p.mrp),
         price: num(p.price),
+        costPrice: num(p.costPrice),
         stockQty: num(p.stockQty),
         unit: p.unit,
         lowStockThreshold: num(p.lowStockThreshold),
@@ -191,9 +200,11 @@ export async function POST(request: Request) {
       movements: pulledMovements.map((m) => ({
         id: m.id,
         productId: m.productId,
+        userId: m.userId,
         delta: num(m.delta),
         reason: m.reason,
         qtyAfter: num(m.qtyAfter),
+        unitCost: m.unitCost == null ? null : num(m.unitCost),
         note: m.note,
         createdAt: num(m.createdAt),
       })),

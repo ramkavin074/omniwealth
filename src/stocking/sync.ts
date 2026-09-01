@@ -95,11 +95,21 @@ async function runSync(): Promise<SyncOutcome> {
     for (const p of data.products) {
       const local = await db().products.get(p.id);
       if (!local || local.updatedAt < p.updatedAt) {
-        await db().products.put({ ...p, deletedAt: p.deletedAt ?? null });
+        await db().products.put({
+          ...p,
+          costPrice: p.costPrice ?? 0,
+          deletedAt: p.deletedAt ?? null,
+        });
       }
     }
     if (data.movements.length) {
-      await db().movements.bulkPut(data.movements);
+      await db().movements.bulkPut(
+        data.movements.map((m) => ({
+          ...m,
+          unitCost: m.unitCost ?? null,
+          userId: m.userId ?? null,
+        })),
+      );
     }
   });
 

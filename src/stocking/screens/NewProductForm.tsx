@@ -32,6 +32,7 @@ export default function NewProductForm({
   const [name, setName] = useState(defaultName);
   const [mrp, setMrp] = useState('');
   const [price, setPrice] = useState('');
+  const [cost, setCost] = useState('');
   const [openingStock, setOpeningStock] = useState('');
   const [unit, setUnit] = useState<Unit>(defaults.unit);
   const [threshold, setThreshold] = useState(String(defaults.lowStockThreshold));
@@ -48,6 +49,7 @@ export default function NewProductForm({
         name,
         mrp: Number(mrp) || 0,
         price: Number(price) || 0,
+        costPrice: Number(cost) || 0,
         openingStock: Number(openingStock) || 0,
         unit,
         lowStockThreshold: Number(threshold) || 0,
@@ -111,6 +113,19 @@ export default function NewProductForm({
             className={field}
           />
         </div>
+      </div>
+
+      <div>
+        <label className={label} htmlFor="np-cost">
+          {t(lang, 'product.cost')}
+        </label>
+        <input
+          id="np-cost"
+          inputMode="decimal"
+          value={cost}
+          onChange={(e) => setCost(e.target.value)}
+          className={field}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">

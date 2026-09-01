@@ -91,6 +91,7 @@ export async function POST(request: Request) {
   return json(
     {
       token: rawToken,
+      userId: user.id,
       householdId: household.id,
       displayName: user.fullName,
       stockingEnabled: household.stockingEnabled === true,

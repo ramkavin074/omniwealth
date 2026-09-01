@@ -3,6 +3,7 @@
 // one Dexie transaction) and always stamps `updatedAt`.
 
 import { db } from './dexie';
+import { getUserId } from '../settings';
 import type {
   Movement,
   MovementReason,
@@ -101,6 +102,7 @@ export async function createProduct(draft: ProductDraft): Promise<Product> {
     mrp,
     // Selling rate falls back to MRP when left blank.
     price: q(draft.price || draft.mrp),
+    costPrice: q(draft.costPrice),
     stockQty: q(draft.openingStock),
     unit: draft.unit,
     lowStockThreshold: q(draft.lowStockThreshold),
@@ -117,6 +119,8 @@ export async function createProduct(draft: ProductDraft): Promise<Product> {
         delta: product.stockQty,
         reason: 'opening',
         qtyAfter: product.stockQty,
+        unitCost: product.costPrice > 0 ? product.costPrice : null,
+        userId: getUserId(),
         note: null,
         createdAt: now,
       };
@@ -134,7 +138,13 @@ export async function updateProduct(
   patch: Partial<
     Pick<
       Product,
-      'name' | 'mrp' | 'price' | 'unit' | 'lowStockThreshold' | 'barcode'
+      | 'name'
+      | 'mrp'
+      | 'price'
+      | 'costPrice'
+      | 'unit'
+      | 'lowStockThreshold'
+      | 'barcode'
     >
   >,
 ): Promise<void> {
@@ -142,6 +152,7 @@ export async function updateProduct(
   if (patch.name !== undefined) clean.name = patch.name.trim();
   if (patch.mrp !== undefined) clean.mrp = q(patch.mrp);
   if (patch.price !== undefined) clean.price = q(patch.price);
+  if (patch.costPrice !== undefined) clean.costPrice = q(patch.costPrice);
   if (patch.unit !== undefined) clean.unit = patch.unit;
   if (patch.lowStockThreshold !== undefined) {
     clean.lowStockThreshold = q(patch.lowStockThreshold);
@@ -181,6 +192,9 @@ interface MovementInput {
   delta?: number;
   /** Absolute target quantity. `delta` is derived from current stock. */
   setTo?: number;
+  /** Purchase cost/unit on a stock-in — also updates the product's costPrice
+   *  (latest-cost model). */
+  unitCost?: number | null;
 }
 
 export interface MovementResult {
@@ -209,6 +223,10 @@ export async function applyMovement(
         : q(input.delta ?? 0);
 
     qtyAfter = q(product.stockQty + delta);
+    const unitCost =
+      typeof input.unitCost === 'number' && input.unitCost > 0
+        ? q(input.unitCost)
+        : null;
 
     const movement: Movement = {
       id: movementId,
@@ -216,15 +234,17 @@ export async function applyMovement(
       delta,
       reason: input.reason,
       qtyAfter,
+      unitCost,
+      userId: getUserId(),
       note: input.note?.trim() ? input.note.trim() : null,
       createdAt: now,
     };
 
     await db().movements.add(movement);
-    await db().products.update(product.id, {
-      stockQty: qtyAfter,
-      updatedAt: now,
-    });
+    const patch: Partial<Product> = { stockQty: qtyAfter, updatedAt: now };
+    // A stock-in with a cost becomes the product's current cost.
+    if (unitCost !== null && delta > 0) patch.costPrice = unitCost;
+    await db().products.update(product.id, patch);
   });
 
   return { qtyAfter, movementId };
@@ -247,6 +267,8 @@ export async function undoMovement(movementId: string): Promise<void> {
       delta: q(-orig.delta),
       reason: 'correction',
       qtyAfter,
+      unitCost: null,
+      userId: getUserId(),
       note: `undo ${orig.reason}`,
       createdAt: now,
     });
@@ -289,7 +311,9 @@ export async function recentMovements(
 export interface CatalogueStats {
   productCount: number;
   lowCount: number;
-  stockValue: number; // Σ price × stockQty
+  stockValue: number; // Σ price × stockQty (retail)
+  stockCost: number; // Σ costPrice × stockQty (for items with a cost set)
+  marginValue: number; // Σ (price − costPrice) × stockQty (items with cost)
   movementsToday: number;
 }
 
@@ -304,14 +328,22 @@ export async function catalogueStats(): Promise<CatalogueStats> {
 
   let lowCount = 0;
   let stockValue = 0;
+  let stockCost = 0;
+  let marginValue = 0;
   for (const p of products) {
     if (p.stockQty <= p.lowStockThreshold) lowCount++;
     stockValue += p.price * p.stockQty;
+    if (p.costPrice > 0) {
+      stockCost += p.costPrice * p.stockQty;
+      marginValue += (p.price - p.costPrice) * p.stockQty;
+    }
   }
   return {
     productCount: products.length,
     lowCount,
     stockValue: q(stockValue),
+    stockCost: q(stockCost),
+    marginValue: q(marginValue),
     movementsToday,
   };
 }
@@ -321,6 +353,7 @@ export interface ImportRow {
   name: string;
   mrp: number;
   price: number;
+  costPrice: number;
   unit: string;
   openingStock: number;
   lowStockThreshold: number;
@@ -361,6 +394,7 @@ export async function importProducts(
       const barcode = row.barcode ? row.barcode.trim() : null;
       const mrp = q(row.mrp);
       const price = q(row.price || row.mrp);
+      const costPrice = q(row.costPrice);
       const unit = (row.unit || 'piece').trim();
       const threshold = q(row.lowStockThreshold);
 
@@ -372,6 +406,7 @@ export async function importProducts(
           name,
           mrp,
           price,
+          ...(costPrice > 0 ? { costPrice } : {}),
           unit: unit as Product['unit'],
           lowStockThreshold: threshold,
           barcode: barcode ?? match.barcode,
@@ -387,6 +422,7 @@ export async function importProducts(
         name,
         mrp,
         price,
+        costPrice,
         stockQty: q(row.openingStock),
         unit: unit as Product['unit'],
         lowStockThreshold: threshold,
@@ -401,6 +437,8 @@ export async function importProducts(
           delta: product.stockQty,
           reason: 'opening',
           qtyAfter: product.stockQty,
+          unitCost: costPrice > 0 ? costPrice : null,
+          userId: getUserId(),
           note: 'import',
           createdAt: now,
         });

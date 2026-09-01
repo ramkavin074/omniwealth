@@ -23,7 +23,11 @@ export default function AdjustScreen({ lang }: Props) {
   const [amount, setAmount] = useState(0);
   const [reason, setReason] = useState<MovementReason>('manual');
   const [note, setNote] = useState('');
+  const [unitCost, setUnitCost] = useState('');
   const [flash, setFlash] = useState<string | null>(null);
+
+  // A positive delta is a stock-in → offer to record the purchase cost.
+  const isStockIn = mode === 'delta' && amount > 0;
 
   const results = useLiveQuery(
     () => searchProducts(debounced),
@@ -44,11 +48,15 @@ export default function AdjustScreen({ lang }: Props) {
       productId: current.id,
       reason,
       note,
+      ...(isStockIn && Number(unitCost) > 0
+        ? { unitCost: Number(unitCost) }
+        : {}),
       ...(mode === 'delta' ? { delta: amount } : { setTo: amount }),
     });
     setFlash(`${t(lang, 'adjust.applied')} · ${qtyAfter}`);
     setAmount(0);
     setNote('');
+    setUnitCost('');
     setTimeout(() => setFlash(null), 2000);
   };
 
@@ -163,6 +171,16 @@ export default function AdjustScreen({ lang }: Props) {
           ))}
         </div>
       </div>
+
+      {isStockIn && (
+        <input
+          inputMode="decimal"
+          value={unitCost}
+          onChange={(e) => setUnitCost(e.target.value)}
+          placeholder={t(lang, 'adjust.unitCost')}
+          className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-slate-900 dark:text-slate-50"
+        />
+      )}
 
       <input
         value={note}

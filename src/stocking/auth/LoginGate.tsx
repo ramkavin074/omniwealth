@@ -10,6 +10,7 @@ import { API_BASE } from '../config';
 
 interface StoredAuth {
   token: string;
+  userId: string;
   householdId: string;
   displayName: string;
   stockingEnabled: boolean;
@@ -63,6 +64,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
       }
       const next: StoredAuth = {
         token: data.token,
+        userId: data.userId,
         householdId: data.householdId,
         displayName: data.displayName,
         stockingEnabled: true,

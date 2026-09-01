@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import {
   isLowStock,
+  marginPct,
   UNITS,
   type Movement,
   type Product,
@@ -165,6 +166,11 @@ export default function ProductListScreen({
                   ₹{p.price}
                   {p.mrp > 0 && p.mrp !== p.price && (
                     <span className="ml-1 line-through">₹{p.mrp}</span>
+                  )}
+                  {marginPct(p) !== null && (
+                    <span className="ml-1 text-emerald-600 dark:text-emerald-400">
+                      {marginPct(p)}%
+                    </span>
                   )}{' '}
                   · {p.barcode || t(lang, 'product.noBarcode')}
                 </span>
@@ -230,9 +236,14 @@ function EditSheet({
   const [name, setName] = useState(product.name);
   const [mrp, setMrp] = useState(String(product.mrp));
   const [price, setPrice] = useState(String(product.price));
+  const [cost, setCost] = useState(
+    product.costPrice ? String(product.costPrice) : '',
+  );
   const [unit, setUnit] = useState<Unit>(product.unit);
   const [threshold, setThreshold] = useState(String(product.lowStockThreshold));
   const [stock, setStock] = useState(String(product.stockQty));
+
+  const m = marginPct({ price: Number(price) || 0, costPrice: Number(cost) || 0 });
 
   const history = useLiveQuery(
     () => movementsFor(product.id, 8),
@@ -245,6 +256,7 @@ function EditSheet({
       name,
       mrp: Number(mrp) || 0,
       price: Number(price) || 0,
+      costPrice: Number(cost) || 0,
       unit,
       lowStockThreshold: Number(threshold) || 0,
     });
@@ -314,6 +326,25 @@ function EditSheet({
               ))}
             </select>
           </label>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <label>
+            <span className={sheetLabel}>{t(lang, 'product.cost')}</span>
+            <input
+              inputMode="decimal"
+              value={cost}
+              onChange={(e) => setCost(e.target.value)}
+              className={`${field} w-full`}
+            />
+          </label>
+          <div className="flex items-end pb-2 text-sm">
+            {m !== null && (
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {t(lang, 'product.margin')}: {m}%
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">

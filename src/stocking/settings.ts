@@ -48,6 +48,19 @@ export function hasStandaloneAuth(): boolean {
   }
 }
 
+/** The signed-in user's id, if known — stamped on locally-created movements
+ *  (the audit "who"). The sync server re-stamps authoritatively from the
+ *  session on push; this is for offline display. */
+export function getUserId(): string | null {
+  try {
+    const raw = localStorage.getItem('stocking.auth');
+    if (!raw) return null;
+    return (JSON.parse(raw) as { userId?: string }).userId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function signOut(): void {
   try {
     localStorage.removeItem('stocking.auth');

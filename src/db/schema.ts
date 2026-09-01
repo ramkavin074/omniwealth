@@ -645,6 +645,7 @@ export const stockProducts = pgTable(
     name: text('name').notNull(),
     mrp: numeric('mrp').notNull().default('0'),
     price: numeric('price').notNull().default('0'),
+    costPrice: numeric('cost_price').notNull().default('0'),
     stockQty: numeric('stock_qty').notNull().default('0'),
     unit: text('unit').notNull().default('piece'),
     lowStockThreshold: numeric('low_stock_threshold').notNull().default('0'),
@@ -678,10 +679,13 @@ export const stockMovements = pgTable(
       .references(() => households.id, { onDelete: 'cascade' }),
 
     productId: uuid('product_id').notNull(),
+    // Who made the change — server-stamped from the caller's session on push.
+    userId: uuid('user_id').references(() => users.id),
 
     delta: numeric('delta').notNull(),
     reason: text('reason').notNull(),
     qtyAfter: numeric('qty_after').notNull(),
+    unitCost: numeric('unit_cost'), // purchase cost/unit on a stock-in
     note: text('note'),
 
     createdAt: numeric('created_at').notNull(),

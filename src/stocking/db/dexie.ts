@@ -50,6 +50,29 @@ export class StockingDB extends Dexie {
       barcodeCache: 'barcode, fetchedAt',
       syncState: 'id',
     });
+    // v4: cost price + movement cost / who. No index changes; backfill nulls.
+    this.version(4)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('products')
+          .toCollection()
+          .modify((p: Product) => {
+            if (typeof p.costPrice !== 'number') p.costPrice = 0;
+          });
+        await tx
+          .table('movements')
+          .toCollection()
+          .modify((m: Movement) => {
+            if (m.unitCost === undefined) m.unitCost = null;
+            if (m.userId === undefined) m.userId = null;
+          });
+      });
   }
 }
 

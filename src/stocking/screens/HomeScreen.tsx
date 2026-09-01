@@ -70,10 +70,23 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
             {stats?.lowCount ?? '—'}
           </span>
         </button>
-        <Tile
-          label={t(lang, 'home.stockValue')}
-          value={stats ? money(stats.stockValue) : '—'}
-        />
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <span className="block text-sm text-slate-500 dark:text-slate-400">
+            {t(lang, 'home.stockValue')}
+          </span>
+          <span className="block text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
+            {stats ? money(stats.stockValue) : '—'}
+          </span>
+          {stats && stats.stockCost > 0 && (
+            <span className="mt-0.5 block text-xs text-slate-400 dark:text-slate-500">
+              {t(lang, 'home.stockCost')} {money(stats.stockCost)} ·{' '}
+              {t(lang, 'home.margin')}{' '}
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {money(stats.marginValue)}
+              </span>
+            </span>
+          )}
+        </div>
         <Tile
           label={t(lang, 'home.today')}
           value={stats?.movementsToday ?? '—'}

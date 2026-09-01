@@ -9,6 +9,15 @@ const ALIASES: Record<keyof ImportRow, string[]> = {
   name: ['name', 'product', 'product name', 'item', 'item name', 'description'],
   mrp: ['mrp', 'max retail price', 'printed price', 'maximum retail price'],
   price: ['price', 'rate', 'selling price', 'sell price', 'sale price'],
+  costPrice: [
+    'cost',
+    'cost price',
+    'cost_price',
+    'purchase price',
+    'buy price',
+    'buying price',
+    'landing cost',
+  ],
   unit: ['unit', 'uom', 'units'],
   openingStock: [
     'opening stock',
@@ -32,9 +41,9 @@ const ALIASES: Record<keyof ImportRow, string[]> = {
 };
 
 export const CSV_TEMPLATE =
-  'barcode,name,mrp,price,unit,opening_stock,low_stock_threshold\n' +
-  '8901030865278,Aashirvaad Atta 5kg,285,280,packet,12,4\n' +
-  ',Sugar (loose),,45,kg,20,10\n';
+  'barcode,name,mrp,price,cost,unit,opening_stock,low_stock_threshold\n' +
+  '8901030865278,Aashirvaad Atta 5kg,285,280,255,packet,12,4\n' +
+  ',Sugar (loose),,45,40,kg,20,10\n';
 
 /** Split one CSV line, honouring double-quoted fields. */
 function splitLine(line: string): string[] {
@@ -125,6 +134,7 @@ export function parseCsv(text: string): ParseResult {
       name,
       mrp: num(get(cells, 'mrp')),
       price: num(get(cells, 'price')),
+      costPrice: num(get(cells, 'costPrice')),
       unit: (get(cells, 'unit') ?? 'piece').trim() || 'piece',
       openingStock: num(get(cells, 'openingStock')),
       lowStockThreshold: num(get(cells, 'lowStockThreshold')),
