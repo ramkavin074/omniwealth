@@ -35,6 +35,10 @@ export const households = pgTable(
 
     legacyPillars: text('legacy_pillars'),
 
+    // JSON map of account-level family instructions, keyed by
+    // `${accountCategory}|${accountNumber}` (e.g. "INDIVIDUAL|3780").
+    accountInstructions: text('account_instructions'),
+
     // Permanent Retirement Planning Settings
     currentAge: integer('current_age').default(35).notNull(),
 

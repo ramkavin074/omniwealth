@@ -16,6 +16,7 @@ import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
 import EstateReadinessCard from '@/components/dashboard/EstateReadinessCard';
+import AccountInstructionsCard from '@/components/dashboard/AccountInstructionsCard';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
 import FutureMilestonesAndDirectives from '@/components/dashboard/FutureMilestonesAndDirectives';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
@@ -428,6 +429,15 @@ export default function DashboardClient({
             {activeTab === 'directives' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
                 <EstateReadinessCard assets={initialAssets} />
+
+                <CollapsibleSection id="account-instructions" title="Account access &amp; instructions" icon={<Lock className="w-5 h-5" />}>
+                  <AccountInstructionsCard
+                    assets={initialAssets}
+                    instructions={session?.household?.accountInstructions}
+                    canManage={canManage}
+                    embedded
+                  />
+                </CollapsibleSection>
 
                 <CollapsibleSection id="milestones" title="Milestones &amp; directives" icon={<Shield className="w-5 h-5" />}>
                   <FutureMilestonesAndDirectives assets={initialAssets} embedded />

@@ -1014,6 +1014,40 @@ export async function updateRetirementPreferencesAction(data: {
   }
 }
 
+/**
+ * Save (or clear) the family instructions for one account. `accountKey` is
+ * `${accountCategory}|${accountNumber}`. Stored as a JSON map on the household.
+ */
+export async function updateAccountInstructionsAction(accountKey: string, text: string) {
+  const session = await getSessionUserAction();
+  if (!session || !session.household?.id) return { success: false, error: 'Unauthorized' };
+  if (!canManageHousehold(session.user.role)) return { success: false, error: FORBIDDEN_ERROR };
+
+  const key = (accountKey || '').trim();
+  if (!key) return { success: false, error: 'Missing account.' };
+  const note = (text || '').trim().slice(0, 4000);
+
+  let map: Record<string, string> = {};
+  try {
+    const raw = (session.household as any).accountInstructions;
+    if (raw) map = JSON.parse(raw);
+    if (typeof map !== 'object' || map === null || Array.isArray(map)) map = {};
+  } catch {
+    map = {};
+  }
+
+  if (note) map[key] = note;
+  else delete map[key];
+
+  await db.update(households)
+    .set({ accountInstructions: JSON.stringify(map), updatedAt: new Date() } as any)
+    .where(eq(households.id, session.household.id));
+  await audit(session, 'household.account_instructions_update', 'household', session.household.id, { account: key });
+
+  revalidatePath('/');
+  return { success: true };
+}
+
 // --- Secure Document Vault & Encryption Helpers ---
 
 type VaultCtx = { userId: string; email: string; householdId: string };
