@@ -1,5 +1,6 @@
 import {
   pgTable,
+  pgSchema,
   uuid,
   text,
   timestamp,
@@ -39,10 +40,14 @@ export const households = pgTable(
     // `${accountCategory}|${accountNumber}` (e.g. "INDIVIDUAL|3780").
     accountInstructions: text('account_instructions'),
 
-    // Unlocks the offline barcode stocking module (`/stocking` route + the
-    // standalone com.omniwealth.stocking app). Off for every household
-    // except the pilot shops.
+    // DEPRECATED (Round 10): stocking access is now `store.store_members`,
+    // not a household flag. Kept one release as a read-only fallback.
     stockingEnabled: boolean('stocking_enabled').default(false).notNull(),
+
+    // A "shell" household exists only to satisfy users.household_id NOT NULL
+    // for a store-only account (a shop employee with no wealth vault). Wealth
+    // pages redirect these users straight to /stocking.
+    isStoreShell: boolean('is_store_shell').default(false).notNull(),
 
     // Permanent Retirement Planning Settings
     currentAge: integer('current_age').default(35).notNull(),
@@ -621,15 +626,12 @@ export const netWorthSnapshots = pgTable(
 
 /**
  * ============================================================
- * STOCKING MODULE — cloud sync targets
+ * STOCKING MODULE — LEGACY tables (Round <10, household-keyed)
  * ============================================================
  *
- * The stocking app is offline-first: IndexedDB on the device is the source of
- * truth. POST /api/stocking/sync upserts into these tables. Primary keys are
- * the client-generated UUIDs so a push is a plain upsert; `updatedAt` drives
- * last-write-wins for products; movements are append-only. `deletedAt`
- * carries tombstones. `syncedAt` is server-assigned and is what the client
- * pages against on pull.
+ * DEPRECATED by the `store` schema below. Kept only so the Round 10 data
+ * migration can copy rows across; dropped once the migration is verified.
+ * Nothing new should reference these.
  */
 export const stockProducts = pgTable(
   'stock_products',
@@ -697,5 +699,141 @@ export const stockMovements = pgTable(
       table.syncedAt,
     ),
     productIdx: index('stock_movements_product_idx').on(table.productId),
+  }),
+);
+
+/**
+ * ============================================================
+ * STORE MODULE  (schema: `store`)
+ * ============================================================
+ *
+ * A shop is its own entity with its own membership — fully independent of
+ * `households` so a shop employee can be given stock access without any
+ * visibility into a family's wealth vault.
+ *
+ *   store.stores          one row per shop
+ *   store.store_members    user ↔ store + role (owner | manager | staff)
+ *   store.suppliers        per-store supplier directory (syncs)
+ *   store.products         offline-first catalogue (syncs; was stock_products)
+ *   store.stock_movements  append-only ledger (syncs; was stock_movements)
+ *
+ * The three synced tables keep the same contract: client-generated UUID PKs,
+ * `updated_at` (epoch ms, client clock) drives last-write-wins, `deleted_at`
+ * carries tombstones, server-assigned `synced_at` is the pull cursor.
+ */
+export const store = pgSchema('store');
+
+export const stores = store.table('stores', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const storeMembers = store.table(
+  'store_members',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // 'owner' | 'manager' | 'staff'
+    role: text('role').notNull().default('staff'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeUserIdx: uniqueIndex('store_members_store_user_idx').on(
+      t.storeId,
+      t.userId,
+    ),
+    userIdx: index('store_members_user_idx').on(t.userId),
+  }),
+);
+
+export const suppliers = store.table(
+  'suppliers',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    phone: text('phone'),
+    note: text('note'),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_suppliers_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+  }),
+);
+
+export const storeProducts = store.table(
+  'products',
+  {
+    id: uuid('id').primaryKey(), // client-generated (matches IndexedDB id)
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+
+    barcode: text('barcode'),
+    name: text('name').notNull(),
+    mrp: numeric('mrp').notNull().default('0'),
+    price: numeric('price').notNull().default('0'),
+    costPrice: numeric('cost_price').notNull().default('0'),
+    stockQty: numeric('stock_qty').notNull().default('0'),
+    unit: text('unit').notNull().default('piece'),
+    lowStockThreshold: numeric('low_stock_threshold').notNull().default('0'),
+
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_products_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    storeBarcodeIdx: index('store_products_store_barcode_idx').on(
+      t.storeId,
+      t.barcode,
+    ),
+  }),
+);
+
+export const storeStockMovements = store.table(
+  'stock_movements',
+  {
+    id: uuid('id').primaryKey(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    productId: uuid('product_id').notNull(),
+    // Server-stamped from the caller's session on push.
+    userId: uuid('user_id').references(() => users.id),
+    supplierId: uuid('supplier_id'),
+
+    delta: numeric('delta').notNull(),
+    reason: text('reason').notNull(),
+    qtyAfter: numeric('qty_after').notNull(),
+    unitCost: numeric('unit_cost'),
+    note: text('note'),
+
+    createdAt: numeric('created_at').notNull(),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_movements_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    productIdx: index('store_movements_product_idx').on(t.productId),
   }),
 );
