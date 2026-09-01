@@ -642,6 +642,7 @@ export const stockProducts = pgTable(
 
     barcode: text('barcode'),
     name: text('name').notNull(),
+    mrp: numeric('mrp').notNull().default('0'),
     price: numeric('price').notNull().default('0'),
     stockQty: numeric('stock_qty').notNull().default('0'),
     unit: text('unit').notNull().default('piece'),

@@ -11,6 +11,7 @@ import {
 } from '../db/products';
 import { useDebounced, useLiveQuery } from '../hooks';
 import LowStockBadge from '../components/LowStockBadge';
+import ImportScreen from './ImportScreen';
 
 interface Props {
   lang: Lang;
@@ -20,6 +21,7 @@ export default function ProductListScreen({ lang }: Props) {
   const [term, setTerm] = useState('');
   const [lowOnly, setLowOnly] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const debounced = useDebounced(term, 200);
 
   const products = useLiveQuery(
@@ -30,14 +32,27 @@ export default function ProductListScreen({ lang }: Props) {
 
   const visible = lowOnly ? products.filter(isLowStock) : products;
 
+  if (importing) {
+    return <ImportScreen lang={lang} onClose={() => setImporting(false)} />;
+  }
+
   return (
     <div className="p-4 space-y-3">
-      <input
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        placeholder={t(lang, 'list.search')}
-        className="w-full h-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-lg text-slate-900 dark:text-slate-50"
-      />
+      <div className="flex gap-2">
+        <input
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          placeholder={t(lang, 'list.search')}
+          className="flex-1 h-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-lg text-slate-900 dark:text-slate-50"
+        />
+        <button
+          type="button"
+          onClick={() => setImporting(true)}
+          className="shrink-0 h-12 px-4 rounded-xl bg-slate-200 dark:bg-slate-700 font-semibold text-slate-700 dark:text-slate-100"
+        >
+          {t(lang, 'import.button')}
+        </button>
+      </div>
 
       <label className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
         <input
@@ -76,7 +91,11 @@ export default function ProductListScreen({ lang }: Props) {
                     {p.name}
                   </span>
                   <span className="block text-sm text-slate-500 dark:text-slate-400">
-                    ₹{p.price} · {p.barcode || t(lang, 'product.noBarcode')}
+                    ₹{p.price}
+                    {p.mrp > 0 && p.mrp !== p.price && (
+                      <span className="ml-1 line-through">₹{p.mrp}</span>
+                    )}{' '}
+                    · {p.barcode || t(lang, 'product.noBarcode')}
                   </span>
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
@@ -112,6 +131,7 @@ function EditRow({
   onDone: () => void;
 }) {
   const [name, setName] = useState(product.name);
+  const [mrp, setMrp] = useState(String(product.mrp));
   const [price, setPrice] = useState(String(product.price));
   const [unit, setUnit] = useState<Unit>(product.unit);
   const [threshold, setThreshold] = useState(String(product.lowStockThreshold));
@@ -120,6 +140,7 @@ function EditRow({
   const save = async () => {
     await updateProduct(product.id, {
       name,
+      mrp: Number(mrp) || 0,
       price: Number(price) || 0,
       unit,
       lowStockThreshold: Number(threshold) || 0,
@@ -152,17 +173,19 @@ function EditRow({
       <div className="grid grid-cols-3 gap-2">
         <input
           inputMode="decimal"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          value={mrp}
+          onChange={(e) => setMrp(e.target.value)}
           className={field}
-          aria-label={t(lang, 'product.price')}
+          aria-label={t(lang, 'product.mrp')}
+          placeholder={t(lang, 'product.mrp')}
         />
         <input
           inputMode="decimal"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
           className={field}
-          aria-label={t(lang, 'product.stock')}
+          aria-label={t(lang, 'product.rate')}
+          placeholder={t(lang, 'product.rate')}
         />
         <select
           value={unit}
@@ -177,14 +200,24 @@ function EditRow({
           ))}
         </select>
       </div>
-      <input
-        inputMode="decimal"
-        value={threshold}
-        onChange={(e) => setThreshold(e.target.value)}
-        className={`${field} w-full`}
-        aria-label={t(lang, 'product.lowStockThreshold')}
-        placeholder={t(lang, 'product.lowStockThreshold')}
-      />
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          inputMode="decimal"
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+          className={field}
+          aria-label={t(lang, 'product.stock')}
+          placeholder={t(lang, 'product.stock')}
+        />
+        <input
+          inputMode="decimal"
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value)}
+          className={field}
+          aria-label={t(lang, 'product.lowStockThreshold')}
+          placeholder={t(lang, 'product.lowStockThreshold')}
+        />
+      </div>
       <div className="flex gap-2 pt-1">
         <button
           type="button"
@@ -204,7 +237,7 @@ function EditRow({
         <button
           type="button"
           onClick={save}
-          className="h-10 px-5 rounded-lg bg-teal-600 text-white font-semibold"
+          className="h-10 px-5 rounded-lg bg-teal-700 text-white font-semibold"
         >
           {t(lang, 'product.save')}
         </button>

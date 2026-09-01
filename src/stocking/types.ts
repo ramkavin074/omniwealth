@@ -31,7 +31,8 @@ export interface Product {
   id: string;
   barcode: string | null;
   name: string;
-  price: number; // INR, 2 decimal places
+  mrp: number; // printed Maximum Retail Price, INR (0 = not set)
+  price: number; // actual selling rate, INR 2dp (defaults to mrp)
   stockQty: number; // supports decimals for kg / liter
   unit: Unit;
   lowStockThreshold: number;
@@ -55,6 +56,14 @@ export type ProductDraft = Omit<
 > & {
   openingStock: number;
 };
+
+export interface BarcodeCacheEntry {
+  barcode: string;
+  name: string | null;
+  brand: string | null;
+  found: boolean;
+  fetchedAt: number; // epoch ms
+}
 
 export function isLowStock(p: Product): boolean {
   return p.deletedAt === null && p.stockQty <= p.lowStockThreshold;

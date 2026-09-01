@@ -50,7 +50,7 @@ export default function QtyStepper({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => e.key === 'Enter' && commit()}
-          className="flex-1 min-w-0 h-16 text-center text-3xl font-bold rounded-2xl border-2 border-teal-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50"
+          className="flex-1 min-w-0 h-16 text-center text-3xl font-bold rounded-2xl border-2 border-teal-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50"
         />
       ) : (
         <button
@@ -73,7 +73,7 @@ export default function QtyStepper({
       <button
         type="button"
         onClick={() => bump(1)}
-        className="w-16 h-16 shrink-0 rounded-2xl bg-teal-600 text-3xl font-bold text-white active:scale-95 transition"
+        className="w-16 h-16 shrink-0 rounded-2xl bg-teal-700 text-3xl font-bold text-white active:scale-95 transition"
         aria-label="increase"
       >
         +

@@ -123,7 +123,7 @@ export default function AdjustScreen({ lang }: Props) {
             }}
             className={`h-11 rounded-xl font-semibold text-sm transition ${
               mode === m
-                ? 'bg-teal-600 text-white'
+                ? 'bg-teal-700 text-white'
                 : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
             }`}
           >
@@ -178,7 +178,7 @@ export default function AdjustScreen({ lang }: Props) {
         type="button"
         onClick={apply}
         disabled={mode === 'delta' && amount === 0}
-        className="w-full h-14 rounded-xl bg-teal-600 text-lg font-bold text-white disabled:opacity-40"
+        className="w-full h-14 rounded-xl bg-teal-700 text-lg font-bold text-white disabled:opacity-40"
       >
         {t(lang, 'adjust.apply')}
       </button>

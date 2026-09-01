@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { households, sessions, users } from '@/db/schema';
+import { corsHeaders, corsPreflight } from '@/lib/stockingCors';
 
 // Lightweight JSON auth for the standalone stocking APK. Verifies the user's
 // OmniWealth password and issues a bearer token backed by the same `sessions`
@@ -19,51 +20,14 @@ const MAX_AGE_SECONDS =
 const DUMMY_HASH =
   '$2a$10$abcdefghijklmnopqrstuv0123456789ABCDEFGHIJKLMNOPQRSTU';
 
-// The standalone APK's WebView runs on a Capacitor localhost origin, so this
-// endpoint is cross-origin for it. It carries no cookies (bearer token in the
-// JSON body), so a narrow allow-list is safe. Extra origins via
-// STOCKING_ALLOWED_ORIGINS (comma-separated) for staging builds.
-const ALLOWED_ORIGINS = new Set(
-  [
-    'https://localhost',
-    'http://localhost',
-    'capacitor://localhost',
-    ...(process.env.STOCKING_ALLOWED_ORIGINS?.split(',') ?? []),
-  ]
-    .map((o) => o.trim())
-    .filter(Boolean),
-);
-
-function corsHeaders(origin: string | null): Record<string, string> {
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
-    return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400',
-      Vary: 'Origin',
-    };
-  }
-  return { Vary: 'Origin' };
-}
-
-function json(
-  body: unknown,
-  status: number,
-  origin: string | null,
-): Response {
-  return Response.json(body, { status, headers: corsHeaders(origin) });
-}
-
 export function OPTIONS(request: Request) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders(request.headers.get('origin')),
-  });
+  return corsPreflight(request);
 }
 
 export async function POST(request: Request) {
-  const origin = request.headers.get('origin');
+  const headers = corsHeaders(request.headers.get('origin'));
+  const json = (body: unknown, status: number) =>
+    Response.json(body, { status, headers });
 
   let email = '';
   let password = '';
@@ -72,11 +36,11 @@ export async function POST(request: Request) {
     email = String(body?.email ?? '').trim().toLowerCase();
     password = String(body?.password ?? '');
   } catch {
-    return json({ error: 'Invalid request body.' }, 400, origin);
+    return json({ error: 'Invalid request body.' }, 400);
   }
 
   if (!email || !password) {
-    return json({ error: 'Email and password are required.' }, 400, origin);
+    return json({ error: 'Email and password are required.' }, 400);
   }
 
   const [user] = await db
@@ -99,7 +63,7 @@ export async function POST(request: Request) {
   );
 
   if (!user || !isBcrypt || !valid) {
-    return json({ error: 'Invalid email or password.' }, 401, origin);
+    return json({ error: 'Invalid email or password.' }, 401);
   }
 
   const [household] = await db
@@ -109,7 +73,7 @@ export async function POST(request: Request) {
     .limit(1);
 
   if (!household) {
-    return json({ error: 'Household not found.' }, 401, origin);
+    return json({ error: 'Household not found.' }, 401);
   }
 
   const rawToken = crypto.randomBytes(32).toString('hex');
@@ -132,6 +96,5 @@ export async function POST(request: Request) {
       stockingEnabled: household.stockingEnabled === true,
     },
     200,
-    origin,
   );
 }

@@ -68,11 +68,14 @@ export async function listLowStock(): Promise<Product[]> {
  *  `opening` movement for the starting quantity. */
 export async function createProduct(draft: ProductDraft): Promise<Product> {
   const now = Date.now();
+  const mrp = q(draft.mrp);
   const product: Product = {
     id: uuid(),
     barcode: draft.barcode ? draft.barcode.trim() : null,
     name: draft.name.trim(),
-    price: q(draft.price),
+    mrp,
+    // Selling rate falls back to MRP when left blank.
+    price: q(draft.price || draft.mrp),
     stockQty: q(draft.openingStock),
     unit: draft.unit,
     lowStockThreshold: q(draft.lowStockThreshold),
@@ -99,19 +102,20 @@ export async function createProduct(draft: ProductDraft): Promise<Product> {
   return product;
 }
 
-/** Patch editable fields (name / price / unit / threshold / barcode). Does
- *  not touch stockQty — use `applyMovement` for that. */
+/** Patch editable fields (name / mrp / price / unit / threshold / barcode).
+ *  Does not touch stockQty — use `applyMovement` for that. */
 export async function updateProduct(
   id: string,
   patch: Partial<
     Pick<
       Product,
-      'name' | 'price' | 'unit' | 'lowStockThreshold' | 'barcode'
+      'name' | 'mrp' | 'price' | 'unit' | 'lowStockThreshold' | 'barcode'
     >
   >,
 ): Promise<void> {
   const clean: Partial<Product> = { updatedAt: Date.now() };
   if (patch.name !== undefined) clean.name = patch.name.trim();
+  if (patch.mrp !== undefined) clean.mrp = q(patch.mrp);
   if (patch.price !== undefined) clean.price = q(patch.price);
   if (patch.unit !== undefined) clean.unit = patch.unit;
   if (patch.lowStockThreshold !== undefined) {
@@ -121,6 +125,20 @@ export async function updateProduct(
     clean.barcode = patch.barcode ? patch.barcode.trim() : null;
   }
   await db().products.update(id, clean);
+}
+
+/** Cache the result of an online barcode name lookup so a later offline
+ *  "not found" scan of the same item can still prefill the name. */
+export async function cacheBarcodeLookup(
+  entry: import('../types').BarcodeCacheEntry,
+): Promise<void> {
+  await db().barcodeCache.put(entry);
+}
+
+export async function getCachedBarcode(
+  barcode: string,
+): Promise<import('../types').BarcodeCacheEntry | undefined> {
+  return db().barcodeCache.get(barcode.trim());
 }
 
 export async function softDeleteProduct(id: string): Promise<void> {
@@ -191,4 +209,102 @@ export async function movementsFor(
     .equals(productId)
     .sortBy('createdAt');
   return rows.reverse().slice(0, limit);
+}
+
+export interface ImportRow {
+  barcode: string | null;
+  name: string;
+  mrp: number;
+  price: number;
+  unit: string;
+  openingStock: number;
+  lowStockThreshold: number;
+}
+
+export interface ImportResult {
+  added: number;
+  updated: number;
+  skipped: number;
+}
+
+/** Bulk upsert a parsed catalogue. Rows with a barcode match an existing
+ *  product by barcode; otherwise by exact (case-insensitive) name. Existing
+ *  rows get name/mrp/price/unit/threshold updated but their stock is left
+ *  alone; new rows are created with an `opening` movement for their stock. */
+export async function importProducts(
+  rows: ImportRow[],
+): Promise<ImportResult> {
+  const res: ImportResult = { added: 0, updated: 0, skipped: 0 };
+  const now = Date.now();
+
+  await db().transaction('rw', db().products, db().movements, async () => {
+    const existing = await db().products.toArray();
+    const byBarcode = new Map<string, Product>();
+    const byName = new Map<string, Product>();
+    for (const p of existing) {
+      if (p.deletedAt !== null) continue;
+      if (p.barcode) byBarcode.set(p.barcode, p);
+      byName.set(p.name.toLowerCase(), p);
+    }
+
+    for (const row of rows) {
+      const name = row.name.trim();
+      if (!name) {
+        res.skipped++;
+        continue;
+      }
+      const barcode = row.barcode ? row.barcode.trim() : null;
+      const mrp = q(row.mrp);
+      const price = q(row.price || row.mrp);
+      const unit = (row.unit || 'piece').trim();
+      const threshold = q(row.lowStockThreshold);
+
+      const match =
+        (barcode && byBarcode.get(barcode)) || byName.get(name.toLowerCase());
+
+      if (match) {
+        await db().products.update(match.id, {
+          name,
+          mrp,
+          price,
+          unit: unit as Product['unit'],
+          lowStockThreshold: threshold,
+          barcode: barcode ?? match.barcode,
+          updatedAt: now,
+        });
+        res.updated++;
+        continue;
+      }
+
+      const product: Product = {
+        id: uuid(),
+        barcode,
+        name,
+        mrp,
+        price,
+        stockQty: q(row.openingStock),
+        unit: unit as Product['unit'],
+        lowStockThreshold: threshold,
+        updatedAt: now,
+        deletedAt: null,
+      };
+      await db().products.add(product);
+      if (product.stockQty !== 0) {
+        await db().movements.add({
+          id: uuid(),
+          productId: product.id,
+          delta: product.stockQty,
+          reason: 'opening',
+          qtyAfter: product.stockQty,
+          note: 'import',
+          createdAt: now,
+        });
+      }
+      if (barcode) byBarcode.set(barcode, product);
+      byName.set(name.toLowerCase(), product);
+      res.added++;
+    }
+  });
+
+  return res;
 }

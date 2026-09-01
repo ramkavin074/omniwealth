@@ -6,6 +6,7 @@
 // <StockingApp/> directly without this component.
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { API_BASE } from '../config';
 
 interface StoredAuth {
   token: string;
@@ -16,11 +17,6 @@ interface StoredAuth {
 }
 
 const KEY = 'stocking.auth';
-
-// Empty in dev (relative path → Vite proxy); the OmniWealth origin in a
-// production APK build. Set by vite.config.ts `define`.
-const API_BASE =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || '';
 
 function readAuth(): StoredAuth | null {
   try {
@@ -113,7 +109,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
         <button
           type="submit"
           disabled={busy}
-          className="h-12 w-full rounded-xl bg-teal-600 text-lg font-bold text-white disabled:opacity-50"
+          className="h-12 w-full rounded-xl bg-teal-700 text-lg font-bold text-white disabled:opacity-50"
         >
           {busy ? '…' : 'Sign in'}
         </button>

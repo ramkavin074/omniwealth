@@ -3,11 +3,12 @@
 // adjust, search) goes here and never touches the network.
 
 import Dexie, { type Table } from 'dexie';
-import type { Movement, Product } from '../types';
+import type { BarcodeCacheEntry, Movement, Product } from '../types';
 
 export class StockingDB extends Dexie {
   products!: Table<Product, string>;
   movements!: Table<Movement, string>;
+  barcodeCache!: Table<BarcodeCacheEntry, string>;
 
   constructor() {
     super('stocking');
@@ -17,6 +18,22 @@ export class StockingDB extends Dexie {
       products: 'id, barcode, name, updatedAt, deletedAt',
       movements: 'id, productId, createdAt',
     });
+    // v2: `mrp` added to products (backfilled from `price`); offline cache of
+    // online barcode name lookups.
+    this.version(2)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('products')
+          .toCollection()
+          .modify((p: Product) => {
+            if (typeof p.mrp !== 'number') p.mrp = p.price ?? 0;
+          });
+      });
   }
 }
 

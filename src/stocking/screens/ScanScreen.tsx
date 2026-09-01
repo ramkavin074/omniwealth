@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import type { Product } from '../types';
 import { applyMovement, findByBarcode } from '../db/products';
+import { lookupBarcodeName } from '../lookup';
 import { scanBarcode } from '../scanner/barcode';
 import QtyStepper from '../components/QtyStepper';
 import NewProductForm from './NewProductForm';
@@ -12,7 +13,7 @@ type View =
   | { kind: 'idle'; message?: string }
   | { kind: 'busy' }
   | { kind: 'found'; product: Product; qty: number; direction: 'in' | 'out' }
-  | { kind: 'notFound'; barcode: string }
+  | { kind: 'notFound'; barcode: string; suggestedName: string }
   | { kind: 'saved'; name: string; qty: number };
 
 interface Props {
@@ -40,9 +41,17 @@ export default function ScanScreen({ lang }: Props) {
     const product = await findByBarcode(result.barcode);
     if (product) {
       setView({ kind: 'found', product, qty: 1, direction: 'out' });
-    } else {
-      setView({ kind: 'notFound', barcode: result.barcode });
+      return;
     }
+
+    // Not in the catalogue — try an online name lookup while the shopkeeper
+    // reaches for the packet. Never blocks: any failure → empty name.
+    const hit = await lookupBarcodeName(result.barcode);
+    setView({
+      kind: 'notFound',
+      barcode: result.barcode,
+      suggestedName: hit?.name ?? '',
+    });
   };
 
   const save = async () => {
@@ -69,6 +78,8 @@ export default function ScanScreen({ lang }: Props) {
         <NewProductForm
           lang={lang}
           barcode={view.barcode}
+          defaultName={view.suggestedName}
+          nameFromLookup={view.suggestedName !== ''}
           onSaved={(p) =>
             setView({ kind: 'saved', name: p.name, qty: p.stockQty })
           }
@@ -87,8 +98,14 @@ export default function ScanScreen({ lang }: Props) {
             {product.name}
           </h2>
           <p className="text-slate-500 dark:text-slate-400">
-            ₹{product.price} · {product.stockQty}{' '}
-            {unitLabel(lang, product.unit)} {t(lang, 'list.inStock')}
+            ₹{product.price}
+            {product.mrp > 0 && product.mrp !== product.price && (
+              <span className="ml-1 text-slate-400 line-through">
+                ₹{product.mrp}
+              </span>
+            )}{' '}
+            · {product.stockQty} {unitLabel(lang, product.unit)}{' '}
+            {t(lang, 'list.inStock')}
           </p>
         </div>
 
@@ -100,7 +117,7 @@ export default function ScanScreen({ lang }: Props) {
               onClick={() => setView({ ...view, direction: d })}
               className={`h-12 rounded-xl font-semibold transition ${
                 direction === d
-                  ? 'bg-teal-600 text-white'
+                  ? 'bg-teal-700 text-white'
                   : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
               }`}
             >
@@ -126,7 +143,7 @@ export default function ScanScreen({ lang }: Props) {
           <button
             type="button"
             onClick={save}
-            className="flex-[2] h-14 rounded-xl bg-teal-600 text-lg font-bold text-white"
+            className="flex-[2] h-14 rounded-xl bg-teal-700 text-lg font-bold text-white"
           >
             {t(lang, 'product.save')}
           </button>
@@ -153,7 +170,7 @@ export default function ScanScreen({ lang }: Props) {
         type="button"
         onClick={startScan}
         disabled={view.kind === 'busy'}
-        className="mt-8 w-full max-w-sm h-40 rounded-3xl bg-teal-600 text-2xl font-bold text-white shadow-lg active:scale-[0.98] transition disabled:opacity-50"
+        className="mt-8 w-full max-w-sm h-40 rounded-3xl bg-teal-700 text-2xl font-bold text-white shadow-lg active:scale-[0.98] transition disabled:opacity-50"
       >
         {view.kind === 'busy' ? '…' : t(lang, 'scan.cta')}
       </button>
