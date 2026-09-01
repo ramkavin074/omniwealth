@@ -18,6 +18,7 @@ import SecurityCard from '@/components/profile/SecurityCard';
 import NotificationsCard from '@/components/profile/NotificationsCard';
 import DataExportCard from '@/components/profile/DataExportCard';
 import AddFamilyMemberModal from '@/components/profile/AddFamilyMemberModal';
+import ActivityLog from '@/components/dashboard/ActivityLog';
 
 interface ProfileClientProps {
   session: {
@@ -302,6 +303,9 @@ export default function ProfileClient({ session, initialFamilyMembers, household
 
           {/* 7. Data Export Card */}
           <DataExportCard />
+
+          {/* 8. Recent activity (compact — 6-row preview) */}
+          <ActivityLog />
 
           {/* Add Family Member Modal */}
           <AddFamilyMemberModal 

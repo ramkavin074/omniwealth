@@ -12,7 +12,6 @@ import WealthSummaryDashboard from '@/components/dashboard/WealthSummaryDashboar
 import AssetAllocationVisualizer from '@/components/dashboard/AssetAllocationVisualizer';
 import NetWorthTrendChart from '@/components/dashboard/NetWorthTrendChart';
 import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesManagementSection';
-import ActivityLog from '@/components/dashboard/ActivityLog';
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
@@ -37,7 +36,7 @@ import {
   updateThemePreferenceAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock, History
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -71,7 +70,7 @@ export default function DashboardClient({
   const canAdd = canWrite(role);
   const canManage = canManageHousehold(role);
 
-  const [activeTab, setActiveTab] = useState<'wealth' | 'retirement' | 'directives' | 'feed'>('wealth');
+  const [activeTab, setActiveTab] = useState<'wealth' | 'retirement' | 'directives'>('wealth');
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
@@ -283,9 +282,6 @@ export default function DashboardClient({
                   <button onClick={() => { setActiveTab('directives'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                     <Shield className="w-4 h-4" /><span>Directives</span>
                   </button>
-                  <button onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                    <History className="w-4 h-4" /><span>Activity</span>
-                  </button>
 
                   {/* Theme Switcher inside Mobile Drawer */}
                   <button
@@ -328,9 +324,6 @@ export default function DashboardClient({
             </button>
             <button onClick={() => setActiveTab('directives')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'directives' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
               <Shield className="w-4 h-4" /> Directives
-            </button>
-            <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <History className="w-4 h-4" /> Activity
             </button>
           </div>
 
@@ -420,12 +413,6 @@ export default function DashboardClient({
                 <CollapsibleSection id="documents" title="Documents" icon={<Lock className="w-5 h-5" />}>
                   <SecureDocumentsVault documents={initialDocuments} onOpenUpload={() => setIsVaultUploadOpen(true)} embedded />
                 </CollapsibleSection>
-              </div>
-            )}
-
-            {activeTab === 'feed' && (
-              <div className="space-y-6 animate-fadeIn print:hidden">
-                <ActivityLog />
               </div>
             )}
           </div>

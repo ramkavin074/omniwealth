@@ -61,13 +61,16 @@ function relativeTime(value: string | Date): string {
   return new Date(value).toLocaleDateString();
 }
 
+const PREVIEW = 6;
+
 export default function ActivityLog() {
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetchAuditLogAction(50)
+    fetchAuditLogAction(20)
       .then((r) => {
         if (!cancelled) setRows((r as AuditRow[]) || []);
       })
@@ -85,41 +88,45 @@ export default function ActivityLog() {
   // Nothing recorded yet (or table not migrated) — stay out of the way.
   if (!loading && rows.length === 0) return null;
 
+  const shown = showAll ? rows : rows.slice(0, PREVIEW);
+
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3 transition-colors">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
         <History className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Recorded Activity</h3>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Activity</h2>
       </div>
 
       {loading ? (
-        <div className="text-center py-6 text-xs text-slate-400 font-mono">Loading activity…</div>
+        <div className="py-3 text-xs text-slate-400 font-mono">Loading…</div>
       ) : (
-        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-          {rows.map((row) => {
-            const detail = detailFor(row);
-            return (
-              <li key={row.id} className="py-2.5 flex items-baseline justify-between gap-3">
-                <div className="min-w-0">
-                  <span className="text-sm text-slate-800 dark:text-slate-200">
+        <>
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+            {shown.map((row) => {
+              const detail = detailFor(row);
+              return (
+                <li key={row.id} className="py-2 flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 text-xs text-slate-700 dark:text-slate-200 truncate">
                     {labelFor(row.action)}
-                    {detail && (
-                      <span className="text-slate-500 dark:text-slate-400"> — {detail}</span>
-                    )}
+                    {detail && <span className="text-slate-400 dark:text-slate-500"> — {detail}</span>}
                   </span>
-                  {row.actorEmail && (
-                    <span className="block text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                      {row.actorEmail}
-                    </span>
-                  )}
-                </div>
-                <span className="shrink-0 text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                  {relativeTime(row.createdAt)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+                  <span className="shrink-0 text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                    {relativeTime(row.createdAt)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {rows.length > PREVIEW && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="text-[11px] font-semibold text-teal-700 dark:text-teal-400 cursor-pointer"
+            >
+              {showAll ? 'Show less' : `Show all ${rows.length}`}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
