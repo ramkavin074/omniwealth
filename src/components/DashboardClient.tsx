@@ -33,7 +33,8 @@ import {
   fetchFamilyMembersAction,
   fetchNetWorthTrendAction,
   fetchNetWorthSnapshotsAction,
-  updateThemePreferenceAction
+  updateThemePreferenceAction,
+  deleteAssetAction
 } from '@/actions/vault';
 import {
   Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock
@@ -86,6 +87,27 @@ export default function DashboardClient({
   // Edit Asset / Liability Modal State
   const [editingAsset, setEditingAsset] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Delete a (possibly consolidated) holding straight from a summary row.
+  // Server enforces "own it, or be an admin"; a failure is surfaced inline.
+  const handleDeleteAsset = async (item: any) => {
+    const ids: string[] = (Array.isArray(item?.rawAssets) && item.rawAssets.length
+      ? item.rawAssets.map((r: any) => r.id)
+      : [item?.id]).filter(Boolean);
+    if (!ids.length) return;
+    const msg = ids.length > 1
+      ? `Delete "${item.name}" and all ${ids.length} underlying holdings? This cannot be undone.`
+      : `Delete "${item.name}"? This cannot be undone.`;
+    if (!window.confirm(msg)) return;
+    for (const id of ids) {
+      const res = await deleteAssetAction(id);
+      if (!res?.success) {
+        window.alert(res?.error || 'Failed to delete this holding.');
+        return;
+      }
+    }
+    window.location.reload();
+  };
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
@@ -345,15 +367,16 @@ export default function DashboardClient({
                     setEditingAsset(asset);
                     setIsEditModalOpen(true);
                   } : undefined;
+                  const deleteHandler = canAdd ? handleDeleteAsset : undefined;
                   return (
                     <>
                       <CollapsibleSection id="by-member" title="Wealth by Family Member" icon={<Users className="w-5 h-5" />}>
-                        <WealthSummaryDashboard only="members" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
+                        <WealthSummaryDashboard only="members" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} onDeleteAsset={deleteHandler} />
                       </CollapsibleSection>
 
                       {hasPurposeSplit && (
                         <CollapsibleSection id="by-purpose" title="Wealth by Purpose" icon={<Target className="w-5 h-5" />}>
-                          <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
+                          <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} onDeleteAsset={deleteHandler} />
                         </CollapsibleSection>
                       )}
                     </>

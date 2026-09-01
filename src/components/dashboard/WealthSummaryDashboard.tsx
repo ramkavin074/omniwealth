@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Users, Target, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
+import { Users, Target, ChevronDown, ChevronUp, Edit3, Trash2 } from 'lucide-react';
 import { formatCompact, formatQty } from '@/lib/format';
 
 const FX_RATES: { [key: string]: number } = {
@@ -66,7 +66,7 @@ function groupAssets(rawAssets: any[], baseCurrency: string, liveRates: { [key: 
   return Object.values(map).sort((a: any, b: any) => b.totalBase - a.totalBase);
 }
 
-export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates = FX_RATES, onEditAsset, only }: any) {
+export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPillars, liveRates = FX_RATES, onEditAsset, onDeleteAsset, only }: any) {
   const [expandedMembers, setExpandedMembers] = useState<{ [key: string]: boolean }>({});
   const [expandedPurposes, setExpandedPurposes] = useState<{ [key: string]: boolean }>({});
 
@@ -172,12 +172,21 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                           </span>
                           <div className="flex items-center gap-1">
                             {onEditAsset && (
-                              <button 
-                                onClick={() => onEditAsset(item)} 
-                                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer" 
+                              <button
+                                onClick={() => onEditAsset(item)}
+                                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer"
                                 title="Edit Asset"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {onDeleteAsset && (
+                              <button
+                                onClick={() => onDeleteAsset(item)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition cursor-pointer"
+                                title="Delete Asset"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
@@ -246,12 +255,21 @@ export default function WealthSummaryDashboard({ assets, baseCurrency, legacyPil
                           </span>
                           <div className="flex items-center gap-1">
                             {onEditAsset && (
-                              <button 
-                                onClick={() => onEditAsset(item)} 
-                                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer" 
+                              <button
+                                onClick={() => onEditAsset(item)}
+                                className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition cursor-pointer"
                                 title="Edit Asset"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {onDeleteAsset && (
+                              <button
+                                onClick={() => onDeleteAsset(item)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition cursor-pointer"
+                                title="Delete Asset"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
