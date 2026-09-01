@@ -175,7 +175,7 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
       AI_MODELS.openrouter,
       {
         Authorization: `Bearer ${key}`,
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://omniwealth.org',
+        'HTTP-Referer': process.env.APP_URL || 'https://www.omniwealth.org',
         'X-Title': 'OmniWealth',
       },
     );

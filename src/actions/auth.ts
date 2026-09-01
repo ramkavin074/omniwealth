@@ -118,7 +118,7 @@ function getAppUrl(): string {
       ? 'https://www.omniwealth.org'
       : 'http://localhost:3000';
 
-  const raw = (process.env.NEXT_PUBLIC_APP_URL || '').trim();
+  const raw = (process.env.APP_URL || '').trim();
   if (!raw) return fallback;
 
   // Tolerate a value with no scheme ("www.omniwealth.org") — a bad env var
@@ -1342,10 +1342,7 @@ export async function sendInviteEmail(
             }
 
             <a
-              href="${
-                process.env.NEXT_PUBLIC_APP_URL ||
-                'http://localhost:3000'
-              }/login"
+              href="${getAppUrl()}/login"
               style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;"
             >
               Access Wealth Vault →
