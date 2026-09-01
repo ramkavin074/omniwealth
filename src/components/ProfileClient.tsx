@@ -282,7 +282,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             liveRates={liveRates}
           />
 
-          {/* 4. Multi-AI Free-First Cascade BYOK Settings Card */}
+          {/* 4. AI key (optional — shared key otherwise) */}
           <AiSettingsCard
             configured={{
               groqApiKey: session.user.hasGroqKey,
