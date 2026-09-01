@@ -4,18 +4,36 @@ import { useState } from 'react';
 import { updateAiSettingsAction } from '@/actions/ai-actions';
 import { Cpu, CheckCircle2, ShieldCheck } from 'lucide-react';
 
+type ProviderKey =
+  | 'geminiApiKey'
+  | 'openaiApiKey'
+  | 'anthropicApiKey'
+  | 'groqApiKey'
+  | 'openrouterApiKey'
+  | 'cerebrasApiKey';
+
+const PROVIDERS: { field: ProviderKey; label: string; placeholder: string; hint: string }[] = [
+  { field: 'geminiApiKey', label: 'Google Gemini', placeholder: 'AIza…', hint: 'aistudio.google.com/apikey — free tier' },
+  { field: 'anthropicApiKey', label: 'Anthropic Claude', placeholder: 'sk-ant-…', hint: 'console.anthropic.com' },
+  { field: 'openaiApiKey', label: 'OpenAI', placeholder: 'sk-…', hint: 'platform.openai.com' },
+  { field: 'groqApiKey', label: 'Groq', placeholder: 'gsk_…', hint: 'console.groq.com — free, no card' },
+  { field: 'openrouterApiKey', label: 'OpenRouter', placeholder: 'sk-or-…', hint: 'openrouter.ai' },
+  { field: 'cerebrasApiKey', label: 'Cerebras', placeholder: 'csk-…', hint: 'cloud.cerebras.ai — free, no card' },
+];
+
 export default function AiSettingsCard({
   configured = {},
 }: {
-  configured?: Partial<Record<string, boolean>>;
+  configured?: Partial<Record<ProviderKey, boolean>>;
 }) {
+  const [field, setField] = useState<ProviderKey>('geminiApiKey');
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Any provider key counts as "configured" for the on/off state.
-  const isConfigured = Object.values(configured).some(Boolean);
+  const current = PROVIDERS.find((p) => p.field === field)!;
+  const anyConfigured = Object.values(configured).some(Boolean);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +43,7 @@ export default function AiSettingsCard({
     setSuccess(false);
 
     const formData = new FormData();
-    formData.append('geminiApiKey', value.trim());
+    formData.append(field, value.trim());
     const res = await updateAiSettingsAction(formData);
     setLoading(false);
 
@@ -51,35 +69,56 @@ export default function AiSettingsCard({
       </div>
 
       <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-        The statement reader and portfolio chat work out of the box on a shared key. Add your own
-        Google&nbsp;Gemini key (<a className="underline" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com</a>, free tier) only if you&rsquo;d rather use your own quota.
+        The statement reader and portfolio chat work out of the box on a shared key. Add your own key
+        for any provider below if you&rsquo;d rather use your own quota — it&rsquo;s used ahead of the
+        shared one.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-        <div>
-          <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-between">
-            <span>Gemini API key</span>
-            {isConfigured ? (
-              <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 normal-case font-bold">
-                <CheckCircle2 className="w-3 h-3" /> Using your key
-              </span>
-            ) : (
-              <span className="text-slate-400 dark:text-slate-500 normal-case">Shared key</span>
-            )}
-          </label>
-          <input
-            type="password"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={isConfigured ? '•••••••••••••• (enter a new key to replace)' : 'AIza…'}
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm"
-          />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="sm:w-48 shrink-0">
+            <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1">Provider</label>
+            <select
+              value={field}
+              onChange={(e) => { setField(e.target.value as ProviderKey); setValue(''); setError(''); setSuccess(false); }}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 cursor-pointer"
+            >
+              {PROVIDERS.map((p) => (
+                <option key={p.field} value={p.field}>
+                  {p.label}{configured[p.field] ? ' ✓' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-between">
+              <span>{current.label} key</span>
+              {configured[field] ? (
+                <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1 normal-case font-bold">
+                  <CheckCircle2 className="w-3 h-3" /> Saved
+                </span>
+              ) : (
+                <span className="text-slate-400 dark:text-slate-500 normal-case">
+                  {anyConfigured ? 'Not set' : 'Using shared key'}
+                </span>
+              )}
+            </label>
+            <input
+              type="password"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={configured[field] ? '•••••••••••••• (enter a new key to replace)' : current.placeholder}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-teal-600 shadow-sm"
+            />
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">{current.hint}</p>
+          </div>
         </div>
 
         {error && <p className="text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
         {success && (
           <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 p-3 rounded-xl">
-            <CheckCircle2 className="w-4 h-4" /> Key saved. Reload to see the status update.
+            <CheckCircle2 className="w-4 h-4" /> {current.label} key saved. Reload to see the status update.
           </div>
         )}
 
@@ -89,7 +128,7 @@ export default function AiSettingsCard({
             disabled={loading || !value.trim()}
             className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold rounded-xl transition cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'Saving…' : 'Save key'}
+            {loading ? 'Saving…' : `Save ${current.label} key`}
           </button>
         </div>
       </form>
