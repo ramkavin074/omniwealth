@@ -1,5 +1,7 @@
 'use client';
 
+import { SCREEN_PAD_STYLE } from '../ui';
+
 import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import type { MovementReason, Product } from '../types';
@@ -38,7 +40,7 @@ export default function AdjustScreen({ lang }: Props) {
 
   const apply = async () => {
     if (!current) return;
-    const qtyAfter = await applyMovement({
+    const { qtyAfter } = await applyMovement({
       productId: current.id,
       reason,
       note,
@@ -52,7 +54,7 @@ export default function AdjustScreen({ lang }: Props) {
 
   if (!selected) {
     return (
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3" style={SCREEN_PAD_STYLE}>
         <input
           autoFocus
           value={term}
@@ -93,7 +95,7 @@ export default function AdjustScreen({ lang }: Props) {
   }
 
   return (
-    <div className="p-4 space-y-5">
+    <div className="p-4 space-y-5" style={SCREEN_PAD_STYLE}>
       <button
         type="button"
         onClick={() => setSelected(null)}

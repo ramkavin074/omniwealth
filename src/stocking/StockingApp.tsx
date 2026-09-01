@@ -3,20 +3,24 @@
 import { useState } from 'react';
 import { t } from './i18n';
 import { useLang } from './hooks';
+import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import AdjustScreen from './screens/AdjustScreen';
 import ProductListScreen from './screens/ProductListScreen';
+import SettingsSheet from './screens/SettingsSheet';
 
-type Tab = 'scan' | 'adjust' | 'products';
+type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
-const TABS: Tab[] = ['scan', 'adjust', 'products'];
+const TABS: Tab[] = ['home', 'scan', 'adjust', 'products'];
 
 export default function StockingApp() {
   const { lang, toggle } = useLang();
-  const [tab, setTab] = useState<Tab>('scan');
+  const [tab, setTab] = useState<Tab>('home');
+  const [lowOnly, setLowOnly] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <div className="mx-auto flex min-h-full max-w-md flex-col bg-slate-50 dark:bg-slate-950">
+    <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
       <header
         className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
@@ -24,26 +28,44 @@ export default function StockingApp() {
         <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">
           {t(lang, 'app.title')}
         </h1>
-        <button
-          type="button"
-          onClick={toggle}
-          className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-        >
-          {t(lang, 'lang.toggle')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggle}
+            className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+          >
+            {t(lang, 'lang.toggle')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label={t(lang, 'settings.title')}
+            className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+          >
+            ⚙
+          </button>
+        </div>
       </header>
 
-      {/* Bottom padding clears the fixed nav (≈3.25rem) plus the OS gesture
-          bar (safe-area inset) so a screen's last button is never hidden. */}
-      <main
-        className="flex-1 overflow-y-auto"
-        style={{
-          paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom))',
-        }}
-      >
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        {tab === 'home' && (
+          <HomeScreen
+            lang={lang}
+            onOpenLow={() => {
+              setLowOnly(true);
+              setTab('products');
+            }}
+          />
+        )}
         {tab === 'scan' && <ScanScreen lang={lang} />}
         {tab === 'adjust' && <AdjustScreen lang={lang} />}
-        {tab === 'products' && <ProductListScreen lang={lang} />}
+        {tab === 'products' && (
+          <ProductListScreen
+            lang={lang}
+            lowOnly={lowOnly}
+            onLowOnlyChange={setLowOnly}
+          />
+        )}
       </main>
 
       <nav
@@ -65,6 +87,10 @@ export default function StockingApp() {
           </button>
         ))}
       </nav>
+
+      {settingsOpen && (
+        <SettingsSheet lang={lang} onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   );
 }

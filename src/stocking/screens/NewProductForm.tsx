@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import { UNITS, type Product, type Unit } from '../types';
 import { createProduct } from '../db/products';
+import { getDefaults } from '../settings';
 
 interface Props {
   lang: Lang;
@@ -27,12 +28,13 @@ export default function NewProductForm({
   onSaved,
   onCancel,
 }: Props) {
+  const [defaults] = useState(getDefaults);
   const [name, setName] = useState(defaultName);
   const [mrp, setMrp] = useState('');
   const [price, setPrice] = useState('');
   const [openingStock, setOpeningStock] = useState('');
-  const [unit, setUnit] = useState<Unit>('piece');
-  const [threshold, setThreshold] = useState('5');
+  const [unit, setUnit] = useState<Unit>(defaults.unit);
+  const [threshold, setThreshold] = useState(String(defaults.lowStockThreshold));
   const [saving, setSaving] = useState(false);
 
   const canSave = name.trim().length > 0 && !saving;

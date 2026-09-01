@@ -50,13 +50,38 @@ export async function listProducts(): Promise<Product[]> {
 /** Case-insensitive substring match on name or barcode. */
 export async function searchProducts(term: string): Promise<Product[]> {
   const live = await listProducts();
+  return filterProducts(live, term);
+}
+
+export type ProductSort = 'recent' | 'name' | 'low';
+
+/** Pure filter — kept separate so the list screen can run it in a memo over a
+ *  single live snapshot instead of re-querying IndexedDB on every keystroke. */
+export function filterProducts(list: Product[], term: string): Product[] {
   const q = term.trim().toLowerCase();
-  if (!q) return live;
-  return live.filter(
+  if (!q) return list;
+  return list.filter(
     (p) =>
       p.name.toLowerCase().includes(q) ||
       (p.barcode ?? '').toLowerCase().includes(q),
   );
+}
+
+export function sortProducts(list: Product[], sort: ProductSort): Product[] {
+  const copy = list.slice();
+  if (sort === 'name') {
+    copy.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sort === 'low') {
+    // Lowest headroom (stock − threshold) first, then by name.
+    copy.sort((a, b) => {
+      const ha = a.stockQty - a.lowStockThreshold;
+      const hb = b.stockQty - b.lowStockThreshold;
+      return ha - hb || a.name.localeCompare(b.name);
+    });
+  } else {
+    copy.sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+  return copy;
 }
 
 export async function listLowStock(): Promise<Product[]> {
@@ -158,13 +183,18 @@ interface MovementInput {
   setTo?: number;
 }
 
+export interface MovementResult {
+  qtyAfter: number;
+  movementId: string;
+}
+
 /** Apply a stock movement atomically: writes the movement row and updates
- *  the product's stockQty + updatedAt in one transaction. Returns the new
- *  stock quantity. */
+ *  the product's stockQty + updatedAt in one transaction. */
 export async function applyMovement(
   input: MovementInput,
-): Promise<number> {
+): Promise<MovementResult> {
   const now = Date.now();
+  const movementId = uuid();
   let qtyAfter = 0;
 
   await db().transaction('rw', db().products, db().movements, async () => {
@@ -181,7 +211,7 @@ export async function applyMovement(
     qtyAfter = q(product.stockQty + delta);
 
     const movement: Movement = {
-      id: uuid(),
+      id: movementId,
       productId: product.id,
       delta,
       reason: input.reason,
@@ -197,7 +227,31 @@ export async function applyMovement(
     });
   });
 
-  return qtyAfter;
+  return { qtyAfter, movementId };
+}
+
+/** Reverse a movement by appending a compensating one (the ledger stays
+ *  append-only). No-op if the movement is already undone or gone. */
+export async function undoMovement(movementId: string): Promise<void> {
+  const now = Date.now();
+  await db().transaction('rw', db().products, db().movements, async () => {
+    const orig = await db().movements.get(movementId);
+    if (!orig) return;
+    const product = await db().products.get(orig.productId);
+    if (!product || product.deletedAt !== null) return;
+
+    const qtyAfter = q(product.stockQty - orig.delta);
+    await db().movements.add({
+      id: uuid(),
+      productId: product.id,
+      delta: q(-orig.delta),
+      reason: 'correction',
+      qtyAfter,
+      note: `undo ${orig.reason}`,
+      createdAt: now,
+    });
+    await db().products.update(product.id, { stockQty: qtyAfter, updatedAt: now });
+  });
 }
 
 export async function movementsFor(
@@ -209,6 +263,57 @@ export async function movementsFor(
     .equals(productId)
     .sortBy('createdAt');
   return rows.reverse().slice(0, limit);
+}
+
+export interface MovementWithName extends Movement {
+  productName: string;
+}
+
+/** Most recent movements across the whole catalogue, newest first. */
+export async function recentMovements(
+  limit = 100,
+): Promise<MovementWithName[]> {
+  const rows = await db()
+    .movements.orderBy('createdAt')
+    .reverse()
+    .limit(limit)
+    .toArray();
+  const names = new Map<string, string>();
+  for (const p of await db().products.toArray()) names.set(p.id, p.name);
+  return rows.map((m) => ({
+    ...m,
+    productName: names.get(m.productId) ?? '—',
+  }));
+}
+
+export interface CatalogueStats {
+  productCount: number;
+  lowCount: number;
+  stockValue: number; // Σ price × stockQty
+  movementsToday: number;
+}
+
+export async function catalogueStats(): Promise<CatalogueStats> {
+  const products = await listProducts();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const movementsToday = await db()
+    .movements.where('createdAt')
+    .aboveOrEqual(startOfDay.getTime())
+    .count();
+
+  let lowCount = 0;
+  let stockValue = 0;
+  for (const p of products) {
+    if (p.stockQty <= p.lowStockThreshold) lowCount++;
+    stockValue += p.price * p.stockQty;
+  }
+  return {
+    productCount: products.length,
+    lowCount,
+    stockValue: q(stockValue),
+    movementsToday,
+  };
 }
 
 export interface ImportRow {

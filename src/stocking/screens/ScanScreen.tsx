@@ -1,9 +1,11 @@
 'use client';
 
+import { SCREEN_PAD_STYLE } from '../ui';
+
 import { useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import type { Product } from '../types';
-import { applyMovement, findByBarcode } from '../db/products';
+import { applyMovement, findByBarcode, undoMovement } from '../db/products';
 import { lookupBarcodeName } from '../lookup';
 import { scanBarcode } from '../scanner/barcode';
 import QtyStepper from '../components/QtyStepper';
@@ -14,7 +16,7 @@ type View =
   | { kind: 'busy' }
   | { kind: 'found'; product: Product; qty: number; direction: 'in' | 'out' }
   | { kind: 'notFound'; barcode: string; suggestedName: string }
-  | { kind: 'saved'; name: string; qty: number };
+  | { kind: 'saved'; name: string; qty: number; movementId?: string };
 
 interface Props {
   lang: Lang;
@@ -57,7 +59,7 @@ export default function ScanScreen({ lang }: Props) {
   const save = async () => {
     if (view.kind !== 'found') return;
     const delta = view.direction === 'in' ? view.qty : -view.qty;
-    await applyMovement({
+    const { movementId } = await applyMovement({
       productId: view.product.id,
       reason: view.direction === 'in' ? 'scan-in' : 'scan-out',
       delta,
@@ -66,12 +68,13 @@ export default function ScanScreen({ lang }: Props) {
       kind: 'saved',
       name: view.product.name,
       qty: view.qty,
+      movementId,
     });
   };
 
   if (view.kind === 'notFound') {
     return (
-      <div className="p-4">
+      <div className="p-4" style={SCREEN_PAD_STYLE}>
         <p className="mb-3 text-slate-600 dark:text-slate-300">
           {t(lang, 'scan.notFound')}
         </p>
@@ -92,7 +95,7 @@ export default function ScanScreen({ lang }: Props) {
   if (view.kind === 'found') {
     const { product, qty, direction } = view;
     return (
-      <div className="p-4 space-y-5">
+      <div className="p-4 space-y-5" style={SCREEN_PAD_STYLE}>
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
             {product.name}
@@ -154,10 +157,24 @@ export default function ScanScreen({ lang }: Props) {
 
   // idle / busy / saved
   return (
-    <div className="p-4 flex flex-col items-center gap-4">
+    <div className="p-4 flex flex-col items-center gap-4" style={SCREEN_PAD_STYLE}>
       {view.kind === 'saved' && (
-        <div className="w-full rounded-xl bg-emerald-100 dark:bg-emerald-900/40 px-4 py-3 text-emerald-800 dark:text-emerald-200">
-          {t(lang, 'product.saved')}: {view.name}
+        <div className="w-full flex items-center justify-between gap-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 px-4 py-3 text-emerald-800 dark:text-emerald-200">
+          <span className="min-w-0 truncate">
+            {t(lang, 'product.saved')}: {view.name}
+          </span>
+          {view.movementId && (
+            <button
+              type="button"
+              onClick={async () => {
+                await undoMovement(view.movementId!);
+                setView({ kind: 'idle', message: t(lang, 'scan.undone') });
+              }}
+              className="shrink-0 font-semibold underline"
+            >
+              {t(lang, 'scan.undo')}
+            </button>
+          )}
         </div>
       )}
       {view.kind === 'idle' && view.message && (

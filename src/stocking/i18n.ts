@@ -11,9 +11,20 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   'app.title': 'Stock',
+  'tab.home': 'Home',
   'tab.scan': 'Scan',
   'tab.adjust': 'Adjust',
   'tab.products': 'Products',
+
+  'home.products': 'Products',
+  'home.low': 'Low stock',
+  'home.stockValue': 'Stock value',
+  'home.today': "Today's changes",
+  'home.activity': 'Recent activity',
+  'home.noActivity': 'No stock changes yet',
+
+  'history.title': 'Recent movements',
+  'export.button': 'Export',
 
   'scan.cta': 'Scan barcode',
   'scan.manualEntry': 'Enter barcode',
@@ -24,6 +35,8 @@ const en: Dict = {
   'scan.permissionDenied': 'Camera permission is needed to scan',
   'scan.again': 'Scan another',
   'scan.nameFromCatalogue': 'Name from online catalogue — please check it',
+  'scan.undo': 'Undo',
+  'scan.undone': 'Last change undone',
 
   'product.name': 'Name',
   'product.price': 'Price (₹)',
@@ -66,7 +79,7 @@ const en: Dict = {
   'adjust.note': 'Note (optional)',
   'adjust.apply': 'Apply',
   'adjust.applied': 'Stock updated',
-  'adjust.empty': 'No products yet. Add one from the Scan tab.',
+  'adjust.empty': 'No products yet. Scan an item or add one from the Products tab.',
 
   'list.search': 'Search products',
   'list.lowOnly': 'Low stock only',
@@ -74,6 +87,21 @@ const en: Dict = {
   'list.noMatch': 'Nothing matches your search',
   'list.lowBadge': 'Low',
   'list.inStock': 'in stock',
+  'list.count': '{n} items',
+  'list.addProduct': '+ Add',
+  'sort.recent': 'Recent',
+  'sort.name': 'A–Z',
+  'sort.low': 'Low first',
+
+  'settings.title': 'Settings',
+  'settings.close': 'Close',
+  'settings.defaults': 'New product defaults',
+  'settings.data': 'Data',
+  'settings.clearData': 'Clear all data',
+  'settings.clearConfirm':
+    'Delete every product and movement on this device? This cannot be undone.',
+  'settings.account': 'Account',
+  'settings.logout': 'Log out',
 
   'reason.opening': 'Opening stock',
   'reason.scan-in': 'Received',
@@ -96,9 +124,20 @@ const en: Dict = {
 // confirm with shop owners — every Tamil string below is a first draft.
 const ta: Dict = {
   'app.title': 'சரக்கு',
+  'tab.home': 'முகப்பு',
   'tab.scan': 'ஸ்கேன்',
   'tab.adjust': 'திருத்து',
   'tab.products': 'பொருட்கள்',
+
+  'home.products': 'பொருட்கள்',
+  'home.low': 'குறைந்த இருப்பு',
+  'home.stockValue': 'இருப்பு மதிப்பு',
+  'home.today': 'இன்றைய மாற்றங்கள்',
+  'home.activity': 'சமீபத்திய செயல்பாடு',
+  'home.noActivity': 'இன்னும் மாற்றங்கள் இல்லை',
+
+  'history.title': 'சமீபத்திய மாற்றங்கள்',
+  'export.button': 'ஏற்றுமதி',
 
   'scan.cta': 'பார்கோடு ஸ்கேன்',
   'scan.manualEntry': 'பார்கோடு உள்ளிடு',
@@ -109,6 +148,8 @@ const ta: Dict = {
   'scan.permissionDenied': 'ஸ்கேன் செய்ய கேமரா அனுமதி தேவை',
   'scan.again': 'மீண்டும் ஸ்கேன்',
   'scan.nameFromCatalogue': 'ஆன்லைன் பட்டியலிலிருந்து பெயர் — சரிபார்க்கவும்',
+  'scan.undo': 'திரும்பப்பெறு',
+  'scan.undone': 'கடைசி மாற்றம் ரத்து செய்யப்பட்டது',
 
   'product.name': 'பெயர்',
   'product.price': 'விலை (₹)',
@@ -151,7 +192,8 @@ const ta: Dict = {
   'adjust.note': 'குறிப்பு (விருப்பம்)',
   'adjust.apply': 'சேமி',
   'adjust.applied': 'இருப்பு புதுப்பிக்கப்பட்டது',
-  'adjust.empty': 'இன்னும் பொருட்கள் இல்லை. ஸ்கேன் தாவலில் சேர்க்கவும்.',
+  'adjust.empty':
+    'இன்னும் பொருட்கள் இல்லை. ஸ்கேன் செய்யவும் அல்லது பொருட்கள் தாவலில் சேர்க்கவும்.',
 
   'list.search': 'பொருட்களை தேடு',
   'list.lowOnly': 'குறைந்த இருப்பு மட்டும்',
@@ -159,6 +201,21 @@ const ta: Dict = {
   'list.noMatch': 'தேடலுக்கு பொருத்தம் இல்லை',
   'list.lowBadge': 'குறைவு',
   'list.inStock': 'இருப்பு',
+  'list.count': '{n} பொருட்கள்',
+  'list.addProduct': '+ சேர்',
+  'sort.recent': 'சமீபத்திய',
+  'sort.name': 'அ–ஃ',
+  'sort.low': 'குறைவு முதலில்',
+
+  'settings.title': 'அமைப்புகள்',
+  'settings.close': 'மூடு',
+  'settings.defaults': 'புதிய பொருள் இயல்புநிலை',
+  'settings.data': 'தரவு',
+  'settings.clearData': 'அனைத்து தரவையும் அழி',
+  'settings.clearConfirm':
+    'இந்த சாதனத்தில் உள்ள அனைத்து பொருட்களையும் மாற்றங்களையும் அழிக்கவா? மீட்க முடியாது.',
+  'settings.account': 'கணக்கு',
+  'settings.logout': 'வெளியேறு',
 
   'reason.opening': 'தொடக்க இருப்பு',
   'reason.scan-in': 'வரவு',
