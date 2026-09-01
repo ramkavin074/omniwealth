@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { t, type Lang } from '../i18n';
+import Numpad from './Numpad';
 
 interface Props {
+  lang: Lang;
   value: number;
   onChange: (next: number) => void;
   step?: number;
@@ -10,55 +13,37 @@ interface Props {
   suffix?: string;
 }
 
-/** Large +/- stepper for counter use. Tap the number to type an exact value
- *  (handy for kg / liter). */
+/** +/- stepper for counter use. Tap the number to open a big decimal keypad
+ *  (exact kg / liter entry without the OS keyboard). */
 export default function QtyStepper({
+  lang,
   value,
   onChange,
   step = 1,
   min = 0,
   suffix,
 }: Props) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
+  const [pad, setPad] = useState(false);
 
   const round = (n: number) => Math.round((n + Number.EPSILON) * 1000) / 1000;
-  const bump = (dir: 1 | -1) => onChange(round(Math.max(min, value + dir * step)));
-
-  const commit = () => {
-    const n = Number(draft.replace(',', '.'));
-    if (Number.isFinite(n)) onChange(round(Math.max(min, n)));
-    setEditing(false);
-  };
+  const bump = (dir: 1 | -1) =>
+    onChange(round(Math.max(min, value + dir * step)));
 
   return (
-    <div className="flex items-stretch gap-3 select-none">
-      <button
-        type="button"
-        onClick={() => bump(-1)}
-        className="w-16 h-16 shrink-0 rounded-2xl bg-slate-200 dark:bg-slate-700 text-3xl font-bold text-slate-800 dark:text-slate-100 active:scale-95 transition"
-        aria-label="decrease"
-      >
-        −
-      </button>
-
-      {editing ? (
-        <input
-          autoFocus
-          inputMode="decimal"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => e.key === 'Enter' && commit()}
-          className="flex-1 min-w-0 h-16 text-center text-3xl font-bold rounded-2xl border-2 border-teal-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50"
-        />
-      ) : (
+    <>
+      <div className="flex items-stretch gap-3 select-none">
         <button
           type="button"
-          onClick={() => {
-            setDraft(String(value));
-            setEditing(true);
-          }}
+          onClick={() => bump(-1)}
+          className="w-16 h-16 shrink-0 rounded-2xl bg-slate-200 dark:bg-slate-700 text-3xl font-bold text-slate-800 dark:text-slate-100 active:scale-95 transition"
+          aria-label="decrease"
+        >
+          −
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPad(true)}
           className="flex-1 min-w-0 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-3xl font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-1"
         >
           <span className="tabular-nums">{value}</span>
@@ -68,16 +53,31 @@ export default function QtyStepper({
             </span>
           )}
         </button>
-      )}
 
-      <button
-        type="button"
-        onClick={() => bump(1)}
-        className="w-16 h-16 shrink-0 rounded-2xl bg-teal-700 text-3xl font-bold text-white active:scale-95 transition"
-        aria-label="increase"
-      >
-        +
-      </button>
-    </div>
+        <button
+          type="button"
+          onClick={() => bump(1)}
+          className="w-16 h-16 shrink-0 rounded-2xl bg-teal-700 text-3xl font-bold text-white active:scale-95 transition"
+          aria-label="increase"
+        >
+          +
+        </button>
+      </div>
+
+      {pad && (
+        <Numpad
+          initial={value}
+          unit={suffix}
+          allowNegative={min < 0}
+          okLabel={t(lang, 'numpad.ok')}
+          cancelLabel={t(lang, 'product.cancel')}
+          onSubmit={(n) => {
+            onChange(round(Math.max(min, n)));
+            setPad(false);
+          }}
+          onCancel={() => setPad(false)}
+        />
+      )}
+    </>
   );
 }

@@ -25,7 +25,8 @@ export type MovementReason =
   | 'scan-in' // received / restocked via a barcode scan
   | 'scan-out' // sold / removed via a barcode scan
   | 'manual' // hand-entered adjustment (loose goods, corrections)
-  | 'correction'; // recount / fixing a data-entry mistake
+  | 'correction' // recount / fixing a data-entry mistake
+  | 'count'; // physical stock-take — sets counted quantity
 
 export interface Product {
   id: string;

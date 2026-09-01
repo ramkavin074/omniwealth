@@ -135,6 +135,7 @@ export default function AdjustScreen({ lang }: Props) {
       </div>
 
       <QtyStepper
+        lang={lang}
         value={amount}
         onChange={setAmount}
         min={mode === 'delta' ? -999999 : 0}

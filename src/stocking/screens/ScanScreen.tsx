@@ -10,6 +10,7 @@ import { lookupBarcodeName } from '../lookup';
 import { scanBarcode } from '../scanner/barcode';
 import QtyStepper from '../components/QtyStepper';
 import NewProductForm from './NewProductForm';
+import BulkScan from './BulkScan';
 
 type View =
   | { kind: 'idle'; message?: string }
@@ -24,6 +25,9 @@ interface Props {
 
 export default function ScanScreen({ lang }: Props) {
   const [view, setView] = useState<View>({ kind: 'idle' });
+  const [bulk, setBulk] = useState(false);
+
+  if (bulk) return <BulkScan lang={lang} onExit={() => setBulk(false)} />;
 
   const startScan = async () => {
     setView({ kind: 'busy' });
@@ -130,6 +134,7 @@ export default function ScanScreen({ lang }: Props) {
         </div>
 
         <QtyStepper
+          lang={lang}
           value={qty}
           onChange={(n) => setView({ ...view, qty: n })}
           suffix={unitLabel(lang, product.unit)}
@@ -198,6 +203,14 @@ export default function ScanScreen({ lang }: Props) {
         className="text-teal-700 dark:text-teal-300 font-medium underline"
       >
         {t(lang, 'scan.manualEntry')}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setBulk(true)}
+        className="mt-2 rounded-xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+      >
+        {t(lang, 'bulk.enter')}
       </button>
     </div>
   );
