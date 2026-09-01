@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
+import { useNow } from '../hooks';
 import { UNITS, type Unit } from '../types';
 import {
   APP_VERSION,
@@ -11,6 +12,7 @@ import {
   setDefaults,
   signOut,
 } from '../settings';
+import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
 
 interface Props {
   lang: Lang;
@@ -27,6 +29,40 @@ export default function SettingsSheet({ lang, onClose }: Props) {
   const [unit, setUnit] = useState<Unit>(initial.unit);
   const [threshold, setThreshold] = useState(String(initial.lowStockThreshold));
   const standalone = hasStandaloneAuth();
+
+  const now = useNow();
+  const [syncedAt, setSyncedAt] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    lastSyncAt().then(setSyncedAt);
+  }, []);
+
+  const runSync = async () => {
+    setSyncing(true);
+    setSyncMsg(null);
+    const r: SyncOutcome = await syncNow();
+    setSyncing(false);
+    if (r.ok) {
+      setSyncedAt(Date.now());
+      setSyncMsg(
+        t(lang, 'sync.result')
+          .replace('{up}', String(r.pushed))
+          .replace('{down}', String(r.pulled)),
+      );
+    } else {
+      setSyncMsg(t(lang, `sync.err.${r.error ?? 'server'}`));
+    }
+  };
+
+  const agoText = () => {
+    if (!syncedAt || !now) return t(lang, 'sync.never');
+    const m = Math.round((now - syncedAt) / 60000);
+    if (m < 1) return t(lang, 'sync.justNow');
+    if (m < 60) return t(lang, 'sync.minsAgo').replace('{m}', String(m));
+    return t(lang, 'sync.hoursAgo').replace('{h}', String(Math.round(m / 60)));
+  };
 
   const persist = (u: Unit, thr: string) =>
     setDefaults({ unit: u, lowStockThreshold: Number(thr) || 0 });
@@ -60,6 +96,21 @@ export default function SettingsSheet({ lang, onClose }: Props) {
             {t(lang, 'settings.close')}
           </button>
         </div>
+
+        <section className="space-y-2">
+          <p className={heading}>{t(lang, 'sync.title')}</p>
+          <button
+            type="button"
+            onClick={runSync}
+            disabled={syncing}
+            className="w-full h-11 rounded-lg bg-teal-700 font-semibold text-white disabled:opacity-50"
+          >
+            {syncing ? t(lang, 'sync.syncing') : t(lang, 'sync.now')}
+          </button>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {syncMsg ?? `${t(lang, 'sync.last')}: ${agoText()}`}
+          </p>
+        </section>
 
         <section className="space-y-2">
           <p className={heading}>{t(lang, 'settings.defaults')}</p>

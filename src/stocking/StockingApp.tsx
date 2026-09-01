@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from './i18n';
 import { useLang } from './hooks';
+import { maybeAutoSync } from './sync';
 import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import AdjustScreen from './screens/AdjustScreen';
@@ -18,6 +19,14 @@ export default function StockingApp() {
   const [tab, setTab] = useState<Tab>('home');
   const [lowOnly, setLowOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Opportunistic sync on open; also whenever the device comes back online.
+  useEffect(() => {
+    maybeAutoSync();
+    const onOnline = () => maybeAutoSync();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
 
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">

@@ -5,10 +5,19 @@
 import Dexie, { type Table } from 'dexie';
 import type { BarcodeCacheEntry, Movement, Product } from '../types';
 
+export interface SyncStateRow {
+  id: 'default';
+  /** Server `now` from the last successful sync — the next pull cursor. */
+  cursor: number;
+  /** Device time of the last successful sync. */
+  lastSyncAt: number;
+}
+
 export class StockingDB extends Dexie {
   products!: Table<Product, string>;
   movements!: Table<Movement, string>;
   barcodeCache!: Table<BarcodeCacheEntry, string>;
+  syncState!: Table<SyncStateRow, string>;
 
   constructor() {
     super('stocking');
@@ -34,6 +43,13 @@ export class StockingDB extends Dexie {
             if (typeof p.mrp !== 'number') p.mrp = p.price ?? 0;
           });
       });
+    // v3: cloud-sync bookkeeping.
+    this.version(3).stores({
+      products: 'id, barcode, name, updatedAt, deletedAt',
+      movements: 'id, productId, createdAt',
+      barcodeCache: 'barcode, fetchedAt',
+      syncState: 'id',
+    });
   }
 }
 

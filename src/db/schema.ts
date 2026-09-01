@@ -621,14 +621,15 @@ export const netWorthSnapshots = pgTable(
 
 /**
  * ============================================================
- * STOCKING MODULE — cloud sync targets (LATER PHASE)
+ * STOCKING MODULE — cloud sync targets
  * ============================================================
  *
  * The stocking app is offline-first: IndexedDB on the device is the source of
- * truth. These tables are the eventual sync destination. Primary keys are the
- * client-generated UUIDs so a push is a plain upsert; `updatedAt` drives
- * last-write-wins and `deletedAt` carries tombstones. Nothing writes here
- * yet — the sync endpoint is a future phase.
+ * truth. POST /api/stocking/sync upserts into these tables. Primary keys are
+ * the client-generated UUIDs so a push is a plain upsert; `updatedAt` drives
+ * last-write-wins for products; movements are append-only. `deletedAt`
+ * carries tombstones. `syncedAt` is server-assigned and is what the client
+ * pages against on pull.
  */
 export const stockProducts = pgTable(
   'stock_products',
@@ -656,7 +657,10 @@ export const stockProducts = pgTable(
     syncedAt: timestamp('synced_at').defaultNow().notNull(),
   },
   (table) => ({
-    householdIdx: index('stock_products_household_idx').on(table.householdId),
+    householdSyncedIdx: index('stock_products_household_synced_idx').on(
+      table.householdId,
+      table.syncedAt,
+    ),
     householdBarcodeIdx: index('stock_products_household_barcode_idx').on(
       table.householdId,
       table.barcode,
@@ -684,7 +688,10 @@ export const stockMovements = pgTable(
     syncedAt: timestamp('synced_at').defaultNow().notNull(),
   },
   (table) => ({
-    householdIdx: index('stock_movements_household_idx').on(table.householdId),
+    householdSyncedIdx: index('stock_movements_household_synced_idx').on(
+      table.householdId,
+      table.syncedAt,
+    ),
     productIdx: index('stock_movements_product_idx').on(table.productId),
   }),
 );

@@ -8,17 +8,20 @@ import {
   type MovementWithName,
 } from '../db/products';
 import type { Product } from '../types';
-import { useLiveQuery } from '../hooks';
+import { db } from '../db/dexie';
+import { useLiveQuery, useNow } from '../hooks';
 import { SCREEN_PAD_STYLE } from '../ui';
+import { syncNow } from '../sync';
 
 interface Props {
   lang: Lang;
   onOpenLow: () => void;
 }
 
-function timeAgo(ms: number): string {
-  const s = Math.round((Date.now() - ms) / 1000);
-  if (s < 60) return `${s}s`;
+function timeAgo(now: number, ms: number): string {
+  if (!now) return '';
+  const s = Math.round((now - ms) / 1000);
+  if (s < 60) return `${Math.max(s, 0)}s`;
   const m = Math.round(s / 60);
   if (m < 60) return `${m}m`;
   const h = Math.round(m / 60);
@@ -37,6 +40,16 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
   const products = useLiveQuery(() => listProducts(), [], [] as Product[]);
   const unitOf = (id: string) =>
     products.find((p) => p.id === id)?.unit ?? 'piece';
+
+  const now = useNow();
+  const sync = useLiveQuery(() => db().syncState.get('default'), []);
+  const syncAgo = () => {
+    if (!sync?.lastSyncAt || !now) return t(lang, 'sync.never');
+    const m = Math.round((now - sync.lastSyncAt) / 60000);
+    if (m < 1) return t(lang, 'sync.justNow');
+    if (m < 60) return t(lang, 'sync.minsAgo').replace('{m}', String(m));
+    return t(lang, 'sync.hoursAgo').replace('{h}', String(Math.round(m / 60)));
+  };
 
   const money = (n: number) =>
     '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -67,6 +80,19 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
         />
       </div>
 
+      <button
+        type="button"
+        onClick={() => syncNow()}
+        className="w-full flex items-center justify-between rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-2 text-sm"
+      >
+        <span className="text-slate-500 dark:text-slate-400">
+          {t(lang, 'sync.last')}: {syncAgo()}
+        </span>
+        <span className="font-semibold text-teal-700 dark:text-teal-400">
+          {t(lang, 'sync.now')}
+        </span>
+      </button>
+
       <div>
         <h2 className="mb-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
           {t(lang, 'home.activity')}
@@ -87,7 +113,7 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
                     {m.productName}
                   </span>
                   <span className="block text-xs text-slate-400 dark:text-slate-500">
-                    {reasonLabel(lang, m.reason)} · {timeAgo(m.createdAt)}
+                    {reasonLabel(lang, m.reason)} · {timeAgo(now, m.createdAt)}
                   </span>
                 </span>
                 <span

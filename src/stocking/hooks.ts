@@ -26,6 +26,18 @@ export function useLang(): { lang: Lang; toggle: () => void } {
   return { lang, toggle };
 }
 
+/** A clock that ticks every `periodMs`, for "x minutes ago" labels. Starts at
+ *  0 and corrects on mount so no impure Date.now() runs during render. */
+export function useNow(periodMs = 30_000): number {
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), periodMs);
+    return () => clearInterval(id);
+  }, [periodMs]);
+  return now;
+}
+
 /** Debounce a fast-changing value (search boxes). */
 export function useDebounced<T>(value: T, ms = 200): T {
   const [debounced, setDebounced] = useState(value);
