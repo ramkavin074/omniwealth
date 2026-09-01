@@ -78,7 +78,17 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
     categorySubtotals[label] = (categorySubtotals[label] || 0) + netVal;
   });
 
-  const sortedCategories = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
+  // Keep the strip compact: show the largest categories, fold the long
+  // tail (tiny payout streams etc.) into a single "Other" card.
+  const CATEGORY_CARD_LIMIT = 7;
+  const allSorted = Object.entries(categorySubtotals).sort((a, b) => b[1] - a[1]);
+  let sortedCategories: [string, number][] = allSorted;
+  let otherBreakdown: [string, number][] = [];
+  if (allSorted.length > CATEGORY_CARD_LIMIT + 1) {
+    otherBreakdown = allSorted.slice(CATEGORY_CARD_LIMIT);
+    const otherTotal = otherBreakdown.reduce((s, [, v]) => s + v, 0);
+    sortedCategories = [...allSorted.slice(0, CATEGORY_CARD_LIMIT), ['__OTHER__', otherTotal]];
+  }
 
   return (
     <div className="space-y-4">
@@ -197,14 +207,23 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl print:grid-cols-3">
-            {sortedCategories.map(([cat, val]) => (
-              <div key={cat} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0 print:border-slate-300 print:bg-white">
-                <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] block font-medium truncate">{formatCategoryName(cat)}</span>
-                <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`} title={`${formatFull(val, baseCurrency)} ${baseCurrency}`}>
-                  {formatCompact(val, baseCurrency)} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
-                </span>
-              </div>
-            ))}
+            {sortedCategories.map(([cat, val]) => {
+              const isOther = cat === '__OTHER__';
+              const label = isOther ? 'Other' : formatCategoryName(cat);
+              const tip = isOther
+                ? otherBreakdown
+                    .map(([c, v]) => `${formatCategoryName(c)}: ${formatCompact(v, baseCurrency)} ${baseCurrency}`)
+                    .join('\n')
+                : `${formatFull(val, baseCurrency)} ${baseCurrency}`;
+              return (
+                <div key={cat} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 px-4 py-3 rounded-xl text-xs shadow-sm min-w-0 print:border-slate-300 print:bg-white">
+                  <span className="text-slate-500 dark:text-slate-400 uppercase text-[10px] block font-medium truncate">{label}</span>
+                  <span className={`font-mono font-bold text-sm block truncate mt-0.5 ${val < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`} title={tip}>
+                    {formatCompact(val, baseCurrency)} <span className="text-[11px] font-sans font-normal text-slate-500">{baseCurrency}</span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
