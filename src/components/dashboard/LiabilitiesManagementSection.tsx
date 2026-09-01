@@ -31,7 +31,6 @@ export default function LiabilitiesManagementSection({
   baseCurrency,
   liveRates = FX_RATES,
   canAdd = true,
-  canManage = true,
   onAddLiability,
   onEditAsset,
 }: LiabilitiesManagementSectionProps) {

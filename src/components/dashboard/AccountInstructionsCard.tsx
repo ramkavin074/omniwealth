@@ -66,22 +66,27 @@ export default function AccountInstructionsCard({
   }, [assets]);
 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // Baselines updated after a successful save, so the row stops looking dirty
+  // without mutating the memoized `saved` map.
+  const [committed, setCommitted] = useState<Record<string, string>>({});
   const [savingKey, setSavingKey] = useState('');
   const [savedKey, setSavedKey] = useState('');
   const [error, setError] = useState('');
 
   if (accounts.length === 0) return null;
 
-  const valueFor = (key: string) => (key in drafts ? drafts[key] : saved[key] || '');
-  const dirty = (key: string) => key in drafts && drafts[key].trim() !== (saved[key] || '').trim();
+  const baseFor = (key: string) => (key in committed ? committed[key] : saved[key] || '');
+  const valueFor = (key: string) => (key in drafts ? drafts[key] : baseFor(key));
+  const dirty = (key: string) => key in drafts && drafts[key].trim() !== baseFor(key).trim();
 
   async function handleSave(key: string) {
     setError('');
     setSavingKey(key);
-    const res = await updateAccountInstructionsAction(key, valueFor(key));
+    const value = valueFor(key).trim();
+    const res = await updateAccountInstructionsAction(key, value);
     setSavingKey('');
     if (res?.success) {
-      saved[key] = valueFor(key).trim(); // keep local baseline in sync
+      setCommitted((c) => ({ ...c, [key]: value }));
       setSavedKey(key);
       setTimeout(() => setSavedKey((k) => (k === key ? '' : k)), 2000);
     } else {
