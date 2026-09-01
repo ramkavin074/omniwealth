@@ -12,7 +12,6 @@ import WealthSummaryDashboard from '@/components/dashboard/WealthSummaryDashboar
 import AssetAllocationVisualizer from '@/components/dashboard/AssetAllocationVisualizer';
 import NetWorthTrendChart from '@/components/dashboard/NetWorthTrendChart';
 import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesManagementSection';
-import IntelligenceFeed from '@/components/dashboard/IntelligenceFeed';
 import ActivityLog from '@/components/dashboard/ActivityLog';
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
@@ -38,7 +37,7 @@ import {
   updateThemePreferenceAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock
+  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock, History
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -277,7 +276,7 @@ export default function DashboardClient({
                     <Shield className="w-4 h-4" /><span>Directives</span>
                   </button>
                   <button onClick={() => { setActiveTab('feed'); setIsMobileMenuOpen(false); }} className={`flex items-center space-x-3.5 py-3 px-3.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                    <TrendingUp className="w-4 h-4" /><span>Feed</span>
+                    <History className="w-4 h-4" /><span>Activity</span>
                   </button>
 
                   {/* Theme Switcher inside Mobile Drawer */}
@@ -323,7 +322,7 @@ export default function DashboardClient({
               <Shield className="w-4 h-4" /> Directives
             </button>
             <button onClick={() => setActiveTab('feed')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${activeTab === 'feed' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-              <Sparkles className="w-4 h-4" /> Feed
+              <History className="w-4 h-4" /> Activity
             </button>
           </div>
 
@@ -416,7 +415,6 @@ export default function DashboardClient({
 
             {activeTab === 'feed' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
-                <IntelligenceFeed assets={initialAssets} trendData={trendData} baseCurrency={baseCurrency} documents={initialDocuments} />
                 <ActivityLog />
               </div>
             )}
