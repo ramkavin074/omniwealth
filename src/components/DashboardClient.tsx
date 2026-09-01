@@ -206,6 +206,14 @@ export default function DashboardClient({
     return set.size;
   }, [initialAssets]);
 
+  // Only worth splitting "by purpose" when holdings carry more than one
+  // distinct rationale — otherwise it's a single bucket.
+  const hasPurposeSplit = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of initialAssets as any[]) set.add((a.rationale || '').trim());
+    return set.size > 1;
+  }, [initialAssets]);
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors print:bg-white print:text-slate-900 print:pb-0">
       <div>
@@ -350,9 +358,11 @@ export default function DashboardClient({
                         <WealthSummaryDashboard only="members" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
                       </CollapsibleSection>
 
-                      <CollapsibleSection id="by-purpose" title="Wealth by Purpose" icon={<Target className="w-5 h-5" />}>
-                        <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
-                      </CollapsibleSection>
+                      {hasPurposeSplit && (
+                        <CollapsibleSection id="by-purpose" title="Wealth by Purpose" icon={<Target className="w-5 h-5" />}>
+                          <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} />
+                        </CollapsibleSection>
+                      )}
                     </>
                   );
                 })()}
