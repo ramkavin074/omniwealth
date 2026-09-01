@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { X, CheckCircle2, Wallet, CreditCard, Building2 } from 'lucide-react';
-import { updateAssetAction } from '@/actions/vault';
+import { X, CheckCircle2, Wallet, CreditCard, Building2, Trash2 } from 'lucide-react';
+import { updateAssetAction, deleteAssetAction } from '@/actions/vault';
 
 interface EditAssetModalProps {
   asset: any;
   isOpen: boolean;
   onClose: () => void;
   legacyPillars: { name: string }[];
+  canDelete?: boolean;
 }
 
-export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }: EditAssetModalProps) {
+export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, canDelete = false }: EditAssetModalProps) {
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -78,6 +79,29 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
 
   const isLiability = asset.assetType === 'LIABILITY' || asset.assetType === 'DEBT' || asset.accountCategory === 'LIABILITY';
   const isConsolidated = subRows.length > 1;
+
+  async function handleDelete() {
+    const ids: string[] = (isConsolidated ? subRows.map((r) => r.id) : [subRows[0]?.id || asset.id]).filter(Boolean);
+    if (ids.length === 0) return;
+    const label = isLiability ? 'liability' : 'asset';
+    const msg = ids.length > 1
+      ? `Delete this ${label} and all ${ids.length} underlying holdings? This cannot be undone.`
+      : `Delete this ${label}? This cannot be undone.`;
+    if (!confirm(msg)) return;
+
+    setError('');
+    startTransition(async () => {
+      for (const id of ids) {
+        const res = await deleteAssetAction(id);
+        if (!res?.success) {
+          setError(res?.error || 'Failed to delete item');
+          return;
+        }
+      }
+      onClose();
+      window.location.reload();
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -303,13 +327,27 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars }
             </div>
           )}
 
-          <div className="pt-4 flex justify-end gap-2 border-t border-slate-200 dark:border-slate-800 mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition font-semibold cursor-pointer">
-              Cancel
-            </button>
-            <button type="submit" disabled={isPending} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl transition font-semibold disabled:opacity-50 cursor-pointer">
-              {isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+          <div className="pt-4 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800 mt-4">
+            <div>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isPending}
+                  className="px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition font-semibold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition font-semibold cursor-pointer">
+                Cancel
+              </button>
+              <button type="submit" disabled={isPending} className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl transition font-semibold disabled:opacity-50 cursor-pointer">
+                {isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -427,7 +427,7 @@ export default function DashboardClient({
       {isVaultUploadOpen && <VaultUploadModal isOpen={isVaultUploadOpen} onClose={() => setIsVaultUploadOpen(false)} />}
       
       {/* Universal Edit Asset/Liability Modal */}
-      <EditAssetModal 
+      <EditAssetModal
         asset={editingAsset}
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -435,6 +435,7 @@ export default function DashboardClient({
           setEditingAsset(null);
         }}
         legacyPillars={legacyPillars}
+        canDelete={canManage}
       />
     </main>
   );
