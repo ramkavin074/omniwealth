@@ -119,7 +119,7 @@ export default function LiabilitiesManagementSection({
                       )}
                     </div>
 
-                    <div className={`flex items-center gap-1.5 pl-3 ${canManage ? 'border-l border-slate-200 dark:border-slate-800' : ''}`}>
+                    <div className={`flex items-center gap-1.5 pl-3 ${(onEditAsset || canAdd) ? 'border-l border-slate-200 dark:border-slate-800' : ''}`}>
                       {onEditAsset && (
                         <button
                           onClick={() => onEditAsset(item)}
@@ -129,7 +129,7 @@ export default function LiabilitiesManagementSection({
                           <Edit3 className="w-4 h-4" />
                         </button>
                       )}
-                      {canManage && (
+                      {canAdd && (
                       <button
                         onClick={() => handleDelete(item.id)}
                         disabled={isPending}

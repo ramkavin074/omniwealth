@@ -855,12 +855,16 @@ export async function updateAssetAction(id: string, formData: FormData) {
 export async function deleteAssetAction(assetId: string) {
   const session = await getSessionUserAction();
   if (!session) return { success: false, error: 'Unauthorized' };
-  // Deleting an asset is an owner/admin action.
-  if (!canManageHousehold(session.user.role)) return { success: false, error: FORBIDDEN_ERROR };
+  // Delete is allowed wherever create is (canWrite); acting on someone
+  // else's holding still needs admin, mirroring addAssetAction.
+  if (!canWrite(session.user.role)) return { success: false, error: READ_ONLY_ERROR };
 
   const [existing] = await db.select().from(assets).where(eq(assets.id, assetId));
   if (!existing || existing.householdId !== session.household.id) {
     return { success: false, error: 'Asset not found' };
+  }
+  if (existing.userId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
   }
 
   await db.delete(transactions).where(eq(transactions.assetId, assetId));
