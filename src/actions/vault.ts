@@ -286,17 +286,22 @@ export async function refreshLiveMarketPricesAction() {
 
     try {
       if (assetType === 'CRYPTO' || ['BTC', 'ETH', 'SOL', 'USDT', 'BNB', 'ADA', 'XRP'].includes(ticker)) {
+        // Explicit ticker -> CoinGecko id. Never fall back to a guessed
+        // lowercase id: "doge" is a junk token, not Dogecoin, and a wrong
+        // hit silently overwrites the holding's value.
         const coinMap: { [key: string]: string } = {
-          BTC: 'bitcoin',
-          ETH: 'ethereum',
-          SOL: 'solana',
-          ADA: 'cardano',
-          XRP: 'ripple',
+          BTC: 'bitcoin', ETH: 'ethereum', SOL: 'solana', ADA: 'cardano',
+          XRP: 'ripple', DOGE: 'dogecoin', SHIB: 'shiba-inu', PEPE: 'pepe',
+          AAVE: 'aave', BNB: 'binancecoin', USDT: 'tether', USDC: 'usd-coin',
+          DOT: 'polkadot', LTC: 'litecoin', LINK: 'chainlink', TRX: 'tron',
+          AVAX: 'avalanche-2', BCH: 'bitcoin-cash', XLM: 'stellar', MATIC: 'matic-network',
         };
-        const coinId = coinMap[ticker] || ticker.toLowerCase();
-        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`, { next: { revalidate: 60 } });
-        const data = await res.json();
-        livePrice = data[coinId]?.usd || null;
+        const coinId = coinMap[ticker];
+        if (coinId) {
+          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`, { next: { revalidate: 60 } });
+          const data = await res.json();
+          livePrice = data[coinId]?.usd || null;
+        }
       } else {
         const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
