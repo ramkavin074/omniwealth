@@ -209,7 +209,9 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 w-full lg:w-auto flex-1 max-w-4xl print:grid-cols-3">
             {sortedCategories.map(([cat, val]) => {
               const isOther = cat === '__OTHER__';
-              const label = isOther ? 'Other' : formatCategoryName(cat);
+              const label = isOther
+                ? `(${otherBreakdown.map(([c]) => formatCategoryName(c)).join(', ')})`
+                : formatCategoryName(cat);
               const tip = isOther
                 ? otherBreakdown
                     .map(([c, v]) => `${formatCategoryName(c)}: ${formatCompact(v, baseCurrency)} ${baseCurrency}`)
