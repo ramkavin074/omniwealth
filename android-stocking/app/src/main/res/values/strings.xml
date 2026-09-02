@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Stock</string>
-    <string name="title_activity_main">Stock</string>
-    <string name="package_name">com.omniwealth.stocking</string>
-    <string name="custom_url_scheme">com.omniwealth.stocking</string>
+    <string name="app_name">OmniWealth Kadai</string>
+    <string name="title_activity_main">OmniWealth Kadai</string>
+    <string name="package_name">com.omniwealth.kadai</string>
+    <string name="custom_url_scheme">com.omniwealth.kadai</string>
 </resources>

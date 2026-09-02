@@ -1,4 +1,4 @@
-package com.omniwealth.stocking;
+package com.omniwealth.kadai;
 
 import com.getcapacitor.BridgeActivity;
 

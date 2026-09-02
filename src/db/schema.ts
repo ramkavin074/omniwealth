@@ -650,6 +650,9 @@ export const store = pgSchema('store');
 export const stores = store.table('stores', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
+  // 'active' | 'trial' | 'suspended' — a suspended store loses stocking access
+  // (sync + APIs) without its data being deleted.
+  status: text('status').notNull().default('active'),
   createdBy: uuid('created_by').references(() => users.id),
   // WhatsApp number for the daily low-stock alert (owner-set). Null = no alert.
   alertPhone: text('alert_phone'),

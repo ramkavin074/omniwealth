@@ -1,7 +1,7 @@
 import crypto from 'crypto';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, ne } from 'drizzle-orm';
 import { db } from '@/db';
-import { sessions, storeMembers } from '@/db/schema';
+import { sessions, storeMembers, stores } from '@/db/schema';
 import { getSessionUserAction } from '@/actions/auth';
 
 // Resolves a stocking API caller to a store + role. Two auth paths:
@@ -49,10 +49,14 @@ export async function resolveStockingAuth(
   const userId = await userIdFromRequest(request);
   if (!userId) return null;
 
+  // Suspended stores are excluded — the user effectively has no store there.
   const memberships = await db
     .select({ storeId: storeMembers.storeId, role: storeMembers.role })
     .from(storeMembers)
-    .where(eq(storeMembers.userId, userId));
+    .innerJoin(stores, eq(stores.id, storeMembers.storeId))
+    .where(
+      and(eq(storeMembers.userId, userId), ne(stores.status, 'suspended')),
+    );
   if (memberships.length === 0) return null;
 
   const wanted = request.headers.get('x-store-id');

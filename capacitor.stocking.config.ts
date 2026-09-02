@@ -20,8 +20,8 @@ import { CapacitorConfig } from '@capacitor/cli';
 const debugWebview = process.env.CAP_DEBUG === 'true';
 
 const config: CapacitorConfig = {
-  appId: 'com.omniwealth.stocking',
-  appName: 'Stock',
+  appId: 'com.omniwealth.kadai',
+  appName: 'OmniWealth Kadai',
   webDir: 'stocking-standalone/dist',
   android: {
     path: 'android-stocking',

@@ -10,7 +10,7 @@ export type Lang = 'ta' | 'en';
 type Dict = Record<string, string>;
 
 const en: Dict = {
-  'app.title': 'Stock',
+  'app.title': 'Kadai',
   'tab.home': 'Home',
   'tab.scan': 'Scan',
   'tab.adjust': 'Adjust',
@@ -347,7 +347,7 @@ const en: Dict = {
 
 // confirm with shop owners — every Tamil string below is a first draft.
 const ta: Dict = {
-  'app.title': 'சரக்கு',
+  'app.title': 'கடை',
   'tab.home': 'முகப்பு',
   'tab.scan': 'ஸ்கேன்',
   'tab.adjust': 'திருத்து',
