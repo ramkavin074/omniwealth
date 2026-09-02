@@ -5,6 +5,7 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   BarcodeCacheEntry,
+  HeldSale,
   Movement,
   Product,
   Sale,
@@ -28,6 +29,7 @@ export class StockingDB extends Dexie {
   suppliers!: Table<Supplier, string>;
   supplierPayments!: Table<SupplierPayment, string>;
   sales!: Table<Sale, string>;
+  heldSales!: Table<HeldSale, string>;
 
   constructor() {
     super('stocking');
@@ -129,6 +131,26 @@ export class StockingDB extends Dexie {
       supplierPayments: 'id, supplierId, updatedAt',
       sales: 'id, billNo, createdAt, updatedAt',
     });
+    // v8: bill-level discount + parked (held) carts. heldSales is local-only.
+    this.version(8)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt',
+        heldSales: 'id, createdAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('sales')
+          .toCollection()
+          .modify((s: Sale) => {
+            if (typeof s.discount !== 'number') s.discount = 0;
+          });
+      });
   }
 }
 

@@ -78,6 +78,7 @@ interface InSale {
   id: string;
   billNo: string;
   items: unknown;
+  discount: number;
   total: number;
   tenderType: string;
   cashAmount: number;
@@ -308,6 +309,7 @@ export async function POST(request: Request) {
         userId: auth.userId, // server-authoritative
         billNo: String(s.billNo ?? ''),
         items: s.items as unknown[],
+        discount: String(num(s.discount)),
         total: String(num(s.total)),
         tenderType: s.tenderType || 'cash',
         cashAmount: String(num(s.cashAmount)),
@@ -445,6 +447,7 @@ export async function POST(request: Request) {
         billNo: s.billNo,
         userId: s.userId,
         items: Array.isArray(s.items) ? s.items : [],
+        discount: num(s.discount),
         total: num(s.total),
         tenderType: s.tenderType,
         cashAmount: num(s.cashAmount),

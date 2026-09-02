@@ -141,8 +141,9 @@ export interface Sale {
   billNo: string; // per-device, e.g. "K7-0042"
   createdAt: number; // epoch ms
   userId: string | null; // who rang it up (server-stamped on sync)
-  items: SaleItem[];
-  total: number; // Σ qty × unitPrice
+  items: SaleItem[]; // empty for a quick amount-only sale
+  discount: number; // ₹ taken off the whole bill (0 = none)
+  total: number; // Σ qty × unitPrice − discount
   tenderType: TenderType;
   cashAmount: number; // amount taken as cash (= total for a cash sale)
   upiAmount: number; // amount taken as UPI
@@ -153,6 +154,20 @@ export interface Sale {
 
 export function saleLineTotal(i: SaleItem): number {
   return Math.round(i.qty * i.unitPrice * 100) / 100;
+}
+
+export function saleSubtotal(s: Pick<Sale, 'items' | 'total' | 'discount'>): number {
+  const fromItems = s.items.reduce((t, i) => t + saleLineTotal(i), 0);
+  return Math.round((fromItems || s.total + s.discount) * 100) / 100;
+}
+
+/** A cart set aside mid-transaction. Local + per-device — never synced. */
+export interface HeldSale {
+  id: string;
+  createdAt: number;
+  label: string; // free text the shopkeeper types, or a short auto label
+  items: SaleItem[];
+  discount: number;
 }
 
 export interface BarcodeCacheEntry {

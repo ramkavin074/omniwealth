@@ -740,6 +740,7 @@ export const storeSales = store.table(
     userId: uuid('user_id').references(() => users.id), // server-stamped
     billNo: text('bill_no').notNull(),
     items: jsonb('items').notNull(), // SaleItem[]
+    discount: numeric('discount').notNull().default('0'),
     total: numeric('total').notNull(),
     tenderType: text('tender_type').notNull(),
     cashAmount: numeric('cash_amount').notNull().default('0'),

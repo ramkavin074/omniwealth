@@ -197,6 +197,7 @@ async function runSync(): Promise<SyncOutcome> {
           await db().sales.put({
             ...s,
             items: Array.isArray(s.items) ? s.items : [],
+            discount: s.discount ?? 0,
             deletedAt: s.deletedAt ?? null,
           });
         }

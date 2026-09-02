@@ -6,7 +6,7 @@
 import { db } from './dexie';
 import { applyMovement, uuid } from './products';
 import { getUserId } from '../settings';
-import type { Sale, SaleItem, TenderType } from '../types';
+import type { HeldSale, Sale, SaleItem, TenderType } from '../types';
 
 const q2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -50,6 +50,9 @@ export interface SaleLineInput {
 
 export interface CompleteSaleInput {
   items: SaleLineInput[];
+  discount?: number; // ₹ off the whole bill
+  /** For an amount-only "quick" sale with no line items — the bill total. */
+  manualTotal?: number;
   tenderType: TenderType;
   cashAmount?: number;
   upiAmount?: number;
@@ -58,7 +61,8 @@ export interface CompleteSaleInput {
 
 /** Ring up a bill: writes the sale row + one stock-out movement per line,
  *  atomically. Stock is allowed to go negative — the goods are physically
- *  leaving the shop; a negative figure just flags a recount later. */
+ *  leaving the shop; a negative figure just flags a recount later.
+ *  A sale with no items (quick amount entry) records revenue only. */
 export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
   const now = Date.now();
   const items: SaleItem[] = input.items
@@ -70,9 +74,14 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
       unit: l.unit,
       unitPrice: q2(l.unitPrice),
     }));
-  if (items.length === 0) throw new Error('No items');
 
-  const total = q2(items.reduce((t, i) => t + i.qty * i.unitPrice, 0));
+  const subtotal =
+    items.length > 0
+      ? items.reduce((t, i) => t + i.qty * i.unitPrice, 0)
+      : q2(input.manualTotal ?? 0);
+  const discount = Math.min(q2(Math.max(0, input.discount ?? 0)), subtotal);
+  const total = q2(subtotal - discount);
+  if (total <= 0) throw new Error('Nothing to bill');
   const cashAmount =
     input.tenderType === 'cash'
       ? total
@@ -92,6 +101,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     createdAt: now,
     userId: getUserId(),
     items,
+    discount,
     total,
     tenderType: input.tenderType,
     cashAmount,
@@ -167,6 +177,9 @@ export interface DaySummary {
   cash: number;
   upi: number;
   units: number;
+  discountTotal: number;
+  avgBill: number;
+  topItems: { name: string; qty: number; value: number }[];
   sales: Sale[]; // newest first
 }
 
@@ -189,12 +202,26 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let cash = 0;
   let upi = 0;
   let units = 0;
+  let discountTotal = 0;
+  const byItem = new Map<string, { qty: number; value: number }>();
   for (const s of rows) {
     total += s.total;
     cash += s.cashAmount;
     upi += s.upiAmount;
-    for (const i of s.items) units += i.qty;
+    discountTotal += s.discount ?? 0;
+    for (const i of s.items) {
+      units += i.qty;
+      const cur = byItem.get(i.name) ?? { qty: 0, value: 0 };
+      cur.qty += i.qty;
+      cur.value += i.qty * i.unitPrice;
+      byItem.set(i.name, cur);
+    }
   }
+  const topItems = [...byItem.entries()]
+    .map(([name, v]) => ({ name, qty: q2(v.qty), value: Math.round(v.value) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
   return {
     from: f,
     to: t,
@@ -203,6 +230,40 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     cash: q2(cash),
     upi: q2(upi),
     units: q2(units),
+    discountTotal: q2(discountTotal),
+    avgBill: rows.length ? Math.round(total / rows.length) : 0,
+    topItems,
     sales: rows,
   };
+}
+
+// ---- held (parked) bills — local only, never synced ----
+
+export async function holdSale(
+  items: SaleItem[],
+  discount: number,
+  label: string,
+): Promise<void> {
+  await db().heldSales.add({
+    id: uuid(),
+    createdAt: Date.now(),
+    label: label.trim() || new Date().toLocaleTimeString('en-IN'),
+    items,
+    discount: q2(Math.max(0, discount)),
+  });
+}
+
+export async function listHeld(): Promise<HeldSale[]> {
+  return db().heldSales.orderBy('createdAt').reverse().toArray();
+}
+
+/** Pull a held bill back and remove it from the parked list. */
+export async function resumeHeld(id: string): Promise<HeldSale | undefined> {
+  const h = await db().heldSales.get(id);
+  if (h) await db().heldSales.delete(id);
+  return h;
+}
+
+export async function discardHeld(id: string): Promise<void> {
+  await db().heldSales.delete(id);
 }

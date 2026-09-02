@@ -73,7 +73,17 @@ export default function SalesScreen({ lang, onClose }: Props) {
               </li>
             ))}
           </ul>
-          <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-900 dark:border-slate-700 dark:text-slate-50">
+          {open.discount > 0 && (
+            <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-sm text-rose-600 dark:border-slate-700 dark:text-rose-400">
+              <span>{t(lang, 'sell.discount')}</span>
+              <span className="tabular-nums">−{money(open.discount)}</span>
+            </div>
+          )}
+          <div
+            className={`mt-2 flex justify-between ${
+              open.discount > 0 ? '' : 'border-t border-slate-200 pt-2 dark:border-slate-700'
+            } font-bold text-slate-900 dark:text-slate-50`}
+          >
             <span>{t(lang, 'sell.total')}</span>
             <span className="tabular-nums">{money(open.total)}</span>
           </div>
@@ -141,6 +151,38 @@ export default function SalesScreen({ lang, onClose }: Props) {
           value={`${money(summary?.cash ?? 0)} / ${money(summary?.upi ?? 0)}`}
         />
       </div>
+
+      {summary && summary.count > 0 && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t(lang, 'sales.avgBill')} {money(summary.avgBill)}
+          {summary.discountTotal > 0 &&
+            ` · ${t(lang, 'sales.discounts')} ${money(summary.discountTotal)}`}
+        </p>
+      )}
+
+      {summary && summary.topItems.length > 0 && (
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            {t(lang, 'sales.topItems')}
+          </p>
+          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+            {summary.topItems.map((it) => (
+              <li
+                key={it.name}
+                className="flex justify-between py-1.5 text-sm"
+              >
+                <span className="text-slate-700 dark:text-slate-200">
+                  {it.name}{' '}
+                  <span className="text-slate-400">× {it.qty}</span>
+                </span>
+                <span className="tabular-nums text-slate-600 dark:text-slate-300">
+                  {money(it.value)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {!summary || summary.sales.length === 0 ? (
         <p className="pt-6 text-center text-slate-500 dark:text-slate-400">

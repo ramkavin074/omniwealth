@@ -4,7 +4,13 @@ import { useMemo, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import { saleLineTotal, type Sale, type TenderType, type Unit } from '../types';
 import { findByBarcode, searchProducts } from '../db/products';
-import { completeSale } from '../db/sales';
+import {
+  completeSale,
+  discardHeld,
+  holdSale,
+  listHeld,
+  resumeHeld,
+} from '../db/sales';
 import { scanBarcode } from '../scanner/barcode';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
@@ -36,6 +42,8 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const [discount, setDiscount] = useState('');
+  const [quickAmt, setQuickAmt] = useState(''); // non-empty → amount-only sale
   const [tender, setTender] = useState<TenderType>('cash');
   const [cashGiven, setCashGiven] = useState('');
   const [upiPart, setUpiPart] = useState('');
@@ -46,11 +54,19 @@ export default function SellScreen({ lang, onClose }: Props) {
     [debounced],
     [],
   );
+  const held = useLiveQuery(() => listHeld(), [], []);
 
-  const total = useMemo(
-    () => Math.round(cart.reduce((s, l) => s + l.qty * l.unitPrice, 0) * 100) / 100,
-    [cart],
+  const isQuick = quickAmt.trim() !== '';
+  const subtotal = useMemo(
+    () =>
+      isQuick
+        ? Math.max(0, Number(quickAmt) || 0)
+        : Math.round(cart.reduce((s, l) => s + l.qty * l.unitPrice, 0) * 100) /
+          100,
+    [cart, isQuick, quickAmt],
   );
+  const disc = Math.min(Math.max(0, Number(discount) || 0), subtotal);
+  const total = Math.round((subtotal - disc) * 100) / 100;
 
   const flash = (s: string) => {
     setMsg(s);
@@ -117,8 +133,9 @@ export default function SellScreen({ lang, onClose }: Props) {
     tender === 'split'
       ? Math.round((total - (Number(upiPart) || 0)) * 100) / 100
       : 0;
+  const hasContent = isQuick ? subtotal > 0 : cart.length > 0;
   const canComplete =
-    cart.length > 0 &&
+    total > 0 &&
     (tender === 'upi' ||
       (tender === 'cash' && (cashGiven === '' || Number(cashGiven) >= total)) ||
       (tender === 'split' &&
@@ -130,13 +147,17 @@ export default function SellScreen({ lang, onClose }: Props) {
     setBusy(true);
     try {
       const sale = await completeSale({
-        items: cart.map((l) => ({
-          productId: l.productId,
-          name: l.name,
-          unit: l.unit,
-          qty: l.qty,
-          unitPrice: l.unitPrice,
-        })),
+        items: isQuick
+          ? []
+          : cart.map((l) => ({
+              productId: l.productId,
+              name: l.name,
+              unit: l.unit,
+              qty: l.qty,
+              unitPrice: l.unitPrice,
+            })),
+        ...(isQuick ? { manualTotal: subtotal } : {}),
+        discount: disc,
         tenderType: tender,
         ...(tender === 'split'
           ? { cashAmount: splitCash, upiAmount: Number(upiPart) || 0 }
@@ -151,9 +172,46 @@ export default function SellScreen({ lang, onClose }: Props) {
     }
   };
 
+  const hold = async () => {
+    if (cart.length === 0) return;
+    const label = window.prompt(t(lang, 'sell.holdLabel')) ?? '';
+    await holdSale(
+      cart.map((l) => ({
+        productId: l.productId,
+        name: l.name,
+        unit: l.unit,
+        qty: l.qty,
+        unitPrice: l.unitPrice,
+      })),
+      Number(discount) || 0,
+      label,
+    );
+    setCart([]);
+    setDiscount('');
+    flash(t(lang, 'sell.held'));
+  };
+
+  const resume = async (id: string) => {
+    const h = await resumeHeld(id);
+    if (!h) return;
+    setQuickAmt('');
+    setCart(
+      h.items.map((i) => ({
+        productId: i.productId,
+        name: i.name,
+        unit: i.unit,
+        qty: i.qty,
+        unitPrice: i.unitPrice,
+      })),
+    );
+    setDiscount(h.discount ? String(h.discount) : '');
+  };
+
   const reset = () => {
     setCart([]);
     setTerm('');
+    setDiscount('');
+    setQuickAmt('');
     setTender('cash');
     setCashGiven('');
     setUpiPart('');
@@ -169,6 +227,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         (i) =>
           `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice} = ${saleLineTotal(i)}`,
       ),
+      ...(s.discount > 0 ? [`${t(lang, 'sell.discount')}: -${s.discount}`] : []),
       `${t(lang, 'sell.total')}: ${money(s.total)}`,
       `${t(lang, 'sell.paid')}: ${s.tenderType.toUpperCase()}`,
     ].join('\n');
@@ -214,7 +273,25 @@ export default function SellScreen({ lang, onClose }: Props) {
               </li>
             ))}
           </ul>
-          <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-lg font-bold text-slate-900 dark:border-slate-700 dark:text-slate-50">
+          {saved.discount > 0 && (
+            <div className="mt-2 space-y-0.5 border-t border-slate-200 pt-2 text-sm dark:border-slate-700">
+              <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                <span>{t(lang, 'sell.subtotal')}</span>
+                <span className="tabular-nums">
+                  {money(saved.total + saved.discount)}
+                </span>
+              </div>
+              <div className="flex justify-between text-rose-600 dark:text-rose-400">
+                <span>{t(lang, 'sell.discount')}</span>
+                <span className="tabular-nums">−{money(saved.discount)}</span>
+              </div>
+            </div>
+          )}
+          <div
+            className={`mt-2 flex justify-between ${
+              saved.discount > 0 ? '' : 'border-t border-slate-200 pt-2 dark:border-slate-700'
+            } text-lg font-bold text-slate-900 dark:text-slate-50`}
+          >
             <span>{t(lang, 'sell.total')}</span>
             <span className="tabular-nums">{money(saved.total)}</span>
           </div>
@@ -272,12 +349,33 @@ export default function SellScreen({ lang, onClose }: Props) {
         </div>
 
         <div className="rounded-2xl bg-slate-100 p-4 text-center dark:bg-slate-800">
+          {disc > 0 && (
+            <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">
+              {t(lang, 'sell.subtotal')} {money(subtotal)} ·{' '}
+              <span className="text-rose-600 dark:text-rose-400">
+                −{money(disc)}
+              </span>
+            </p>
+          )}
           <span className="block text-sm text-slate-500 dark:text-slate-400">
             {t(lang, 'sell.total')}
           </span>
           <span className="block text-3xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
             {money(total)}
           </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            {t(lang, 'sell.discount')}
+          </label>
+          <input
+            inputMode="decimal"
+            value={discount}
+            onChange={(e) => setDiscount(e.target.value)}
+            placeholder="0"
+            className={`${inputCls} w-24 text-right`}
+          />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -399,6 +497,42 @@ export default function SellScreen({ lang, onClose }: Props) {
           />
         </div>
 
+        {(cart.length > 0 || held.length > 0) && (
+          <div className="flex items-center gap-2 text-sm">
+            {cart.length > 0 && (
+              <button
+                type="button"
+                onClick={hold}
+                className="rounded-lg bg-slate-200 px-3 py-1.5 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+              >
+                {t(lang, 'sell.hold')}
+              </button>
+            )}
+            {held.length > 0 && (
+              <div className="flex flex-1 gap-1 overflow-x-auto">
+                {held.map((h) => (
+                  <span
+                    key={h.id}
+                    className="flex shrink-0 items-center rounded-full bg-amber-100 pl-3 font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                  >
+                    <button type="button" onClick={() => resume(h.id)}>
+                      {h.label} ({h.items.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => discardHeld(h.id)}
+                      className="px-2 py-1 text-amber-500"
+                      aria-label="discard"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {term.trim() && results.length > 0 && (
           <ul className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
             {results.slice(0, 12).map((p) => (
@@ -426,9 +560,23 @@ export default function SellScreen({ lang, onClose }: Props) {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4">
         {cart.length === 0 ? (
-          <p className="pt-10 text-center text-slate-400 dark:text-slate-500">
-            {t(lang, 'sell.empty')}
-          </p>
+          <div className="pt-8 text-center">
+            <p className="text-slate-400 dark:text-slate-500">
+              {t(lang, 'sell.empty')}
+            </p>
+            <div className="mx-auto mt-6 flex max-w-xs items-center gap-2">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {t(lang, 'sell.quickAmount')}
+              </span>
+              <span className="text-slate-400">₹</span>
+              <input
+                inputMode="decimal"
+                value={quickAmt}
+                onChange={(e) => setQuickAmt(e.target.value)}
+                className={`${inputCls} w-28 text-right`}
+              />
+            </div>
+          </div>
         ) : (
           <ul className="divide-y divide-slate-200 dark:divide-slate-800">
             {cart.map((l) => (
@@ -513,7 +661,7 @@ export default function SellScreen({ lang, onClose }: Props) {
             setUpiPart('');
             setPhase('pay');
           }}
-          disabled={cart.length === 0}
+          disabled={!hasContent}
           className="h-14 w-full rounded-xl bg-teal-700 text-lg font-bold text-white disabled:opacity-40"
         >
           {t(lang, 'sell.takePayment')}
