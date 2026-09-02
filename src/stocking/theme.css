@@ -27,6 +27,28 @@
   --k-hairline: #1e293b; /* slate-800 */
 }
 
+/* ---- firmer hairlines (the defaults read as barely-there) ------------- */
+html:not(.dark) .kadai :is(.border-slate-200, .border-slate-100) {
+  border-color: #cbd5e1; /* slate-300 */
+}
+html:not(.dark)
+  .kadai
+  :is(.divide-slate-200, .divide-slate-100)
+  > :not([hidden])
+  ~ :not([hidden]) {
+  border-color: #cbd5e1;
+}
+html.dark .kadai :is(.border-slate-200, .border-slate-800) {
+  border-color: #334155; /* slate-700 */
+}
+html.dark
+  .kadai
+  :is(.divide-slate-200, .divide-slate-800)
+  > :not([hidden])
+  ~ :not([hidden]) {
+  border-color: #334155;
+}
+
 /* ---- card depth: the app was almost entirely shadowless ---------------- */
 .kadai :is(.rounded-lg, .rounded-xl, .rounded-2xl):is(.bg-white, .border) {
   box-shadow: var(--k-shadow);

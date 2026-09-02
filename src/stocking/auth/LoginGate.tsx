@@ -7,6 +7,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { API_BASE } from '../config';
+import { OMNIWEALTH_LOGO } from '../logo';
 
 export type StoreRole = 'owner' | 'manager' | 'staff';
 
@@ -100,8 +101,15 @@ export default function LoginGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="kadai mx-auto flex min-h-full max-w-sm flex-col justify-center gap-4 p-6 text-slate-900 dark:text-slate-100">
-      <h1 className="flex items-center gap-2 text-2xl">
-        <span className="k-mark" aria-hidden="true" />
+      <h1 className="flex items-center gap-2.5 text-2xl">
+        {/* eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI */}
+        <img
+          src={OMNIWEALTH_LOGO}
+          alt="OmniWealth"
+          width={36}
+          height={36}
+          className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"
+        />
         <span className="k-wordmark">OmniWealth Kadai</span>
       </h1>
       <form onSubmit={signIn} className="space-y-3">

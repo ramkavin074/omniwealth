@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { t } from './i18n';
 import { useLang, useTheme } from './hooks';
 import { maybeAutoSync } from './sync';
+import { OMNIWEALTH_LOGO } from './logo';
 import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import AdjustScreen from './screens/AdjustScreen';
@@ -54,8 +55,15 @@ export default function StockingApp() {
         className="k-headrule flex items-center justify-between px-4 py-3"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
       >
-        <h1 className="flex items-center gap-2 text-xl">
-          <span className="k-mark" aria-hidden="true" />
+        <h1 className="flex items-center gap-2.5 text-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI */}
+          <img
+            src={OMNIWEALTH_LOGO}
+            alt="OmniWealth"
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"
+          />
           <span className="k-wordmark">{t(lang, 'app.title')}</span>
         </h1>
         <div className="flex items-center gap-2">
