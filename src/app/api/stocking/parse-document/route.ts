@@ -85,6 +85,9 @@ export async function POST(request: Request) {
   }
   if (!file || file.size === 0) return json({ error: 'No image' }, 400);
   if (file.size > 8 * 1024 * 1024) return json({ error: 'Image too large' }, 413);
+  if (kind !== 'invoice' && kind !== 'payment') {
+    return json({ error: 'Unknown kind' }, 400);
+  }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const mimeType = file.type || 'image/jpeg';
