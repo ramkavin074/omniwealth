@@ -184,6 +184,26 @@ export class StockingDB extends Dexie {
             }
           });
       });
+    // v10: customer refunds — a sale row with refundOf set + negative amounts.
+    this.version(10)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt, refundOf',
+        heldSales: 'id, createdAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('sales')
+          .toCollection()
+          .modify((s: Sale) => {
+            if (s.refundOf === undefined) s.refundOf = null;
+          });
+      });
   }
 }
 

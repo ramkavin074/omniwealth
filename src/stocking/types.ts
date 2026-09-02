@@ -28,6 +28,7 @@ export type MovementReason =
   | 'correction' // recount / fixing a data-entry mistake
   | 'count' // physical stock-take — sets counted quantity
   | 'return' // goods sent back to the supplier (credits the payables ledger)
+  | 'sale-return' // a customer returned goods — back into stock
   | 'damage' // written off — breakage / spoilage
   | 'expiry'; // written off — past its date
 
@@ -219,11 +220,12 @@ export interface Sale {
   billNo: string; // per-device, e.g. "K7-0042"
   createdAt: number; // epoch ms
   userId: string | null; // who rang it up (server-stamped on sync)
-  items: SaleItem[]; // empty for a quick amount-only sale
+  items: SaleItem[]; // empty for a quick amount-only sale; negative qty on a refund
   discount: number; // ₹ taken off the whole bill (0 = none)
   taxTotal: number; // GST on the bill (0 when the store isn't charging GST)
   taxBreakup: TaxRow[]; // per-rate CGST/SGST split for the receipt
-  total: number; // items − discount (+ taxTotal when prices are tax-exclusive)
+  total: number; // items − discount (+ taxTotal when tax-exclusive); negative on a refund
+  refundOf: string | null; // the original sale's id when this row is a refund
   tenderType: TenderType;
   cashAmount: number; // amount taken as cash (= total for a cash sale)
   upiAmount: number; // amount taken as UPI

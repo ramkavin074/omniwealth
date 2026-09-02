@@ -21,6 +21,7 @@ const REASONS: (MovementReason | 'all')[] = [
   'count',
   'correction',
   'return',
+  'sale-return',
   'damage',
   'expiry',
   'opening',

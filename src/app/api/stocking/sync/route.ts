@@ -85,6 +85,7 @@ interface InSale {
   taxTotal: number;
   taxBreakup: unknown;
   total: number;
+  refundOf: string | null;
   tenderType: string;
   cashAmount: number;
   upiAmount: number;
@@ -322,6 +323,8 @@ export async function POST(request: Request) {
         taxTotal: String(num(s.taxTotal)),
         taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
         total: String(num(s.total)),
+        refundOf:
+          typeof s.refundOf === 'string' && s.refundOf ? s.refundOf : null,
         tenderType: s.tenderType || 'cash',
         cashAmount: String(num(s.cashAmount)),
         upiAmount: String(num(s.upiAmount)),
@@ -483,6 +486,7 @@ export async function POST(request: Request) {
         taxTotal: num(s.taxTotal),
         taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
         total: num(s.total),
+        refundOf: s.refundOf ?? null,
         tenderType: s.tenderType,
         cashAmount: num(s.cashAmount),
         upiAmount: num(s.upiAmount),

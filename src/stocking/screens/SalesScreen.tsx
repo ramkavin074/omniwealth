@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
-import { saleLineTotal, type Sale } from '../types';
-import { daySummary, voidSale } from '../db/sales';
+import { saleLineTotal, type Sale, type TenderType } from '../types';
+import { daySummary, refundSale, refundsFor, voidSale } from '../db/sales';
 import { useLiveQuery } from '../hooks';
 import { canManage } from '../settings';
 import { SCREEN_PAD } from '../ui';
@@ -24,6 +24,7 @@ const RANGES = [0, 1, 7] as const;
 export default function SalesScreen({ lang, onClose }: Props) {
   const [range, setRange] = useState<(typeof RANGES)[number]>(0);
   const [open, setOpen] = useState<Sale | null>(null);
+  const [refunding, setRefunding] = useState<Sale | null>(null);
   const [manage] = useState(canManage);
 
   const summary = useLiveQuery(() => {
@@ -39,7 +40,22 @@ export default function SalesScreen({ lang, onClose }: Props) {
     return daySummary();
   }, [range]);
 
+  if (refunding) {
+    return (
+      <RefundView
+        lang={lang}
+        sale={refunding}
+        onDone={() => {
+          setRefunding(null);
+          setOpen(null);
+        }}
+        onBack={() => setRefunding(null)}
+      />
+    );
+  }
+
   if (open) {
+    const isRefund = !!open.refundOf;
     return (
       <div className={`p-4 space-y-4 ${SCREEN_PAD}`}>
         <div className="flex items-center justify-between">
@@ -104,24 +120,35 @@ export default function SalesScreen({ lang, onClose }: Props) {
             <span className="tabular-nums">{money(open.total)}</span>
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {t(lang, 'sell.paid')}: {t(lang, `sell.tender.${open.tenderType}`)}
+            {isRefund
+              ? `${t(lang, 'sales.refundOf')} ${open.note?.replace('refund ', '') ?? ''}`
+              : `${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${open.tenderType}`)}`}
             {open.deletedAt ? ` · ${t(lang, 'sales.voided')}` : ''}
           </p>
         </div>
 
-        {manage && !open.deletedAt && (
-          <button
-            type="button"
-            onClick={async () => {
-              if (confirm(t(lang, 'sales.voidConfirm'))) {
-                await voidSale(open.id);
-                setOpen(null);
-              }
-            }}
-            className="text-sm font-medium text-rose-600 dark:text-rose-400"
-          >
-            {t(lang, 'sales.void')}
-          </button>
+        {manage && !open.deletedAt && !isRefund && (
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setRefunding(open)}
+              className="text-sm font-semibold text-teal-700 dark:text-teal-300"
+            >
+              {t(lang, 'sales.refund')}
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (confirm(t(lang, 'sales.voidConfirm'))) {
+                  await voidSale(open.id);
+                  setOpen(null);
+                }
+              }}
+              className="text-sm font-medium text-rose-600 dark:text-rose-400"
+            >
+              {t(lang, 'sales.void')}
+            </button>
+          </div>
         )}
       </div>
     );
@@ -175,6 +202,13 @@ export default function SalesScreen({ lang, onClose }: Props) {
             ` · ${t(lang, 'sales.discounts')} ${money(summary.discountTotal)}`}
           {summary.taxCollected > 0 &&
             ` · ${t(lang, 'sales.gst')} ${money(summary.taxCollected)}`}
+          {summary.refundCount > 0 && (
+            <span className="text-rose-600 dark:text-rose-400">
+              {' · '}
+              {t(lang, 'sales.refunds')} {money(summary.refundTotal)} (
+              {summary.refundCount})
+            </span>
+          )}
         </p>
       )}
 
@@ -218,6 +252,7 @@ export default function SalesScreen({ lang, onClose }: Props) {
                 <span className="min-w-0">
                   <span className="block font-mono text-sm text-slate-900 dark:text-slate-50">
                     {s.billNo}
+                    {s.refundOf ? ` · ${t(lang, 'sales.refundTag')}` : ''}
                     {s.deletedAt ? ` · ${t(lang, 'sales.voided')}` : ''}
                   </span>
                   <span className="text-xs text-slate-400">
@@ -232,7 +267,9 @@ export default function SalesScreen({ lang, onClose }: Props) {
                   className={`shrink-0 font-semibold tabular-nums ${
                     s.deletedAt
                       ? 'text-slate-400 line-through'
-                      : 'text-slate-800 dark:text-slate-100'
+                      : s.refundOf
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-slate-800 dark:text-slate-100'
                   }`}
                 >
                   {money(s.total)}
@@ -242,6 +279,147 @@ export default function SalesScreen({ lang, onClose }: Props) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function RefundView({
+  lang,
+  sale,
+  onDone,
+  onBack,
+}: {
+  lang: Lang;
+  sale: Sale;
+  onDone: () => void;
+  onBack: () => void;
+}) {
+  const priorRefunds = useLiveQuery(() => refundsFor(sale.id), [sale.id], []);
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [tender, setTender] = useState<TenderType>('cash');
+  const [busy, setBusy] = useState(false);
+
+  const already = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of priorRefunds) {
+      for (const i of r.items) m[i.productId] = (m[i.productId] ?? 0) + -i.qty;
+    }
+    return m;
+  }, [priorRefunds]);
+
+  const rows = sale.items.map((i) => ({
+    ...i,
+    remaining: i.qty - (already[i.productId] ?? 0),
+    picked: qty[i.productId] ?? 0,
+  }));
+  const estimate =
+    Math.round(rows.reduce((t, r) => t + r.picked * r.unitPrice, 0) * 100) / 100;
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await refundSale(
+        sale.id,
+        rows
+          .filter((r) => r.picked > 0)
+          .map((r) => ({ productId: r.productId, qty: r.picked })),
+        tender,
+      );
+      onDone();
+    } catch {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={`p-4 space-y-4 ${SCREEN_PAD}`}>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="font-medium text-teal-700 dark:text-teal-300"
+        >
+          ← {t(lang, 'sell.back')}
+        </button>
+        <span className="text-lg font-bold text-slate-900 dark:text-slate-50">
+          {t(lang, 'sales.refund')}
+        </span>
+        <span className="w-6" />
+      </div>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        {t(lang, 'sales.refundOf')} {sale.billNo}
+      </p>
+
+      <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+        {rows.map((r) => (
+          <li key={r.productId} className="flex items-center gap-2 py-2">
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-slate-900 dark:text-slate-50">
+                {r.name}
+              </span>
+              <span className="text-xs text-slate-400">
+                {t(lang, 'sales.refundLeft')} {r.remaining}{' '}
+                {unitLabel(lang, r.unit)} · {money(r.unitPrice)}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setQty((q) => ({
+                  ...q,
+                  [r.productId]: Math.max(0, (q[r.productId] ?? 0) - 1),
+                }))
+              }
+              className="h-9 w-9 rounded-lg bg-slate-200 text-lg font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              −
+            </button>
+            <span className="w-6 text-center tabular-nums">{r.picked}</span>
+            <button
+              type="button"
+              onClick={() =>
+                setQty((q) => ({
+                  ...q,
+                  [r.productId]: Math.min(
+                    r.remaining,
+                    (q[r.productId] ?? 0) + 1,
+                  ),
+                }))
+              }
+              disabled={r.remaining <= 0}
+              className="h-9 w-9 rounded-lg bg-slate-200 text-lg font-bold text-slate-700 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-100"
+            >
+              +
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="grid grid-cols-3 gap-2">
+        {(['cash', 'upi', 'split'] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setTender(k)}
+            className={`h-10 rounded-xl text-sm font-semibold transition ${
+              tender === k
+                ? 'bg-teal-700 text-white'
+                : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+            }`}
+          >
+            {t(lang, `sell.tender.${k}`)}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={submit}
+        disabled={busy || estimate <= 0}
+        className="h-14 w-full rounded-xl bg-rose-600 text-lg font-bold text-white disabled:opacity-40"
+      >
+        {t(lang, 'sales.refundDo')} · {money(estimate)}
+      </button>
     </div>
   );
 }

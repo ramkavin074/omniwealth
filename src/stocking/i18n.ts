@@ -92,6 +92,12 @@ const en: Dict = {
   'sales.void': 'Void this bill',
   'sales.voidConfirm': 'Void this bill and add the stock back?',
   'sales.voided': 'Voided',
+  'sales.refund': 'Refund items',
+  'sales.refundOf': 'Refund of',
+  'sales.refundTag': 'REFUND',
+  'sales.refunds': 'Refunds',
+  'sales.refundLeft': 'left:',
+  'sales.refundDo': 'Refund',
 
   'numpad.ok': 'OK',
 
@@ -229,6 +235,7 @@ const en: Dict = {
   'reason.correction': 'Correction',
   'reason.count': 'Stock-take',
   'reason.return': 'Returned to supplier',
+  'reason.sale-return': 'Customer return',
   'reason.damage': 'Damage / breakage',
   'reason.expiry': 'Expired',
 
@@ -380,6 +387,12 @@ const ta: Dict = {
   'sales.void': 'இந்த பில்லை ரத்து செய்',
   'sales.voidConfirm': 'இந்த பில்லை ரத்து செய்து இருப்பை திரும்ப சேர்க்கவா?',
   'sales.voided': 'ரத்து',
+  'sales.refund': 'பொருட்களை திரும்பப்பெறு',
+  'sales.refundOf': 'திரும்பப்பெறுதல்:',
+  'sales.refundTag': 'திரும்பம்',
+  'sales.refunds': 'திரும்பப்பெறுதல்கள்',
+  'sales.refundLeft': 'மீதம்:',
+  'sales.refundDo': 'திரும்பப்பெறு',
 
   'numpad.ok': 'சரி',
 
@@ -518,6 +531,7 @@ const ta: Dict = {
   'reason.correction': 'திருத்தம்',
   'reason.count': 'சரக்கு எண்ணிக்கை',
   'reason.return': 'சப்ளையருக்கு திருப்பியது',
+  'reason.sale-return': 'வாடிக்கையாளர் திரும்பம்',
   'reason.damage': 'சேதம் / உடைவு',
   'reason.expiry': 'காலம் கடந்தது',
 

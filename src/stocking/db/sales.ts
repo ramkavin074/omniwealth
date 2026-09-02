@@ -114,6 +114,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     taxTotal,
     taxBreakup: breakup,
     total,
+    refundOf: null,
     tenderType: input.tenderType,
     cashAmount,
     upiAmount,
@@ -173,6 +174,124 @@ export async function getSale(id: string): Promise<Sale | undefined> {
   return db().sales.get(id);
 }
 
+export async function refundsFor(saleId: string): Promise<Sale[]> {
+  return db()
+    .sales.where('refundOf')
+    .equals(saleId)
+    .toArray()
+    .then((r) => r.filter((s) => s.deletedAt === null));
+}
+
+export interface RefundLineInput {
+  productId: string;
+  qty: number; // positive — how many units come back
+}
+
+/** Record a partial/full customer return against an existing bill. Creates a
+ *  new sale row with `refundOf` set and negative amounts, and puts the stock
+ *  back. Refund qtys are clamped to what's left un-refunded on each line. */
+export async function refundSale(
+  originalId: string,
+  lines: RefundLineInput[],
+  tenderType: TenderType,
+  tender?: { cashAmount?: number; upiAmount?: number },
+): Promise<Sale> {
+  const now = Date.now();
+  const orig = await db().sales.get(originalId);
+  if (!orig || orig.deletedAt !== null || orig.refundOf) {
+    throw new Error('Cannot refund this bill');
+  }
+  const priorRefunds = await refundsFor(originalId);
+  const already = new Map<string, number>();
+  for (const r of priorRefunds) {
+    for (const i of r.items) {
+      already.set(i.productId, (already.get(i.productId) ?? 0) + -i.qty);
+    }
+  }
+
+  const origSubtotal =
+    orig.items.reduce((t, i) => t + i.qty * i.unitPrice, 0) || orig.total;
+
+  const items: SaleItem[] = [];
+  for (const req of lines) {
+    const src = orig.items.find((i) => i.productId === req.productId);
+    if (!src) continue;
+    const room = src.qty - (already.get(req.productId) ?? 0);
+    const qty = Math.min(q2(Math.max(0, req.qty)), room);
+    if (qty <= 0) continue;
+    items.push({
+      productId: src.productId,
+      name: src.name,
+      unit: src.unit,
+      qty: -qty, // negative — leaving the sale
+      unitPrice: src.unitPrice,
+      gstRate: src.gstRate,
+    });
+  }
+  if (items.length === 0) throw new Error('Nothing to refund');
+
+  const grossBack = items.reduce((t, i) => t + -i.qty * i.unitPrice, 0);
+  // Give back the same share of the original bill discount.
+  const discShare =
+    origSubtotal > 0 ? q2((orig.discount * grossBack) / origSubtotal) : 0;
+
+  const { taxTotal, addToTotal, breakup } = computeSaleTax(
+    items.map((i) => ({ lineTotal: i.qty * i.unitPrice, gstRate: i.gstRate })),
+    -discShare,
+    getGstConfig(),
+  );
+  const total = q2(-grossBack + discShare - addToTotal); // negative
+
+  const refund: Sale = {
+    id: uuid(),
+    billNo: `${orig.billNo}/R`,
+    createdAt: now,
+    userId: getUserId(),
+    items,
+    discount: -discShare,
+    taxTotal,
+    taxBreakup: breakup,
+    total,
+    refundOf: originalId,
+    tenderType,
+    cashAmount:
+      tenderType === 'cash'
+        ? total
+        : tenderType === 'split'
+          ? -q2(Math.abs(tender?.cashAmount ?? 0))
+          : 0,
+    upiAmount:
+      tenderType === 'upi'
+        ? total
+        : tenderType === 'split'
+          ? -q2(Math.abs(tender?.upiAmount ?? 0))
+          : 0,
+    note: `refund ${orig.billNo}`,
+    updatedAt: now,
+    deletedAt: null,
+  };
+
+  await db().transaction(
+    'rw',
+    db().products,
+    db().movements,
+    db().sales,
+    async () => {
+      for (const i of items) {
+        await applyMovement({
+          productId: i.productId,
+          reason: 'sale-return',
+          delta: -i.qty, // positive — back into stock
+          note: `refund ${orig.billNo}`,
+          allowNegative: true,
+        });
+      }
+      await db().sales.add(refund);
+    },
+  );
+  return refund;
+}
+
 /** Most recent live bills, newest first. */
 export async function recentSales(limit = 50): Promise<Sale[]> {
   const rows = await db().sales.orderBy('createdAt').reverse().limit(limit * 2)
@@ -183,16 +302,18 @@ export async function recentSales(limit = 50): Promise<Sale[]> {
 export interface DaySummary {
   from: number;
   to: number;
-  count: number;
-  total: number;
-  cash: number;
-  upi: number;
+  count: number; // number of sale bills (refunds excluded)
+  total: number; // net take = gross sales − refunds
+  cash: number; // net
+  upi: number; // net
   units: number;
   discountTotal: number;
-  taxCollected: number;
+  taxCollected: number; // net
+  refundCount: number;
+  refundTotal: number; // positive ₹ value refunded
   avgBill: number;
   topItems: { name: string; qty: number; value: number }[];
-  sales: Sale[]; // newest first
+  sales: Sale[]; // newest first — includes refund rows
 }
 
 /** Summary + bill list for [from, to). Defaults to local "today". */
@@ -216,6 +337,9 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let units = 0;
   let discountTotal = 0;
   let taxCollected = 0;
+  let saleCount = 0;
+  let refundCount = 0;
+  let refundTotal = 0;
   const byItem = new Map<string, { qty: number; value: number }>();
   for (const s of rows) {
     total += s.total;
@@ -223,6 +347,12 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     upi += s.upiAmount;
     discountTotal += s.discount ?? 0;
     taxCollected += s.taxTotal ?? 0;
+    if (s.refundOf) {
+      refundCount++;
+      refundTotal += -s.total;
+    } else {
+      saleCount++;
+    }
     for (const i of s.items) {
       units += i.qty;
       const cur = byItem.get(i.name) ?? { qty: 0, value: 0 };
@@ -233,20 +363,23 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   }
   const topItems = [...byItem.entries()]
     .map(([name, v]) => ({ name, qty: q2(v.qty), value: Math.round(v.value) }))
+    .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
 
   return {
     from: f,
     to: t,
-    count: rows.length,
+    count: saleCount,
     total: q2(total),
     cash: q2(cash),
     upi: q2(upi),
     units: q2(units),
     discountTotal: q2(discountTotal),
     taxCollected: q2(taxCollected),
-    avgBill: rows.length ? Math.round(total / rows.length) : 0,
+    refundCount,
+    refundTotal: q2(refundTotal),
+    avgBill: saleCount ? Math.round((total + refundTotal) / saleCount) : 0,
     topItems,
     sales: rows,
   };

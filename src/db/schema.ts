@@ -752,6 +752,7 @@ export const storeSales = store.table(
     tenderType: text('tender_type').notNull(),
     cashAmount: numeric('cash_amount').notNull().default('0'),
     upiAmount: numeric('upi_amount').notNull().default('0'),
+    refundOf: uuid('refund_of'), // original sale id when this row is a customer refund
     note: text('note'),
     createdAt: numeric('created_at').notNull(), // epoch ms, client clock
     updatedAt: numeric('updated_at').notNull(),

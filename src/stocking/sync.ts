@@ -218,6 +218,7 @@ async function runSync(): Promise<SyncOutcome> {
             discount: s.discount ?? 0,
             taxTotal: s.taxTotal ?? 0,
             taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
+            refundOf: s.refundOf ?? null,
             deletedAt: s.deletedAt ?? null,
           });
         }
