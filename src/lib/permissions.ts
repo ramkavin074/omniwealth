@@ -55,11 +55,12 @@ export const READ_ONLY_ERROR = 'Your account has view-only access.';
 export const FORBIDDEN_ERROR = 'You do not have permission to do that.';
 
 /**
- * The offline stocking module is an opt-in per household (a pilot flag), not
- * a role. Any member of an enabled household may use it.
+ * Stocking access moved to `store.store_members` in Round 10 — a household
+ * flag no longer governs it. Kept as a thin shim (checks `session.stores`)
+ * for any caller that still imports it.
  */
 export function canUseStocking(
-  household: { stockingEnabled?: boolean | null } | null | undefined,
+  session: { stores?: unknown[] } | null | undefined,
 ): boolean {
-  return household?.stockingEnabled === true;
+  return (session?.stores?.length ?? 0) > 0;
 }

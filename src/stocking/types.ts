@@ -54,9 +54,29 @@ export interface Movement {
   reason: MovementReason;
   qtyAfter: number; // stockQty immediately after this movement
   unitCost: number | null; // purchase cost/unit on a stock-in; null otherwise
+  supplierId: string | null; // set on a stock-in from a known supplier
   userId: string | null; // who made the change (the audit "who")
   note: string | null;
   createdAt: number; // epoch ms
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string | null;
+  note: string | null;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+export interface SupplierPayment {
+  id: string;
+  supplierId: string;
+  amount: number;
+  note: string | null;
+  paidAt: number; // epoch ms
+  updatedAt: number;
+  deletedAt: number | null;
 }
 
 export type ProductDraft = Omit<

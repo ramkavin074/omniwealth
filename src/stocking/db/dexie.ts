@@ -3,7 +3,13 @@
 // adjust, search) goes here and never touches the network.
 
 import Dexie, { type Table } from 'dexie';
-import type { BarcodeCacheEntry, Movement, Product } from '../types';
+import type {
+  BarcodeCacheEntry,
+  Movement,
+  Product,
+  Supplier,
+  SupplierPayment,
+} from '../types';
 
 export interface SyncStateRow {
   id: 'default';
@@ -18,6 +24,8 @@ export class StockingDB extends Dexie {
   movements!: Table<Movement, string>;
   barcodeCache!: Table<BarcodeCacheEntry, string>;
   syncState!: Table<SyncStateRow, string>;
+  suppliers!: Table<Supplier, string>;
+  supplierPayments!: Table<SupplierPayment, string>;
 
   constructor() {
     super('stocking');
@@ -71,6 +79,24 @@ export class StockingDB extends Dexie {
           .modify((m: Movement) => {
             if (m.unitCost === undefined) m.unitCost = null;
             if (m.userId === undefined) m.userId = null;
+          });
+      });
+    // v5: suppliers + supplier payments (the supplier ledger).
+    this.version(5)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('movements')
+          .toCollection()
+          .modify((m: Movement) => {
+            if (m.supplierId === undefined) m.supplierId = null;
           });
       });
   }

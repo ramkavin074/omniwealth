@@ -7,6 +7,7 @@ import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
 import { UNITS, type Unit } from '../types';
 import {
   APP_VERSION,
+  canManage,
   clearAllData,
   getDefaults,
   hasStandaloneAuth,
@@ -18,6 +19,7 @@ import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
 interface Props {
   lang: Lang;
   onClose: () => void;
+  onOpenSuppliers: () => void;
 }
 
 const field =
@@ -25,8 +27,13 @@ const field =
 const heading =
   'text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500';
 
-export default function SettingsSheet({ lang, onClose }: Props) {
+export default function SettingsSheet({
+  lang,
+  onClose,
+  onOpenSuppliers,
+}: Props) {
   const initial = getDefaults();
+  const [manage] = useState(canManage);
   const [unit, setUnit] = useState<Unit>(initial.unit);
   const [threshold, setThreshold] = useState(String(initial.lowStockThreshold));
   const standalone = hasStandaloneAuth();
@@ -112,6 +119,19 @@ export default function SettingsSheet({ lang, onClose }: Props) {
             {syncMsg ?? `${t(lang, 'sync.last')}: ${agoText()}`}
           </p>
         </section>
+
+        {manage && (
+          <section className="space-y-2">
+            <p className={heading}>{t(lang, 'sup.title')}</p>
+            <button
+              type="button"
+              onClick={onOpenSuppliers}
+              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'sup.manage')}
+            </button>
+          </section>
+        )}
 
         <section className="space-y-2">
           <p className={heading}>{t(lang, 'settings.defaults')}</p>

@@ -11,7 +11,7 @@ import type {
   ProductDraft,
 } from '../types';
 
-function uuid(): string {
+export function uuid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
@@ -120,6 +120,7 @@ export async function createProduct(draft: ProductDraft): Promise<Product> {
         reason: 'opening',
         qtyAfter: product.stockQty,
         unitCost: product.costPrice > 0 ? product.costPrice : null,
+        supplierId: null,
         userId: getUserId(),
         note: null,
         createdAt: now,
@@ -195,6 +196,8 @@ interface MovementInput {
   /** Purchase cost/unit on a stock-in — also updates the product's costPrice
    *  (latest-cost model). */
   unitCost?: number | null;
+  /** Supplier this stock-in came from. */
+  supplierId?: string | null;
 }
 
 export interface MovementResult {
@@ -235,6 +238,7 @@ export async function applyMovement(
       reason: input.reason,
       qtyAfter,
       unitCost,
+      supplierId: input.supplierId ?? null,
       userId: getUserId(),
       note: input.note?.trim() ? input.note.trim() : null,
       createdAt: now,
@@ -268,6 +272,7 @@ export async function undoMovement(movementId: string): Promise<void> {
       reason: 'correction',
       qtyAfter,
       unitCost: null,
+      supplierId: null,
       userId: getUserId(),
       note: `undo ${orig.reason}`,
       createdAt: now,
@@ -438,6 +443,7 @@ export async function importProducts(
           reason: 'opening',
           qtyAfter: product.stockQty,
           unitCost: costPrice > 0 ? costPrice : null,
+          supplierId: null,
           userId: getUserId(),
           note: 'import',
           createdAt: now,

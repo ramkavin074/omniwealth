@@ -40,10 +40,6 @@ export const households = pgTable(
     // `${accountCategory}|${accountNumber}` (e.g. "INDIVIDUAL|3780").
     accountInstructions: text('account_instructions'),
 
-    // DEPRECATED (Round 10): stocking access is now `store.store_members`,
-    // not a household flag. Kept one release as a read-only fallback.
-    stockingEnabled: boolean('stocking_enabled').default(false).notNull(),
-
     // A "shell" household exists only to satisfy users.household_id NOT NULL
     // for a store-only account (a shop employee with no wealth vault). Wealth
     // pages redirect these users straight to /stocking.
@@ -626,86 +622,13 @@ export const netWorthSnapshots = pgTable(
 
 /**
  * ============================================================
- * STOCKING MODULE — LEGACY tables (Round <10, household-keyed)
- * ============================================================
- *
- * DEPRECATED by the `store` schema below. Kept only so the Round 10 data
- * migration can copy rows across; dropped once the migration is verified.
- * Nothing new should reference these.
- */
-export const stockProducts = pgTable(
-  'stock_products',
-  {
-    // Client-generated UUID (matches the IndexedDB row id).
-    id: uuid('id').primaryKey(),
-
-    householdId: uuid('household_id')
-      .notNull()
-      .references(() => households.id, { onDelete: 'cascade' }),
-
-    barcode: text('barcode'),
-    name: text('name').notNull(),
-    mrp: numeric('mrp').notNull().default('0'),
-    price: numeric('price').notNull().default('0'),
-    costPrice: numeric('cost_price').notNull().default('0'),
-    stockQty: numeric('stock_qty').notNull().default('0'),
-    unit: text('unit').notNull().default('piece'),
-    lowStockThreshold: numeric('low_stock_threshold').notNull().default('0'),
-
-    // Epoch-ms mirrors of the device clock (not server time) — the client
-    // owns these so sync ordering is stable across the round trip.
-    updatedAt: numeric('updated_at').notNull(),
-    deletedAt: numeric('deleted_at'),
-
-    syncedAt: timestamp('synced_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    householdSyncedIdx: index('stock_products_household_synced_idx').on(
-      table.householdId,
-      table.syncedAt,
-    ),
-    householdBarcodeIdx: index('stock_products_household_barcode_idx').on(
-      table.householdId,
-      table.barcode,
-    ),
-  }),
-);
-
-export const stockMovements = pgTable(
-  'stock_movements',
-  {
-    id: uuid('id').primaryKey(),
-
-    householdId: uuid('household_id')
-      .notNull()
-      .references(() => households.id, { onDelete: 'cascade' }),
-
-    productId: uuid('product_id').notNull(),
-    // Who made the change — server-stamped from the caller's session on push.
-    userId: uuid('user_id').references(() => users.id),
-
-    delta: numeric('delta').notNull(),
-    reason: text('reason').notNull(),
-    qtyAfter: numeric('qty_after').notNull(),
-    unitCost: numeric('unit_cost'), // purchase cost/unit on a stock-in
-    note: text('note'),
-
-    createdAt: numeric('created_at').notNull(),
-    syncedAt: timestamp('synced_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    householdSyncedIdx: index('stock_movements_household_synced_idx').on(
-      table.householdId,
-      table.syncedAt,
-    ),
-    productIdx: index('stock_movements_product_idx').on(table.productId),
-  }),
-);
-
-/**
- * ============================================================
  * STORE MODULE  (schema: `store`)
  * ============================================================
+ *
+ * The Round <10 household-keyed `stock_products` / `stock_movements` tables
+ * and `households.stocking_enabled` were retired in Round 10–11; data was
+ * migrated into `store.*` and the legacy objects dropped
+ * (scripts/round11-cleanup.sql).
  *
  * A shop is its own entity with its own membership — fully independent of
  * `households` so a shop employee can be given stock access without any
@@ -772,6 +695,32 @@ export const suppliers = store.table(
       t.storeId,
       t.syncedAt,
     ),
+  }),
+);
+
+// Manual payments made to a supplier. Purchases come from stock_movements
+// (delta > 0 with a supplier_id + unit_cost); paid − purchased = balance owed.
+export const supplierPayments = store.table(
+  'supplier_payments',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    supplierId: uuid('supplier_id').notNull(),
+    amount: numeric('amount').notNull(),
+    note: text('note'),
+    paidAt: numeric('paid_at').notNull(), // epoch ms, client clock
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_supplier_payments_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    supplierIdx: index('store_supplier_payments_supplier_idx').on(t.supplierId),
   }),
 );
 

@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import type { MovementReason, Product } from '../types';
 import { applyMovement, getProduct, searchProducts } from '../db/products';
+import { createSupplier, listSuppliers } from '../db/suppliers';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { canSeeCost } from '../settings';
 import QtyStepper from '../components/QtyStepper';
@@ -25,10 +26,11 @@ export default function AdjustScreen({ lang }: Props) {
   const [reason, setReason] = useState<MovementReason>('manual');
   const [note, setNote] = useState('');
   const [unitCost, setUnitCost] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [flash, setFlash] = useState<string | null>(null);
 
-  // A positive delta is a stock-in → offer to record the purchase cost
-  // (owner/manager only).
+  // A positive delta is a stock-in → offer to record the purchase cost +
+  // supplier (owner/manager only).
   const [showCost] = useState(canSeeCost);
   const isStockIn = mode === 'delta' && amount > 0 && showCost;
 
@@ -37,6 +39,7 @@ export default function AdjustScreen({ lang }: Props) {
     [debounced],
     [] as Product[],
   );
+  const suppliers = useLiveQuery(() => listSuppliers(), [], []);
 
   // Keep the selected product's stock figure fresh after an apply.
   const live = useLiveQuery(
@@ -47,6 +50,12 @@ export default function AdjustScreen({ lang }: Props) {
 
   const apply = async () => {
     if (!current) return;
+    let sup = supplierId;
+    if (isStockIn && supplierId === '__new') {
+      const name = window.prompt(t(lang, 'sup.name'))?.trim();
+      if (!name) return;
+      sup = (await createSupplier({ name })).id;
+    }
     const { qtyAfter } = await applyMovement({
       productId: current.id,
       reason,
@@ -54,9 +63,11 @@ export default function AdjustScreen({ lang }: Props) {
       ...(isStockIn && Number(unitCost) > 0
         ? { unitCost: Number(unitCost) }
         : {}),
+      ...(isStockIn && sup && sup !== '__new' ? { supplierId: sup } : {}),
       ...(mode === 'delta' ? { delta: amount } : { setTo: amount }),
     });
     setFlash(`${t(lang, 'adjust.applied')} · ${qtyAfter}`);
+    setSupplierId('');
     setAmount(0);
     setNote('');
     setUnitCost('');
@@ -176,13 +187,28 @@ export default function AdjustScreen({ lang }: Props) {
       </div>
 
       {isStockIn && (
-        <input
-          inputMode="decimal"
-          value={unitCost}
-          onChange={(e) => setUnitCost(e.target.value)}
-          placeholder={t(lang, 'adjust.unitCost')}
-          className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-slate-900 dark:text-slate-50"
-        />
+        <>
+          <input
+            inputMode="decimal"
+            value={unitCost}
+            onChange={(e) => setUnitCost(e.target.value)}
+            placeholder={t(lang, 'adjust.unitCost')}
+            className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-slate-900 dark:text-slate-50"
+          />
+          <select
+            value={supplierId}
+            onChange={(e) => setSupplierId(e.target.value)}
+            className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-slate-900 dark:text-slate-50"
+          >
+            <option value="">{t(lang, 'sup.pick')}</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            <option value="__new">＋ {t(lang, 'sup.add')}</option>
+          </select>
+        </>
       )}
 
       <input

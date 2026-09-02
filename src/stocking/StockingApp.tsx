@@ -9,6 +9,7 @@ import ScanScreen from './screens/ScanScreen';
 import AdjustScreen from './screens/AdjustScreen';
 import ProductListScreen from './screens/ProductListScreen';
 import SettingsSheet from './screens/SettingsSheet';
+import SuppliersScreen from './screens/SuppliersScreen';
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
@@ -19,6 +20,7 @@ export default function StockingApp() {
   const [tab, setTab] = useState<Tab>('home');
   const [lowOnly, setLowOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [suppliersOpen, setSuppliersOpen] = useState(false);
 
   // Opportunistic sync on open; also whenever the device comes back online.
   useEffect(() => {
@@ -79,28 +81,44 @@ export default function StockingApp() {
       </nav>
 
       <main className="flex-1 min-h-0 overflow-y-auto">
-        {tab === 'home' && (
-          <HomeScreen
+        {suppliersOpen ? (
+          <SuppliersScreen
             lang={lang}
-            onOpenLow={() => {
-              setLowOnly(true);
-              setTab('products');
-            }}
+            onClose={() => setSuppliersOpen(false)}
           />
-        )}
-        {tab === 'scan' && <ScanScreen lang={lang} />}
-        {tab === 'adjust' && <AdjustScreen lang={lang} />}
-        {tab === 'products' && (
-          <ProductListScreen
-            lang={lang}
-            lowOnly={lowOnly}
-            onLowOnlyChange={setLowOnly}
-          />
+        ) : (
+          <>
+            {tab === 'home' && (
+              <HomeScreen
+                lang={lang}
+                onOpenLow={() => {
+                  setLowOnly(true);
+                  setTab('products');
+                }}
+              />
+            )}
+            {tab === 'scan' && <ScanScreen lang={lang} />}
+            {tab === 'adjust' && <AdjustScreen lang={lang} />}
+            {tab === 'products' && (
+              <ProductListScreen
+                lang={lang}
+                lowOnly={lowOnly}
+                onLowOnlyChange={setLowOnly}
+              />
+            )}
+          </>
         )}
       </main>
 
       {settingsOpen && (
-        <SettingsSheet lang={lang} onClose={() => setSettingsOpen(false)} />
+        <SettingsSheet
+          lang={lang}
+          onClose={() => setSettingsOpen(false)}
+          onOpenSuppliers={() => {
+            setSettingsOpen(false);
+            setSuppliersOpen(true);
+          }}
+        />
       )}
     </div>
   );

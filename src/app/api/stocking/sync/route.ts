@@ -1,6 +1,11 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { storeProducts, storeStockMovements } from '@/db/schema';
+import {
+  storeProducts,
+  storeStockMovements,
+  supplierPayments,
+  suppliers,
+} from '@/db/schema';
 import { canEditCatalogue, resolveStockingAuth } from '@/lib/stockingAuth';
 import { corsHeaders, corsPreflight } from '@/lib/stockingCors';
 
@@ -43,8 +48,28 @@ interface InMovement {
   reason: string;
   qtyAfter: number;
   unitCost: number | null;
+  supplierId: string | null;
   note: string | null;
   createdAt: number;
+}
+
+interface InSupplier {
+  id: string;
+  name: string;
+  phone: string | null;
+  note: string | null;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+interface InPayment {
+  id: string;
+  supplierId: string;
+  amount: number;
+  note: string | null;
+  paidAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
 }
 
 const num = (v: unknown, d = 0) => {
@@ -65,17 +90,32 @@ export async function POST(request: Request) {
   let since = 0;
   let inProducts: InProduct[] = [];
   let inMovements: InMovement[] = [];
+  let inSuppliers: InSupplier[] = [];
+  let inPayments: InPayment[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
     inProducts = Array.isArray(body?.products) ? body.products : [];
     inMovements = Array.isArray(body?.movements) ? body.movements : [];
+    inSuppliers = Array.isArray(body?.suppliers) ? body.suppliers : [];
+    inPayments = Array.isArray(body?.payments) ? body.payments : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
 
-  if (inProducts.length + inMovements.length > MAX_ROWS) {
+  const total =
+    inProducts.length +
+    inMovements.length +
+    inSuppliers.length +
+    inPayments.length;
+  if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
+  }
+
+  // Suppliers + the payment ledger are owner/manager only.
+  if (!fullEdit) {
+    inSuppliers = [];
+    inPayments = [];
   }
 
   const now = Date.now();
@@ -150,6 +190,7 @@ export async function POST(request: Request) {
         storeId,
         productId: m.productId,
         userId: auth.userId, // server-authoritative
+        supplierId: m.supplierId ?? null,
         delta: String(num(m.delta)),
         reason: m.reason || 'manual',
         qtyAfter: String(num(m.qtyAfter)),
@@ -166,30 +207,121 @@ export async function POST(request: Request) {
     }
   }
 
+  // ---- push: suppliers (upsert, LWW) ----
+  if (inSuppliers.length) {
+    const rows = inSuppliers
+      .filter((s) => s && typeof s.id === 'string' && typeof s.name === 'string')
+      .map((s) => ({
+        id: s.id,
+        storeId,
+        name: s.name,
+        phone: s.phone ?? null,
+        note: s.note ?? null,
+        updatedAt: String(num(s.updatedAt)),
+        deletedAt: s.deletedAt == null ? null : String(num(s.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(suppliers)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: suppliers.id,
+          set: {
+            name: sql`excluded.name`,
+            phone: sql`excluded.phone`,
+            note: sql`excluded.note`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${suppliers.storeId} = ${storeId} AND ${suppliers.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
+  // ---- push: supplier payments (upsert, LWW) ----
+  if (inPayments.length) {
+    const rows = inPayments
+      .filter(
+        (p) =>
+          p && typeof p.id === 'string' && typeof p.supplierId === 'string',
+      )
+      .map((p) => ({
+        id: p.id,
+        storeId,
+        supplierId: p.supplierId,
+        amount: String(num(p.amount)),
+        note: p.note ?? null,
+        paidAt: String(num(p.paidAt)),
+        updatedAt: String(num(p.updatedAt)),
+        deletedAt: p.deletedAt == null ? null : String(num(p.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(supplierPayments)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: supplierPayments.id,
+          set: {
+            amount: sql`excluded.amount`,
+            note: sql`excluded.note`,
+            paidAt: sql`excluded.paid_at`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${supplierPayments.storeId} = ${storeId} AND ${supplierPayments.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
   // ---- pull: everything newer than the client cursor ----
   const sinceDate = new Date(since);
-  const [pulledProducts, pulledMovements] = await Promise.all([
-    db
-      .select()
-      .from(storeProducts)
-      .where(
-        and(
-          eq(storeProducts.storeId, storeId),
-          gt(storeProducts.syncedAt, sinceDate),
-        ),
-      )
-      .limit(MAX_ROWS),
-    db
-      .select()
-      .from(storeStockMovements)
-      .where(
-        and(
-          eq(storeStockMovements.storeId, storeId),
-          gt(storeStockMovements.syncedAt, sinceDate),
-        ),
-      )
-      .limit(MAX_ROWS),
-  ]);
+  const [pulledProducts, pulledMovements, pulledSuppliers, pulledPayments] =
+    await Promise.all([
+      db
+        .select()
+        .from(storeProducts)
+        .where(
+          and(
+            eq(storeProducts.storeId, storeId),
+            gt(storeProducts.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeStockMovements)
+        .where(
+          and(
+            eq(storeStockMovements.storeId, storeId),
+            gt(storeStockMovements.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(suppliers)
+        .where(
+          and(
+            eq(suppliers.storeId, storeId),
+            gt(suppliers.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(supplierPayments)
+        .where(
+          and(
+            eq(supplierPayments.storeId, storeId),
+            gt(supplierPayments.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+    ]);
 
   return json(
     {
@@ -212,12 +344,30 @@ export async function POST(request: Request) {
         id: m.id,
         productId: m.productId,
         userId: m.userId,
+        supplierId: m.supplierId ?? null,
         delta: num(m.delta),
         reason: m.reason,
         qtyAfter: num(m.qtyAfter),
         unitCost: m.unitCost == null ? null : num(m.unitCost),
         note: m.note,
         createdAt: num(m.createdAt),
+      })),
+      suppliers: pulledSuppliers.map((s) => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone,
+        note: s.note,
+        updatedAt: num(s.updatedAt),
+        deletedAt: s.deletedAt == null ? null : num(s.deletedAt),
+      })),
+      payments: pulledPayments.map((p) => ({
+        id: p.id,
+        supplierId: p.supplierId,
+        amount: num(p.amount),
+        note: p.note,
+        paidAt: num(p.paidAt),
+        updatedAt: num(p.updatedAt),
+        deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),
     },
     200,

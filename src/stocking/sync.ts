@@ -5,7 +5,12 @@
 
 import { API_BASE } from './config';
 import { db } from './db/dexie';
-import type { Movement, Product } from './types';
+import type {
+  Movement,
+  Product,
+  Supplier,
+  SupplierPayment,
+} from './types';
 
 export interface SyncOutcome {
   ok: boolean;
@@ -69,6 +74,14 @@ async function runSync(): Promise<SyncOutcome> {
     .movements.where('createdAt')
     .above(cursor)
     .toArray();
+  const dirtySuppliers = await db()
+    .suppliers.where('updatedAt')
+    .above(cursor)
+    .toArray();
+  const dirtyPayments = await db()
+    .supplierPayments.where('updatedAt')
+    .above(cursor)
+    .toArray();
 
   let res: Response;
   try {
@@ -85,6 +98,8 @@ async function runSync(): Promise<SyncOutcome> {
         since: cursor,
         products: dirtyProducts,
         movements: dirtyMovements,
+        suppliers: dirtySuppliers,
+        payments: dirtyPayments,
       }),
     });
   } catch {
@@ -103,6 +118,8 @@ async function runSync(): Promise<SyncOutcome> {
     role?: string;
     products: Product[];
     movements: Movement[];
+    suppliers?: Supplier[];
+    payments?: SupplierPayment[];
   };
 
   // The server is the source of truth for the caller's role — keep the local
@@ -121,27 +138,51 @@ async function runSync(): Promise<SyncOutcome> {
     }
   }
 
-  await db().transaction('rw', db().products, db().movements, async () => {
-    for (const p of data.products) {
-      const local = await db().products.get(p.id);
-      if (!local || local.updatedAt < p.updatedAt) {
-        await db().products.put({
-          ...p,
-          costPrice: p.costPrice ?? 0,
-          deletedAt: p.deletedAt ?? null,
-        });
+  const pulledSuppliers = data.suppliers ?? [];
+  const pulledPayments = data.payments ?? [];
+
+  await db().transaction(
+    'rw',
+    db().products,
+    db().movements,
+    db().suppliers,
+    db().supplierPayments,
+    async () => {
+      for (const p of data.products) {
+        const local = await db().products.get(p.id);
+        if (!local || local.updatedAt < p.updatedAt) {
+          await db().products.put({
+            ...p,
+            costPrice: p.costPrice ?? 0,
+            deletedAt: p.deletedAt ?? null,
+          });
+        }
       }
-    }
-    if (data.movements.length) {
-      await db().movements.bulkPut(
-        data.movements.map((m) => ({
-          ...m,
-          unitCost: m.unitCost ?? null,
-          userId: m.userId ?? null,
-        })),
-      );
-    }
-  });
+      if (data.movements.length) {
+        await db().movements.bulkPut(
+          data.movements.map((m) => ({
+            ...m,
+            unitCost: m.unitCost ?? null,
+            supplierId: m.supplierId ?? null,
+            userId: m.userId ?? null,
+          })),
+        );
+      }
+      for (const s of pulledSuppliers) {
+        const local = await db().suppliers.get(s.id);
+        if (!local || local.updatedAt < s.updatedAt) {
+          await db().suppliers.put({ ...s, deletedAt: s.deletedAt ?? null });
+        }
+      }
+      for (const p of pulledPayments) {
+        const local = await db().supplierPayments.get(p.id);
+        if (!local || local.updatedAt < p.updatedAt) {
+          await db()
+            .supplierPayments.put({ ...p, deletedAt: p.deletedAt ?? null });
+        }
+      }
+    },
+  );
 
   await db().syncState.put({
     id: 'default',
@@ -151,8 +192,16 @@ async function runSync(): Promise<SyncOutcome> {
 
   return {
     ok: true,
-    pushed: dirtyProducts.length + dirtyMovements.length,
-    pulled: data.products.length + data.movements.length,
+    pushed:
+      dirtyProducts.length +
+      dirtyMovements.length +
+      dirtySuppliers.length +
+      dirtyPayments.length,
+    pulled:
+      data.products.length +
+      data.movements.length +
+      pulledSuppliers.length +
+      pulledPayments.length,
   };
 }
 
