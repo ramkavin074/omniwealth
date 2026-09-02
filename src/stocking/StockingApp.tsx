@@ -57,6 +57,15 @@ export default function StockingApp() {
           {t(lang, 'app.title')}
         </h1>
         <div className="flex items-center gap-2">
+          {/* Desktop: Sell lives in the header (the mobile FAB would collide
+              with the host page's floating widgets). */}
+          <button
+            type="button"
+            onClick={() => setSellOpen(true)}
+            className="hidden rounded-lg bg-teal-700 px-3 py-1.5 text-sm font-semibold text-white md:inline-flex"
+          >
+            {t(lang, 'sell.fab')}
+          </button>
           <button
             type="button"
             onClick={() => setAskAiOpen(true)}
@@ -180,7 +189,7 @@ export default function StockingApp() {
           <button
             type="button"
             onClick={() => setSellOpen(true)}
-            className="fixed bottom-20 right-4 z-10 h-14 rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-lg active:scale-95 md:bottom-8"
+            className="fixed bottom-20 right-4 z-10 h-14 rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-lg active:scale-95 md:hidden"
             style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
           >
             {t(lang, 'sell.fab')}
