@@ -5,6 +5,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { Resend } from 'resend';
 import { db } from '@/db';
 import {
+  adminAudit,
   passwordResets,
   sessions,
   storeMembers,
@@ -29,27 +30,40 @@ async function requireSuperAdmin(): Promise<Guard | null> {
 }
 
 const FORBIDDEN = { ok: false as const, error: 'Not authorised.' };
-const ms = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STORE_ROLES = ['owner', 'manager', 'staff'] as const;
 const STORE_STATUSES = ['active', 'trial', 'suspended'] as const;
 
+async function logAudit(
+  actorId: string,
+  action: string,
+  extra: { storeId?: string; targetUserId?: string; detail?: string } = {},
+) {
+  try {
+    await db.insert(adminAudit).values({
+      actorId,
+      action,
+      storeId: extra.storeId ?? null,
+      targetUserId: extra.targetUserId ?? null,
+      detail: extra.detail ?? null,
+    });
+  } catch (e) {
+    console.error('[admin] audit write failed', e);
+  }
+}
+
 // ---------------------------------------------------------------- overview
 
+// Access / health only — no bill counts, no sales value, nothing that
+// reveals what or how much the shop sells.
 export interface AdminStoreRow {
   id: string;
   name: string;
   status: string;
   createdAt: string | null;
   members: number;
-  products: number;
-  billsTotal: number;
-  bills7d: number;
-  salesValue: number;
-  lastActivity: string | null;
+  products: number; // catalogue size — an onboarding/health signal
+  lastActivity: string | null; // timestamp of last sync — "are they using it"
   gstEnabled: boolean;
   gstScheme: string;
 }
@@ -67,8 +81,6 @@ export interface AdminUserRow {
 export async function adminOverviewAction() {
   const g = await requireSuperAdmin();
   if (!g) return FORBIDDEN;
-
-  const weekAgo = Date.now() - 7 * 864e5;
 
   const storeRows = await db.select().from(stores).orderBy(stores.name);
   const storeIds = storeRows.map((s) => s.id);
@@ -100,22 +112,15 @@ export async function adminOverviewAction() {
         .groupBy(storeProducts.storeId)
     : [];
 
-  const salesAgg = storeIds.length
+  // Last sync time only — a liveness signal, not the content or value of sales.
+  const lastSyncAgg = storeIds.length
     ? await db
         .select({
           storeId: storeSales.storeId,
-          total: sql<number>`count(*)::int`,
-          last7: sql<number>`count(*) filter (where ${storeSales.createdAt}::numeric >= ${weekAgo})::int`,
-          value: sql<string>`coalesce(sum(${storeSales.total}::numeric) filter (where ${storeSales.refundOf} is null), 0)`,
           lastSync: sql<string>`max(${storeSales.syncedAt})`,
         })
         .from(storeSales)
-        .where(
-          and(
-            inArray(storeSales.storeId, storeIds),
-            sql`${storeSales.deletedAt} is null`,
-          ),
-        )
+        .where(inArray(storeSales.storeId, storeIds))
         .groupBy(storeSales.storeId)
     : [];
 
@@ -132,12 +137,11 @@ export async function adminOverviewAction() {
 
   const mBy = new Map(memberCounts.map((r) => [r.storeId, r.n]));
   const pBy = new Map(productCounts.map((r) => [r.storeId, r.n]));
-  const sBy = new Map(salesAgg.map((r) => [r.storeId, r]));
+  const syncBy = new Map(lastSyncAgg.map((r) => [r.storeId, r.lastSync]));
   const mvBy = new Map(moveAgg.map((r) => [r.storeId, r.lastSync]));
 
   const adminStores: AdminStoreRow[] = storeRows.map((s) => {
-    const sa = sBy.get(s.id);
-    const last = [sa?.lastSync, mvBy.get(s.id)]
+    const last = [syncBy.get(s.id), mvBy.get(s.id)]
       .filter(Boolean)
       .map((d) => new Date(d as string).getTime());
     return {
@@ -147,9 +151,6 @@ export async function adminOverviewAction() {
       createdAt: s.createdAt ? new Date(s.createdAt).toISOString() : null,
       members: mBy.get(s.id) ?? 0,
       products: pBy.get(s.id) ?? 0,
-      billsTotal: sa?.total ?? 0,
-      bills7d: sa?.last7 ?? 0,
-      salesValue: Math.round(Number(sa?.value ?? 0)),
       lastActivity: last.length
         ? new Date(Math.max(...last)).toISOString()
         : null,
@@ -244,24 +245,28 @@ export async function adminOverviewAction() {
   };
 }
 
-// ---------------------------------------------------------------- activity
+// ---------------------------------------------------------------- audit
 
-export interface AdminActivityRow {
-  kind: 'sale' | 'stock';
-  store: string;
-  userId: string | null;
+// Account / access events only: admin actions + logins. Never sales, stock,
+// or anything about what the shop trades.
+export interface AdminAuditRow {
+  kind: 'admin' | 'login';
+  action: string;
+  actorId: string | null;
+  targetUserId: string | null;
+  storeId: string | null;
+  storeName: string | null;
+  detail: string | null;
   when: number;
-  summary: string;
-  flag: 'void' | 'refund' | null;
 }
 
-export async function adminActivityAction(opts?: {
+export async function adminAuditAction(opts?: {
   storeId?: string;
   limit?: number;
 }) {
   const g = await requireSuperAdmin();
   if (!g) return FORBIDDEN;
-  const limit = Math.min(Math.max(opts?.limit ?? 60, 1), 200);
+  const limit = Math.min(Math.max(opts?.limit ?? 80, 1), 200);
   const storeFilter = opts?.storeId;
 
   const nameRows = await db
@@ -269,44 +274,45 @@ export async function adminActivityAction(opts?: {
     .from(stores);
   const nm = new Map(nameRows.map((s) => [s.id, s.name]));
 
-  const saleRows = await db
+  const auditRows = await db
     .select()
-    .from(storeSales)
-    .where(storeFilter ? eq(storeSales.storeId, storeFilter) : sql`true`)
-    .orderBy(desc(storeSales.syncedAt))
+    .from(adminAudit)
+    .where(storeFilter ? eq(adminAudit.storeId, storeFilter) : sql`true`)
+    .orderBy(desc(adminAudit.createdAt))
     .limit(limit);
 
-  const moveRows = await db
-    .select()
-    .from(storeStockMovements)
-    .where(
-      storeFilter ? eq(storeStockMovements.storeId, storeFilter) : sql`true`,
-    )
-    .orderBy(desc(storeStockMovements.syncedAt))
-    .limit(limit);
+  const rows: AdminAuditRow[] = auditRows.map((a) => ({
+    kind: 'admin' as const,
+    action: a.action,
+    actorId: a.actorId,
+    targetUserId: a.targetUserId,
+    storeId: a.storeId,
+    storeName: a.storeId ? (nm.get(a.storeId) ?? null) : null,
+    detail: a.detail,
+    when: new Date(a.createdAt).getTime(),
+  }));
 
-  const rows: AdminActivityRow[] = [];
-  for (const s of saleRows) {
-    const items = Array.isArray(s.items) ? (s.items as unknown[]) : [];
-    rows.push({
-      kind: 'sale',
-      store: nm.get(s.storeId) ?? '?',
-      userId: s.userId,
-      when: ms(s.createdAt),
-      summary: `${s.billNo} · ₹${ms(s.total)} · ${s.tenderType} · ${items.length} item(s)`,
-      flag: s.deletedAt ? 'void' : s.refundOf ? 'refund' : null,
-    });
+  // Recent logins (no store scope on a session — only shown unfiltered).
+  if (!storeFilter) {
+    const logins = await db
+      .select({ userId: sessions.userId, at: sessions.createdAt })
+      .from(sessions)
+      .orderBy(desc(sessions.createdAt))
+      .limit(limit);
+    for (const l of logins) {
+      rows.push({
+        kind: 'login',
+        action: 'login',
+        actorId: l.userId,
+        targetUserId: l.userId,
+        storeId: null,
+        storeName: null,
+        detail: null,
+        when: new Date(l.at).getTime(),
+      });
+    }
   }
-  for (const m of moveRows) {
-    rows.push({
-      kind: 'stock',
-      store: nm.get(m.storeId) ?? '?',
-      userId: m.userId,
-      when: ms(m.createdAt),
-      summary: `${m.reason} ${ms(m.delta) >= 0 ? '+' : ''}${ms(m.delta)}${m.note ? ` · ${m.note}` : ''}`,
-      flag: null,
-    });
-  }
+
   rows.sort((a, b) => b.when - a.when);
   return { ok: true as const, rows: rows.slice(0, limit) };
 }
@@ -357,6 +363,12 @@ export async function adminCreateStoreAction(input: {
     .values({ storeId: created.id, userId: owner.id, role: 'owner' })
     .onConflictDoNothing();
 
+  await logAudit(g.user.id, 'store.create', {
+    storeId: created.id,
+    targetUserId: owner.id,
+    detail: `${created.name} · owner ${owner.email} · status ${status}`,
+  });
+
   return { ok: true as const, store: created, owner };
 }
 
@@ -397,6 +409,12 @@ export async function adminAddMemberAction(input: {
       set: { role },
     });
 
+  await logAudit(g.user.id, 'member.add', {
+    storeId: input.storeId,
+    targetUserId: u.id,
+    detail: `${u.email} as ${role}`,
+  });
+
   return { ok: true as const, user: u, role };
 }
 
@@ -414,6 +432,10 @@ export async function adminRemoveMemberAction(input: {
         eq(storeMembers.userId, input.userId),
       ),
     );
+  await logAudit(g.user.id, 'member.remove', {
+    storeId: input.storeId,
+    targetUserId: input.userId,
+  });
   return { ok: true as const };
 }
 
@@ -430,6 +452,10 @@ export async function adminSetStoreStatusAction(input: {
     .update(stores)
     .set({ status: input.status })
     .where(eq(stores.id, input.storeId));
+  await logAudit(g.user.id, 'store.status', {
+    storeId: input.storeId,
+    detail: `→ ${input.status}`,
+  });
   return { ok: true as const, status: input.status };
 }
 
@@ -463,6 +489,10 @@ export async function adminSendResetAction(input: { userId: string }) {
 
   await db.delete(passwordResets).where(eq(passwordResets.userId, u.id));
   await db.insert(passwordResets).values({ userId: u.id, tokenHash, expiresAt });
+  await logAudit(g.user.id, 'account.reset-sent', {
+    targetUserId: u.id,
+    detail: u.email,
+  });
 
   const link = `${appUrl()}/login?reset-token=${encodeURIComponent(rawToken)}`;
   const key = process.env.RESEND_API_KEY;
@@ -498,5 +528,9 @@ export async function adminRevokeSessionsAction(input: { userId: string }) {
     .delete(sessions)
     .where(eq(sessions.userId, input.userId))
     .returning({ id: sessions.id });
+  await logAudit(g.user.id, 'account.sessions-revoked', {
+    targetUserId: input.userId,
+    detail: `${deleted.length} session(s)`,
+  });
   return { ok: true as const, count: deleted.length };
 }

@@ -4,20 +4,20 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import {
-  adminActivityAction,
   adminAddMemberAction,
+  adminAuditAction,
   adminCreateStoreAction,
   adminOverviewAction,
   adminRemoveMemberAction,
   adminRevokeSessionsAction,
   adminSendResetAction,
   adminSetStoreStatusAction,
-  type AdminActivityRow,
+  type AdminAuditRow,
   type AdminStoreRow,
   type AdminUserRow,
 } from '@/actions/admin';
 
-type Tab = 'stores' | 'people' | 'activity';
+type Tab = 'stores' | 'people' | 'audit';
 
 const DORMANT_DAYS = 7;
 
@@ -34,8 +34,6 @@ function ago(iso: string | number | null, now: number): string {
   const d = Math.round(h / 24);
   return `${d}d ago`;
 }
-const rupee = (n: number) => '₹' + n.toLocaleString('en-IN');
-
 const card =
   'bg-slate-900 border border-slate-800 rounded-xl';
 const btn =
@@ -43,32 +41,12 @@ const btn =
 const input =
   'h-9 rounded-lg border border-slate-700 bg-slate-950 px-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-teal-600 focus:outline-none';
 
-function Pill({ kind }: { kind: string }) {
-  const map: Record<string, string> = {
-    active: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-    trial: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-    suspended: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-    dormant: 'bg-slate-700/40 text-slate-400 border-slate-600/40',
-    void: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-    refund: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  };
-  return (
-    <span
-      className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
-        map[kind] ?? 'bg-slate-800 text-slate-300 border-slate-700'
-      }`}
-    >
-      {kind}
-    </span>
-  );
-}
-
 export default function AdminDashboardClient() {
   const [tab, setTab] = useState<Tab>('stores');
   const [now] = useState(() => Date.now());
   const [stores, setStores] = useState<AdminStoreRow[]>([]);
   const [users, setUsers] = useState<AdminUserRow[]>([]);
-  const [activity, setActivity] = useState<AdminActivityRow[]>([]);
+  const [audit, setAudit] = useState<AdminAuditRow[]>([]);
   const [actFilter, setActFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -91,17 +69,17 @@ export default function AdminDashboardClient() {
     setLoading(false);
   }, []);
 
-  const loadActivity = useCallback(async (storeId?: string) => {
-    const r = await adminActivityAction({ storeId, limit: 80 });
-    if (r.ok) setActivity(r.rows);
+  const loadAudit = useCallback(async (storeId?: string) => {
+    const r = await adminAuditAction({ storeId, limit: 120 });
+    if (r.ok) setAudit(r.rows);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
   useEffect(() => {
-    if (tab === 'activity') loadActivity(actFilter || undefined);
-  }, [tab, actFilter, loadActivity]);
+    if (tab === 'audit') loadAudit(actFilter || undefined);
+  }, [tab, actFilter, loadAudit]);
 
   const run = async (key: string, fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) => {
     setBusy(key);
@@ -121,7 +99,7 @@ export default function AdminDashboardClient() {
   };
 
   const userName = (id: string | null) =>
-    users.find((u) => u.id === id)?.name ?? '—';
+    users.find((u) => u.id === id)?.name ?? (id ? id.slice(0, 8) : '—');
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 font-sans text-slate-100">
@@ -152,7 +130,7 @@ export default function AdminDashboardClient() {
       </header>
 
       <nav className="mt-6 flex gap-1 rounded-xl bg-slate-900 p-1">
-        {(['stores', 'people', 'activity'] as Tab[]).map((k) => (
+        {(['stores', 'people', 'audit'] as Tab[]).map((k) => (
           <button
             key={k}
             type="button"
@@ -252,7 +230,7 @@ export default function AdminDashboardClient() {
             />
           )}
 
-          {tab === 'activity' && (
+          {tab === 'audit' && (
             <div className={`${card} p-4`}>
               <div className="mb-3 flex items-center gap-2">
                 <select
@@ -268,38 +246,49 @@ export default function AdminDashboardClient() {
                   ))}
                 </select>
                 <span className="text-xs text-slate-500">
-                  {activity.length} events
+                  {audit.length} events
+                </span>
+                <span className="ml-auto text-xs text-slate-600">
+                  account &amp; access only
                 </span>
               </div>
               <ul className="divide-y divide-slate-800">
-                {activity.map((a, i) => (
+                {audit.map((a, i) => (
                   <li
                     key={i}
                     className="flex items-center gap-3 py-2 text-sm"
                   >
                     <span
                       className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                        a.kind === 'sale'
-                          ? 'bg-teal-500/15 text-teal-300'
-                          : 'bg-slate-700/50 text-slate-300'
+                        a.kind === 'login'
+                          ? 'bg-slate-700/50 text-slate-300'
+                          : 'bg-teal-500/15 text-teal-300'
                       }`}
                     >
                       {a.kind}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-slate-200">
-                        {a.summary}
+                        {a.kind === 'login'
+                          ? `${userName(a.actorId)} logged in`
+                          : `${a.action}${a.detail ? ` · ${a.detail}` : ''}`}
                       </span>
                       <span className="text-xs text-slate-500">
-                        {a.store} · {userName(a.userId)} · {ago(a.when, now)}
+                        {a.kind === 'admin'
+                          ? `by ${userName(a.actorId)} · `
+                          : ''}
+                        {a.storeName ? `${a.storeName} · ` : ''}
+                        {a.targetUserId && a.targetUserId !== a.actorId
+                          ? `${userName(a.targetUserId)} · `
+                          : ''}
+                        {ago(a.when, now)}
                       </span>
                     </span>
-                    {a.flag && <Pill kind={a.flag} />}
                   </li>
                 ))}
-                {activity.length === 0 && (
+                {audit.length === 0 && (
                   <li className="py-6 text-center text-sm text-slate-500">
-                    No activity.
+                    No admin activity yet.
                   </li>
                 )}
               </ul>
@@ -395,9 +384,7 @@ function StoresTab({
               <th className="px-4 py-2.5">Store</th>
               <th className="px-3 py-2.5">People</th>
               <th className="px-3 py-2.5">Items</th>
-              <th className="px-3 py-2.5">Bills 7d / all</th>
-              <th className="px-3 py-2.5">Sales</th>
-              <th className="px-3 py-2.5">Last active</th>
+              <th className="px-3 py-2.5">Last synced</th>
               <th className="px-3 py-2.5">Status</th>
             </tr>
           </thead>
@@ -416,12 +403,6 @@ function StoresTab({
                   </td>
                   <td className="px-3 py-2.5 tabular-nums text-slate-300">
                     {s.products}
-                  </td>
-                  <td className="px-3 py-2.5 tabular-nums text-slate-300">
-                    {s.bills7d} / {s.billsTotal}
-                  </td>
-                  <td className="px-3 py-2.5 tabular-nums text-slate-300">
-                    {rupee(s.salesValue)}
                   </td>
                   <td className="px-3 py-2.5 text-slate-400">
                     <span className={dormant(s.lastActivity) ? 'text-slate-600' : ''}>
@@ -442,7 +423,7 @@ function StoresTab({
                   </td>
                 </tr>
                 <tr key={s.id + '-x'} className="border-b border-slate-800">
-                  <td colSpan={7} className="px-4 pb-2.5">
+                  <td colSpan={5} className="px-4 pb-2.5">
                     {addTo === s.id ? (
                       <div className="flex flex-wrap items-center gap-2">
                         <input
@@ -498,7 +479,7 @@ function StoresTab({
             ))}
             {stores.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
                   No stores yet.
                 </td>
               </tr>

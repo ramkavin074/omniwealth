@@ -667,6 +667,18 @@ export const stores = store.table('stores', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Operator-console audit trail: account / access actions only (who created a
+// store, added a member, sent a reset…). Never business data.
+export const adminAudit = store.table('admin_audit', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  actorId: uuid('actor_id').references(() => users.id),
+  action: text('action').notNull(),
+  storeId: uuid('store_id'),
+  targetUserId: uuid('target_user_id'),
+  detail: text('detail'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const storeMembers = store.table(
   'store_members',
   {
