@@ -6,6 +6,7 @@ import { ShieldAlert } from 'lucide-react';
 import {
   adminAddMemberAction,
   adminAuditAction,
+  adminCreateAccountAction,
   adminCreateStoreAction,
   adminHouseholdsAction,
   adminOverviewAction,
@@ -92,6 +93,13 @@ export default function AdminDashboardClient() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [created, setCreated] = useState<{
+    email: string;
+    store: string | null;
+    link: string;
+    sent: boolean;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const flash = (s: string) => {
     setMsg(s);
@@ -154,6 +162,37 @@ export default function AdminDashboardClient() {
       () => adminCreateStoreAction({ name, ownerEmail, status }),
       'Store created.',
     );
+
+  const onCreateAccount = async (
+    fullName: string,
+    email: string,
+    storeName: string,
+  ) => {
+    setBusy('create-acct');
+    try {
+      const r = await adminCreateAccountAction({
+        fullName,
+        email,
+        storeName: storeName || undefined,
+      });
+      if (r.ok) {
+        setCreated({
+          email: r.user.email,
+          store: r.store?.name ?? null,
+          link: r.link,
+          sent: r.sent,
+        });
+        setCopied(false);
+        await load();
+      } else {
+        flash(r.error ?? 'Failed.');
+      }
+    } catch {
+      flash('Something went wrong.');
+    } finally {
+      setBusy(null);
+    }
+  };
   const onStoreStatus = (id: string, status: string) =>
     run(
       `st:${id}`,
@@ -213,6 +252,45 @@ export default function AdminDashboardClient() {
         <p className="mt-4 rounded-lg border border-teal-700/40 bg-teal-900/20 px-3 py-2 text-sm text-teal-200 break-all">
           {msg}
         </p>
+      )}
+
+      {created && (
+        <div className="mt-4 rounded-lg border border-emerald-700/40 bg-emerald-900/15 p-3 text-sm text-emerald-100">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold">
+              Account ready for {created.email}
+              {created.store ? ` · store “${created.store}”` : ''}.
+              {created.sent
+                ? ' A set-password email was sent.'
+                : ' Send them this link to set a password (valid 30 min):'}
+            </p>
+            <button
+              type="button"
+              onClick={() => setCreated(null)}
+              className="shrink-0 text-emerald-300/70 hover:text-emerald-200"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded bg-slate-950 px-2 py-1.5 text-xs text-slate-200">
+              {created.link}
+            </code>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard?.writeText(created.link).then(
+                  () => setCopied(true),
+                  () => setCopied(false),
+                );
+              }}
+              className={`${btn} shrink-0 border-emerald-600/50 text-emerald-200`}
+            >
+              {copied ? 'Copied' : 'Copy link'}
+            </button>
+          </div>
+        </div>
       )}
 
       {loading ? (
@@ -299,6 +377,7 @@ export default function AdminDashboardClient() {
                   'Removed from store.',
                 );
               }}
+              onCreate={onCreateAccount}
             />
           )}
 
@@ -733,6 +812,7 @@ function PeopleTab({
   onRevoke,
   onUnlock,
   onRemove,
+  onCreate,
 }: {
   now: number;
   people: AdminPersonRow[];
@@ -742,9 +822,14 @@ function PeopleTab({
   onRevoke: (userId: string) => void;
   onUnlock: (userId: string) => void;
   onRemove: (storeName: string, userId: string) => void;
+  onCreate: (fullName: string, email: string, storeName: string) => void;
 }) {
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<PeopleFilter>('all');
+  const [showCreate, setShowCreate] = useState(false);
+  const [cName, setCName] = useState('');
+  const [cEmail, setCEmail] = useState('');
+  const [cStore, setCStore] = useState('');
 
   const ageMs = (iso: string | null) =>
     iso ? now - new Date(iso).getTime() : Infinity;
@@ -774,8 +859,66 @@ function PeopleTab({
     }
   });
 
+  const busyCreate = busy === 'create-acct';
+  const canCreate =
+    cName.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cEmail.trim());
+
   return (
     <div className="space-y-3">
+      <div className={`${card} p-4`}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-white">Create account</h2>
+          <button
+            type="button"
+            onClick={() => setShowCreate((v) => !v)}
+            className={btn}
+          >
+            {showCreate ? 'Cancel' : '＋ New account'}
+          </button>
+        </div>
+        {showCreate && (
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            <input
+              className={input}
+              placeholder="Full name"
+              value={cName}
+              onChange={(e) => setCName(e.target.value)}
+            />
+            <input
+              className={input}
+              placeholder="Email"
+              value={cEmail}
+              onChange={(e) => setCEmail(e.target.value)}
+            />
+            <input
+              className={input}
+              placeholder="Store name (optional)"
+              value={cStore}
+              onChange={(e) => setCStore(e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={busyCreate || !canCreate}
+              onClick={() => {
+                onCreate(cName.trim(), cEmail.trim(), cStore.trim());
+                setCName('');
+                setCEmail('');
+                setCStore('');
+                setShowCreate(false);
+              }}
+              className={`${btn} border-teal-600 text-teal-200`}
+            >
+              {busyCreate ? 'Creating…' : 'Create'}
+            </button>
+            <p className="w-full text-xs text-slate-500">
+              Makes the login, a store-only household, and (if named) the store
+              with this person as <b>owner</b>. A set-password link comes back
+              to hand over. Use for a shopkeeper who only needs Kadai.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <input
           className={`${input} min-w-[200px] flex-1`}

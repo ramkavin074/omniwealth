@@ -1,6 +1,7 @@
 'use server';
 
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { Resend } from 'resend';
 import { db } from '@/db';
@@ -677,6 +678,47 @@ function appUrl(): string {
   );
 }
 
+// Mint a 30-minute set-password link for a user, delivering it by email when a
+// mailer is configured. The link is always returned so the operator can also
+// hand it over directly (WhatsApp, in person).
+async function issueSetPasswordLink(
+  userId: string,
+  name: string,
+  email: string,
+): Promise<{ link: string; sent: boolean }> {
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto
+    .createHash('sha256')
+    .update(rawToken)
+    .digest('hex');
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
+
+  await db.delete(passwordResets).where(eq(passwordResets.userId, userId));
+  await db.insert(passwordResets).values({ userId, tokenHash, expiresAt });
+
+  const link = `${appUrl()}/login?reset-token=${encodeURIComponent(rawToken)}`;
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return { link, sent: false };
+  try {
+    const resend = new Resend(key);
+    await resend.emails.send({
+      from:
+        process.env.RESEND_FROM_EMAIL || 'OmniWealth <onboarding@resend.dev>',
+      to: [email],
+      subject: 'Set your OmniWealth password',
+      html: `<div style="font-family:Arial,sans-serif;background:#0b1220;color:#e2e8f0;padding:28px;border-radius:14px">
+        <h2 style="color:#2dd4bf;margin:0 0 12px">Set your password</h2>
+        <p style="font-size:14px;color:#cbd5e1">Hello ${name}, tap below to choose a password for your OmniWealth account. This link expires in 30 minutes.</p>
+        <a href="${link}" style="display:inline-block;margin-top:14px;background:#0f766e;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:bold;font-size:14px">Set password &rarr;</a>
+      </div>`,
+    });
+    return { link, sent: true };
+  } catch (e) {
+    console.error('[admin] set-password email failed', e);
+    return { link, sent: false };
+  }
+}
+
 export async function adminSendResetAction(input: { userId: string }) {
   const g = await requireSuperAdmin();
   if (!g) return FORBIDDEN;
@@ -688,45 +730,98 @@ export async function adminSendResetAction(input: { userId: string }) {
     .limit(1);
   if (!u) return { ok: false as const, error: 'User not found.' };
 
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto
-    .createHash('sha256')
-    .update(rawToken)
-    .digest('hex');
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
-
-  await db.delete(passwordResets).where(eq(passwordResets.userId, u.id));
-  await db.insert(passwordResets).values({ userId: u.id, tokenHash, expiresAt });
   await logAudit(g.user.id, 'account.reset-sent', {
     targetUserId: u.id,
     detail: u.email,
   });
+  const { link, sent } = await issueSetPasswordLink(u.id, u.name, u.email);
+  return { ok: true as const, sent, link };
+}
 
-  const link = `${appUrl()}/login?reset-token=${encodeURIComponent(rawToken)}`;
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    // No mail configured — hand the link back so the operator can pass it on.
-    return { ok: true as const, sent: false, link };
-  }
+// Create a brand-new account for a Kadai-first shopkeeper: a store-shell
+// household + the user + (optionally) their store with an owner membership,
+// then a set-password link to hand over. No self-signup exists for Kadai.
+export async function adminCreateAccountAction(input: {
+  fullName: string;
+  email: string;
+  storeName?: string;
+}) {
+  const g = await requireSuperAdmin();
+  if (!g) return FORBIDDEN;
+
+  const fullName = String(input.fullName ?? '').trim();
+  const email = String(input.email ?? '')
+    .trim()
+    .toLowerCase();
+  const storeName = String(input.storeName ?? '').trim();
+  if (fullName.length < 2)
+    return { ok: false as const, error: 'Name is too short.' };
+  if (!EMAIL_RE.test(email))
+    return { ok: false as const, error: 'Enter a valid email.' };
+  if (storeName && storeName.length < 2)
+    return { ok: false as const, error: 'Store name is too short.' };
+
+  if (await findUserByEmail(email))
+    return {
+      ok: false as const,
+      error: 'An account with that email already exists.',
+    };
+
+  // Unusable random password — the person sets a real one via the link.
+  const passwordHash = await bcrypt.hash(
+    crypto.randomBytes(24).toString('hex'),
+    10,
+  );
+
+  let made: { userId: string; store: { id: string; name: string } | null };
   try {
-    const resend = new Resend(key);
-    await resend.emails.send({
-      from:
-        process.env.RESEND_FROM_EMAIL ||
-        'OmniWealth <onboarding@resend.dev>',
-      to: [u.email],
-      subject: 'Set your OmniWealth password',
-      html: `<div style="font-family:Arial,sans-serif;background:#0b1220;color:#e2e8f0;padding:28px;border-radius:14px">
-        <h2 style="color:#2dd4bf;margin:0 0 12px">Set your password</h2>
-        <p style="font-size:14px;color:#cbd5e1">Hello ${u.name}, tap below to choose a password for your OmniWealth account. This link expires in 30 minutes.</p>
-        <a href="${link}" style="display:inline-block;margin-top:14px;background:#0f766e;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:bold;font-size:14px">Set password &rarr;</a>
-      </div>`,
+    made = await db.transaction(async (tx) => {
+      const [hh] = await tx
+        .insert(households)
+        .values({
+          name: storeName || `${fullName}'s shop`,
+          isStoreShell: true,
+        })
+        .returning({ id: households.id });
+      const [u] = await tx
+        .insert(users)
+        .values({ householdId: hh.id, email, passwordHash, fullName })
+        .returning({ id: users.id });
+      let store: { id: string; name: string } | null = null;
+      if (storeName) {
+        const [s] = await tx
+          .insert(stores)
+          .values({ name: storeName, status: 'trial', createdBy: g.user.id })
+          .returning({ id: stores.id, name: stores.name });
+        store = s;
+        await tx
+          .insert(storeMembers)
+          .values({ storeId: s.id, userId: u.id, role: 'owner' });
+      }
+      return { userId: u.id, store };
     });
-    return { ok: true as const, sent: true, link };
   } catch (e) {
-    console.error('[admin] reset email failed', e);
-    return { ok: true as const, sent: false, link };
+    console.error('[admin] create account failed', e);
+    return {
+      ok: false as const,
+      error: 'Could not create the account (the email may already be taken).',
+    };
   }
+
+  await logAudit(g.user.id, 'account.create', {
+    targetUserId: made.userId,
+    storeId: made.store?.id,
+    detail: storeName ? `${email} · store "${storeName}"` : email,
+  });
+
+  const { link, sent } = await issueSetPasswordLink(made.userId, fullName, email);
+  return {
+    ok: true as const,
+    user: { id: made.userId, email, fullName },
+    store: made.store,
+    link,
+    sent,
+  };
 }
 
 export async function adminRevokeSessionsAction(input: { userId: string }) {
