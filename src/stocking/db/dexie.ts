@@ -151,6 +151,39 @@ export class StockingDB extends Dexie {
             if (typeof s.discount !== 'number') s.discount = 0;
           });
       });
+    // v9: per-product GST rate + HSN; per-sale tax breakup. No index change.
+    this.version(9)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt',
+        heldSales: 'id, createdAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('products')
+          .toCollection()
+          .modify((p: Product) => {
+            if (typeof p.gstRate !== 'number') p.gstRate = 0;
+            if (p.hsn === undefined) p.hsn = null;
+          });
+        await tx
+          .table('sales')
+          .toCollection()
+          .modify((s: Sale) => {
+            if (typeof s.taxTotal !== 'number') s.taxTotal = 0;
+            if (!Array.isArray(s.taxBreakup)) s.taxBreakup = [];
+            for (const i of s.items ?? []) {
+              if (typeof (i as { gstRate?: number }).gstRate !== 'number') {
+                (i as { gstRate: number }).gstRate = 0;
+              }
+            }
+          });
+      });
   }
 }
 

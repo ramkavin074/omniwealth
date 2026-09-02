@@ -653,6 +653,11 @@ export const stores = store.table('stores', {
   createdBy: uuid('created_by').references(() => users.id),
   // WhatsApp number for the daily low-stock alert (owner-set). Null = no alert.
   alertPhone: text('alert_phone'),
+  // GST setup (owner-set). gstin present ⇒ issue tax invoices.
+  gstin: text('gstin'),
+  gstEnabled: boolean('gst_enabled').notNull().default(false),
+  pricesIncludeTax: boolean('prices_include_tax').notNull().default(true),
+  defaultGstRate: numeric('default_gst_rate').notNull().default('0'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -741,6 +746,8 @@ export const storeSales = store.table(
     billNo: text('bill_no').notNull(),
     items: jsonb('items').notNull(), // SaleItem[]
     discount: numeric('discount').notNull().default('0'),
+    taxTotal: numeric('tax_total').notNull().default('0'),
+    taxBreakup: jsonb('tax_breakup').notNull().default('[]'), // TaxRow[]
     total: numeric('total').notNull(),
     tenderType: text('tender_type').notNull(),
     cashAmount: numeric('cash_amount').notNull().default('0'),
@@ -780,6 +787,8 @@ export const storeProducts = store.table(
     unit: text('unit').notNull().default('piece'),
     lowStockThreshold: numeric('low_stock_threshold').notNull().default('0'),
     expiryDate: text('expiry_date'), // 'YYYY-MM-DD' of the current batch; null = untracked
+    gstRate: numeric('gst_rate').notNull().default('0'), // GST %
+    hsn: text('hsn'),
 
     updatedAt: numeric('updated_at').notNull(),
     deletedAt: numeric('deleted_at'),

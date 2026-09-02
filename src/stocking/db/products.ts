@@ -3,7 +3,7 @@
 // one Dexie transaction) and always stamps `updatedAt`.
 
 import { db } from './dexie';
-import { getUserId } from '../settings';
+import { getGstConfig, getUserId } from '../settings';
 import type {
   Movement,
   MovementReason,
@@ -107,6 +107,11 @@ export async function createProduct(draft: ProductDraft): Promise<Product> {
     unit: draft.unit,
     lowStockThreshold: q(draft.lowStockThreshold),
     expiryDate: draft.expiryDate || null,
+    gstRate:
+      typeof draft.gstRate === 'number'
+        ? draft.gstRate
+        : getGstConfig().defaultRate,
+    hsn: draft.hsn?.trim() || null,
     updatedAt: now,
     deletedAt: null,
   };
@@ -148,6 +153,8 @@ export async function updateProduct(
       | 'lowStockThreshold'
       | 'barcode'
       | 'expiryDate'
+      | 'gstRate'
+      | 'hsn'
     >
   >,
 ): Promise<void> {
@@ -166,6 +173,8 @@ export async function updateProduct(
   if (patch.expiryDate !== undefined) {
     clean.expiryDate = patch.expiryDate || null;
   }
+  if (patch.gstRate !== undefined) clean.gstRate = Number(patch.gstRate) || 0;
+  if (patch.hsn !== undefined) clean.hsn = patch.hsn?.trim() || null;
   await db().products.update(id, clean);
 }
 
@@ -384,6 +393,8 @@ export interface ImportRow {
   openingStock: number;
   lowStockThreshold: number;
   expiryDate: string | null; // 'YYYY-MM-DD' or null
+  gstRate: number;
+  hsn: string | null;
 }
 
 export interface ImportResult {
@@ -425,6 +436,8 @@ export async function importProducts(
       const unit = (row.unit || 'piece').trim();
       const threshold = q(row.lowStockThreshold);
       const expiryDate = row.expiryDate || null;
+      const gstRate = Number(row.gstRate) || 0;
+      const hsn = row.hsn?.trim() || null;
 
       const match =
         (barcode && byBarcode.get(barcode)) || byName.get(name.toLowerCase());
@@ -438,6 +451,8 @@ export async function importProducts(
           unit: unit as Product['unit'],
           lowStockThreshold: threshold,
           ...(expiryDate ? { expiryDate } : {}),
+          ...(gstRate ? { gstRate } : {}),
+          ...(hsn ? { hsn } : {}),
           barcode: barcode ?? match.barcode,
           updatedAt: now,
         });
@@ -456,6 +471,8 @@ export async function importProducts(
         unit: unit as Product['unit'],
         lowStockThreshold: threshold,
         expiryDate,
+        gstRate: gstRate || getGstConfig().defaultRate,
+        hsn,
         updatedAt: now,
         deletedAt: null,
       };

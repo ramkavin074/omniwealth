@@ -1,8 +1,20 @@
 // Client wrapper for GET/POST /api/stocking/store — per-store settings that
-// aren't synced as rows (currently just the low-stock WhatsApp alert phone).
-// Online-only; owner/manager only for writes (server enforces).
+// aren't synced as rows: the low-stock WhatsApp alert phone and the GST setup.
+// Online-only; owner/manager only for writes (server enforces). The sync
+// response also echoes the GST fields, so billing has them offline.
 
 import { API_BASE } from './config';
+import { setGstConfig } from './settings';
+import type { GstConfig } from './types';
+
+export interface StoreSettings {
+  name?: string;
+  alertPhone: string | null;
+  gstin: string | null;
+  gstEnabled: boolean;
+  pricesIncludeTax: boolean;
+  defaultGstRate: number;
+}
 
 function auth(): { token?: string; storeId?: string } {
   try {
@@ -21,7 +33,32 @@ function headers(): Record<string, string> {
   };
 }
 
-export async function getStoreSettings(): Promise<{ alertPhone: string | null }> {
+function normalise(s: Record<string, unknown> | null | undefined): StoreSettings {
+  return {
+    name: (s?.name as string) ?? undefined,
+    alertPhone: (s?.alertPhone as string) ?? null,
+    gstin: (s?.gstin as string) ?? null,
+    gstEnabled: !!s?.gstEnabled,
+    pricesIncludeTax: s?.pricesIncludeTax !== false,
+    defaultGstRate: Number(s?.defaultGstRate) || 0,
+  };
+}
+
+/** Mirror the store's GST setup into the local cache billing reads offline. */
+export function cacheGst(s: Pick<
+  StoreSettings,
+  'gstEnabled' | 'pricesIncludeTax' | 'gstin' | 'defaultGstRate'
+>): void {
+  const cfg: GstConfig = {
+    enabled: s.gstEnabled,
+    inclusive: s.pricesIncludeTax,
+    gstin: s.gstin,
+    defaultRate: s.defaultGstRate,
+  };
+  setGstConfig(cfg);
+}
+
+export async function getStoreSettings(): Promise<StoreSettings> {
   const { token } = auth();
   const res = await fetch(`${API_BASE}/api/stocking/store`, {
     headers: headers(),
@@ -29,18 +66,35 @@ export async function getStoreSettings(): Promise<{ alertPhone: string | null }>
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body?.error || 'Failed to load');
-  return { alertPhone: body?.store?.alertPhone ?? null };
+  const s = normalise(body?.store);
+  cacheGst(s);
+  return s;
 }
 
-export async function saveAlertPhone(alertPhone: string): Promise<string | null> {
+export async function saveStoreSettings(
+  patch: Partial<
+    Pick<
+      StoreSettings,
+      'alertPhone' | 'gstin' | 'gstEnabled' | 'pricesIncludeTax' | 'defaultGstRate'
+    >
+  >,
+): Promise<StoreSettings> {
   const { token } = auth();
   const res = await fetch(`${API_BASE}/api/stocking/store`, {
     method: 'POST',
     headers: { ...headers(), 'Content-Type': 'application/json' },
     credentials: token ? 'omit' : 'include',
-    body: JSON.stringify({ alertPhone }),
+    body: JSON.stringify(patch),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body?.error || 'Failed to save');
-  return body?.alertPhone ?? null;
+  const s = normalise(body?.store);
+  cacheGst(s);
+  return s;
+}
+
+/** Back-compat helper still used by the alert-phone field. */
+export async function saveAlertPhone(alertPhone: string): Promise<string | null> {
+  const s = await saveStoreSettings({ alertPhone });
+  return s.alertPhone;
 }

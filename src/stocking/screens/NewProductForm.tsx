@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
-import { UNITS, type Product, type Unit } from '../types';
+import { GST_RATES, UNITS, type Product, type Unit } from '../types';
 import { createProduct } from '../db/products';
-import { canSeeCost, getDefaults } from '../settings';
+import { canSeeCost, getDefaults, getGstConfig } from '../settings';
 
 interface Props {
   lang: Lang;
@@ -30,6 +30,9 @@ export default function NewProductForm({
 }: Props) {
   const [defaults] = useState(getDefaults);
   const [showCost] = useState(canSeeCost);
+  const [gst] = useState(getGstConfig);
+  const [gstRate, setGstRate] = useState(String(gst.defaultRate));
+  const [hsn, setHsn] = useState('');
   const [name, setName] = useState(defaultName);
   const [mrp, setMrp] = useState('');
   const [price, setPrice] = useState('');
@@ -56,6 +59,9 @@ export default function NewProductForm({
         unit,
         lowStockThreshold: Number(threshold) || 0,
         expiryDate: expiry || null,
+        ...(gst.enabled
+          ? { gstRate: Number(gstRate) || 0, hsn: hsn.trim() || null }
+          : {}),
       });
       onSaved(product);
     } finally {
@@ -191,6 +197,39 @@ export default function NewProductForm({
           />
         </div>
       </div>
+
+      {gst.enabled && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={label} htmlFor="np-gst">
+              {t(lang, 'product.gst')}
+            </label>
+            <select
+              id="np-gst"
+              value={gstRate}
+              onChange={(e) => setGstRate(e.target.value)}
+              className={field}
+            >
+              {GST_RATES.map((r) => (
+                <option key={r} value={r}>
+                  {r}%
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={label} htmlFor="np-hsn">
+              {t(lang, 'product.hsn')}
+            </label>
+            <input
+              id="np-hsn"
+              value={hsn}
+              onChange={(e) => setHsn(e.target.value)}
+              className={field}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-3 pt-2">
         <button

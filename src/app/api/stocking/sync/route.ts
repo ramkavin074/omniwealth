@@ -4,6 +4,7 @@ import {
   storeProducts,
   storeSales,
   storeStockMovements,
+  stores,
   supplierPayments,
   suppliers,
 } from '@/db/schema';
@@ -39,6 +40,8 @@ interface InProduct {
   unit: string;
   lowStockThreshold: number;
   expiryDate: string | null;
+  gstRate: number;
+  hsn: string | null;
   updatedAt: number;
   deletedAt: number | null;
 }
@@ -79,6 +82,8 @@ interface InSale {
   billNo: string;
   items: unknown;
   discount: number;
+  taxTotal: number;
+  taxBreakup: unknown;
   total: number;
   tenderType: string;
   cashAmount: number;
@@ -157,6 +162,8 @@ export async function POST(request: Request) {
         unit: p.unit || 'piece',
         lowStockThreshold: String(num(p.lowStockThreshold)),
         expiryDate: p.expiryDate || null,
+        gstRate: String(num(p.gstRate)),
+        hsn: p.hsn || null,
         updatedAt: String(num(p.updatedAt)),
         deletedAt: p.deletedAt == null ? null : String(num(p.deletedAt)),
         syncedAt,
@@ -177,6 +184,8 @@ export async function POST(request: Request) {
             unit: sql`excluded.unit`,
             lowStockThreshold: sql`excluded.low_stock_threshold`,
             expiryDate: sql`excluded.expiry_date`,
+            gstRate: sql`excluded.gst_rate`,
+            hsn: sql`excluded.hsn`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
             syncedAt: sql`excluded.synced_at`,
@@ -310,6 +319,8 @@ export async function POST(request: Request) {
         billNo: String(s.billNo ?? ''),
         items: s.items as unknown[],
         discount: String(num(s.discount)),
+        taxTotal: String(num(s.taxTotal)),
+        taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
         total: String(num(s.total)),
         tenderType: s.tenderType || 'cash',
         cashAmount: String(num(s.cashAmount)),
@@ -345,6 +356,7 @@ export async function POST(request: Request) {
     pulledSuppliers,
     pulledPayments,
     pulledSales,
+    storeRow,
   ] = await Promise.all([
       db
         .select()
@@ -393,12 +405,30 @@ export async function POST(request: Request) {
           and(eq(storeSales.storeId, storeId), gt(storeSales.syncedAt, sinceDate)),
         )
         .limit(MAX_ROWS),
+      db
+        .select({
+          gstin: stores.gstin,
+          gstEnabled: stores.gstEnabled,
+          pricesIncludeTax: stores.pricesIncludeTax,
+          defaultGstRate: stores.defaultGstRate,
+        })
+        .from(stores)
+        .where(eq(stores.id, storeId))
+        .then((r) => r[0]),
     ]);
 
   return json(
     {
       now,
       role: auth.role,
+      store: storeRow
+        ? {
+            gstin: storeRow.gstin,
+            gstEnabled: storeRow.gstEnabled,
+            pricesIncludeTax: storeRow.pricesIncludeTax,
+            defaultGstRate: num(storeRow.defaultGstRate),
+          }
+        : null,
       products: pulledProducts.map((p) => ({
         id: p.id,
         barcode: p.barcode,
@@ -410,6 +440,8 @@ export async function POST(request: Request) {
         unit: p.unit,
         lowStockThreshold: num(p.lowStockThreshold),
         expiryDate: p.expiryDate ?? null,
+        gstRate: num(p.gstRate),
+        hsn: p.hsn ?? null,
         updatedAt: num(p.updatedAt),
         deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),
@@ -448,6 +480,8 @@ export async function POST(request: Request) {
         userId: s.userId,
         items: Array.isArray(s.items) ? s.items : [],
         discount: num(s.discount),
+        taxTotal: num(s.taxTotal),
+        taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
         total: num(s.total),
         tenderType: s.tenderType,
         cashAmount: num(s.cashAmount),

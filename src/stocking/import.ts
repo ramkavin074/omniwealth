@@ -49,13 +49,15 @@ const ALIASES: Record<keyof ImportRow, string[]> = {
     'best before',
     'use by',
   ],
+  gstRate: ['gst', 'gst rate', 'gst_rate', 'gst%', 'tax', 'tax rate', 'gst %'],
+  hsn: ['hsn', 'hsn code', 'hsn_code', 'sac'],
 };
 
 export const CSV_TEMPLATE =
-  'barcode,name,mrp,price,cost,unit,opening_stock,low_stock_threshold,expiry\n' +
-  '8901030865278,Aashirvaad Atta 5kg,285,280,255,packet,12,4,\n' +
-  ',Sugar (loose),,45,40,kg,20,10,\n' +
-  ',Amul Butter 500g,,275,255,piece,8,3,2026-11-30\n';
+  'barcode,name,mrp,price,cost,unit,opening_stock,low_stock_threshold,expiry,gst,hsn\n' +
+  '8901030865278,Aashirvaad Atta 5kg,285,280,255,packet,12,4,,5,1101\n' +
+  ',Sugar (loose),,45,40,kg,20,10,,0,\n' +
+  ',Amul Butter 500g,,275,255,piece,8,3,2026-11-30,12,0405\n';
 
 /** Normalise a date cell to 'YYYY-MM-DD', or null if unrecognised.
  *  Accepts ISO, or day-first dd/mm/yyyy and dd-mm-yyyy (the Indian norm). */
@@ -170,6 +172,8 @@ export function parseCsv(text: string): ParseResult {
       openingStock: num(get(cells, 'openingStock')),
       lowStockThreshold: num(get(cells, 'lowStockThreshold')),
       expiryDate: toISODate(get(cells, 'expiryDate')),
+      gstRate: num(get(cells, 'gstRate')),
+      hsn: (get(cells, 'hsn') ?? '').trim() || null,
     });
   }
 

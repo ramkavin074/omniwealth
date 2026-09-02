@@ -2,7 +2,7 @@
 // new-product defaults and the about screen.
 
 import { db } from './db/dexie';
-import type { Unit } from './types';
+import { GST_CONFIG_FALLBACK, type GstConfig, type Unit } from './types';
 
 export const APP_VERSION = '0.1.0';
 
@@ -94,6 +94,35 @@ export function canManage(): boolean {
 /** Cost & margin are hidden from staff. */
 export function canSeeCost(): boolean {
   return canManage();
+}
+
+// The store's GST setup, cached locally so billing works offline. Refreshed
+// from every sync response and whenever an owner saves it in Settings.
+const GST_KEY = 'stocking.gst';
+
+export function getGstConfig(): GstConfig {
+  try {
+    const raw = localStorage.getItem(GST_KEY);
+    if (!raw) return GST_CONFIG_FALLBACK;
+    const p = JSON.parse(raw) as Partial<GstConfig>;
+    return {
+      enabled: !!p.enabled,
+      inclusive: p.inclusive !== false,
+      gstin: p.gstin ? String(p.gstin) : null,
+      defaultRate:
+        typeof p.defaultRate === 'number' ? p.defaultRate : 0,
+    };
+  } catch {
+    return GST_CONFIG_FALLBACK;
+  }
+}
+
+export function setGstConfig(c: GstConfig): void {
+  try {
+    localStorage.setItem(GST_KEY, JSON.stringify(c));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 export function signOut(): void {

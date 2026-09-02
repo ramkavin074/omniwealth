@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import {
   expiryStatus,
+  GST_RATES,
   isLowStock,
   marginPct,
   UNITS,
@@ -23,7 +24,7 @@ import {
 } from '../db/products';
 import { buildCatalogueCsv, downloadCsv } from '../export';
 import { useDebounced, useIsDesktop, useLiveQuery } from '../hooks';
-import { canManage, canSeeCost } from '../settings';
+import { canManage, canSeeCost, getGstConfig } from '../settings';
 import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
 import LowStockBadge from '../components/LowStockBadge';
 import VirtualList from '../components/VirtualList';
@@ -306,6 +307,9 @@ function EditSheet({
   const [threshold, setThreshold] = useState(String(product.lowStockThreshold));
   const [stock, setStock] = useState(String(product.stockQty));
   const [expiry, setExpiry] = useState(product.expiryDate ?? '');
+  const [gst] = useState(getGstConfig);
+  const [gstRate, setGstRate] = useState(String(product.gstRate ?? 0));
+  const [hsn, setHsn] = useState(product.hsn ?? '');
 
   const m = marginPct({ price: Number(price) || 0, costPrice: Number(cost) || 0 });
   const ro = !manage; // catalogue fields read-only for staff
@@ -326,6 +330,9 @@ function EditSheet({
         unit,
         lowStockThreshold: Number(threshold) || 0,
         expiryDate: expiry || null,
+        ...(gst.enabled
+          ? { gstRate: Number(gstRate) || 0, hsn: hsn.trim() || null }
+          : {}),
       });
     }
     const nextStock = Number(stock);
@@ -466,6 +473,33 @@ function EditSheet({
             )}
           </div>
         </label>
+
+        {gst.enabled && manage && (
+          <div className="grid grid-cols-2 gap-2">
+            <label>
+              <span className={sheetLabel}>{t(lang, 'product.gst')}</span>
+              <select
+                value={gstRate}
+                onChange={(e) => setGstRate(e.target.value)}
+                className={`${field} w-full`}
+              >
+                {GST_RATES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}%
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className={sheetLabel}>{t(lang, 'product.hsn')}</span>
+              <input
+                value={hsn}
+                onChange={(e) => setHsn(e.target.value)}
+                className={`${field} w-full`}
+              />
+            </label>
+          </div>
+        )}
 
         {history.length > 0 && (
           <div className="pt-1">

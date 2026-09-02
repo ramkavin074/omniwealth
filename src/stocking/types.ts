@@ -44,9 +44,13 @@ export interface Product {
   unit: Unit;
   lowStockThreshold: number;
   expiryDate: string | null; // 'YYYY-MM-DD' local date of the current batch; null = not tracked
+  gstRate: number; // GST %, e.g. 0 / 5 / 12 / 18 / 28
+  hsn: string | null; // HSN code (optional, shown on a tax invoice)
   updatedAt: number; // epoch ms
   deletedAt: number | null; // tombstone for sync; null = live
 }
+
+export const GST_RATES = [0, 5, 12, 18, 28] as const;
 
 export type ExpiryStatus = 'none' | 'ok' | 'soon' | 'expired';
 
@@ -118,10 +122,18 @@ export interface SupplierPayment {
 
 export type ProductDraft = Omit<
   Product,
-  'id' | 'updatedAt' | 'deletedAt' | 'stockQty' | 'expiryDate'
+  | 'id'
+  | 'updatedAt'
+  | 'deletedAt'
+  | 'stockQty'
+  | 'expiryDate'
+  | 'gstRate'
+  | 'hsn'
 > & {
   openingStock: number;
   expiryDate?: string | null;
+  gstRate?: number;
+  hsn?: string | null;
 };
 
 // ---- billing (B1) ----
@@ -134,6 +146,72 @@ export interface SaleItem {
   qty: number;
   unit: Unit;
   unitPrice: number; // ₹ per unit actually charged (editable at the counter)
+  gstRate: number; // GST % snapshot (0 when the store isn't charging GST)
+}
+
+/** One GST-rate group on a bill's tax summary. cgst === sgst (intra-state). */
+export interface TaxRow {
+  rate: number;
+  taxable: number;
+  cgst: number;
+  sgst: number;
+}
+
+export interface GstConfig {
+  enabled: boolean; // charge / show GST on bills
+  inclusive: boolean; // true = prices already include GST (kirana norm)
+  gstin: string | null; // the shop's GSTIN; presence ⇒ "TAX INVOICE" header
+  defaultRate: number; // fallback slab for items with no rate set
+}
+
+export const GST_CONFIG_FALLBACK: GstConfig = {
+  enabled: false,
+  inclusive: true,
+  gstin: null,
+  defaultRate: 0,
+};
+
+const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/** Tax breakdown for a set of priced lines. `discount` (₹ off the whole bill)
+ *  is spread across lines pro-rata before tax. Inclusive: tax is extracted
+ *  from the price. Exclusive: tax is added on top (`addToTotal`). */
+export function computeSaleTax(
+  lines: { lineTotal: number; gstRate: number }[],
+  discount: number,
+  cfg: Pick<GstConfig, 'enabled' | 'inclusive'>,
+): { taxTotal: number; addToTotal: number; breakup: TaxRow[] } {
+  const subtotal = lines.reduce((t, l) => t + l.lineTotal, 0);
+  if (!cfg.enabled || subtotal <= 0) {
+    return { taxTotal: 0, addToTotal: 0, breakup: [] };
+  }
+  const disc = Math.min(Math.max(0, discount), subtotal);
+  const byRate = new Map<number, { taxable: number; tax: number }>();
+  for (const l of lines) {
+    const rate = l.gstRate || 0;
+    if (rate <= 0) continue;
+    const net = l.lineTotal - (disc * l.lineTotal) / subtotal;
+    const taxable = cfg.inclusive ? net / (1 + rate / 100) : net;
+    const tax = cfg.inclusive ? net - taxable : net * (rate / 100);
+    const cur = byRate.get(rate) ?? { taxable: 0, tax: 0 };
+    cur.taxable += taxable;
+    cur.tax += tax;
+    byRate.set(rate, cur);
+  }
+  const breakup: TaxRow[] = [...byRate.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([rate, v]) => ({
+      rate,
+      taxable: r2(v.taxable),
+      cgst: r2(v.tax / 2),
+      sgst: r2(v.tax / 2),
+    }));
+  const taxTotal = r2(breakup.reduce((t, b) => t + b.cgst + b.sgst, 0));
+  return {
+    taxTotal,
+    addToTotal: cfg.inclusive ? 0 : taxTotal,
+    breakup,
+  };
 }
 
 export interface Sale {
@@ -143,7 +221,9 @@ export interface Sale {
   userId: string | null; // who rang it up (server-stamped on sync)
   items: SaleItem[]; // empty for a quick amount-only sale
   discount: number; // ₹ taken off the whole bill (0 = none)
-  total: number; // Σ qty × unitPrice − discount
+  taxTotal: number; // GST on the bill (0 when the store isn't charging GST)
+  taxBreakup: TaxRow[]; // per-rate CGST/SGST split for the receipt
+  total: number; // items − discount (+ taxTotal when prices are tax-exclusive)
   tenderType: TenderType;
   cashAmount: number; // amount taken as cash (= total for a cash sale)
   upiAmount: number; // amount taken as UPI

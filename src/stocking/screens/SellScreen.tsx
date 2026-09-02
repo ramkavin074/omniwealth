@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
-import { saleLineTotal, type Sale, type TenderType, type Unit } from '../types';
+import {
+  computeSaleTax,
+  saleLineTotal,
+  type Sale,
+  type TenderType,
+  type Unit,
+} from '../types';
+import { getGstConfig } from '../settings';
 import { findByBarcode, searchProducts } from '../db/products';
 import {
   completeSale,
@@ -26,6 +33,7 @@ interface CartLine {
   unit: Unit;
   qty: number;
   unitPrice: number;
+  gstRate: number;
 }
 
 const money = (n: number) =>
@@ -66,7 +74,18 @@ export default function SellScreen({ lang, onClose }: Props) {
     [cart, isQuick, quickAmt],
   );
   const disc = Math.min(Math.max(0, Number(discount) || 0), subtotal);
-  const total = Math.round((subtotal - disc) * 100) / 100;
+  const [gst] = useState(getGstConfig);
+  const tax = useMemo(
+    () =>
+      computeSaleTax(
+        cart.map((l) => ({ lineTotal: l.qty * l.unitPrice, gstRate: l.gstRate })),
+        disc,
+        gst,
+      ),
+    [cart, disc, gst],
+  );
+  const total =
+    Math.round((subtotal - disc + tax.addToTotal) * 100) / 100;
 
   const flash = (s: string) => {
     setMsg(s);
@@ -79,6 +98,7 @@ export default function SellScreen({ lang, onClose }: Props) {
     unit: string;
     price: number;
     mrp: number;
+    gstRate?: number;
   }) => {
     setCart((c) => {
       const i = c.findIndex((l) => l.productId === p.id);
@@ -95,6 +115,7 @@ export default function SellScreen({ lang, onClose }: Props) {
           unit: p.unit as Unit,
           qty: 1,
           unitPrice: p.price || p.mrp || 0,
+          gstRate: p.gstRate ?? 0,
         },
       ];
     });
@@ -155,6 +176,7 @@ export default function SellScreen({ lang, onClose }: Props) {
               unit: l.unit,
               qty: l.qty,
               unitPrice: l.unitPrice,
+              gstRate: l.gstRate,
             })),
         ...(isQuick ? { manualTotal: subtotal } : {}),
         discount: disc,
@@ -182,6 +204,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         unit: l.unit,
         qty: l.qty,
         unitPrice: l.unitPrice,
+        gstRate: l.gstRate,
       })),
       Number(discount) || 0,
       label,
@@ -202,6 +225,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         unit: i.unit,
         qty: i.qty,
         unitPrice: i.unitPrice,
+        gstRate: i.gstRate ?? 0,
       })),
     );
     setDiscount(h.discount ? String(h.discount) : '');
@@ -223,11 +247,16 @@ export default function SellScreen({ lang, onClose }: Props) {
     [
       s.billNo,
       new Date(s.createdAt).toLocaleString('en-IN'),
+      ...(gst.gstin ? [`GSTIN: ${gst.gstin}`] : []),
       ...s.items.map(
         (i) =>
           `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice} = ${saleLineTotal(i)}`,
       ),
       ...(s.discount > 0 ? [`${t(lang, 'sell.discount')}: -${s.discount}`] : []),
+      ...s.taxBreakup.map(
+        (r) =>
+          `GST ${r.rate}%  CGST ${r.cgst} + SGST ${r.sgst}`,
+      ),
       `${t(lang, 'sell.total')}: ${money(s.total)}`,
       `${t(lang, 'sell.paid')}: ${s.tenderType.toUpperCase()}`,
     ].join('\n');
@@ -250,6 +279,11 @@ export default function SellScreen({ lang, onClose }: Props) {
         </div>
 
         <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+          {gst.gstin && (
+            <p className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {t(lang, 'sell.taxInvoice')} · GSTIN {gst.gstin}
+            </p>
+          )}
           <div className="flex items-baseline justify-between">
             <span className="font-mono text-lg font-bold text-slate-900 dark:text-slate-50">
               {saved.billNo}
@@ -287,9 +321,33 @@ export default function SellScreen({ lang, onClose }: Props) {
               </div>
             </div>
           )}
+          {saved.taxBreakup.length > 0 && (
+            <div
+              className={`mt-2 space-y-0.5 ${
+                saved.discount > 0 ? '' : 'border-t border-slate-200 pt-2 dark:border-slate-700'
+              } text-xs text-slate-500 dark:text-slate-400`}
+            >
+              {saved.taxBreakup.map((r) => (
+                <div key={r.rate} className="flex justify-between">
+                  <span>
+                    GST {r.rate}% ({money(r.taxable)})
+                  </span>
+                  <span className="tabular-nums">
+                    CGST {money(r.cgst)} · SGST {money(r.sgst)}
+                  </span>
+                </div>
+              ))}
+              <div className="flex justify-between font-medium text-slate-600 dark:text-slate-300">
+                <span>{t(lang, 'sell.taxTotal')}</span>
+                <span className="tabular-nums">{money(saved.taxTotal)}</span>
+              </div>
+            </div>
+          )}
           <div
             className={`mt-2 flex justify-between ${
-              saved.discount > 0 ? '' : 'border-t border-slate-200 pt-2 dark:border-slate-700'
+              saved.discount > 0 || saved.taxBreakup.length > 0
+                ? ''
+                : 'border-t border-slate-200 pt-2 dark:border-slate-700'
             } text-lg font-bold text-slate-900 dark:text-slate-50`}
           >
             <span>{t(lang, 'sell.total')}</span>
@@ -355,6 +413,14 @@ export default function SellScreen({ lang, onClose }: Props) {
               <span className="text-rose-600 dark:text-rose-400">
                 −{money(disc)}
               </span>
+            </p>
+          )}
+          {gst.enabled && tax.taxTotal > 0 && (
+            <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">
+              {gst.inclusive
+                ? t(lang, 'sell.taxIncl')
+                : t(lang, 'sell.taxAdd')}{' '}
+              {money(tax.taxTotal)}
             </p>
           )}
           <span className="block text-sm text-slate-500 dark:text-slate-400">

@@ -20,6 +20,8 @@ export function buildCatalogueCsv(products: Product[]): string {
     'stock',
     'low_stock_threshold',
     'expiry',
+    'gst',
+    'hsn',
     'stock_value',
     'stock_cost',
   ];
@@ -36,6 +38,8 @@ export function buildCatalogueCsv(products: Product[]): string {
         p.stockQty,
         p.lowStockThreshold,
         p.expiryDate ?? '',
+        p.gstRate || '',
+        p.hsn ?? '',
         Math.round(p.price * p.stockQty * 100) / 100,
         p.costPrice ? Math.round(p.costPrice * p.stockQty * 100) / 100 : '',
       ]

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import { useNow } from '../hooks';
 import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
-import { UNITS, type Unit } from '../types';
+import { GST_RATES, UNITS, type Unit } from '../types';
 import {
   APP_VERSION,
   canManage,
@@ -15,7 +15,11 @@ import {
   signOut,
 } from '../settings';
 import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
-import { getStoreSettings, saveAlertPhone } from '../storeSettings';
+import {
+  getStoreSettings,
+  saveAlertPhone,
+  saveStoreSettings,
+} from '../storeSettings';
 
 interface Props {
   lang: Lang;
@@ -55,6 +59,15 @@ export default function SettingsSheet({
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
 
+  // GST setup
+  const [gstin, setGstin] = useState('');
+  const [gstEnabled, setGstEnabled] = useState(false);
+  const [pricesInclTax, setPricesInclTax] = useState(true);
+  const [defaultGstRate, setDefaultGstRate] = useState('0');
+  const [gstState, setGstState] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
+
   useEffect(() => {
     lastSyncAt().then(setSyncedAt);
   }, []);
@@ -62,7 +75,13 @@ export default function SettingsSheet({
   useEffect(() => {
     if (!manage) return;
     getStoreSettings()
-      .then((s) => setAlertPhone(s.alertPhone ?? ''))
+      .then((s) => {
+        setAlertPhone(s.alertPhone ?? '');
+        setGstin(s.gstin ?? '');
+        setGstEnabled(s.gstEnabled);
+        setPricesInclTax(s.pricesIncludeTax);
+        setDefaultGstRate(String(s.defaultGstRate));
+      })
       .catch(() => {});
   }, [manage]);
 
@@ -74,6 +93,22 @@ export default function SettingsSheet({
       setAlertState('saved');
     } catch {
       setAlertState('error');
+    }
+  };
+
+  const saveGst = async () => {
+    setGstState('saving');
+    try {
+      const s = await saveStoreSettings({
+        gstin: gstin.trim(),
+        gstEnabled,
+        pricesIncludeTax: pricesInclTax,
+        defaultGstRate: Number(defaultGstRate) || 0,
+      });
+      setGstin(s.gstin ?? '');
+      setGstState('saved');
+    } catch {
+      setGstState('error');
     }
   };
 
@@ -216,6 +251,77 @@ export default function SettingsSheet({
                   ? t(lang, 'settings.alertErr')
                   : t(lang, 'settings.alertHint')}
             </p>
+          </section>
+        )}
+
+        {manage && (
+          <section className="space-y-2">
+            <p className={heading}>{t(lang, 'settings.gst')}</p>
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={gstEnabled}
+                onChange={(e) => {
+                  setGstEnabled(e.target.checked);
+                  setGstState('idle');
+                }}
+                className="h-5 w-5 accent-teal-600"
+              />
+              {t(lang, 'settings.gstEnabled')}
+            </label>
+            {gstEnabled && (
+              <>
+                <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={pricesInclTax}
+                    onChange={(e) => {
+                      setPricesInclTax(e.target.checked);
+                      setGstState('idle');
+                    }}
+                    className="h-5 w-5 accent-teal-600"
+                  />
+                  {t(lang, 'settings.gstInclusive')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    value={gstin}
+                    onChange={(e) => {
+                      setGstin(e.target.value);
+                      setGstState('idle');
+                    }}
+                    placeholder={t(lang, 'settings.gstin')}
+                    className={`${field} flex-1 font-mono`}
+                  />
+                  <select
+                    value={defaultGstRate}
+                    onChange={(e) => {
+                      setDefaultGstRate(e.target.value);
+                      setGstState('idle');
+                    }}
+                    className={field}
+                  >
+                    {GST_RATES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}%
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={saveGst}
+              disabled={gstState === 'saving'}
+              className="h-10 w-full rounded-lg bg-teal-700 font-semibold text-white disabled:opacity-50"
+            >
+              {gstState === 'saved'
+                ? t(lang, 'settings.alertSaved')
+                : gstState === 'error'
+                  ? t(lang, 'settings.alertErr')
+                  : t(lang, 'settings.alertSave')}
+            </button>
           </section>
         )}
 

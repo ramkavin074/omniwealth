@@ -5,6 +5,7 @@
 
 import { API_BASE } from './config';
 import { db } from './db/dexie';
+import { cacheGst } from './storeSettings';
 import type {
   Movement,
   Product,
@@ -127,6 +128,12 @@ async function runSync(): Promise<SyncOutcome> {
     suppliers?: Supplier[];
     payments?: SupplierPayment[];
     sales?: Sale[];
+    store?: {
+      gstin: string | null;
+      gstEnabled: boolean;
+      pricesIncludeTax: boolean;
+      defaultGstRate: number;
+    } | null;
   };
 
   // The server is the source of truth for the caller's role — keep the local
@@ -149,6 +156,15 @@ async function runSync(): Promise<SyncOutcome> {
   const pulledPayments = data.payments ?? [];
   const pulledSales = data.sales ?? [];
 
+  // Keep the offline GST cache in step with the store's server setup.
+  if (data.store) {
+    try {
+      cacheGst(data.store);
+    } catch {
+      /* ignore */
+    }
+  }
+
   await db().transaction(
     'rw',
     db().products,
@@ -164,6 +180,8 @@ async function runSync(): Promise<SyncOutcome> {
             ...p,
             costPrice: p.costPrice ?? 0,
             expiryDate: p.expiryDate ?? null,
+            gstRate: p.gstRate ?? 0,
+            hsn: p.hsn ?? null,
             deletedAt: p.deletedAt ?? null,
           });
         }
@@ -198,6 +216,8 @@ async function runSync(): Promise<SyncOutcome> {
             ...s,
             items: Array.isArray(s.items) ? s.items : [],
             discount: s.discount ?? 0,
+            taxTotal: s.taxTotal ?? 0,
+            taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
             deletedAt: s.deletedAt ?? null,
           });
         }

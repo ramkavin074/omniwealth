@@ -53,6 +53,10 @@ const en: Dict = {
   'sell.total': 'Total',
   'sell.subtotal': 'Subtotal',
   'sell.discount': 'Discount',
+  'sell.taxIncl': 'incl. GST',
+  'sell.taxAdd': '+ GST',
+  'sell.taxTotal': 'GST total',
+  'sell.taxInvoice': 'Tax invoice',
   'sell.takePayment': 'Take payment',
   'sell.hold': 'Hold',
   'sell.held': 'Bill held',
@@ -79,6 +83,7 @@ const en: Dict = {
   'sales.bills': 'Bills',
   'sales.avgBill': 'Avg bill',
   'sales.discounts': 'Discounts',
+  'sales.gst': 'GST',
   'sales.topItems': 'Top items',
   'sales.range.0': 'Today',
   'sales.range.1': 'Yesterday',
@@ -119,6 +124,8 @@ const en: Dict = {
   'product.barcode': 'Barcode',
   'product.noBarcode': 'No barcode',
   'product.expiry': 'Expiry date',
+  'product.gst': 'GST %',
+  'product.hsn': 'HSN',
   'product.clear': 'Clear',
   'product.save': 'Save',
   'product.cancel': 'Cancel',
@@ -129,7 +136,7 @@ const en: Dict = {
   'import.button': 'Import',
   'import.title': 'Import catalogue',
   'import.help':
-    'Upload a CSV with columns: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry. Only "name" is required. In Excel use File → Save As → CSV.',
+    'Upload a CSV with columns: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. Only "name" is required. In Excel use File → Save As → CSV.',
   'import.downloadTemplate': 'Download template CSV',
   'import.chooseFile': 'Choose CSV file',
   'import.noNameColumn': 'The file needs a "name" column.',
@@ -282,6 +289,11 @@ const en: Dict = {
   'settings.alertSave': 'Save',
   'settings.alertSaved': 'Saved',
   'settings.alertErr': "Couldn't save — check your connection",
+
+  'settings.gst': 'GST',
+  'settings.gstEnabled': 'Charge / show GST on bills',
+  'settings.gstInclusive': 'Prices already include GST',
+  'settings.gstin': 'GSTIN (for tax invoices)',
 };
 
 // confirm with shop owners — every Tamil string below is a first draft.
@@ -329,6 +341,10 @@ const ta: Dict = {
   'sell.total': 'மொத்தம்',
   'sell.subtotal': 'கூட்டுத்தொகை',
   'sell.discount': 'தள்ளுபடி',
+  'sell.taxIncl': 'GST உள்ளடங்கும்',
+  'sell.taxAdd': '+ GST',
+  'sell.taxTotal': 'GST மொத்தம்',
+  'sell.taxInvoice': 'வரி விலைப்பட்டியல்',
   'sell.takePayment': 'பணம் வாங்கு',
   'sell.hold': 'நிறுத்து',
   'sell.held': 'பில் நிறுத்தப்பட்டது',
@@ -355,6 +371,7 @@ const ta: Dict = {
   'sales.bills': 'பில்கள்',
   'sales.avgBill': 'சராசரி பில்',
   'sales.discounts': 'தள்ளுபடிகள்',
+  'sales.gst': 'GST',
   'sales.topItems': 'அதிக விற்பனை',
   'sales.range.0': 'இன்று',
   'sales.range.1': 'நேற்று',
@@ -395,6 +412,8 @@ const ta: Dict = {
   'product.barcode': 'பார்கோடு',
   'product.noBarcode': 'பார்கோடு இல்லை',
   'product.expiry': 'காலக்கெடு தேதி',
+  'product.gst': 'GST %',
+  'product.hsn': 'HSN',
   'product.clear': 'அழி',
   'product.save': 'சேமி',
   'product.cancel': 'ரத்து',
@@ -405,7 +424,7 @@ const ta: Dict = {
   'import.button': 'இறக்குமதி',
   'import.title': 'பட்டியல் இறக்குமதி',
   'import.help':
-    'CSV கோப்பை பதிவேற்றவும்: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry. "name" மட்டும் அவசியம். Excel-ல் File → Save As → CSV.',
+    'CSV கோப்பை பதிவேற்றவும்: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. "name" மட்டும் அவசியம். Excel-ல் File → Save As → CSV.',
   'import.downloadTemplate': 'மாதிரி CSV பதிவிறக்கு',
   'import.chooseFile': 'CSV கோப்பை தேர்வு செய்',
   'import.noNameColumn': 'கோப்பில் "name" நெடுவரிசை தேவை.',
@@ -559,6 +578,11 @@ const ta: Dict = {
   'settings.alertSave': 'சேமி',
   'settings.alertSaved': 'சேமிக்கப்பட்டது',
   'settings.alertErr': 'சேமிக்க முடியவில்லை — இணைப்பைச் சரிபார்க்கவும்',
+
+  'settings.gst': 'GST',
+  'settings.gstEnabled': 'பில்களில் GST காட்டு / வசூலி',
+  'settings.gstInclusive': 'விலைகளில் GST ஏற்கனவே உள்ளடங்கும்',
+  'settings.gstin': 'GSTIN (வரி விலைப்பட்டியலுக்கு)',
 };
 
 const DICTS: Record<Lang, Dict> = { en, ta };

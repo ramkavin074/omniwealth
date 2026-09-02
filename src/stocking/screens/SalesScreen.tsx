@@ -15,6 +15,8 @@ interface Props {
 
 const money = (n: number) =>
   '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const money2 = (n: number) =>
+  '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
 // 0 = today, 1 = yesterday, 7 = last 7 days
 const RANGES = [0, 1, 7] as const;
@@ -79,9 +81,23 @@ export default function SalesScreen({ lang, onClose }: Props) {
               <span className="tabular-nums">−{money(open.discount)}</span>
             </div>
           )}
+          {(open.taxBreakup ?? []).length > 0 && (
+            <div className="mt-2 space-y-0.5 text-xs text-slate-500 dark:text-slate-400">
+              {open.taxBreakup.map((r) => (
+                <div key={r.rate} className="flex justify-between">
+                  <span>GST {r.rate}%</span>
+                  <span className="tabular-nums">
+                    CGST {money2(r.cgst)} · SGST {money2(r.sgst)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           <div
             className={`mt-2 flex justify-between ${
-              open.discount > 0 ? '' : 'border-t border-slate-200 pt-2 dark:border-slate-700'
+              open.discount > 0 || (open.taxBreakup ?? []).length > 0
+                ? ''
+                : 'border-t border-slate-200 pt-2 dark:border-slate-700'
             } font-bold text-slate-900 dark:text-slate-50`}
           >
             <span>{t(lang, 'sell.total')}</span>
@@ -157,6 +173,8 @@ export default function SalesScreen({ lang, onClose }: Props) {
           {t(lang, 'sales.avgBill')} {money(summary.avgBill)}
           {summary.discountTotal > 0 &&
             ` · ${t(lang, 'sales.discounts')} ${money(summary.discountTotal)}`}
+          {summary.taxCollected > 0 &&
+            ` · ${t(lang, 'sales.gst')} ${money(summary.taxCollected)}`}
         </p>
       )}
 

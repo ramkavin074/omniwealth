@@ -5,8 +5,8 @@
 
 import { db } from './dexie';
 import { applyMovement, uuid } from './products';
-import { getUserId } from '../settings';
-import type { HeldSale, Sale, SaleItem, TenderType } from '../types';
+import { getGstConfig, getUserId } from '../settings';
+import { computeSaleTax, type HeldSale, type Sale, type SaleItem, type TenderType } from '../types';
 
 const q2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -46,6 +46,7 @@ export interface SaleLineInput {
   unit: SaleItem['unit'];
   qty: number;
   unitPrice: number;
+  gstRate?: number;
 }
 
 export interface CompleteSaleInput {
@@ -73,6 +74,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
       qty: q2(l.qty),
       unit: l.unit,
       unitPrice: q2(l.unitPrice),
+      gstRate: Number(l.gstRate) || 0,
     }));
 
   const subtotal =
@@ -80,7 +82,14 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
       ? items.reduce((t, i) => t + i.qty * i.unitPrice, 0)
       : q2(input.manualTotal ?? 0);
   const discount = Math.min(q2(Math.max(0, input.discount ?? 0)), subtotal);
-  const total = q2(subtotal - discount);
+
+  const gst = getGstConfig();
+  const { taxTotal, addToTotal, breakup } = computeSaleTax(
+    items.map((i) => ({ lineTotal: i.qty * i.unitPrice, gstRate: i.gstRate })),
+    discount,
+    gst,
+  );
+  const total = q2(subtotal - discount + addToTotal);
   if (total <= 0) throw new Error('Nothing to bill');
   const cashAmount =
     input.tenderType === 'cash'
@@ -102,6 +111,8 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     userId: getUserId(),
     items,
     discount,
+    taxTotal,
+    taxBreakup: breakup,
     total,
     tenderType: input.tenderType,
     cashAmount,
@@ -178,6 +189,7 @@ export interface DaySummary {
   upi: number;
   units: number;
   discountTotal: number;
+  taxCollected: number;
   avgBill: number;
   topItems: { name: string; qty: number; value: number }[];
   sales: Sale[]; // newest first
@@ -203,12 +215,14 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let upi = 0;
   let units = 0;
   let discountTotal = 0;
+  let taxCollected = 0;
   const byItem = new Map<string, { qty: number; value: number }>();
   for (const s of rows) {
     total += s.total;
     cash += s.cashAmount;
     upi += s.upiAmount;
     discountTotal += s.discount ?? 0;
+    taxCollected += s.taxTotal ?? 0;
     for (const i of s.items) {
       units += i.qty;
       const cur = byItem.get(i.name) ?? { qty: 0, value: 0 };
@@ -231,6 +245,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     upi: q2(upi),
     units: q2(units),
     discountTotal: q2(discountTotal),
+    taxCollected: q2(taxCollected),
     avgBill: rows.length ? Math.round(total / rows.length) : 0,
     topItems,
     sales: rows,
