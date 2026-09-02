@@ -4,6 +4,7 @@ import {
   storeProducts,
   storeSales,
   storeStockMovements,
+  storeUpiReceipts,
   stores,
   supplierPayments,
   suppliers,
@@ -77,6 +78,19 @@ interface InPayment {
   deletedAt: number | null;
 }
 
+interface InUpiReceipt {
+  id: string;
+  amount: number;
+  receivedAt: number;
+  ref: string | null;
+  payerName: string | null;
+  source: string;
+  matchedSaleId: string | null;
+  note: string | null;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 interface InSale {
   id: string;
   billNo: string;
@@ -116,6 +130,7 @@ export async function POST(request: Request) {
   let inSuppliers: InSupplier[] = [];
   let inPayments: InPayment[] = [];
   let inSales: InSale[] = [];
+  let inUpiReceipts: InUpiReceipt[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
@@ -124,6 +139,7 @@ export async function POST(request: Request) {
     inSuppliers = Array.isArray(body?.suppliers) ? body.suppliers : [];
     inPayments = Array.isArray(body?.payments) ? body.payments : [];
     inSales = Array.isArray(body?.sales) ? body.sales : [];
+    inUpiReceipts = Array.isArray(body?.upiReceipts) ? body.upiReceipts : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
@@ -133,15 +149,17 @@ export async function POST(request: Request) {
     inMovements.length +
     inSuppliers.length +
     inPayments.length +
-    inSales.length;
+    inSales.length +
+    inUpiReceipts.length;
   if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
   }
 
-  // Suppliers + the payment ledger are owner/manager only.
+  // Suppliers, the payables ledger and UPI reconciliation are owner/manager only.
   if (!fullEdit) {
     inSuppliers = [];
     inPayments = [];
+    inUpiReceipts = [];
   }
 
   const now = Date.now();
@@ -351,6 +369,50 @@ export async function POST(request: Request) {
     }
   }
 
+  // ---- push: UPI receipts (upsert, LWW) ----
+  if (inUpiReceipts.length) {
+    const rows = inUpiReceipts
+      .filter((r) => r && typeof r.id === 'string')
+      .map((r) => ({
+        id: r.id,
+        storeId,
+        userId: auth.userId,
+        amount: String(num(r.amount)),
+        receivedAt: String(num(r.receivedAt)),
+        ref: r.ref ?? null,
+        payerName: r.payerName ?? null,
+        source: r.source || 'manual',
+        matchedSaleId:
+          typeof r.matchedSaleId === 'string' && r.matchedSaleId
+            ? r.matchedSaleId
+            : null,
+        note: r.note ?? null,
+        updatedAt: String(num(r.updatedAt)),
+        deletedAt: r.deletedAt == null ? null : String(num(r.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeUpiReceipts)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeUpiReceipts.id,
+          set: {
+            amount: sql`excluded.amount`,
+            ref: sql`excluded.ref`,
+            payerName: sql`excluded.payer_name`,
+            source: sql`excluded.source`,
+            matchedSaleId: sql`excluded.matched_sale_id`,
+            note: sql`excluded.note`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeUpiReceipts.storeId} = ${storeId} AND ${storeUpiReceipts.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
   // ---- pull: everything newer than the client cursor ----
   const sinceDate = new Date(since);
   const [
@@ -359,6 +421,7 @@ export async function POST(request: Request) {
     pulledSuppliers,
     pulledPayments,
     pulledSales,
+    pulledUpi,
     storeRow,
   ] = await Promise.all([
       db
@@ -406,6 +469,16 @@ export async function POST(request: Request) {
         .from(storeSales)
         .where(
           and(eq(storeSales.storeId, storeId), gt(storeSales.syncedAt, sinceDate)),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeUpiReceipts)
+        .where(
+          and(
+            eq(storeUpiReceipts.storeId, storeId),
+            gt(storeUpiReceipts.syncedAt, sinceDate),
+          ),
         )
         .limit(MAX_ROWS),
       db
@@ -498,6 +571,18 @@ export async function POST(request: Request) {
         createdAt: num(s.createdAt),
         updatedAt: num(s.updatedAt),
         deletedAt: s.deletedAt == null ? null : num(s.deletedAt),
+      })),
+      upiReceipts: pulledUpi.map((r) => ({
+        id: r.id,
+        amount: num(r.amount),
+        receivedAt: num(r.receivedAt),
+        ref: r.ref,
+        payerName: r.payerName,
+        source: r.source,
+        matchedSaleId: r.matchedSaleId ?? null,
+        note: r.note,
+        updatedAt: num(r.updatedAt),
+        deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
       })),
     },
     200,

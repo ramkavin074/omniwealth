@@ -12,6 +12,7 @@ import type {
   Sale,
   Supplier,
   SupplierPayment,
+  UpiReceipt,
 } from './types';
 
 export interface SyncOutcome {
@@ -88,6 +89,10 @@ async function runSync(): Promise<SyncOutcome> {
     .sales.where('updatedAt')
     .above(cursor)
     .toArray();
+  const dirtyUpiReceipts = await db()
+    .upiReceipts.where('updatedAt')
+    .above(cursor)
+    .toArray();
 
   let res: Response;
   try {
@@ -107,6 +112,7 @@ async function runSync(): Promise<SyncOutcome> {
         suppliers: dirtySuppliers,
         payments: dirtyPayments,
         sales: dirtySales,
+        upiReceipts: dirtyUpiReceipts,
       }),
     });
   } catch {
@@ -128,6 +134,7 @@ async function runSync(): Promise<SyncOutcome> {
     suppliers?: Supplier[];
     payments?: SupplierPayment[];
     sales?: Sale[];
+    upiReceipts?: UpiReceipt[];
     store?: {
       gstin: string | null;
       gstEnabled: boolean;
@@ -157,6 +164,7 @@ async function runSync(): Promise<SyncOutcome> {
   const pulledSuppliers = data.suppliers ?? [];
   const pulledPayments = data.payments ?? [];
   const pulledSales = data.sales ?? [];
+  const pulledUpi = data.upiReceipts ?? [];
 
   // Keep the offline GST + tax caches in step with the store's server setup.
   if (data.store) {
@@ -173,11 +181,14 @@ async function runSync(): Promise<SyncOutcome> {
 
   await db().transaction(
     'rw',
-    db().products,
-    db().movements,
-    db().suppliers,
-    db().supplierPayments,
-    db().sales,
+    [
+      db().products,
+      db().movements,
+      db().suppliers,
+      db().supplierPayments,
+      db().sales,
+      db().upiReceipts,
+    ],
     async () => {
       for (const p of data.products) {
         const local = await db().products.get(p.id);
@@ -229,6 +240,19 @@ async function runSync(): Promise<SyncOutcome> {
           });
         }
       }
+      for (const r of pulledUpi) {
+        const local = await db().upiReceipts.get(r.id);
+        if (!local || local.updatedAt < r.updatedAt) {
+          await db().upiReceipts.put({
+            ...r,
+            ref: r.ref ?? null,
+            payerName: r.payerName ?? null,
+            matchedSaleId: r.matchedSaleId ?? null,
+            note: r.note ?? null,
+            deletedAt: r.deletedAt ?? null,
+          });
+        }
+      }
     },
   );
 
@@ -245,13 +269,15 @@ async function runSync(): Promise<SyncOutcome> {
       dirtyMovements.length +
       dirtySuppliers.length +
       dirtyPayments.length +
-      dirtySales.length,
+      dirtySales.length +
+      dirtyUpiReceipts.length,
     pulled:
       data.products.length +
       data.movements.length +
       pulledSuppliers.length +
       pulledPayments.length +
-      pulledSales.length,
+      pulledSales.length +
+      pulledUpi.length,
   };
 }
 

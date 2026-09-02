@@ -120,6 +120,24 @@ const en: Dict = {
   'tax.disclaimer':
     'Estimates from your sales only — not tax advice. Use for planning; file through your accountant or the GST/IT portal.',
 
+  'upi.title': 'UPI check',
+  'upi.appSays': 'Bills say',
+  'upi.received': 'Received',
+  'upi.difference': 'Difference',
+  'upi.scan': 'Scan UPI history',
+  'upi.rematch': 'Re-match',
+  'upi.addManual': 'Add amount ₹',
+  'upi.scanNothing': 'No transactions found — try a clearer photo',
+  'upi.scanAdded': 'Added {n} receipts',
+  'upi.scanFailed': "Couldn't read the photo",
+  'upi.matched': 'Matched {n}',
+  'upi.matched2': 'Matched',
+  'upi.unmatchedBills': 'Bills with no matching payment',
+  'upi.unmatchedReceipts': 'Payments with no bill',
+  'upi.addBtn': 'Add',
+  'upi.link': 'Link',
+  'upi.linkTo': 'Link',
+
   'numpad.ok': 'OK',
 
   'bulk.enter': 'Rapid / stock-take',
@@ -438,6 +456,24 @@ const ta: Dict = {
   'tax.share': 'கணக்காளருக்கு சுருக்கம் அனுப்பு',
   'tax.disclaimer':
     'உங்கள் விற்பனையிலிருந்து மட்டும் மதிப்பீடு — வரி ஆலோசனை அல்ல. திட்டமிடலுக்கு பயன்படுத்தவும்; கணக்காளர் / GST-IT போர்ட்டல் மூலம் தாக்கல் செய்யவும்.',
+
+  'upi.title': 'UPI சரிபார்ப்பு',
+  'upi.appSays': 'பில் கூறுவது',
+  'upi.received': 'பெறப்பட்டது',
+  'upi.difference': 'வித்தியாசம்',
+  'upi.scan': 'UPI வரலாற்றை ஸ்கேன்',
+  'upi.rematch': 'மீண்டும் பொருத்து',
+  'upi.addManual': 'தொகை சேர் ₹',
+  'upi.scanNothing': 'பரிவர்த்தனைகள் இல்லை — தெளிவான படம் முயற்சிக்கவும்',
+  'upi.scanAdded': '{n} ரசீதுகள் சேர்க்கப்பட்டன',
+  'upi.scanFailed': 'படத்தைப் படிக்க முடியவில்லை',
+  'upi.matched': '{n} பொருத்தப்பட்டது',
+  'upi.matched2': 'பொருத்தப்பட்டது',
+  'upi.unmatchedBills': 'பணம் பொருந்தாத பில்கள்',
+  'upi.unmatchedReceipts': 'பில் இல்லாத பணம்',
+  'upi.addBtn': 'சேர்',
+  'upi.link': 'இணை',
+  'upi.linkTo': 'இணை',
 
   'numpad.ok': 'சரி',
 

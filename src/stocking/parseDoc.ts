@@ -18,6 +18,13 @@ export interface PaymentDoc {
   reference?: string;
 }
 
+export interface UpiRow {
+  amount: number;
+  receivedAt: number | null; // epoch ms, or null if the AI couldn't read a time
+  payer?: string;
+  ref?: string;
+}
+
 function auth(): { token?: string; storeId?: string } {
   try {
     const raw = localStorage.getItem('stocking.auth');
@@ -27,7 +34,7 @@ function auth(): { token?: string; storeId?: string } {
   }
 }
 
-async function post(file: File, kind: 'invoice' | 'payment') {
+async function post(file: File, kind: 'invoice' | 'payment' | 'upi') {
   const { token, storeId } = auth();
   const fd = new FormData();
   fd.append('image', file);
@@ -65,4 +72,21 @@ export async function parsePayment(file: File): Promise<PaymentDoc> {
     date: data?.date ? String(data.date) : undefined,
     reference: data?.reference ? String(data.reference) : undefined,
   };
+}
+
+export async function parseUpiHistory(file: File): Promise<UpiRow[]> {
+  const { data } = await post(file, 'upi');
+  return (Array.isArray(data) ? data : [])
+    .map((r: Record<string, unknown>) => {
+      const amount = Number(r.amount) || 0;
+      const raw = r.datetime ? String(r.datetime) : '';
+      const t = raw ? Date.parse(raw) : NaN;
+      return {
+        amount,
+        receivedAt: Number.isFinite(t) ? t : null,
+        payer: r.payer ? String(r.payer).trim() : undefined,
+        ref: r.ref ? String(r.ref).trim() : undefined,
+      };
+    })
+    .filter((r) => r.amount > 0);
 }

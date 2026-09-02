@@ -5,6 +5,7 @@ import {
   storeProducts,
   storeSales,
   storeStockMovements,
+  storeUpiReceipts,
   stores,
   suppliers,
   supplierPayments,
@@ -80,7 +81,8 @@ export async function POST(request: Request) {
   const fyFrom = String(new Date(fyStart, 3, 1).getTime());
   const fyTo = String(new Date(fyStart + 1, 3, 1).getTime());
 
-  const [products, movements, sups, pays, fySales, storeRow] = await Promise.all([
+  const [products, movements, sups, pays, fySales, storeRow, upiReceipts] =
+    await Promise.all([
     db
       .select()
       .from(storeProducts)
@@ -125,6 +127,17 @@ export async function POST(request: Request) {
           .where(eq(stores.id, auth.storeId))
           .then((r) => r[0])
       : Promise.resolve(undefined),
+    manage
+      ? db
+          .select()
+          .from(storeUpiReceipts)
+          .where(
+            and(
+              eq(storeUpiReceipts.storeId, auth.storeId),
+              isNull(storeUpiReceipts.deletedAt),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
 
   const catalogue = products.map((p) => {
@@ -215,6 +228,54 @@ export async function POST(request: Request) {
     };
   }
 
+  // Today's UPI reconciliation (owner/manager only).
+  let upiReconcile: Record<string, unknown> | undefined;
+  if (manage) {
+    const ds = new Date();
+    ds.setHours(0, 0, 0, 0);
+    const dStart = ds.getTime();
+    const dEnd = dStart + 86_400_000;
+    let appUpi = 0;
+    for (const s of fySales) {
+      const c = Number(s.createdAt);
+      if (c < dStart || c >= dEnd || s.refundOf) continue;
+      if (s.tenderType === 'upi' || s.tenderType === 'split') appUpi += n(s.upiAmount);
+    }
+    let received = 0;
+    let unmatchedBills = 0;
+    const matched = new Set(
+      upiReceipts
+        .filter((r) => Number(r.receivedAt) >= dStart && Number(r.receivedAt) < dEnd)
+        .map((r) => r.matchedSaleId)
+        .filter(Boolean),
+    );
+    for (const r of upiReceipts) {
+      const rt = Number(r.receivedAt);
+      if (rt >= dStart && rt < dEnd) received += n(r.amount);
+    }
+    for (const s of fySales) {
+      const c = Number(s.createdAt);
+      if (c < dStart || c >= dEnd || s.refundOf) continue;
+      if (
+        (s.tenderType === 'upi' || s.tenderType === 'split') &&
+        n(s.upiAmount) > 0 &&
+        !matched.has(s.id)
+      ) {
+        unmatchedBills++;
+      }
+    }
+    upiReconcile = {
+      appUpiToday: Math.round(appUpi),
+      receivedToday: Math.round(received),
+      difference: Math.round(received - appUpi),
+      billsWithoutConfirmedPayment: unmatchedBills,
+      note:
+        upiReceipts.length === 0
+          ? 'No UPI receipts logged yet — reconciliation not set up.'
+          : 'difference 0 means every UPI bill is accounted for.',
+    };
+  }
+
   const context = {
     products: catalogue.length,
     lowCount: catalogue.filter((c) => c.low).length,
@@ -222,7 +283,7 @@ export async function POST(request: Request) {
     salesLast30Days: Math.round(salesValue),
     topSellers,
     expiringSoon,
-    ...(manage ? { supplierBalances, taxSummary } : {}),
+    ...(manage ? { supplierBalances, taxSummary, upiReconcile } : {}),
     catalogue,
   };
 

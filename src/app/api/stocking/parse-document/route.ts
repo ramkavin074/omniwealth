@@ -26,6 +26,13 @@ const PAYMENT_PROMPT =
   'to a supplier. Extract: supplier or payee name, amount paid (number), date ' +
   '(yyyy-mm-dd if visible else empty), and a reference/UTR if present.';
 
+const UPI_PROMPT =
+  "This is a UPI app transaction history (Google Pay / PhonePe / Paytm / bank). " +
+  'Extract every CREDIT — money RECEIVED by this shop, not sent. For each: amount ' +
+  'in rupees (number), datetime (ISO 8601 if the date+time are shown, else empty), ' +
+  'the payer / sender name if shown, and the UPI reference / UTR / transaction id ' +
+  'if shown. Skip debits, refunds sent, and pending/failed rows.';
+
 const invoiceSchema = {
   type: Type.ARRAY,
   items: {
@@ -50,6 +57,20 @@ const paymentSchema = {
     reference: { type: Type.STRING },
   },
   required: ['supplierName', 'amount'],
+};
+
+const upiSchema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      amount: { type: Type.NUMBER },
+      datetime: { type: Type.STRING },
+      payer: { type: Type.STRING },
+      ref: { type: Type.STRING },
+    },
+    required: ['amount'],
+  },
 };
 
 export async function POST(request: Request) {
@@ -85,13 +106,25 @@ export async function POST(request: Request) {
   }
   if (!file || file.size === 0) return json({ error: 'No image' }, 400);
   if (file.size > 8 * 1024 * 1024) return json({ error: 'Image too large' }, 413);
-  if (kind !== 'invoice' && kind !== 'payment') {
+  if (kind !== 'invoice' && kind !== 'payment' && kind !== 'upi') {
     return json({ error: 'Unknown kind' }, 400);
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const mimeType = file.type || 'image/jpeg';
-  const isPayment = kind === 'payment';
+  const prompt =
+    kind === 'payment'
+      ? PAYMENT_PROMPT
+      : kind === 'upi'
+        ? UPI_PROMPT
+        : INVOICE_PROMPT;
+  const schema =
+    kind === 'payment'
+      ? paymentSchema
+      : kind === 'upi'
+        ? upiSchema
+        : invoiceSchema;
+  const emptyText = kind === 'payment' ? '{}' : '[]';
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -99,14 +132,14 @@ export async function POST(request: Request) {
       model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
       contents: [
         { inlineData: { mimeType, data: buffer.toString('base64') } },
-        { text: isPayment ? PAYMENT_PROMPT : INVOICE_PROMPT },
+        { text: prompt },
       ],
       config: {
         responseMimeType: 'application/json',
-        responseSchema: isPayment ? paymentSchema : invoiceSchema,
+        responseSchema: schema,
       },
     });
-    const parsed = JSON.parse(res.text || (isPayment ? '{}' : '[]'));
+    const parsed = JSON.parse(res.text || emptyText);
     return json({ kind, data: parsed }, 200);
   } catch (err) {
     console.error('[stocking] parse-document failed', err);

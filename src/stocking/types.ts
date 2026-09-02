@@ -264,6 +264,26 @@ export interface HeldSale {
   discount: number;
 }
 
+// ---- UPI reconciliation (R23) ----
+
+export type UpiSource = 'manual' | 'photo' | 'notification' | 'sms' | 'api';
+
+/** Money the shop actually received over UPI — from a scanned/typed history
+ *  now, from a notification listener later. Matched against `upi`/`split`
+ *  sales by amount + time. */
+export interface UpiReceipt {
+  id: string;
+  amount: number;
+  receivedAt: number; // epoch ms
+  ref: string | null; // UPI txn ref / UTR
+  payerName: string | null;
+  source: UpiSource;
+  matchedSaleId: string | null; // the bill this receipt was reconciled to
+  note: string | null;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 export interface BarcodeCacheEntry {
   barcode: string;
   name: string | null;

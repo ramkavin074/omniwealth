@@ -774,6 +774,34 @@ export const storeSales = store.table(
   }),
 );
 
+// UPI money actually received, for reconciliation against upi/split sales.
+export const storeUpiReceipts = store.table(
+  'upi_receipts',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id), // server-stamped
+    amount: numeric('amount').notNull(),
+    receivedAt: numeric('received_at').notNull(), // epoch ms
+    ref: text('ref'),
+    payerName: text('payer_name'),
+    source: text('source').notNull().default('manual'),
+    matchedSaleId: uuid('matched_sale_id'),
+    note: text('note'),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_upi_receipts_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+  }),
+);
+
 export const storeProducts = store.table(
   'products',
   {

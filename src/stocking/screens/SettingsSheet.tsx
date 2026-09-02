@@ -29,6 +29,7 @@ interface Props {
   onOpenAudit: () => void;
   onOpenSales: () => void;
   onOpenTax: () => void;
+  onOpenUpi: () => void;
 }
 
 const field =
@@ -44,6 +45,7 @@ export default function SettingsSheet({
   onOpenAudit,
   onOpenSales,
   onOpenTax,
+  onOpenUpi,
 }: Props) {
   const initial = getDefaults();
   const [manage] = useState(canManage);
@@ -211,6 +213,15 @@ export default function SettingsSheet({
               className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
             >
               {t(lang, 'tax.title')}
+            </button>
+          )}
+          {manage && (
+            <button
+              type="button"
+              onClick={onOpenUpi}
+              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'upi.title')}
             </button>
           )}
           {manage && (

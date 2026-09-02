@@ -11,6 +11,7 @@ import type {
   Sale,
   Supplier,
   SupplierPayment,
+  UpiReceipt,
 } from '../types';
 
 export interface SyncStateRow {
@@ -31,6 +32,7 @@ export class StockingDB extends Dexie {
   sales!: Table<Sale, string>;
   heldSales!: Table<HeldSale, string>;
   taxNotes!: Table<{ key: string; done: boolean; note: string; updatedAt: number }, string>;
+  upiReceipts!: Table<UpiReceipt, string>;
 
   constructor() {
     super('stocking');
@@ -216,6 +218,19 @@ export class StockingDB extends Dexie {
       sales: 'id, billNo, createdAt, updatedAt, refundOf',
       heldSales: 'id, createdAt',
       taxNotes: 'key, updatedAt',
+    });
+    // v12: UPI receipts (reconciliation against upi/split sales).
+    this.version(12).stores({
+      products: 'id, barcode, name, updatedAt, deletedAt',
+      movements: 'id, productId, createdAt',
+      barcodeCache: 'barcode, fetchedAt',
+      syncState: 'id',
+      suppliers: 'id, name, updatedAt, deletedAt',
+      supplierPayments: 'id, supplierId, updatedAt',
+      sales: 'id, billNo, createdAt, updatedAt, refundOf',
+      heldSales: 'id, createdAt',
+      taxNotes: 'key, updatedAt',
+      upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
     });
   }
 }

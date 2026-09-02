@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { storeProducts, stores } from '@/db/schema';
+import {
+  storeProducts,
+  storeSales,
+  storeUpiReceipts,
+  stores,
+} from '@/db/schema';
 import { logError } from '@/lib/log';
 import { sendWhatsAppText } from '@/lib/whatsapp';
 
@@ -96,7 +101,56 @@ async function run() {
 
     const taxLines = taxDueLines(s.gstEnabled, s.gstScheme, s.presumptive);
 
-    if (low.length === 0 && expiring.length === 0 && taxLines.length === 0) {
+    // Yesterday's UPI reconciliation — only signal if the shop logged receipts.
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+    const yStart = String(dayStart.getTime() - 86_400_000);
+    const yEnd = String(dayStart.getTime());
+    const [rcpt] = await db
+      .select({
+        total: sql<string>`coalesce(sum(${storeUpiReceipts.amount}::numeric), 0)`,
+        cnt: sql<string>`count(*)`,
+      })
+      .from(storeUpiReceipts)
+      .where(
+        and(
+          eq(storeUpiReceipts.storeId, s.id),
+          isNull(storeUpiReceipts.deletedAt),
+          gte(storeUpiReceipts.receivedAt, yStart),
+          lt(storeUpiReceipts.receivedAt, yEnd),
+        ),
+      );
+    let upiLine: string | null = null;
+    if (Number(rcpt?.cnt ?? 0) > 0) {
+      const [sold] = await db
+        .select({
+          total: sql<string>`coalesce(sum(${storeSales.upiAmount}::numeric), 0)`,
+        })
+        .from(storeSales)
+        .where(
+          and(
+            eq(storeSales.storeId, s.id),
+            isNull(storeSales.deletedAt),
+            isNull(storeSales.refundOf),
+            gte(storeSales.createdAt, yStart),
+            lt(storeSales.createdAt, yEnd),
+          ),
+        );
+      const diff =
+        Math.round((Number(rcpt.total) - Number(sold?.total ?? 0)) * 100) / 100;
+      if (Math.abs(diff) >= 1) {
+        upiLine =
+          `UPI yesterday: bills ₹${Number(sold?.total ?? 0)} vs received ₹${Number(rcpt.total)} ` +
+          `(off by ₹${diff})`;
+      }
+    }
+
+    if (
+      low.length === 0 &&
+      expiring.length === 0 &&
+      taxLines.length === 0 &&
+      !upiLine
+    ) {
       continue;
     }
 
@@ -122,6 +176,7 @@ async function run() {
     if (taxLines.length) {
       parts.push(taxLines.map((l) => `• ${l}`).join('\n'));
     }
+    if (upiLine) parts.push(`• ${upiLine}`);
     const body = `${s.name}\n\n${parts.join('\n\n')}`;
 
     const r = await sendWhatsAppText(s.alertPhone, body);

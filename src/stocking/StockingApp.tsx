@@ -17,6 +17,7 @@ import ScanDocScreen from './screens/ScanDocScreen';
 import SellScreen from './screens/SellScreen';
 import SalesScreen from './screens/SalesScreen';
 import TaxScreen from './screens/TaxScreen';
+import UpiScreen from './screens/UpiScreen';
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
@@ -36,6 +37,7 @@ export default function StockingApp() {
   const [sellOpen, setSellOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
+  const [upiOpen, setUpiOpen] = useState(false);
 
   // Opportunistic sync on open; also whenever the device comes back online.
   useEffect(() => {
@@ -110,6 +112,8 @@ export default function StockingApp() {
           <SalesScreen lang={lang} onClose={() => setSalesOpen(false)} />
         ) : taxOpen ? (
           <TaxScreen lang={lang} onClose={() => setTaxOpen(false)} />
+        ) : upiOpen ? (
+          <UpiScreen lang={lang} onClose={() => setUpiOpen(false)} />
         ) : scanDoc ? (
           <ScanDocScreen
             lang={lang}
@@ -168,6 +172,7 @@ export default function StockingApp() {
       {!sellOpen &&
         !salesOpen &&
         !taxOpen &&
+        !upiOpen &&
         !scanDoc &&
         !suppliersOpen &&
         !reportsOpen &&
@@ -205,6 +210,10 @@ export default function StockingApp() {
           onOpenTax={() => {
             setSettingsOpen(false);
             setTaxOpen(true);
+          }}
+          onOpenUpi={() => {
+            setSettingsOpen(false);
+            setUpiOpen(true);
           }}
         />
       )}
