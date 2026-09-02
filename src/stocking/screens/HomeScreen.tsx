@@ -199,9 +199,9 @@ function Tile({
 }) {
   const toneCls =
     tone === 'warn'
-      ? 'border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40'
+      ? 'border-amber-300 bg-amber-50 dark:border-amber-900/70 dark:bg-amber-950/40'
       : tone === 'accent'
-        ? 'border-teal-600 bg-teal-50'
+        ? 'border-teal-300 bg-teal-50 dark:border-teal-900/70 dark:bg-teal-950/40'
         : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900';
   const valueCls =
     tone === 'warn'

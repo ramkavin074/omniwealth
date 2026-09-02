@@ -96,11 +96,14 @@ export default function LoginGate({ children }: { children: ReactNode }) {
   if (auth) return <>{children}</>;
 
   const field =
-    'w-full h-12 rounded-xl border border-slate-300 bg-white px-3 text-lg text-slate-900';
+    'w-full h-12 rounded-xl border border-slate-300 bg-white px-3 text-lg text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
 
   return (
-    <div className="mx-auto flex min-h-full max-w-sm flex-col justify-center gap-4 p-6">
-      <h1 className="text-2xl font-bold text-slate-900">Stock / சரக்கு</h1>
+    <div className="kadai mx-auto flex min-h-full max-w-sm flex-col justify-center gap-4 p-6 text-slate-900 dark:text-slate-100">
+      <h1 className="flex items-center gap-2 text-2xl">
+        <span className="k-mark" aria-hidden="true" />
+        <span className="k-wordmark">OmniWealth Kadai</span>
+      </h1>
       <form onSubmit={signIn} className="space-y-3">
         <input
           type="email"
@@ -120,7 +123,9 @@ export default function LoginGate({ children }: { children: ReactNode }) {
           className={field}
           required
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        )}
         <button
           type="submit"
           disabled={busy}
@@ -129,7 +134,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
           {busy ? '…' : 'Sign in'}
         </button>
       </form>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Sign in once with an internet connection. After that the app works
         fully offline.
       </p>

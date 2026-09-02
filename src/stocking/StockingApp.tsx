@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { t } from './i18n';
-import { useLang } from './hooks';
+import { useLang, useTheme } from './hooks';
 import { maybeAutoSync } from './sync';
 import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
@@ -25,6 +25,7 @@ const TABS: Tab[] = ['home', 'scan', 'adjust', 'products'];
 
 export default function StockingApp() {
   const { lang, toggle } = useLang();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [tab, setTab] = useState<Tab>('home');
   const [lowOnly, setLowOnly] = useState(false);
   const [expOnly, setExpOnly] = useState(false);
@@ -48,7 +49,7 @@ export default function StockingApp() {
   }, []);
 
   return (
-    <div className="kadai mx-auto flex h-dvh max-w-md flex-col overflow-hidden md:max-w-4xl md:border-x md:border-slate-200">
+    <div className="kadai mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:max-w-4xl md:border-x md:border-slate-200 md:dark:border-slate-800">
       <header
         className="k-headrule flex items-center justify-between px-4 py-3"
         style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
@@ -84,6 +85,14 @@ export default function StockingApp() {
           </button>
           <button
             type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+          >
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
+          <button
+            type="button"
             onClick={() => setSettingsOpen(true)}
             aria-label={t(lang, 'settings.title')}
             className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
@@ -96,7 +105,7 @@ export default function StockingApp() {
       {/* Bottom tab bar on phones (fixed, out of flow); a top tab strip on
           desktop (static, sits here between header and content). */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white md:static md:max-w-none md:border-t-0 md:border-b"
+        className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:static md:max-w-none md:border-t-0 md:border-b"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {TABS.map((name) => (
@@ -106,8 +115,8 @@ export default function StockingApp() {
             onClick={() => setTab(name)}
             className={`flex-1 border-t-2 py-3 text-sm font-semibold transition md:flex-none md:border-t-0 md:border-b-2 md:px-5 ${
               tab === name
-                ? 'border-teal-700 bg-teal-50 text-teal-700 md:bg-transparent'
-                : 'border-transparent text-slate-500'
+                ? 'border-teal-700 bg-teal-50 text-teal-700 dark:border-teal-400 dark:bg-teal-500/10 dark:text-teal-300 md:bg-transparent md:dark:bg-transparent'
+                : 'border-transparent text-slate-500 dark:text-slate-400'
             }`}
           >
             {t(lang, `tab.${name}`)}

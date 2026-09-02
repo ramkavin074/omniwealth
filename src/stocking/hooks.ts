@@ -3,8 +3,30 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getLang, setLang, type Lang } from './i18n';
+import { applyTheme, getTheme, setTheme, type Theme } from './theme';
 
 export { useLiveQuery };
+
+/** Current light/dark theme + a toggle, persisted to localStorage. */
+export function useTheme(): { theme: Theme; toggle: () => void } {
+  const [theme, setThemeState] = useState<Theme>('light');
+
+  useEffect(() => {
+    const t = getTheme();
+    setThemeState(t);
+    applyTheme(t);
+  }, []);
+
+  const toggle = useCallback(() => {
+    setThemeState((prev) => {
+      const next: Theme = prev === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+      return next;
+    });
+  }, []);
+
+  return { theme, toggle };
+}
 
 /** Current UI language + a toggle, persisted to localStorage. */
 export function useLang(): { lang: Lang; toggle: () => void } {
