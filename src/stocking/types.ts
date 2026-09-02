@@ -26,7 +26,12 @@ export type MovementReason =
   | 'scan-out' // sold / removed via a barcode scan
   | 'manual' // hand-entered adjustment (loose goods, corrections)
   | 'correction' // recount / fixing a data-entry mistake
-  | 'count'; // physical stock-take — sets counted quantity
+  | 'count' // physical stock-take — sets counted quantity
+  | 'return' // goods sent back to the supplier (credits the payables ledger)
+  | 'damage' // written off — breakage / spoilage
+  | 'expiry'; // written off — past its date
+
+export const WRITE_OFF_REASONS: MovementReason[] = ['damage', 'expiry'];
 
 export interface Product {
   id: string;

@@ -15,11 +15,14 @@ import {
   signOut,
 } from '../settings';
 import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
+import { getStoreSettings, saveAlertPhone } from '../storeSettings';
 
 interface Props {
   lang: Lang;
   onClose: () => void;
   onOpenSuppliers: () => void;
+  onOpenReports: () => void;
+  onOpenAudit: () => void;
 }
 
 const field =
@@ -31,6 +34,8 @@ export default function SettingsSheet({
   lang,
   onClose,
   onOpenSuppliers,
+  onOpenReports,
+  onOpenAudit,
 }: Props) {
   const initial = getDefaults();
   const [manage] = useState(canManage);
@@ -43,9 +48,32 @@ export default function SettingsSheet({
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
+  const [alertPhone, setAlertPhone] = useState('');
+  const [alertState, setAlertState] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
+
   useEffect(() => {
     lastSyncAt().then(setSyncedAt);
   }, []);
+
+  useEffect(() => {
+    if (!manage) return;
+    getStoreSettings()
+      .then((s) => setAlertPhone(s.alertPhone ?? ''))
+      .catch(() => {});
+  }, [manage]);
+
+  const saveAlert = async () => {
+    setAlertState('saving');
+    try {
+      const saved = await saveAlertPhone(alertPhone.trim());
+      setAlertPhone(saved ?? '');
+      setAlertState('saved');
+    } catch {
+      setAlertState('error');
+    }
+  };
 
   const runSync = async () => {
     setSyncing(true);
@@ -120,9 +148,9 @@ export default function SettingsSheet({
           </p>
         </section>
 
-        {manage && (
-          <section className="space-y-2">
-            <p className={heading}>{t(lang, 'sup.title')}</p>
+        <section className="space-y-2">
+          <p className={heading}>{t(lang, 'settings.tools')}</p>
+          {manage && (
             <button
               type="button"
               onClick={onOpenSuppliers}
@@ -130,6 +158,55 @@ export default function SettingsSheet({
             >
               {t(lang, 'sup.manage')}
             </button>
+          )}
+          {manage && (
+            <button
+              type="button"
+              onClick={onOpenReports}
+              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'rep.title')}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onOpenAudit}
+            className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+          >
+            {t(lang, 'audit.title')}
+          </button>
+        </section>
+
+        {manage && (
+          <section className="space-y-2">
+            <p className={heading}>{t(lang, 'settings.alerts')}</p>
+            <div className="flex gap-2">
+              <input
+                inputMode="tel"
+                value={alertPhone}
+                onChange={(e) => {
+                  setAlertPhone(e.target.value);
+                  setAlertState('idle');
+                }}
+                placeholder={t(lang, 'settings.alertPhone')}
+                className={`${field} flex-1`}
+              />
+              <button
+                type="button"
+                onClick={saveAlert}
+                disabled={alertState === 'saving'}
+                className="h-11 rounded-lg bg-teal-700 px-4 font-semibold text-white disabled:opacity-50"
+              >
+                {t(lang, 'settings.alertSave')}
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {alertState === 'saved'
+                ? t(lang, 'settings.alertSaved')
+                : alertState === 'error'
+                  ? t(lang, 'settings.alertErr')
+                  : t(lang, 'settings.alertHint')}
+            </p>
           </section>
         )}
 

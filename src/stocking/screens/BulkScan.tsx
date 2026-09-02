@@ -59,6 +59,9 @@ export default function BulkScan({ lang, onExit }: Props) {
           reason: m === 'in' ? 'scan-in' : 'scan-out',
           delta: m === 'in' ? 1 : -1,
           note: 'bulk',
+          // Rapid reconciliation loop — a per-scan confirm would break the
+          // flow; the running tally is visible to the user.
+          allowNegative: true,
         });
       }
       setFlash(

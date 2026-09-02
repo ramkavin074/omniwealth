@@ -196,13 +196,24 @@ interface MovementInput {
   /** Purchase cost/unit on a stock-in — also updates the product's costPrice
    *  (latest-cost model). */
   unitCost?: number | null;
-  /** Supplier this stock-in came from. */
+  /** Supplier this stock-in came from (or the one goods are returned to). */
   supplierId?: string | null;
+  /** Skip the below-zero guard (the caller has confirmed with the user). */
+  allowNegative?: boolean;
 }
 
 export interface MovementResult {
   qtyAfter: number;
   movementId: string;
+}
+
+/** Thrown by `applyMovement` when a change would take stock below zero and the
+ *  caller hasn't set `allowNegative`. Carries the quantity actually on hand. */
+export class NegativeStockError extends Error {
+  constructor(public readonly available: number) {
+    super('negative-stock');
+    this.name = 'NegativeStockError';
+  }
 }
 
 /** Apply a stock movement atomically: writes the movement row and updates
@@ -226,6 +237,9 @@ export async function applyMovement(
         : q(input.delta ?? 0);
 
     qtyAfter = q(product.stockQty + delta);
+    if (qtyAfter < 0 && delta < 0 && !input.allowNegative) {
+      throw new NegativeStockError(product.stockQty);
+    }
     const unitCost =
       typeof input.unitCost === 'number' && input.unitCost > 0
         ? q(input.unitCost)
@@ -271,8 +285,10 @@ export async function undoMovement(movementId: string): Promise<void> {
       delta: q(-orig.delta),
       reason: 'correction',
       qtyAfter,
-      unitCost: null,
-      supplierId: null,
+      // Carry cost + supplier through so reversing a supplier receive also
+      // nets it out of the payables ledger.
+      unitCost: orig.unitCost,
+      supplierId: orig.supplierId,
       userId: getUserId(),
       note: `undo ${orig.reason}`,
       createdAt: now,
@@ -456,4 +472,59 @@ export async function importProducts(
   });
 
   return res;
+}
+
+export interface ReceiveLine {
+  name: string;
+  barcode?: string | null;
+  qty: number;
+  unit: string;
+  rate: number; // purchase cost per unit
+}
+
+/** Receive a batch of stock (from a scanned invoice). Each line finds or
+ *  creates its product, then adds the quantity as a `scan-in` movement with
+ *  the purchase cost + supplier — so the supplier ledger and costs update. */
+export async function receiveStock(
+  lines: ReceiveLine[],
+  supplierId?: string | null,
+): Promise<{ received: number; created: number }> {
+  let received = 0;
+  let created = 0;
+  for (const line of lines) {
+    const name = line.name.trim();
+    const qty = q(line.qty);
+    if (!name || qty <= 0) continue;
+
+    let product =
+      (line.barcode ? await findByBarcode(line.barcode) : undefined) ??
+      (await listProducts()).find(
+        (p) => p.name.toLowerCase() === name.toLowerCase(),
+      );
+
+    if (!product) {
+      product = await createProduct({
+        barcode: line.barcode ?? null,
+        name,
+        mrp: 0,
+        price: 0,
+        costPrice: q(line.rate),
+        openingStock: 0,
+        unit: (line.unit || 'piece') as Product['unit'],
+        lowStockThreshold: 0,
+      });
+      created++;
+    }
+
+    await applyMovement({
+      productId: product.id,
+      reason: 'scan-in',
+      delta: qty,
+      note: 'invoice',
+      ...(line.rate > 0 ? { unitCost: q(line.rate) } : {}),
+      ...(supplierId ? { supplierId } : {}),
+    });
+    received++;
+  }
+  return { received, created };
 }

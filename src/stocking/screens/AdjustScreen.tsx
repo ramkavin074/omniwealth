@@ -4,8 +4,13 @@ import { SCREEN_PAD } from '../ui';
 
 import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
-import type { MovementReason, Product } from '../types';
-import { applyMovement, getProduct, searchProducts } from '../db/products';
+import { WRITE_OFF_REASONS, type MovementReason, type Product } from '../types';
+import {
+  applyMovement,
+  getProduct,
+  NegativeStockError,
+  searchProducts,
+} from '../db/products';
 import { createSupplier, listSuppliers } from '../db/suppliers';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { canSeeCost } from '../settings';
@@ -15,7 +20,11 @@ interface Props {
   lang: Lang;
 }
 
-const MANUAL_REASONS: MovementReason[] = ['manual', 'correction'];
+const MANUAL_REASONS: MovementReason[] = [
+  'manual',
+  'correction',
+  ...WRITE_OFF_REASONS,
+];
 
 export default function AdjustScreen({ lang }: Props) {
   const [term, setTerm] = useState('');
@@ -48,7 +57,9 @@ export default function AdjustScreen({ lang }: Props) {
   );
   const current = useMemo(() => live ?? selected, [live, selected]);
 
-  const apply = async () => {
+  const isWriteOff = WRITE_OFF_REASONS.includes(reason);
+
+  const runApply = async (allowNegative: boolean) => {
     if (!current) return;
     let sup = supplierId;
     if (isStockIn && supplierId === '__new') {
@@ -56,23 +67,46 @@ export default function AdjustScreen({ lang }: Props) {
       if (!name) return;
       sup = (await createSupplier({ name })).id;
     }
-    const { qtyAfter } = await applyMovement({
-      productId: current.id,
-      reason,
-      note,
-      ...(isStockIn && Number(unitCost) > 0
-        ? { unitCost: Number(unitCost) }
-        : {}),
-      ...(isStockIn && sup && sup !== '__new' ? { supplierId: sup } : {}),
-      ...(mode === 'delta' ? { delta: amount } : { setTo: amount }),
-    });
-    setFlash(`${t(lang, 'adjust.applied')} · ${qtyAfter}`);
-    setSupplierId('');
-    setAmount(0);
-    setNote('');
-    setUnitCost('');
-    setTimeout(() => setFlash(null), 2000);
+    // A write-off is always a loss — the entered amount is the quantity lost.
+    const change = isWriteOff
+      ? { delta: -Math.abs(amount) }
+      : mode === 'delta'
+        ? { delta: amount }
+        : { setTo: amount };
+    try {
+      const { qtyAfter } = await applyMovement({
+        productId: current.id,
+        reason,
+        note,
+        allowNegative,
+        ...(isStockIn && Number(unitCost) > 0
+          ? { unitCost: Number(unitCost) }
+          : {}),
+        ...(isStockIn && sup && sup !== '__new' ? { supplierId: sup } : {}),
+        ...change,
+      });
+      setFlash(`${t(lang, 'adjust.applied')} · ${qtyAfter}`);
+      setSupplierId('');
+      setAmount(0);
+      setNote('');
+      setUnitCost('');
+      setTimeout(() => setFlash(null), 2000);
+    } catch (e) {
+      if (e instanceof NegativeStockError && !allowNegative) {
+        if (
+          window.confirm(
+            t(lang, 'scan.negConfirm').replace('{n}', String(e.available)),
+          )
+        ) {
+          await runApply(true);
+        }
+        return;
+      }
+      throw e;
+    }
   };
+
+  const apply = () => runApply(false);
 
   if (!selected) {
     return (
@@ -136,31 +170,39 @@ export default function AdjustScreen({ lang }: Props) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {(['delta', 'setTo'] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => {
-              setMode(m);
-              setAmount(m === 'setTo' ? (current?.stockQty ?? 0) : 0);
-            }}
-            className={`h-11 rounded-xl font-semibold text-sm transition ${
-              mode === m
-                ? 'bg-teal-700 text-white'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
-            }`}
-          >
-            {t(lang, m === 'delta' ? 'adjust.change' : 'adjust.setTo')}
-          </button>
-        ))}
-      </div>
+      {!isWriteOff && (
+        <div className="grid grid-cols-2 gap-2">
+          {(['delta', 'setTo'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMode(m);
+                setAmount(m === 'setTo' ? (current?.stockQty ?? 0) : 0);
+              }}
+              className={`h-11 rounded-xl font-semibold text-sm transition ${
+                mode === m
+                  ? 'bg-teal-700 text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              {t(lang, m === 'delta' ? 'adjust.change' : 'adjust.setTo')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isWriteOff && (
+        <p className="text-sm font-medium text-rose-600 dark:text-rose-400">
+          {t(lang, 'adjust.lossQty')}
+        </p>
+      )}
 
       <QtyStepper
         lang={lang}
         value={amount}
         onChange={setAmount}
-        min={mode === 'delta' ? -999999 : 0}
+        min={mode === 'delta' && !isWriteOff ? -999999 : 0}
         suffix={current ? unitLabel(lang, current.unit) : undefined}
       />
 
@@ -173,7 +215,13 @@ export default function AdjustScreen({ lang }: Props) {
             <button
               key={r}
               type="button"
-              onClick={() => setReason(r)}
+              onClick={() => {
+                setReason(r);
+                if (WRITE_OFF_REASONS.includes(r)) {
+                  setMode('delta');
+                  setAmount(0);
+                }
+              }}
               className={`h-10 rounded-lg text-sm font-medium transition ${
                 reason === r
                   ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900'

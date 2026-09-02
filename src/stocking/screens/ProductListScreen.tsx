@@ -33,6 +33,7 @@ interface Props {
   lang: Lang;
   lowOnly: boolean;
   onLowOnlyChange: (v: boolean) => void;
+  onScanInvoice: () => void;
 }
 
 const ROW_H = 76;
@@ -44,6 +45,7 @@ export default function ProductListScreen({
   lang,
   lowOnly,
   onLowOnlyChange,
+  onScanInvoice,
 }: Props) {
   const [term, setTerm] = useState('');
   const [sort, setSort] = useState<ProductSort>('recent');
@@ -86,13 +88,20 @@ export default function ProductListScreen({
           />
 
           {manage && (
-            <div className="grid grid-cols-3 gap-2 md:flex md:shrink-0">
+            <div className="grid grid-cols-2 gap-2 md:flex md:shrink-0">
               <button
                 type="button"
                 onClick={() => setAdding(true)}
                 className="h-10 rounded-lg bg-teal-700 px-3 text-sm font-semibold text-white"
               >
                 {t(lang, 'list.addProduct')}
+              </button>
+              <button
+                type="button"
+                onClick={onScanInvoice}
+                className="h-10 rounded-lg bg-teal-700 px-3 text-sm font-semibold text-white"
+              >
+                {t(lang, 'doc.scanInvoice')}
               </button>
               <button
                 type="button"

@@ -650,6 +650,8 @@ export const stores = store.table('stores', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   createdBy: uuid('created_by').references(() => users.id),
+  // WhatsApp number for the daily low-stock alert (owner-set). Null = no alert.
+  alertPhone: text('alert_phone'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

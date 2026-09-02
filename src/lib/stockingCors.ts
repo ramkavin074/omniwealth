@@ -23,7 +23,7 @@ export function corsHeaders(
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': methods,
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-store-id',
       'Access-Control-Max-Age': '86400',
       Vary: 'Origin',
     };

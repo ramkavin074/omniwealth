@@ -88,7 +88,7 @@ export async function paymentsFor(
 
 export interface SupplierLedgerRow {
   supplier: Supplier;
-  purchased: number; // Σ delta × unitCost for stock-ins tagged to this supplier
+  purchased: number; // Σ delta × unitCost tagged to this supplier (net of returns)
   paid: number;
   balance: number; // purchased − paid (positive = owed)
 }
@@ -100,9 +100,11 @@ export async function supplierLedger(): Promise<SupplierLedgerRow[]> {
     db().supplierPayments.toArray(),
   ]);
 
+  // delta × unitCost, both signs: a stock-in adds to what's owed, a return
+  // (negative delta, same supplier + cost) subtracts from it.
   const purchasedBy = new Map<string, number>();
   for (const m of movements) {
-    if (!m.supplierId || m.delta <= 0 || !m.unitCost) continue;
+    if (!m.supplierId || !m.unitCost || m.delta === 0) continue;
     purchasedBy.set(
       m.supplierId,
       (purchasedBy.get(m.supplierId) ?? 0) + m.delta * m.unitCost,

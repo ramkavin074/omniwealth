@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { t, type Lang } from '../i18n';
+import { t, unitLabel, type Lang } from '../i18n';
 import {
   createSupplier,
   paymentsFor,
@@ -10,13 +10,20 @@ import {
   supplierLedger,
   updateSupplier,
 } from '../db/suppliers';
-import type { SupplierPayment } from '../types';
-import { useLiveQuery } from '../hooks';
+import {
+  applyMovement,
+  listLowStock,
+  NegativeStockError,
+  searchProducts,
+} from '../db/products';
+import type { Product, SupplierPayment } from '../types';
+import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
   lang: Lang;
   onClose: () => void;
+  onScanPayment: () => void;
 }
 
 const field =
@@ -25,10 +32,16 @@ const field =
 const money = (n: number) =>
   '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
-export default function SuppliersScreen({ lang, onClose }: Props) {
+export default function SuppliersScreen({
+  lang,
+  onClose,
+  onScanPayment,
+}: Props) {
   const ledger = useLiveQuery(() => supplierLedger(), [], []);
   const [sel, setSel] = useState<string | null>(null);
-  const [mode, setMode] = useState<'list' | 'add' | 'pay' | 'edit'>('list');
+  const [mode, setMode] = useState<
+    'list' | 'add' | 'pay' | 'edit' | 'return'
+  >('list');
 
   // add / edit form
   const [name, setName] = useState('');
@@ -37,6 +50,16 @@ export default function SuppliersScreen({ lang, onClose }: Props) {
   // payment form
   const [amount, setAmount] = useState('');
   const [payNote, setPayNote] = useState('');
+  // return-goods form
+  const [retTerm, setRetTerm] = useState('');
+  const retDebounced = useDebounced(retTerm, 200);
+  const [retProduct, setRetProduct] = useState<Product | null>(null);
+  const [retQty, setRetQty] = useState('');
+  const retResults = useLiveQuery(
+    () => (retTerm.trim() ? searchProducts(retDebounced) : Promise.resolve([])),
+    [retDebounced],
+    [] as Product[],
+  );
 
   const current = useMemo(
     () => ledger.find((r) => r.supplier.id === sel) ?? null,
@@ -54,6 +77,41 @@ export default function SuppliersScreen({ lang, onClose }: Props) {
     setNote('');
     setAmount('');
     setPayNote('');
+    setRetTerm('');
+    setRetProduct(null);
+    setRetQty('');
+  };
+
+  const submitReturn = async (allowNegative = false) => {
+    if (!current || !retProduct) return;
+    const qty = Number(retQty);
+    if (!Number.isFinite(qty) || qty <= 0) return;
+    const unitCost = retProduct.costPrice || retProduct.price || 0;
+    try {
+      await applyMovement({
+        productId: retProduct.id,
+        reason: 'return',
+        delta: -Math.abs(qty),
+        supplierId: current.supplier.id,
+        note: 'return',
+        allowNegative,
+        ...(unitCost > 0 ? { unitCost } : {}),
+      });
+      resetForm();
+      setMode('list');
+    } catch (e) {
+      if (e instanceof NegativeStockError && !allowNegative) {
+        if (
+          window.confirm(
+            t(lang, 'sup.returnNegative').replace('{n}', String(e.available)),
+          )
+        ) {
+          await submitReturn(true);
+        }
+        return;
+      }
+      throw e;
+    }
   };
 
   const header = (title: string, back: () => void) => (
@@ -162,6 +220,90 @@ export default function SuppliersScreen({ lang, onClose }: Props) {
     );
   }
 
+  // ---- return goods to supplier ----
+  if (mode === 'return' && current) {
+    return (
+      <div className={`p-4 space-y-3 ${SCREEN_PAD}`}>
+        {header(t(lang, 'sup.return'), () => setMode('list'))}
+        <p className="text-slate-600 dark:text-slate-300">
+          {current.supplier.name} · {t(lang, 'sup.owed')}{' '}
+          <span className="font-semibold">{money(current.balance)}</span>
+        </p>
+
+        {retProduct ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-lg bg-slate-100 px-3 py-2 dark:bg-slate-800">
+              <span className="font-medium text-slate-900 dark:text-slate-50">
+                {retProduct.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setRetProduct(null);
+                  setRetQty('');
+                }}
+                className="text-sm font-medium text-teal-700 dark:text-teal-300"
+              >
+                {t(lang, 'adjust.pick')}
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {retProduct.stockQty} {unitLabel(lang, retProduct.unit)}{' '}
+              {t(lang, 'list.inStock')}
+            </p>
+            <input
+              autoFocus
+              value={retQty}
+              onChange={(e) => setRetQty(e.target.value)}
+              inputMode="decimal"
+              placeholder={t(lang, 'sup.returnQty')}
+              className={field}
+            />
+            <button
+              type="button"
+              onClick={() => submitReturn()}
+              disabled={!(Number(retQty) > 0)}
+              className="h-12 w-full rounded-xl bg-teal-700 font-bold text-white disabled:opacity-40"
+            >
+              {t(lang, 'product.save')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <input
+              autoFocus
+              value={retTerm}
+              onChange={(e) => setRetTerm(e.target.value)}
+              placeholder={t(lang, 'sup.returnPick')}
+              className={field}
+            />
+            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+              {retResults.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRetProduct(p);
+                      setRetTerm('');
+                    }}
+                    className="flex w-full items-center justify-between py-3 text-left"
+                  >
+                    <span className="font-medium text-slate-900 dark:text-slate-50">
+                      {p.name}
+                    </span>
+                    <span className="text-sm text-slate-400 tabular-nums">
+                      {p.stockQty} {unitLabel(lang, p.unit)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    );
+  }
+
   // ---- supplier detail ----
   if (sel && current) {
     return (
@@ -204,6 +346,39 @@ export default function SuppliersScreen({ lang, onClose }: Props) {
             {t(lang, 'sup.edit')}
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            resetForm();
+            setMode('return');
+          }}
+          className="h-11 w-full rounded-xl bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+        >
+          {t(lang, 'sup.return')}
+        </button>
+
+        {current.supplier.phone && (
+          <button
+            type="button"
+            onClick={async () => {
+              const low = await listLowStock();
+              const lines = low
+                .map((p) => `- ${p.name} (${p.stockQty} ${unitLabel(lang, p.unit)})`)
+                .join('\n');
+              const msg = `${t(lang, 'sup.reorderMsg')}\n${lines || '—'}`;
+              const phone = current.supplier.phone!.replace(/\D/g, '');
+              const num = phone.length === 10 ? '91' + phone : phone;
+              window.open(
+                `https://wa.me/${num}?text=${encodeURIComponent(msg)}`,
+                '_blank',
+              );
+            }}
+            className="h-11 w-full rounded-xl bg-emerald-600 font-semibold text-white"
+          >
+            {t(lang, 'sup.reorderWhatsApp')}
+          </button>
+        )}
 
         <div>
           <h3 className="mb-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -260,16 +435,25 @@ export default function SuppliersScreen({ lang, onClose }: Props) {
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          resetForm();
-          setMode('add');
-        }}
-        className="h-11 w-full rounded-xl bg-teal-700 font-semibold text-white"
-      >
-        {t(lang, 'sup.add')}
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            resetForm();
+            setMode('add');
+          }}
+          className="h-11 rounded-xl bg-teal-700 font-semibold text-white"
+        >
+          {t(lang, 'sup.add')}
+        </button>
+        <button
+          type="button"
+          onClick={onScanPayment}
+          className="h-11 rounded-xl bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+        >
+          {t(lang, 'doc.scanPayment')}
+        </button>
+      </div>
 
       {ledger.length === 0 ? (
         <p className="pt-4 text-center text-slate-500 dark:text-slate-400">

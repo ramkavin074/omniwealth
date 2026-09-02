@@ -10,6 +10,10 @@ import AdjustScreen from './screens/AdjustScreen';
 import ProductListScreen from './screens/ProductListScreen';
 import SettingsSheet from './screens/SettingsSheet';
 import SuppliersScreen from './screens/SuppliersScreen';
+import ReportsScreen from './screens/ReportsScreen';
+import AuditScreen from './screens/AuditScreen';
+import AskAiSheet from './screens/AskAiSheet';
+import ScanDocScreen from './screens/ScanDocScreen';
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
@@ -21,6 +25,10 @@ export default function StockingApp() {
   const [lowOnly, setLowOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [suppliersOpen, setSuppliersOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [askAiOpen, setAskAiOpen] = useState(false);
+  const [scanDoc, setScanDoc] = useState<null | 'invoice' | 'payment'>(null);
 
   // Opportunistic sync on open; also whenever the device comes back online.
   useEffect(() => {
@@ -40,6 +48,14 @@ export default function StockingApp() {
           {t(lang, 'app.title')}
         </h1>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAskAiOpen(true)}
+            aria-label={t(lang, 'ai.ask')}
+            className="rounded-lg bg-teal-700 px-3 py-1.5 text-sm font-semibold text-white"
+          >
+            {t(lang, 'ai.ask')}
+          </button>
           <button
             type="button"
             onClick={toggle}
@@ -81,11 +97,25 @@ export default function StockingApp() {
       </nav>
 
       <main className="flex-1 min-h-0 overflow-y-auto">
-        {suppliersOpen ? (
+        {scanDoc ? (
+          <ScanDocScreen
+            lang={lang}
+            kind={scanDoc}
+            onClose={() => setScanDoc(null)}
+          />
+        ) : suppliersOpen ? (
           <SuppliersScreen
             lang={lang}
             onClose={() => setSuppliersOpen(false)}
+            onScanPayment={() => {
+              setSuppliersOpen(false);
+              setScanDoc('payment');
+            }}
           />
+        ) : reportsOpen ? (
+          <ReportsScreen lang={lang} onClose={() => setReportsOpen(false)} />
+        ) : auditOpen ? (
+          <AuditScreen lang={lang} onClose={() => setAuditOpen(false)} />
         ) : (
           <>
             {tab === 'home' && (
@@ -104,6 +134,7 @@ export default function StockingApp() {
                 lang={lang}
                 lowOnly={lowOnly}
                 onLowOnlyChange={setLowOnly}
+                onScanInvoice={() => setScanDoc('invoice')}
               />
             )}
           </>
@@ -118,7 +149,19 @@ export default function StockingApp() {
             setSettingsOpen(false);
             setSuppliersOpen(true);
           }}
+          onOpenReports={() => {
+            setSettingsOpen(false);
+            setReportsOpen(true);
+          }}
+          onOpenAudit={() => {
+            setSettingsOpen(false);
+            setAuditOpen(true);
+          }}
         />
+      )}
+
+      {askAiOpen && (
+        <AskAiSheet lang={lang} onClose={() => setAskAiOpen(false)} />
       )}
     </div>
   );

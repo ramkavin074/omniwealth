@@ -5,7 +5,12 @@ import { SCREEN_PAD } from '../ui';
 import { useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import type { Product } from '../types';
-import { applyMovement, findByBarcode, undoMovement } from '../db/products';
+import {
+  applyMovement,
+  findByBarcode,
+  NegativeStockError,
+  undoMovement,
+} from '../db/products';
 import { lookupBarcodeName } from '../lookup';
 import { scanBarcode } from '../scanner/barcode';
 import QtyStepper from '../components/QtyStepper';
@@ -60,20 +65,35 @@ export default function ScanScreen({ lang }: Props) {
     });
   };
 
-  const save = async () => {
+  const save = async (allowNegative = false) => {
     if (view.kind !== 'found') return;
     const delta = view.direction === 'in' ? view.qty : -view.qty;
-    const { movementId } = await applyMovement({
-      productId: view.product.id,
-      reason: view.direction === 'in' ? 'scan-in' : 'scan-out',
-      delta,
-    });
-    setView({
-      kind: 'saved',
-      name: view.product.name,
-      qty: view.qty,
-      movementId,
-    });
+    try {
+      const { movementId } = await applyMovement({
+        productId: view.product.id,
+        reason: view.direction === 'in' ? 'scan-in' : 'scan-out',
+        delta,
+        allowNegative,
+      });
+      setView({
+        kind: 'saved',
+        name: view.product.name,
+        qty: view.qty,
+        movementId,
+      });
+    } catch (e) {
+      if (e instanceof NegativeStockError && !allowNegative) {
+        if (
+          window.confirm(
+            t(lang, 'scan.negConfirm').replace('{n}', String(e.available)),
+          )
+        ) {
+          await save(true);
+        }
+        return;
+      }
+      throw e;
+    }
   };
 
   if (view.kind === 'notFound') {
@@ -150,7 +170,7 @@ export default function ScanScreen({ lang }: Props) {
           </button>
           <button
             type="button"
-            onClick={save}
+            onClick={() => save()}
             className="flex-[2] h-14 rounded-xl bg-teal-700 text-lg font-bold text-white"
           >
             {t(lang, 'product.save')}

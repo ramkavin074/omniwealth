@@ -39,6 +39,7 @@ const en: Dict = {
   'scan.nameFromCatalogue': 'Name from online catalogue — please check it',
   'scan.undo': 'Undo',
   'scan.undone': 'Last change undone',
+  'scan.negConfirm': 'Only {n} in stock. Record anyway and go below zero?',
 
   'numpad.ok': 'OK',
 
@@ -100,6 +101,7 @@ const en: Dict = {
   'adjust.reason': 'Reason',
   'adjust.note': 'Note (optional)',
   'adjust.unitCost': 'Cost per unit (optional)',
+  'adjust.lossQty': 'Quantity lost',
   'adjust.apply': 'Apply',
   'adjust.applied': 'Stock updated',
   'adjust.empty': 'No products yet. Scan an item or add one from the Products tab.',
@@ -155,6 +157,11 @@ const en: Dict = {
   'sup.amount': 'Amount (₹)',
   'sup.payments': 'Payments',
   'sup.deleteConfirm': 'Delete this supplier?',
+  'sup.return': 'Return goods',
+  'sup.returnPick': 'Search a product to return',
+  'sup.returnQty': 'Quantity returned',
+  'sup.returnDone': 'Returned {n} {unit} — {money} off the balance',
+  'sup.returnNegative': 'Only {n} in stock. Return anyway?',
 
   'reason.opening': 'Opening stock',
   'reason.scan-in': 'Received',
@@ -162,6 +169,9 @@ const en: Dict = {
   'reason.manual': 'Manual change',
   'reason.correction': 'Correction',
   'reason.count': 'Stock-take',
+  'reason.return': 'Returned to supplier',
+  'reason.damage': 'Damage / breakage',
+  'reason.expiry': 'Expired',
 
   'unit.piece': 'piece',
   'unit.kg': 'kg',
@@ -173,6 +183,53 @@ const en: Dict = {
   'common.plus': '+',
   'common.minus': '−',
   'lang.toggle': 'தமிழ்',
+
+  'settings.tools': 'Tools',
+  'ai.ask': 'Ask',
+  'ai.title': 'Ask about your stock',
+  'ai.intro': 'Ask anything about your stock, sales or suppliers.',
+  'ai.placeholder': 'Type a question…',
+  'ai.send': 'Ask',
+  'ai.thinking': 'Thinking…',
+  'ai.failed': 'Could not answer, try again',
+  'ai.offline': 'No connection',
+
+  'rep.title': 'Reports',
+  'rep.week': 'This week',
+  'rep.fast': 'Fast movers',
+  'rep.dead': 'Dead stock',
+  'rep.weekTotal': 'Sold this week',
+  'rep.losses': 'Write-offs (30d)',
+  'rep.noSales': 'No sales recorded yet',
+  'rep.noDead': 'Nothing sitting idle',
+  'rep.noSaleIn': 'No sale in {d} days',
+  'rep.note': 'Sales = scanned sell-outs. Exact once billing is added.',
+
+  'audit.title': 'Activity log',
+  'audit.all': 'All',
+
+  'doc.invoiceTitle': 'Scan invoice',
+  'doc.paymentTitle': 'Scan payment slip',
+  'doc.scanInvoice': 'Scan bill',
+  'doc.scanPayment': 'Scan slip',
+  'doc.help':
+    'Take a clear photo of the supplier bill. Review the items before adding.',
+  'doc.take': 'Take photo',
+  'doc.reading': 'Reading the image…',
+  'doc.review': 'Check each line, then add to stock.',
+  'doc.nothing': 'No items found — try a clearer photo',
+  'doc.received': 'Added {n} lines ({c} new products)',
+  'doc.addToStock': 'Add {n} items to stock',
+
+  'sup.reorderWhatsApp': 'Send reorder on WhatsApp',
+  'sup.reorderMsg': 'Please send these items:',
+
+  'settings.alerts': 'Low-stock WhatsApp alert',
+  'settings.alertPhone': 'Alert phone (blank = off)',
+  'settings.alertHint': 'A daily WhatsApp goes to this number when items run low.',
+  'settings.alertSave': 'Save',
+  'settings.alertSaved': 'Saved',
+  'settings.alertErr': "Couldn't save — check your connection",
 };
 
 // confirm with shop owners — every Tamil string below is a first draft.
@@ -206,6 +263,7 @@ const ta: Dict = {
   'scan.nameFromCatalogue': 'ஆன்லைன் பட்டியலிலிருந்து பெயர் — சரிபார்க்கவும்',
   'scan.undo': 'திரும்பப்பெறு',
   'scan.undone': 'கடைசி மாற்றம் ரத்து செய்யப்பட்டது',
+  'scan.negConfirm': 'இருப்பில் {n} மட்டுமே. இருந்தாலும் பதிவு செய்து பூஜ்ஜியத்திற்கு கீழே போகவா?',
 
   'numpad.ok': 'சரி',
 
@@ -267,6 +325,7 @@ const ta: Dict = {
   'adjust.reason': 'காரணம்',
   'adjust.note': 'குறிப்பு (விருப்பம்)',
   'adjust.unitCost': 'ஒரு அலகு மூலவிலை (விருப்பம்)',
+  'adjust.lossQty': 'இழந்த அளவு',
   'adjust.apply': 'சேமி',
   'adjust.applied': 'இருப்பு புதுப்பிக்கப்பட்டது',
   'adjust.empty':
@@ -323,6 +382,11 @@ const ta: Dict = {
   'sup.amount': 'தொகை (₹)',
   'sup.payments': 'பணம் செலுத்தல்கள்',
   'sup.deleteConfirm': 'இந்த சப்ளையரை நீக்கவா?',
+  'sup.return': 'சரக்கு திருப்பி அனுப்பு',
+  'sup.returnPick': 'திருப்பி அனுப்ப பொருளைத் தேடு',
+  'sup.returnQty': 'திருப்பிய அளவு',
+  'sup.returnDone': '{n} {unit} திருப்பப்பட்டது — பாக்கியில் {money} குறைந்தது',
+  'sup.returnNegative': 'இருப்பில் {n} மட்டுமே. இருந்தாலும் திருப்பவா?',
 
   'reason.opening': 'தொடக்க இருப்பு',
   'reason.scan-in': 'வரவு',
@@ -330,6 +394,9 @@ const ta: Dict = {
   'reason.manual': 'கைமுறை மாற்றம்',
   'reason.correction': 'திருத்தம்',
   'reason.count': 'சரக்கு எண்ணிக்கை',
+  'reason.return': 'சப்ளையருக்கு திருப்பியது',
+  'reason.damage': 'சேதம் / உடைவு',
+  'reason.expiry': 'காலம் கடந்தது',
 
   'unit.piece': 'எண்ணிக்கை',
   'unit.kg': 'கிலோ',
@@ -341,6 +408,53 @@ const ta: Dict = {
   'common.plus': '+',
   'common.minus': '−',
   'lang.toggle': 'EN',
+
+  'settings.tools': 'கருவிகள்',
+  'ai.ask': 'கேள்',
+  'ai.title': 'உங்கள் இருப்பு பற்றி கேள்',
+  'ai.intro': 'இருப்பு, விற்பனை அல்லது சப்ளையர்கள் பற்றி எதுவும் கேளுங்கள்.',
+  'ai.placeholder': 'கேள்வி தட்டச்சு செய்…',
+  'ai.send': 'கேள்',
+  'ai.thinking': 'யோசிக்கிறது…',
+  'ai.failed': 'பதில் தர முடியவில்லை, மீண்டும் முயற்சிக்கவும்',
+  'ai.offline': 'இணைப்பு இல்லை',
+
+  'rep.title': 'அறிக்கைகள்',
+  'rep.week': 'இந்த வாரம்',
+  'rep.fast': 'விரைவு விற்பனை',
+  'rep.dead': 'விற்காத இருப்பு',
+  'rep.weekTotal': 'இந்த வாரம் விற்றது',
+  'rep.losses': 'இழப்புகள் (30 நாள்)',
+  'rep.noSales': 'இன்னும் விற்பனை பதிவு இல்லை',
+  'rep.noDead': 'எதுவும் தேங்கவில்லை',
+  'rep.noSaleIn': '{d} நாட்களில் விற்பனை இல்லை',
+  'rep.note': 'விற்பனை = ஸ்கேன் செய்யப்பட்ட வெளியேற்றம். பில்லிங் வந்ததும் இது துல்லியமாகும்.',
+
+  'audit.title': 'செயல்பாட்டு பதிவு',
+  'audit.all': 'அனைத்தும்',
+
+  'doc.invoiceTitle': 'பில் ஸ்கேன்',
+  'doc.paymentTitle': 'பணச் சீட்டு ஸ்கேன்',
+  'doc.scanInvoice': 'பில் ஸ்கேன்',
+  'doc.scanPayment': 'சீட்டு ஸ்கேன்',
+  'doc.help':
+    'சப்ளையர் பில்லின் தெளிவான படம் எடுக்கவும். சேர்ப்பதற்கு முன் சரிபார்க்கவும்.',
+  'doc.take': 'படம் எடு',
+  'doc.reading': 'படத்தை படிக்கிறது…',
+  'doc.review': 'ஒவ்வொரு வரியையும் சரிபார்த்து, இருப்பில் சேர்.',
+  'doc.nothing': 'பொருட்கள் எதுவும் இல்லை — தெளிவான படம் முயற்சிக்கவும்',
+  'doc.received': '{n} வரிகள் சேர்க்கப்பட்டன ({c} புதிய பொருட்கள்)',
+  'doc.addToStock': '{n} பொருட்களை இருப்பில் சேர்',
+
+  'sup.reorderWhatsApp': 'வாட்ஸ்அப்பில் ஆர்டர் அனுப்பு',
+  'sup.reorderMsg': 'இந்த பொருட்களை அனுப்பவும்:',
+
+  'settings.alerts': 'குறைந்த இருப்பு வாட்ஸ்அப் அறிவிப்பு',
+  'settings.alertPhone': 'அறிவிப்பு எண் (காலி = முடக்கு)',
+  'settings.alertHint': 'பொருட்கள் குறையும்போது இந்த எண்ணுக்கு தினமும் வாட்ஸ்அப் வரும்.',
+  'settings.alertSave': 'சேமி',
+  'settings.alertSaved': 'சேமிக்கப்பட்டது',
+  'settings.alertErr': 'சேமிக்க முடியவில்லை — இணைப்பைச் சரிபார்க்கவும்',
 };
 
 const DICTS: Record<Lang, Dict> = { en, ta };
