@@ -12,6 +12,11 @@ export default async function DashboardPage() {
   if (!session) {
     redirect('/login');
   }
+  // Store-only accounts (shop staff) have no wealth vault — send them to the
+  // stocking app.
+  if (session.household?.isStoreShell) {
+    redirect('/stocking');
+  }
 
   const householdId = session.household.id;
 

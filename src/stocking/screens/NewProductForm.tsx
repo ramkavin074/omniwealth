@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import { UNITS, type Product, type Unit } from '../types';
 import { createProduct } from '../db/products';
-import { getDefaults } from '../settings';
+import { canSeeCost, getDefaults } from '../settings';
 
 interface Props {
   lang: Lang;
@@ -29,6 +29,7 @@ export default function NewProductForm({
   onCancel,
 }: Props) {
   const [defaults] = useState(getDefaults);
+  const [showCost] = useState(canSeeCost);
   const [name, setName] = useState(defaultName);
   const [mrp, setMrp] = useState('');
   const [price, setPrice] = useState('');
@@ -115,18 +116,20 @@ export default function NewProductForm({
         </div>
       </div>
 
-      <div>
-        <label className={label} htmlFor="np-cost">
-          {t(lang, 'product.cost')}
-        </label>
-        <input
-          id="np-cost"
-          inputMode="decimal"
-          value={cost}
-          onChange={(e) => setCost(e.target.value)}
-          className={field}
-        />
-      </div>
+      {showCost && (
+        <div>
+          <label className={label} htmlFor="np-cost">
+            {t(lang, 'product.cost')}
+          </label>
+          <input
+            id="np-cost"
+            inputMode="decimal"
+            value={cost}
+            onChange={(e) => setCost(e.target.value)}
+            className={field}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>

@@ -7,6 +7,7 @@ import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import type { MovementReason, Product } from '../types';
 import { applyMovement, getProduct, searchProducts } from '../db/products';
 import { useDebounced, useLiveQuery } from '../hooks';
+import { canSeeCost } from '../settings';
 import QtyStepper from '../components/QtyStepper';
 
 interface Props {
@@ -26,8 +27,10 @@ export default function AdjustScreen({ lang }: Props) {
   const [unitCost, setUnitCost] = useState('');
   const [flash, setFlash] = useState<string | null>(null);
 
-  // A positive delta is a stock-in → offer to record the purchase cost.
-  const isStockIn = mode === 'delta' && amount > 0;
+  // A positive delta is a stock-in → offer to record the purchase cost
+  // (owner/manager only).
+  const [showCost] = useState(canSeeCost);
+  const isStockIn = mode === 'delta' && amount > 0 && showCost;
 
   const results = useLiveQuery(
     () => searchProducts(debounced),

@@ -7,6 +7,9 @@ export default async function VaultPageRoute() {
   if (!session) {
     redirect('/');
   }
+  if (session.household?.isStoreShell) {
+    redirect('/stocking');
+  }
 
   const documents = await fetchHouseholdDocumentsAction();
   

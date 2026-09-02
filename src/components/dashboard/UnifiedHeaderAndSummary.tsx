@@ -168,7 +168,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
                 <Settings className="w-4 h-4" />
               </Link>
 
-              {session?.household?.stockingEnabled && (
+              {session?.stores?.length > 0 && (
                 <Link href="/stocking" title="Stock / சரக்கு" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                   <Package className="w-4 h-4" />
                 </Link>

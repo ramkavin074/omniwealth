@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { households, sessions, users } from '@/db/schema';
+import { sessions, storeMembers, stores, users } from '@/db/schema';
 import { corsHeaders, corsPreflight } from '@/lib/stockingCors';
 
 // Lightweight JSON auth for the standalone stocking APK. Verifies the user's
@@ -66,14 +66,18 @@ export async function POST(request: Request) {
     return json({ error: 'Invalid email or password.' }, 401);
   }
 
-  const [household] = await db
-    .select()
-    .from(households)
-    .where(eq(households.id, user.householdId))
-    .limit(1);
+  const memberships = await db
+    .select({
+      id: stores.id,
+      name: stores.name,
+      role: storeMembers.role,
+    })
+    .from(storeMembers)
+    .innerJoin(stores, eq(stores.id, storeMembers.storeId))
+    .where(eq(storeMembers.userId, user.id));
 
-  if (!household) {
-    return json({ error: 'Household not found.' }, 401);
+  if (memberships.length === 0) {
+    return json({ error: 'This account has no shop access.' }, 403);
   }
 
   const rawToken = crypto.randomBytes(32).toString('hex');
@@ -92,9 +96,8 @@ export async function POST(request: Request) {
     {
       token: rawToken,
       userId: user.id,
-      householdId: household.id,
       displayName: user.fullName,
-      stockingEnabled: household.stockingEnabled === true,
+      stores: memberships,
     },
     200,
   );

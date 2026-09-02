@@ -12,6 +12,9 @@ export default async function ProfilePage() {
   if (!session) {
     redirect('/login');
   }
+  if (session.household?.isStoreShell) {
+    redirect('/stocking');
+  }
 
   const householdId = session.household.id;
   

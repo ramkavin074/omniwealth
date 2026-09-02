@@ -22,6 +22,7 @@ import {
 } from '../db/products';
 import { buildCatalogueCsv, downloadCsv } from '../export';
 import { useDebounced, useIsDesktop, useLiveQuery } from '../hooks';
+import { canManage, canSeeCost } from '../settings';
 import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
 import LowStockBadge from '../components/LowStockBadge';
 import VirtualList from '../components/VirtualList';
@@ -52,6 +53,8 @@ export default function ProductListScreen({
   const debounced = useDebounced(term, 200);
   const isDesktop = useIsDesktop();
   const footerPad = isDesktop ? 24 : FOOTER_PAD;
+  const [manage] = useState(canManage); // role is fixed for the session
+  const [showCost] = useState(canSeeCost);
 
   // One live snapshot of the whole catalogue; filter/sort happen in memory.
   const all = useLiveQuery(() => listProducts(), [], [] as Product[]);
@@ -82,30 +85,32 @@ export default function ProductListScreen({
             className="w-full h-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-lg text-slate-900 dark:text-slate-50 md:flex-1"
           />
 
-          <div className="grid grid-cols-3 gap-2 md:flex md:shrink-0">
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="h-10 rounded-lg bg-teal-700 px-3 text-sm font-semibold text-white"
-            >
-              {t(lang, 'list.addProduct')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setImporting(true)}
-              className="h-10 rounded-lg bg-slate-200 px-3 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'import.button')}
-            </button>
-            <button
-              type="button"
-              onClick={exportCsv}
-              disabled={all.length === 0}
-              className="h-10 rounded-lg bg-slate-200 px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'export.button')}
-            </button>
-          </div>
+          {manage && (
+            <div className="grid grid-cols-3 gap-2 md:flex md:shrink-0">
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="h-10 rounded-lg bg-teal-700 px-3 text-sm font-semibold text-white"
+              >
+                {t(lang, 'list.addProduct')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setImporting(true)}
+                className="h-10 rounded-lg bg-slate-200 px-3 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+              >
+                {t(lang, 'import.button')}
+              </button>
+              <button
+                type="button"
+                onClick={exportCsv}
+                disabled={all.length === 0}
+                className="h-10 rounded-lg bg-slate-200 px-3 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-100"
+              >
+                {t(lang, 'export.button')}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
@@ -167,7 +172,7 @@ export default function ProductListScreen({
                   {p.mrp > 0 && p.mrp !== p.price && (
                     <span className="ml-1 line-through">₹{p.mrp}</span>
                   )}
-                  {marginPct(p) !== null && (
+                  {showCost && marginPct(p) !== null && (
                     <span className="ml-1 text-emerald-600 dark:text-emerald-400">
                       {marginPct(p)}%
                     </span>
@@ -233,6 +238,8 @@ function EditSheet({
   product: Product;
   onDone: () => void;
 }) {
+  const [manage] = useState(canManage);
+  const [showCost] = useState(canSeeCost);
   const [name, setName] = useState(product.name);
   const [mrp, setMrp] = useState(String(product.mrp));
   const [price, setPrice] = useState(String(product.price));
@@ -244,6 +251,7 @@ function EditSheet({
   const [stock, setStock] = useState(String(product.stockQty));
 
   const m = marginPct({ price: Number(price) || 0, costPrice: Number(cost) || 0 });
+  const ro = !manage; // catalogue fields read-only for staff
 
   const history = useLiveQuery(
     () => movementsFor(product.id, 8),
@@ -252,14 +260,16 @@ function EditSheet({
   );
 
   const save = async () => {
-    await updateProduct(product.id, {
-      name,
-      mrp: Number(mrp) || 0,
-      price: Number(price) || 0,
-      costPrice: Number(cost) || 0,
-      unit,
-      lowStockThreshold: Number(threshold) || 0,
-    });
+    if (manage) {
+      await updateProduct(product.id, {
+        name,
+        mrp: Number(mrp) || 0,
+        price: Number(price) || 0,
+        costPrice: Number(cost) || 0,
+        unit,
+        lowStockThreshold: Number(threshold) || 0,
+      });
+    }
     const nextStock = Number(stock);
     if (Number.isFinite(nextStock) && nextStock !== product.stockQty) {
       await applyMovement({
@@ -289,7 +299,8 @@ function EditSheet({
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className={`${field} w-full text-lg`}
+          readOnly={ro}
+          className={`${field} w-full text-lg ${ro ? 'opacity-70' : ''}`}
           aria-label={t(lang, 'product.name')}
         />
 
@@ -300,7 +311,8 @@ function EditSheet({
               inputMode="decimal"
               value={mrp}
               onChange={(e) => setMrp(e.target.value)}
-              className={`${field} w-full`}
+              readOnly={ro}
+              className={`${field} w-full ${ro ? 'opacity-70' : ''}`}
             />
           </label>
           <label>
@@ -309,7 +321,8 @@ function EditSheet({
               inputMode="decimal"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className={`${field} w-full`}
+              readOnly={ro}
+              className={`${field} w-full ${ro ? 'opacity-70' : ''}`}
             />
           </label>
           <label>
@@ -317,7 +330,8 @@ function EditSheet({
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as Unit)}
-              className={`${field} w-full`}
+              disabled={ro}
+              className={`${field} w-full ${ro ? 'opacity-70' : ''}`}
             >
               {UNITS.map((u) => (
                 <option key={u} value={u}>
@@ -328,24 +342,26 @@ function EditSheet({
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <label>
-            <span className={sheetLabel}>{t(lang, 'product.cost')}</span>
-            <input
-              inputMode="decimal"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-              className={`${field} w-full`}
-            />
-          </label>
-          <div className="flex items-end pb-2 text-sm">
-            {m !== null && (
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {t(lang, 'product.margin')}: {m}%
-              </span>
-            )}
+        {showCost && (
+          <div className="grid grid-cols-2 gap-2">
+            <label>
+              <span className={sheetLabel}>{t(lang, 'product.cost')}</span>
+              <input
+                inputMode="decimal"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                className={`${field} w-full`}
+              />
+            </label>
+            <div className="flex items-end pb-2 text-sm">
+              {m !== null && (
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  {t(lang, 'product.margin')}: {m}%
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <label>
@@ -365,7 +381,8 @@ function EditSheet({
               inputMode="decimal"
               value={threshold}
               onChange={(e) => setThreshold(e.target.value)}
-              className={`${field} w-full`}
+              readOnly={ro}
+              className={`${field} w-full ${ro ? 'opacity-70' : ''}`}
             />
           </label>
         </div>
@@ -391,13 +408,15 @@ function EditSheet({
         )}
 
         <div className="flex gap-2 pt-1">
-          <button
-            type="button"
-            onClick={remove}
-            className="h-11 px-3 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-sm font-medium"
-          >
-            {t(lang, 'product.delete')}
-          </button>
+          {manage && (
+            <button
+              type="button"
+              onClick={remove}
+              className="h-11 px-3 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-sm font-medium"
+            >
+              {t(lang, 'product.delete')}
+            </button>
+          )}
           <div className="flex-1" />
           <button
             type="button"

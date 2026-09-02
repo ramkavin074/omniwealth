@@ -1,15 +1,17 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { stockMovements, stockProducts } from '@/db/schema';
-import { resolveStockingAuth } from '@/lib/stockingAuth';
+import { storeProducts, storeStockMovements } from '@/db/schema';
+import { canEditCatalogue, resolveStockingAuth } from '@/lib/stockingAuth';
 import { corsHeaders, corsPreflight } from '@/lib/stockingCors';
 
-// Offline-first sync for the stocking module.
-//   push: client sends rows changed since its cursor
-//     - products: upsert, last-write-wins on `updatedAt`
-//     - movements: append-only (insert, ignore dup id)
-//   pull: server returns rows whose server-assigned `syncedAt` is newer than
-//         the client's cursor, scoped to the caller's household.
+// Offline-first sync for the stocking module, scoped to the caller's store.
+//   push: rows changed since the client cursor
+//     - products: upsert, last-write-wins on `updatedAt`. A `staff` caller can
+//       only move stock (stock_qty) — catalogue fields (name/price/cost/…) are
+//       kept from the existing row.
+//     - movements: append-only (insert, ignore dup id). `user_id` is
+//       server-stamped from the session.
+//   pull: rows whose server-assigned `synced_at` is newer than the cursor.
 // The response `now` is the client's next cursor.
 
 export const dynamic = 'force-dynamic';
@@ -57,7 +59,8 @@ export async function POST(request: Request) {
 
   const auth = await resolveStockingAuth(request);
   if (!auth) return json({ error: 'Unauthorized' }, 401);
-  const hh = auth.householdId;
+  const storeId = auth.storeId;
+  const fullEdit = canEditCatalogue(auth.role);
 
   let since = 0;
   let inProducts: InProduct[] = [];
@@ -84,7 +87,7 @@ export async function POST(request: Request) {
       .filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
       .map((p) => ({
         id: p.id,
-        householdId: hh,
+        storeId,
         barcode: p.barcode ?? null,
         name: p.name,
         mrp: String(num(p.mrp)),
@@ -99,12 +102,11 @@ export async function POST(request: Request) {
       }));
 
     if (rows.length) {
-      await db
-        .insert(stockProducts)
-        .values(rows)
-        .onConflictDoUpdate({
-          target: stockProducts.id,
-          set: {
+      // owner/manager: full catalogue upsert. staff: only stock_qty moves;
+      // a NEW row from staff still lands (they can add a product by scanning),
+      // but edits to an existing row keep its catalogue fields.
+      const set = fullEdit
+        ? {
             barcode: sql`excluded.barcode`,
             name: sql`excluded.name`,
             mrp: sql`excluded.mrp`,
@@ -116,10 +118,22 @@ export async function POST(request: Request) {
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
             syncedAt: sql`excluded.synced_at`,
-          },
-          // Only overwrite an existing row that belongs to this household and
-          // is strictly older — cross-household id collisions are ignored.
-          setWhere: sql`${stockProducts.householdId} = ${hh} AND ${stockProducts.updatedAt} < excluded.updated_at`,
+          }
+        : {
+            stockQty: sql`excluded.stock_qty`,
+            updatedAt: sql`excluded.updated_at`,
+            syncedAt: sql`excluded.synced_at`,
+          };
+
+      await db
+        .insert(storeProducts)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeProducts.id,
+          set,
+          // Only overwrite an existing row of THIS store that is strictly
+          // older — cross-store id collisions are ignored.
+          setWhere: sql`${storeProducts.storeId} = ${storeId} AND ${storeProducts.updatedAt} < excluded.updated_at`,
         });
     }
   }
@@ -129,30 +143,26 @@ export async function POST(request: Request) {
     const rows = inMovements
       .filter(
         (m) =>
-          m &&
-          typeof m.id === 'string' &&
-          typeof m.productId === 'string',
+          m && typeof m.id === 'string' && typeof m.productId === 'string',
       )
       .map((m) => ({
         id: m.id,
-        householdId: hh,
+        storeId,
         productId: m.productId,
-        // Server-authoritative: the mover is whoever this session belongs to.
-        userId: auth.userId,
+        userId: auth.userId, // server-authoritative
         delta: String(num(m.delta)),
         reason: m.reason || 'manual',
         qtyAfter: String(num(m.qtyAfter)),
-        unitCost:
-          m.unitCost == null ? null : String(num(m.unitCost)),
+        unitCost: m.unitCost == null ? null : String(num(m.unitCost)),
         note: m.note ?? null,
         createdAt: String(num(m.createdAt)),
         syncedAt,
       }));
     if (rows.length) {
       await db
-        .insert(stockMovements)
+        .insert(storeStockMovements)
         .values(rows)
-        .onConflictDoNothing({ target: stockMovements.id });
+        .onConflictDoNothing({ target: storeStockMovements.id });
     }
   }
 
@@ -161,21 +171,21 @@ export async function POST(request: Request) {
   const [pulledProducts, pulledMovements] = await Promise.all([
     db
       .select()
-      .from(stockProducts)
+      .from(storeProducts)
       .where(
         and(
-          eq(stockProducts.householdId, hh),
-          gt(stockProducts.syncedAt, sinceDate),
+          eq(storeProducts.storeId, storeId),
+          gt(storeProducts.syncedAt, sinceDate),
         ),
       )
       .limit(MAX_ROWS),
     db
       .select()
-      .from(stockMovements)
+      .from(storeStockMovements)
       .where(
         and(
-          eq(stockMovements.householdId, hh),
-          gt(stockMovements.syncedAt, sinceDate),
+          eq(storeStockMovements.storeId, storeId),
+          gt(storeStockMovements.syncedAt, sinceDate),
         ),
       )
       .limit(MAX_ROWS),
@@ -184,6 +194,7 @@ export async function POST(request: Request) {
   return json(
     {
       now,
+      role: auth.role,
       products: pulledProducts.map((p) => ({
         id: p.id,
         barcode: p.barcode,

@@ -10,7 +10,18 @@ export const dynamic = 'force-dynamic';
 export default async function StockingPage() {
   const session = await getSessionUserAction();
   if (!session) redirect('/login');
-  if (!session.household?.stockingEnabled) redirect('/');
+  if (!session.stores || session.stores.length === 0) redirect('/');
 
-  return <StockingAppClient />;
+  const store = session.stores[0];
+  return (
+    <StockingAppClient
+      userId={session.user.id}
+      displayName={session.user.fullName}
+      store={{
+        id: store.id,
+        name: store.name,
+        role: store.role as 'owner' | 'manager' | 'staff',
+      }}
+    />
+  );
 }

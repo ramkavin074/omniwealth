@@ -14,14 +14,24 @@ export interface SyncOutcome {
   error?: 'auth' | 'network' | 'server';
 }
 
-function authToken(): string | null {
+function authBlob(): { token?: string; storeId?: string; role?: string } {
   try {
     const raw = localStorage.getItem('stocking.auth');
-    if (!raw) return null;
-    return (JSON.parse(raw) as { token?: string }).token ?? null;
+    return raw ? JSON.parse(raw) : {};
   } catch {
-    return null;
+    return {};
   }
+}
+
+/** If this device's data belongs to a different store than the signed-in
+ *  one (account switch, store switch), wipe it before syncing. */
+async function guardStore(storeId: string | undefined): Promise<void> {
+  if (!storeId) return;
+  const prev = localStorage.getItem('stocking.storeId');
+  if (prev && prev !== storeId) {
+    await db().delete();
+  }
+  if (prev !== storeId) localStorage.setItem('stocking.storeId', storeId);
 }
 
 async function getState() {
@@ -45,9 +55,11 @@ export function syncNow(): Promise<SyncOutcome> {
 }
 
 async function runSync(): Promise<SyncOutcome> {
+  const { token, storeId } = authBlob();
+  await guardStore(storeId);
+
   const state = await getState();
   const cursor = state?.cursor ?? 0;
-  const token = authToken();
 
   const dirtyProducts = await db()
     .products.where('updatedAt')
@@ -65,6 +77,7 @@ async function runSync(): Promise<SyncOutcome> {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(storeId ? { 'x-store-id': storeId } : {}),
       },
       // Bearer for the APK; cookie for the in-OmniWealth page.
       credentials: token ? 'omit' : 'include',
@@ -87,9 +100,26 @@ async function runSync(): Promise<SyncOutcome> {
 
   const data = (await res.json()) as {
     now: number;
+    role?: string;
     products: Product[];
     movements: Movement[];
   };
+
+  // The server is the source of truth for the caller's role — keep the local
+  // copy in step so UI gating can't drift.
+  if (data.role) {
+    try {
+      const blob = authBlob();
+      if (blob.role !== data.role) {
+        localStorage.setItem(
+          'stocking.auth',
+          JSON.stringify({ ...blob, role: data.role }),
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   await db().transaction('rw', db().products, db().movements, async () => {
     for (const p of data.products) {

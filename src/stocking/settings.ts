@@ -39,31 +39,67 @@ export function setDefaults(next: Defaults): void {
   }
 }
 
-/** True in the standalone APK build (LoginGate cached a session). */
+/** True in the standalone APK build (LoginGate cached a bearer token). The
+ *  in-OmniWealth host seeds stocking.auth too, but without a token. */
 export function hasStandaloneAuth(): boolean {
   try {
-    return !!localStorage.getItem('stocking.auth');
+    const raw = localStorage.getItem('stocking.auth');
+    return !!raw && !!(JSON.parse(raw) as { token?: string }).token;
   } catch {
     return false;
   }
 }
 
-/** The signed-in user's id, if known — stamped on locally-created movements
- *  (the audit "who"). The sync server re-stamps authoritatively from the
- *  session on push; this is for offline display. */
-export function getUserId(): string | null {
+export type StoreRole = 'owner' | 'manager' | 'staff';
+
+interface AuthBlob {
+  userId?: string;
+  displayName?: string;
+  storeId?: string;
+  role?: StoreRole;
+}
+
+function readAuthBlob(): AuthBlob {
   try {
     const raw = localStorage.getItem('stocking.auth');
-    if (!raw) return null;
-    return (JSON.parse(raw) as { userId?: string }).userId ?? null;
+    return raw ? (JSON.parse(raw) as AuthBlob) : {};
   } catch {
-    return null;
+    return {};
   }
+}
+
+/** The signed-in user's id — stamped on locally-created movements (the audit
+ *  "who"). The sync server re-stamps authoritatively on push. */
+export function getUserId(): string | null {
+  return readAuthBlob().userId ?? null;
+}
+
+/** The active store's id (both hosts write this into stocking.auth). */
+export function getStoreId(): string | null {
+  return readAuthBlob().storeId ?? null;
+}
+
+/** The user's role in the active store. Defaults to the most restrictive. */
+export function getStoreRole(): StoreRole {
+  return readAuthBlob().role ?? 'staff';
+}
+
+/** owner / manager may edit the catalogue (name, price, cost, delete,
+ *  import/export) and see cost & margin. staff can only move stock. */
+export function canManage(): boolean {
+  const r = getStoreRole();
+  return r === 'owner' || r === 'manager';
+}
+
+/** Cost & margin are hidden from staff. */
+export function canSeeCost(): boolean {
+  return canManage();
 }
 
 export function signOut(): void {
   try {
     localStorage.removeItem('stocking.auth');
+    localStorage.removeItem('stocking.storeId');
   } catch {
     /* ignore */
   }

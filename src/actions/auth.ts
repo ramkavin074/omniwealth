@@ -11,6 +11,8 @@ import {
   invitations,
   rateLimits,
   passwordResets,
+  stores,
+  storeMembers,
 } from '@/db/schema';
 
 import {
@@ -653,9 +655,22 @@ export async function getSessionUserAction() {
     hasOpenrouterKey: hasValue(user.openrouterApiKey),
   };
 
+  // Stocking-module store memberships (independent of the household). Empty
+  // for everyone who isn't a shop member.
+  const storeRows = await db
+    .select({
+      id: stores.id,
+      name: stores.name,
+      role: storeMembers.role,
+    })
+    .from(storeMembers)
+    .innerJoin(stores, eq(stores.id, storeMembers.storeId))
+    .where(eq(storeMembers.userId, user.id));
+
   return {
     user: safeUser,
     household,
+    stores: storeRows,
   };
 }
 

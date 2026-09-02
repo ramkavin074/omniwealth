@@ -8,12 +8,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { API_BASE } from '../config';
 
+export type StoreRole = 'owner' | 'manager' | 'staff';
+
+interface StoreRef {
+  id: string;
+  name: string;
+  role: StoreRole;
+}
+
 interface StoredAuth {
   token: string;
   userId: string;
-  householdId: string;
   displayName: string;
-  stockingEnabled: boolean;
+  stores: StoreRef[];
+  storeId: string; // the active store
+  role: StoreRole; // role in the active store
   savedAt: number;
 }
 
@@ -24,7 +33,7 @@ function readAuth(): StoredAuth | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredAuth;
-    return parsed && parsed.token ? parsed : null;
+    return parsed && parsed.token && parsed.storeId ? parsed : null;
   } catch {
     return null;
   }
@@ -58,16 +67,20 @@ export default function LoginGate({ children }: { children: ReactNode }) {
         setError(data?.error || 'Sign-in failed');
         return;
       }
-      if (!data.stockingEnabled) {
-        setError('This account does not have the stocking module enabled.');
+      const stores: StoreRef[] = Array.isArray(data.stores) ? data.stores : [];
+      if (stores.length === 0) {
+        setError('This account has no shop access.');
         return;
       }
+      // Pilot shops are one-store-per-user; if that ever changes, add a picker.
+      const active = stores[0];
       const next: StoredAuth = {
         token: data.token,
         userId: data.userId,
-        householdId: data.householdId,
         displayName: data.displayName,
-        stockingEnabled: true,
+        stores,
+        storeId: active.id,
+        role: active.role,
         savedAt: Date.now(),
       };
       localStorage.setItem(KEY, JSON.stringify(next));
@@ -80,7 +93,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
   };
 
   if (!ready) return null;
-  if (auth?.stockingEnabled) return <>{children}</>;
+  if (auth) return <>{children}</>;
 
   const field =
     'w-full h-12 rounded-xl border border-slate-300 bg-white px-3 text-lg text-slate-900';

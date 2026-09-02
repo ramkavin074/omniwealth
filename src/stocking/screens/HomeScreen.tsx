@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import {
   catalogueStats,
@@ -10,6 +11,7 @@ import {
 import type { Product } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow } from '../hooks';
+import { canSeeCost } from '../settings';
 import { SCREEN_PAD } from '../ui';
 import { syncNow } from '../sync';
 
@@ -42,6 +44,7 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
     products.find((p) => p.id === id)?.unit ?? 'piece';
 
   const now = useNow();
+  const [showCost] = useState(canSeeCost);
   const sync = useLiveQuery(() => db().syncState.get('default'), []);
   const syncAgo = () => {
     if (!sync?.lastSyncAt || !now) return t(lang, 'sync.never');
@@ -77,7 +80,7 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
           <span className="block text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
             {stats ? money(stats.stockValue) : '—'}
           </span>
-          {stats && stats.stockCost > 0 && (
+          {canSeeCost() && stats && stats.stockCost > 0 && (
             <span className="mt-0.5 block text-xs text-slate-400 dark:text-slate-500">
               {t(lang, 'home.stockCost')} {money(stats.stockCost)} ·{' '}
               {t(lang, 'home.margin')}{' '}
