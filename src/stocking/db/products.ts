@@ -106,6 +106,7 @@ export async function createProduct(draft: ProductDraft): Promise<Product> {
     stockQty: q(draft.openingStock),
     unit: draft.unit,
     lowStockThreshold: q(draft.lowStockThreshold),
+    expiryDate: draft.expiryDate || null,
     updatedAt: now,
     deletedAt: null,
   };
@@ -146,6 +147,7 @@ export async function updateProduct(
       | 'unit'
       | 'lowStockThreshold'
       | 'barcode'
+      | 'expiryDate'
     >
   >,
 ): Promise<void> {
@@ -160,6 +162,9 @@ export async function updateProduct(
   }
   if (patch.barcode !== undefined) {
     clean.barcode = patch.barcode ? patch.barcode.trim() : null;
+  }
+  if (patch.expiryDate !== undefined) {
+    clean.expiryDate = patch.expiryDate || null;
   }
   await db().products.update(id, clean);
 }
@@ -378,6 +383,7 @@ export interface ImportRow {
   unit: string;
   openingStock: number;
   lowStockThreshold: number;
+  expiryDate: string | null; // 'YYYY-MM-DD' or null
 }
 
 export interface ImportResult {
@@ -418,6 +424,7 @@ export async function importProducts(
       const costPrice = q(row.costPrice);
       const unit = (row.unit || 'piece').trim();
       const threshold = q(row.lowStockThreshold);
+      const expiryDate = row.expiryDate || null;
 
       const match =
         (barcode && byBarcode.get(barcode)) || byName.get(name.toLowerCase());
@@ -430,6 +437,7 @@ export async function importProducts(
           ...(costPrice > 0 ? { costPrice } : {}),
           unit: unit as Product['unit'],
           lowStockThreshold: threshold,
+          ...(expiryDate ? { expiryDate } : {}),
           barcode: barcode ?? match.barcode,
           updatedAt: now,
         });
@@ -447,6 +455,7 @@ export async function importProducts(
         stockQty: q(row.openingStock),
         unit: unit as Product['unit'],
         lowStockThreshold: threshold,
+        expiryDate,
         updatedAt: now,
         deletedAt: null,
       };

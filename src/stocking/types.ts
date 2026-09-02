@@ -43,8 +43,40 @@ export interface Product {
   stockQty: number; // supports decimals for kg / liter
   unit: Unit;
   lowStockThreshold: number;
+  expiryDate: string | null; // 'YYYY-MM-DD' local date of the current batch; null = not tracked
   updatedAt: number; // epoch ms
   deletedAt: number | null; // tombstone for sync; null = live
+}
+
+export type ExpiryStatus = 'none' | 'ok' | 'soon' | 'expired';
+
+/** Local calendar date as 'YYYY-MM-DD'. */
+export function todayISO(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** Whole days from local midnight today to local midnight of `dateISO`
+ *  (negative = already past). Returns null for an unparseable date. */
+export function daysUntil(dateISO: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
+  if (!m) return null;
+  const then = new Date(+m[1], +m[2] - 1, +m[3]).setHours(0, 0, 0, 0);
+  const now = new Date().setHours(0, 0, 0, 0);
+  return Math.round((then - now) / 86_400_000);
+}
+
+export function expiryStatus(
+  p: Pick<Product, 'expiryDate'>,
+  soonDays = 30,
+): ExpiryStatus {
+  if (!p.expiryDate) return 'none';
+  const d = daysUntil(p.expiryDate);
+  if (d === null) return 'none';
+  if (d < 0) return 'expired';
+  if (d <= soonDays) return 'soon';
+  return 'ok';
 }
 
 export function marginPct(p: Pick<Product, 'price' | 'costPrice'>): number | null {
@@ -86,9 +118,10 @@ export interface SupplierPayment {
 
 export type ProductDraft = Omit<
   Product,
-  'id' | 'updatedAt' | 'deletedAt' | 'stockQty'
+  'id' | 'updatedAt' | 'deletedAt' | 'stockQty' | 'expiryDate'
 > & {
   openingStock: number;
+  expiryDate?: string | null;
 };
 
 export interface BarcodeCacheEntry {

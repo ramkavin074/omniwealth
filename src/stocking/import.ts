@@ -38,12 +38,43 @@ const ALIASES: Record<keyof ImportRow, string[]> = {
     'minimum stock',
     'threshold',
   ],
+  expiryDate: [
+    'expiry',
+    'expiry date',
+    'expiry_date',
+    'expire',
+    'expires',
+    'exp',
+    'exp date',
+    'best before',
+    'use by',
+  ],
 };
 
 export const CSV_TEMPLATE =
-  'barcode,name,mrp,price,cost,unit,opening_stock,low_stock_threshold\n' +
-  '8901030865278,Aashirvaad Atta 5kg,285,280,255,packet,12,4\n' +
-  ',Sugar (loose),,45,40,kg,20,10\n';
+  'barcode,name,mrp,price,cost,unit,opening_stock,low_stock_threshold,expiry\n' +
+  '8901030865278,Aashirvaad Atta 5kg,285,280,255,packet,12,4,\n' +
+  ',Sugar (loose),,45,40,kg,20,10,\n' +
+  ',Amul Butter 500g,,275,255,piece,8,3,2026-11-30\n';
+
+/** Normalise a date cell to 'YYYY-MM-DD', or null if unrecognised.
+ *  Accepts ISO, or day-first dd/mm/yyyy and dd-mm-yyyy (the Indian norm). */
+function toISODate(v: string | undefined): string | null {
+  const s = (v ?? '').trim();
+  if (!s) return null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (iso) return s;
+  const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/.exec(s);
+  if (dmy) {
+    const dd = dmy[1].padStart(2, '0');
+    const mm = dmy[2].padStart(2, '0');
+    const yyyy = dmy[3].length === 2 ? '20' + dmy[3] : dmy[3];
+    if (+mm >= 1 && +mm <= 12 && +dd >= 1 && +dd <= 31) {
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+  return null;
+}
 
 /** Split one CSV line, honouring double-quoted fields. */
 function splitLine(line: string): string[] {
@@ -138,6 +169,7 @@ export function parseCsv(text: string): ParseResult {
       unit: (get(cells, 'unit') ?? 'piece').trim() || 'piece',
       openingStock: num(get(cells, 'openingStock')),
       lowStockThreshold: num(get(cells, 'lowStockThreshold')),
+      expiryDate: toISODate(get(cells, 'expiryDate')),
     });
   }
 

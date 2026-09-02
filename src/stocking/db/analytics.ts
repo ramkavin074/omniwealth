@@ -3,9 +3,36 @@
 
 import { db } from './dexie';
 import { listProducts } from './products';
-import type { Product } from '../types';
+import { daysUntil, type Product } from '../types';
 
 const DAY = 24 * 60 * 60 * 1000;
+
+export interface ExpirySoon {
+  /** expired first, then ≤7 days, then ≤30 days; each sorted by soonest. */
+  buckets: { key: 'expired' | 'd7' | 'd30'; products: Product[] }[];
+  /** expired + expiring within 7 days — drives the Home banner. */
+  urgent: number;
+}
+
+/** Products with stock on hand whose (single) batch date is past or near. */
+export async function expiringSoon(): Promise<ExpirySoon> {
+  const rows = (await listProducts())
+    .filter((p) => p.expiryDate && p.stockQty > 0)
+    .map((p) => ({ p, d: daysUntil(p.expiryDate as string) }))
+    .filter((x): x is { p: Product; d: number } => x.d !== null)
+    .sort((a, b) => a.d - b.d);
+  const pick = (lo: number, hi: number) =>
+    rows.filter((x) => x.d >= lo && x.d <= hi).map((x) => x.p);
+  const expired = rows.filter((x) => x.d < 0).map((x) => x.p);
+  return {
+    buckets: [
+      { key: 'expired', products: expired },
+      { key: 'd7', products: pick(0, 7) },
+      { key: 'd30', products: pick(8, 30) },
+    ],
+    urgent: expired.length + pick(0, 7).length,
+  };
+}
 
 export interface FastMover {
   product: Product;

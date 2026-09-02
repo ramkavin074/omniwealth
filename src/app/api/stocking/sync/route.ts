@@ -37,6 +37,7 @@ interface InProduct {
   stockQty: number;
   unit: string;
   lowStockThreshold: number;
+  expiryDate: string | null;
   updatedAt: number;
   deletedAt: number | null;
 }
@@ -136,6 +137,7 @@ export async function POST(request: Request) {
         stockQty: String(num(p.stockQty)),
         unit: p.unit || 'piece',
         lowStockThreshold: String(num(p.lowStockThreshold)),
+        expiryDate: p.expiryDate || null,
         updatedAt: String(num(p.updatedAt)),
         deletedAt: p.deletedAt == null ? null : String(num(p.deletedAt)),
         syncedAt,
@@ -155,6 +157,7 @@ export async function POST(request: Request) {
             stockQty: sql`excluded.stock_qty`,
             unit: sql`excluded.unit`,
             lowStockThreshold: sql`excluded.low_stock_threshold`,
+            expiryDate: sql`excluded.expiry_date`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
             syncedAt: sql`excluded.synced_at`,
@@ -337,6 +340,7 @@ export async function POST(request: Request) {
         stockQty: num(p.stockQty),
         unit: p.unit,
         lowStockThreshold: num(p.lowStockThreshold),
+        expiryDate: p.expiryDate ?? null,
         updatedAt: num(p.updatedAt),
         deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),

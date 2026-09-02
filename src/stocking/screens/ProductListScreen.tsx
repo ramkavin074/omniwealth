@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import {
+  expiryStatus,
   isLowStock,
   marginPct,
   UNITS,
@@ -33,6 +34,8 @@ interface Props {
   lang: Lang;
   lowOnly: boolean;
   onLowOnlyChange: (v: boolean) => void;
+  expOnly: boolean;
+  onExpOnlyChange: (v: boolean) => void;
   onScanInvoice: () => void;
 }
 
@@ -45,6 +48,8 @@ export default function ProductListScreen({
   lang,
   lowOnly,
   onLowOnlyChange,
+  expOnly,
+  onExpOnlyChange,
   onScanInvoice,
 }: Props) {
   const [term, setTerm] = useState('');
@@ -64,8 +69,14 @@ export default function ProductListScreen({
   const visible = useMemo(() => {
     let rows = filterProducts(all, debounced);
     if (lowOnly) rows = rows.filter(isLowStock);
+    if (expOnly) {
+      rows = rows.filter((p) => {
+        const s = expiryStatus(p);
+        return s === 'soon' || s === 'expired';
+      });
+    }
     return sortProducts(rows, sort);
-  }, [all, debounced, lowOnly, sort]);
+  }, [all, debounced, lowOnly, expOnly, sort]);
 
   const exportCsv = () => {
     const date = new Date().toISOString().slice(0, 10);
@@ -140,15 +151,26 @@ export default function ProductListScreen({
         </div>
 
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-            <input
-              type="checkbox"
-              checked={lowOnly}
-              onChange={(e) => onLowOnlyChange(e.target.checked)}
-              className="h-5 w-5 accent-amber-500"
-            />
-            {t(lang, 'list.lowOnly')}
-          </label>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={lowOnly}
+                onChange={(e) => onLowOnlyChange(e.target.checked)}
+                className="h-5 w-5 accent-amber-500"
+              />
+              {t(lang, 'list.lowOnly')}
+            </label>
+            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={expOnly}
+                onChange={(e) => onExpOnlyChange(e.target.checked)}
+                className="h-5 w-5 accent-rose-500"
+              />
+              {t(lang, 'list.expOnly')}
+            </label>
+          </div>
           <span className="text-sm text-slate-400 dark:text-slate-500 tabular-nums">
             {t(lang, 'list.count').replace('{n}', String(visible.length))}
           </span>
@@ -193,6 +215,7 @@ export default function ProductListScreen({
                 {isLowStock(p) && (
                   <LowStockBadge label={t(lang, 'list.lowBadge')} />
                 )}
+                <ExpiryChip lang={lang} product={p} />
                 <span className="tabular-nums font-semibold text-slate-800 dark:text-slate-100">
                   {p.stockQty}
                 </span>
@@ -238,6 +261,30 @@ const field =
 const sheetLabel =
   'block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1';
 
+/** Short "Exp 12 Nov" / "Expired" pill; nothing when the item has no date or
+ *  it's more than 30 days out. */
+function ExpiryChip({ lang, product }: { lang: Lang; product: Product }) {
+  const s = expiryStatus(product);
+  if (s === 'none' || s === 'ok') return null;
+  const label =
+    s === 'expired'
+      ? t(lang, 'list.expired')
+      : `${t(lang, 'list.expShort')} ${new Date(
+          product.expiryDate as string,
+        ).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        s === 'expired'
+          ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+          : 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
 function EditSheet({
   lang,
   product,
@@ -258,6 +305,7 @@ function EditSheet({
   const [unit, setUnit] = useState<Unit>(product.unit);
   const [threshold, setThreshold] = useState(String(product.lowStockThreshold));
   const [stock, setStock] = useState(String(product.stockQty));
+  const [expiry, setExpiry] = useState(product.expiryDate ?? '');
 
   const m = marginPct({ price: Number(price) || 0, costPrice: Number(cost) || 0 });
   const ro = !manage; // catalogue fields read-only for staff
@@ -277,6 +325,7 @@ function EditSheet({
         costPrice: Number(cost) || 0,
         unit,
         lowStockThreshold: Number(threshold) || 0,
+        expiryDate: expiry || null,
       });
     }
     const nextStock = Number(stock);
@@ -395,6 +444,28 @@ function EditSheet({
             />
           </label>
         </div>
+
+        <label className="block">
+          <span className={sheetLabel}>{t(lang, 'product.expiry')}</span>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              readOnly={ro}
+              className={`${field} w-full ${ro ? 'opacity-70' : ''}`}
+            />
+            {expiry && !ro && (
+              <button
+                type="button"
+                onClick={() => setExpiry('')}
+                className="shrink-0 rounded-lg bg-slate-200 px-3 text-sm font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-200"
+              >
+                {t(lang, 'product.clear')}
+              </button>
+            )}
+          </div>
+        </label>
 
         {history.length > 0 && (
           <div className="pt-1">

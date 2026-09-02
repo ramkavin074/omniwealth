@@ -23,6 +23,7 @@ export default function StockingApp() {
   const { lang, toggle } = useLang();
   const [tab, setTab] = useState<Tab>('home');
   const [lowOnly, setLowOnly] = useState(false);
+  const [expOnly, setExpOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [suppliersOpen, setSuppliersOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
@@ -123,6 +124,12 @@ export default function StockingApp() {
                 lang={lang}
                 onOpenLow={() => {
                   setLowOnly(true);
+                  setExpOnly(false);
+                  setTab('products');
+                }}
+                onOpenExpiring={() => {
+                  setExpOnly(true);
+                  setLowOnly(false);
                   setTab('products');
                 }}
               />
@@ -134,6 +141,8 @@ export default function StockingApp() {
                 lang={lang}
                 lowOnly={lowOnly}
                 onLowOnlyChange={setLowOnly}
+                expOnly={expOnly}
+                onExpOnlyChange={setExpOnly}
                 onScanInvoice={() => setScanDoc('invoice')}
               />
             )}

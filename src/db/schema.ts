@@ -742,6 +742,7 @@ export const storeProducts = store.table(
     stockQty: numeric('stock_qty').notNull().default('0'),
     unit: text('unit').notNull().default('piece'),
     lowStockThreshold: numeric('low_stock_threshold').notNull().default('0'),
+    expiryDate: text('expiry_date'), // 'YYYY-MM-DD' of the current batch; null = untracked
 
     updatedAt: numeric('updated_at').notNull(),
     deletedAt: numeric('deleted_at'),

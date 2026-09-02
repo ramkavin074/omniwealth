@@ -8,6 +8,7 @@ import {
   recentMovements,
   type MovementWithName,
 } from '../db/products';
+import { expiringSoon } from '../db/analytics';
 import type { Product } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow } from '../hooks';
@@ -18,6 +19,7 @@ import { syncNow } from '../sync';
 interface Props {
   lang: Lang;
   onOpenLow: () => void;
+  onOpenExpiring: () => void;
 }
 
 function timeAgo(now: number, ms: number): string {
@@ -31,8 +33,9 @@ function timeAgo(now: number, ms: number): string {
   return `${Math.round(h / 24)}d`;
 }
 
-export default function HomeScreen({ lang, onOpenLow }: Props) {
+export default function HomeScreen({ lang, onOpenLow, onOpenExpiring }: Props) {
   const stats = useLiveQuery(() => catalogueStats(), []);
+  const expiry = useLiveQuery(() => expiringSoon(), []);
   const activity = useLiveQuery(
     () => recentMovements(40),
     [],
@@ -95,6 +98,21 @@ export default function HomeScreen({ lang, onOpenLow }: Props) {
           value={stats?.movementsToday ?? '—'}
         />
       </div>
+
+      {expiry && expiry.urgent > 0 && (
+        <button
+          type="button"
+          onClick={onOpenExpiring}
+          className="w-full flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2.5 text-sm dark:bg-rose-950/40"
+        >
+          <span className="font-medium text-rose-700 dark:text-rose-300">
+            {t(lang, 'home.expiring').replace('{n}', String(expiry.urgent))}
+          </span>
+          <span className="font-semibold text-rose-700 dark:text-rose-300">
+            ›
+          </span>
+        </button>
+      )}
 
       <button
         type="button"

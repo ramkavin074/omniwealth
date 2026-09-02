@@ -154,6 +154,7 @@ async function runSync(): Promise<SyncOutcome> {
           await db().products.put({
             ...p,
             costPrice: p.costPrice ?? 0,
+            expiryDate: p.expiryDate ?? null,
             deletedAt: p.deletedAt ?? null,
           });
         }

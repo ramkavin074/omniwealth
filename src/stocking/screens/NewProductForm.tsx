@@ -37,6 +37,7 @@ export default function NewProductForm({
   const [openingStock, setOpeningStock] = useState('');
   const [unit, setUnit] = useState<Unit>(defaults.unit);
   const [threshold, setThreshold] = useState(String(defaults.lowStockThreshold));
+  const [expiry, setExpiry] = useState('');
   const [saving, setSaving] = useState(false);
 
   const canSave = name.trim().length > 0 && !saving;
@@ -54,6 +55,7 @@ export default function NewProductForm({
         openingStock: Number(openingStock) || 0,
         unit,
         lowStockThreshold: Number(threshold) || 0,
+        expiryDate: expiry || null,
       });
       onSaved(product);
     } finally {
@@ -163,17 +165,31 @@ export default function NewProductForm({
         </div>
       </div>
 
-      <div>
-        <label className={label} htmlFor="np-thresh">
-          {t(lang, 'product.lowStockThreshold')}
-        </label>
-        <input
-          id="np-thresh"
-          inputMode="decimal"
-          value={threshold}
-          onChange={(e) => setThreshold(e.target.value)}
-          className={field}
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={label} htmlFor="np-thresh">
+            {t(lang, 'product.lowStockThreshold')}
+          </label>
+          <input
+            id="np-thresh"
+            inputMode="decimal"
+            value={threshold}
+            onChange={(e) => setThreshold(e.target.value)}
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={label} htmlFor="np-expiry">
+            {t(lang, 'product.expiry')}
+          </label>
+          <input
+            id="np-expiry"
+            type="date"
+            value={expiry}
+            onChange={(e) => setExpiry(e.target.value)}
+            className={field}
+          />
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">

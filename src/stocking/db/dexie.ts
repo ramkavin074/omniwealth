@@ -99,6 +99,24 @@ export class StockingDB extends Dexie {
             if (m.supplierId === undefined) m.supplierId = null;
           });
       });
+    // v6: per-product expiry date ('YYYY-MM-DD'). No index change; backfill null.
+    this.version(6)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('products')
+          .toCollection()
+          .modify((p: Product) => {
+            if (p.expiryDate === undefined) p.expiryDate = null;
+          });
+      });
   }
 }
 

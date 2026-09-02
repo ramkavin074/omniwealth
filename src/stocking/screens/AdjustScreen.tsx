@@ -10,6 +10,7 @@ import {
   getProduct,
   NegativeStockError,
   searchProducts,
+  updateProduct,
 } from '../db/products';
 import { createSupplier, listSuppliers } from '../db/suppliers';
 import { useDebounced, useLiveQuery } from '../hooks';
@@ -36,6 +37,7 @@ export default function AdjustScreen({ lang }: Props) {
   const [note, setNote] = useState('');
   const [unitCost, setUnitCost] = useState('');
   const [supplierId, setSupplierId] = useState('');
+  const [expiry, setExpiry] = useState('');
   const [flash, setFlash] = useState<string | null>(null);
 
   // A positive delta is a stock-in → offer to record the purchase cost +
@@ -85,11 +87,15 @@ export default function AdjustScreen({ lang }: Props) {
         ...(isStockIn && sup && sup !== '__new' ? { supplierId: sup } : {}),
         ...change,
       });
+      if (isStockIn && expiry) {
+        await updateProduct(current.id, { expiryDate: expiry });
+      }
       setFlash(`${t(lang, 'adjust.applied')} · ${qtyAfter}`);
       setSupplierId('');
       setAmount(0);
       setNote('');
       setUnitCost('');
+      setExpiry('');
       setTimeout(() => setFlash(null), 2000);
     } catch (e) {
       if (e instanceof NegativeStockError && !allowNegative) {
@@ -256,6 +262,17 @@ export default function AdjustScreen({ lang }: Props) {
             ))}
             <option value="__new">＋ {t(lang, 'sup.add')}</option>
           </select>
+          <label className="block">
+            <span className="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+              {t(lang, 'product.expiry')}
+            </span>
+            <input
+              type="date"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 text-slate-900 dark:text-slate-50"
+            />
+          </label>
         </>
       )}
 
