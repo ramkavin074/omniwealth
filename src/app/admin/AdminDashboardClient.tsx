@@ -7,19 +7,24 @@ import {
   adminAddMemberAction,
   adminAuditAction,
   adminCreateStoreAction,
+  adminHouseholdsAction,
   adminOverviewAction,
+  adminPeopleAction,
   adminRemoveMemberAction,
   adminRevokeSessionsAction,
   adminSendResetAction,
   adminSetStoreStatusAction,
+  adminUnlockLoginAction,
   type AdminAuditRow,
+  type AdminHouseholdRow,
+  type AdminPersonRow,
   type AdminStoreRow,
-  type AdminUserRow,
 } from '@/actions/admin';
 
-type Tab = 'stores' | 'people' | 'audit';
+type Tab = 'households' | 'stores' | 'people' | 'audit';
 
 const DORMANT_DAYS = 7;
+const STALE_DAYS = 30;
 
 function ago(iso: string | number | null, now: number): string {
   if (!iso) return '—';
@@ -34,18 +39,54 @@ function ago(iso: string | number | null, now: number): string {
   const d = Math.round(h / 24);
   return `${d}d ago`;
 }
-const card =
-  'bg-slate-900 border border-slate-800 rounded-xl';
+
+const card = 'bg-slate-900 border border-slate-800 rounded-xl';
 const btn =
   'text-xs font-semibold rounded-lg px-3 py-1.5 border border-slate-700 bg-slate-950 text-slate-200 hover:text-white hover:border-slate-500 disabled:opacity-40';
 const input =
   'h-9 rounded-lg border border-slate-700 bg-slate-950 px-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-teal-600 focus:outline-none';
 
+function RoleTag({ role }: { role: string }) {
+  const strong = role === 'SUPER_ADMIN';
+  const mid = role === 'OWNER' || role === 'ADMIN';
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+        strong
+          ? 'bg-amber-500/15 text-amber-300'
+          : mid
+            ? 'bg-slate-700/60 text-slate-200'
+            : 'bg-slate-800 text-slate-400'
+      }`}
+    >
+      {role}
+    </span>
+  );
+}
+
+function StorePill({ status, name }: { status: string; name: string }) {
+  const map: Record<string, string> = {
+    active: 'bg-emerald-500/15 text-emerald-300',
+    trial: 'bg-amber-500/15 text-amber-300',
+    suspended: 'bg-rose-500/15 text-rose-300',
+  };
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[11px] ${
+        map[status] ?? 'bg-slate-800 text-slate-300'
+      }`}
+    >
+      {name} · {status}
+    </span>
+  );
+}
+
 export default function AdminDashboardClient() {
-  const [tab, setTab] = useState<Tab>('stores');
+  const [tab, setTab] = useState<Tab>('households');
   const [now] = useState(() => Date.now());
   const [stores, setStores] = useState<AdminStoreRow[]>([]);
-  const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [houses, setHouses] = useState<AdminHouseholdRow[]>([]);
+  const [people, setPeople] = useState<AdminPersonRow[]>([]);
   const [audit, setAudit] = useState<AdminAuditRow[]>([]);
   const [actFilter, setActFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -59,13 +100,15 @@ export default function AdminDashboardClient() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const r = await adminOverviewAction();
-    if (r.ok) {
-      setStores(r.stores);
-      setUsers(r.users);
-    } else {
-      flash(r.error);
-    }
+    const [ov, hh, pp] = await Promise.all([
+      adminOverviewAction(),
+      adminHouseholdsAction(),
+      adminPeopleAction(),
+    ]);
+    if (ov.ok) setStores(ov.stores);
+    else flash(ov.error);
+    if (hh.ok) setHouses(hh.rows);
+    if (pp.ok) setPeople(pp.rows);
     setLoading(false);
   }, []);
 
@@ -81,7 +124,11 @@ export default function AdminDashboardClient() {
     if (tab === 'audit') loadAudit(actFilter || undefined);
   }, [tab, actFilter, loadAudit]);
 
-  const run = async (key: string, fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) => {
+  const run = async (
+    key: string,
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    okMsg: string,
+  ) => {
     setBusy(key);
     try {
       const r = await fn();
@@ -99,7 +146,20 @@ export default function AdminDashboardClient() {
   };
 
   const userName = (id: string | null) =>
-    users.find((u) => u.id === id)?.name ?? (id ? id.slice(0, 8) : '—');
+    people.find((u) => u.id === id)?.name ?? (id ? id.slice(0, 8) : '—');
+
+  const onCreateStore = (name: string, ownerEmail: string, status?: string) =>
+    run(
+      `new-store:${ownerEmail}`,
+      () => adminCreateStoreAction({ name, ownerEmail, status }),
+      'Store created.',
+    );
+  const onStoreStatus = (id: string, status: string) =>
+    run(
+      `st:${id}`,
+      () => adminSetStoreStatusAction({ storeId: id, status }),
+      `Store set to ${status}.`,
+    );
 
   return (
     <div className="min-h-screen bg-slate-950 p-6 font-sans text-slate-100">
@@ -109,10 +169,13 @@ export default function AdminDashboardClient() {
             <ShieldAlert className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Operator Console</h1>
+            <h1 className="text-lg font-bold text-white">
+              Platform Operator Console
+            </h1>
             <p className="text-xs text-slate-400">
-              {stores.length} store{stores.length === 1 ? '' : 's'} ·{' '}
-              {users.length} people
+              {houses.length} household{houses.length === 1 ? '' : 's'} ·{' '}
+              {people.length} people · {stores.length} store
+              {stores.length === 1 ? '' : 's'}
             </p>
           </div>
         </div>
@@ -130,7 +193,7 @@ export default function AdminDashboardClient() {
       </header>
 
       <nav className="mt-6 flex gap-1 rounded-xl bg-slate-900 p-1">
-        {(['stores', 'people', 'audit'] as Tab[]).map((k) => (
+        {(['households', 'stores', 'people', 'audit'] as Tab[]).map((k) => (
           <button
             key={k}
             type="button"
@@ -156,26 +219,28 @@ export default function AdminDashboardClient() {
         <p className="mt-10 text-center text-sm text-slate-500">Loading…</p>
       ) : (
         <div className="mt-5">
+          {tab === 'households' && (
+            <HouseholdsTab
+              now={now}
+              houses={houses}
+              busy={busy}
+              onEnableStocking={(h) =>
+                onCreateStore(h.name, h.ownerEmail as string, 'trial')
+              }
+              onDisableStocking={(storeId) =>
+                onStoreStatus(storeId, 'suspended')
+              }
+            />
+          )}
+
           {tab === 'stores' && (
             <StoresTab
               now={now}
               stores={stores}
-              users={users}
+              peopleCount={people.length}
               busy={busy}
-              onStatus={(id, status) =>
-                run(
-                  `st:${id}`,
-                  () => adminSetStoreStatusAction({ storeId: id, status }),
-                  `Store set to ${status}.`,
-                )
-              }
-              onCreate={(name, ownerEmail) =>
-                run(
-                  'new-store',
-                  () => adminCreateStoreAction({ name, ownerEmail }),
-                  'Store created.',
-                )
-              }
+              onStatus={onStoreStatus}
+              onCreate={(name, ownerEmail) => onCreateStore(name, ownerEmail)}
               onAddMember={(storeId, email, role) =>
                 run(
                   `am:${storeId}`,
@@ -189,7 +254,8 @@ export default function AdminDashboardClient() {
           {tab === 'people' && (
             <PeopleTab
               now={now}
-              users={users}
+              people={people}
+              stores={stores}
               busy={busy}
               onReset={(id) =>
                 run(
@@ -217,16 +283,22 @@ export default function AdminDashboardClient() {
                   'Sessions revoked — they must log in again.',
                 )
               }
-              onRemove={(storeName, storeId, userId) => {
+              onUnlock={(id) =>
+                run(
+                  `ul:${id}`,
+                  () => adminUnlockLoginAction({ userId: id }),
+                  'Login lock cleared.',
+                )
+              }
+              onRemove={(storeName, userId) => {
                 const st = stores.find((s) => s.name === storeName);
                 if (!st) return;
                 run(
-                  `rm:${storeId}:${userId}`,
+                  `rm:${st.id}:${userId}`,
                   () => adminRemoveMemberAction({ storeId: st.id, userId }),
                   'Removed from store.',
                 );
               }}
-              stores={stores}
             />
           )}
 
@@ -254,10 +326,7 @@ export default function AdminDashboardClient() {
               </div>
               <ul className="divide-y divide-slate-800">
                 {audit.map((a, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 py-2 text-sm"
-                  >
+                  <li key={i} className="flex items-center gap-3 py-2 text-sm">
                     <span
                       className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
                         a.kind === 'login'
@@ -300,12 +369,154 @@ export default function AdminDashboardClient() {
   );
 }
 
+/* ------------------------------------------------------------ Households */
+
+function HouseholdsTab({
+  now,
+  houses,
+  busy,
+  onEnableStocking,
+  onDisableStocking,
+}: {
+  now: number;
+  houses: AdminHouseholdRow[];
+  busy: string | null;
+  onEnableStocking: (h: AdminHouseholdRow) => void;
+  onDisableStocking: (storeId: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className={`${card} overflow-x-auto`}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-2.5">Household</th>
+              <th className="px-3 py-2.5">Members</th>
+              <th className="px-3 py-2.5">Wealth</th>
+              <th className="px-3 py-2.5">Stocking</th>
+              <th className="px-3 py-2.5">Last login</th>
+              <th className="px-3 py-2.5"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {houses.map((h) => {
+              const liveStore = h.stores.find((s) => s.status !== 'suspended');
+              return (
+                <tr
+                  key={h.id}
+                  className="border-b border-slate-800/60 align-top"
+                >
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-100">{h.name}</div>
+                    <div className="text-xs text-slate-500">
+                      {h.ownerEmail ?? 'no owner'} · since{' '}
+                      {h.createdAt
+                        ? new Date(h.createdAt).toLocaleDateString()
+                        : '—'}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 tabular-nums text-slate-300">
+                    {h.members}
+                  </td>
+                  <td className="px-3 py-3">
+                    {h.isStoreShell ? (
+                      <span className="text-xs text-slate-500">
+                        store-only
+                      </span>
+                    ) : (
+                      <span className="text-xs text-emerald-400">Vault</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {h.stores.length === 0 && (
+                        <span className="text-xs text-slate-600">—</span>
+                      )}
+                      {h.stores.map((s) => (
+                        <StorePill
+                          key={s.id}
+                          status={s.status}
+                          name={s.name}
+                        />
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-slate-400">
+                    {ago(h.lastLogin, now)}
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex justify-end">
+                      {h.stores.length === 0 ? (
+                        <button
+                          type="button"
+                          disabled={
+                            !h.ownerEmail ||
+                            busy === `new-store:${h.ownerEmail}`
+                          }
+                          onClick={() => onEnableStocking(h)}
+                          className={`${btn} border-teal-600 text-teal-200`}
+                          title={
+                            h.ownerEmail
+                              ? 'Create a trial store for this household'
+                              : 'Household has no owner account'
+                          }
+                        >
+                          ＋ Enable stocking
+                        </button>
+                      ) : liveStore ? (
+                        <button
+                          type="button"
+                          disabled={busy === `st:${liveStore.id}`}
+                          onClick={() => {
+                            if (
+                              confirm(
+                                `Suspend "${liveStore.name}"? Its data is kept; the app stops working for its staff.`,
+                              )
+                            )
+                              onDisableStocking(liveStore.id);
+                          }}
+                          className={`${btn} border-rose-700/50 text-rose-300`}
+                        >
+                          Disable stocking
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-600">
+                          suspended
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {houses.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-6 text-center text-slate-500"
+                >
+                  No households.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-slate-600">
+        Wealth vault is on for every household unless it is a store-only shell.
+        &quot;Enable stocking&quot; provisions a trial store owned by the
+        household&apos;s owner; fine-tune members and status in the Stores tab.
+      </p>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- Stores */
 
 function StoresTab({
   now,
   stores,
-  users,
+  peopleCount,
   busy,
   onStatus,
   onCreate,
@@ -313,7 +524,7 @@ function StoresTab({
 }: {
   now: number;
   stores: AdminStoreRow[];
-  users: AdminUserRow[];
+  peopleCount: number;
   busy: string | null;
   onStatus: (id: string, status: string) => void;
   onCreate: (name: string, ownerEmail: string) => void;
@@ -358,7 +569,7 @@ function StoresTab({
             />
             <button
               type="button"
-              disabled={busy === 'new-store' || !nName || !nEmail}
+              disabled={busy?.startsWith('new-store') || !nName || !nEmail}
               onClick={() => {
                 onCreate(nName.trim(), nEmail.trim());
                 setNName('');
@@ -405,7 +616,11 @@ function StoresTab({
                     {s.products}
                   </td>
                   <td className="px-3 py-2.5 text-slate-400">
-                    <span className={dormant(s.lastActivity) ? 'text-slate-600' : ''}>
+                    <span
+                      className={
+                        dormant(s.lastActivity) ? 'text-slate-600' : ''
+                      }
+                    >
                       {ago(s.lastActivity, now)}
                     </span>
                   </td>
@@ -479,7 +694,10 @@ function StoresTab({
             ))}
             {stores.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                <td
+                  colSpan={5}
+                  className="px-4 py-6 text-center text-slate-500"
+                >
                   No stores yet.
                 </td>
               </tr>
@@ -488,7 +706,7 @@ function StoresTab({
         </table>
       </div>
       <p className="text-xs text-slate-600">
-        {users.length} people across all stores. Suspended = loses sync &amp;
+        {peopleCount} accounts on the platform. Suspended = loses sync &amp;
         app access, data kept.
       </p>
     </div>
@@ -497,120 +715,220 @@ function StoresTab({
 
 /* ---------------------------------------------------------------- People */
 
+const PEOPLE_FILTERS = [
+  'all',
+  'dormant',
+  'locked',
+  'super-admins',
+  'store users',
+  'wealth-only',
+] as const;
+type PeopleFilter = (typeof PEOPLE_FILTERS)[number];
+
 function PeopleTab({
   now,
-  users,
-  stores,
+  people,
   busy,
   onReset,
   onRevoke,
+  onUnlock,
   onRemove,
 }: {
   now: number;
-  users: AdminUserRow[];
+  people: AdminPersonRow[];
   stores: AdminStoreRow[];
   busy: string | null;
   onReset: (userId: string) => void;
   onRevoke: (userId: string) => void;
-  onRemove: (storeName: string, storeId: string, userId: string) => void;
+  onUnlock: (userId: string) => void;
+  onRemove: (storeName: string, userId: string) => void;
 }) {
-  void stores;
-  const isDormant = (t: number | null) =>
-    !t || now - t > DORMANT_DAYS * 864e5;
+  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<PeopleFilter>('all');
+
+  const ageMs = (iso: string | null) =>
+    iso ? now - new Date(iso).getTime() : Infinity;
+  const staleLogin = (iso: string | null) => ageMs(iso) > STALE_DAYS * 864e5;
+  const freshLogin = (iso: string | null) => ageMs(iso) < DORMANT_DAYS * 864e5;
+
+  const needle = q.trim().toLowerCase();
+  const rows = people.filter((u) => {
+    if (
+      needle &&
+      !`${u.name} ${u.email} ${u.household}`.toLowerCase().includes(needle)
+    )
+      return false;
+    switch (filter) {
+      case 'dormant':
+        return staleLogin(u.lastLogin);
+      case 'locked':
+        return u.loginLocked;
+      case 'super-admins':
+        return u.role === 'SUPER_ADMIN';
+      case 'store users':
+        return u.stores.length > 0;
+      case 'wealth-only':
+        return u.stores.length === 0 && !u.isStoreShell;
+      default:
+        return true;
+    }
+  });
 
   return (
-    <div className={`${card} overflow-x-auto`}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-500">
-            <th className="px-4 py-2.5">Person</th>
-            <th className="px-3 py-2.5">Stores</th>
-            <th className="px-3 py-2.5">Last login</th>
-            <th className="px-3 py-2.5">Last active</th>
-            <th className="px-3 py-2.5"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.id} className="border-b border-slate-800/60 align-top">
-              <td className="px-4 py-3">
-                <div className="font-medium text-slate-100">{u.name}</div>
-                <div className="text-xs text-slate-500">{u.email}</div>
-              </td>
-              <td className="px-3 py-3">
-                <div className="flex flex-wrap gap-1">
-                  {u.memberships.map((m, i) => (
-                    <span
-                      key={i}
-                      className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-300"
-                    >
-                      {m.store} · {m.role}
-                    </span>
-                  ))}
-                  {u.memberships.length === 0 && (
-                    <span className="text-xs text-slate-600">none</span>
-                  )}
-                </div>
-              </td>
-              <td className="px-3 py-3 text-slate-400">{ago(u.lastLogin, now)}</td>
-              <td className="px-3 py-3">
-                <span
-                  className={
-                    isDormant(u.lastActive)
-                      ? 'text-slate-600'
-                      : 'text-emerald-400'
-                  }
-                >
-                  {ago(u.lastActive, now)}
-                </span>
-              </td>
-              <td className="px-3 py-3">
-                <div className="flex flex-wrap justify-end gap-1.5">
-                  <button
-                    type="button"
-                    disabled={busy === `rs:${u.id}`}
-                    onClick={() => onReset(u.id)}
-                    className={btn}
-                  >
-                    Send reset
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy === `rv:${u.id}`}
-                    onClick={() => {
-                      if (confirm(`Log ${u.name} out of every device?`))
-                        onRevoke(u.id);
-                    }}
-                    className={btn}
-                  >
-                    Revoke sessions
-                  </button>
-                  {u.memberships.map((m, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        if (confirm(`Remove ${u.name} from ${m.store}?`))
-                          onRemove(m.store, u.id, u.id);
-                      }}
-                      className={`${btn} border-rose-700/50 text-rose-300`}
-                    >
-                      Remove from {m.store}
-                    </button>
-                  ))}
-                </div>
-              </td>
-            </tr>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          className={`${input} min-w-[200px] flex-1`}
+          placeholder="Search name, email, household"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <select
+          className={input}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as PeopleFilter)}
+        >
+          {PEOPLE_FILTERS.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
           ))}
-          {users.length === 0 && (
-            <tr>
-              <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                No store members yet.
-              </td>
+        </select>
+        <span className="text-xs text-slate-500">{rows.length} shown</span>
+      </div>
+
+      <div className={`${card} overflow-x-auto`}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-2.5">Person</th>
+              <th className="px-3 py-2.5">Household</th>
+              <th className="px-3 py-2.5">Stores</th>
+              <th className="px-3 py-2.5">Last login</th>
+              <th className="px-3 py-2.5">Sessions</th>
+              <th className="px-3 py-2.5"></th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((u) => (
+              <tr
+                key={u.id}
+                className="border-b border-slate-800/60 align-top"
+              >
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-100">
+                      {u.name}
+                    </span>
+                    <RoleTag role={u.role} />
+                    {u.loginLocked && (
+                      <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-rose-300">
+                        locked
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-500">{u.email}</div>
+                </td>
+                <td className="px-3 py-3 text-slate-300">
+                  {u.household}
+                  {u.isStoreShell && (
+                    <span className="ml-1 text-xs text-slate-600">
+                      (shell)
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {u.stores.map((m, i) => (
+                      <span
+                        key={i}
+                        className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-300"
+                      >
+                        {m.store} · {m.role}
+                      </span>
+                    ))}
+                    {u.stores.length === 0 && (
+                      <span className="text-xs text-slate-600">none</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-3 py-3">
+                  <span
+                    className={
+                      freshLogin(u.lastLogin)
+                        ? 'text-emerald-400'
+                        : staleLogin(u.lastLogin)
+                          ? 'text-slate-600'
+                          : 'text-slate-400'
+                    }
+                  >
+                    {ago(u.lastLogin, now)}
+                  </span>
+                </td>
+                <td className="px-3 py-3 tabular-nums text-slate-400">
+                  {u.activeSessions}
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    <button
+                      type="button"
+                      disabled={busy === `rs:${u.id}`}
+                      onClick={() => onReset(u.id)}
+                      className={btn}
+                    >
+                      Send reset
+                    </button>
+                    {u.loginLocked && (
+                      <button
+                        type="button"
+                        disabled={busy === `ul:${u.id}`}
+                        onClick={() => onUnlock(u.id)}
+                        className={`${btn} border-amber-600/50 text-amber-200`}
+                      >
+                        Unlock login
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={busy === `rv:${u.id}` || u.activeSessions === 0}
+                      onClick={() => {
+                        if (confirm(`Log ${u.name} out of every device?`))
+                          onRevoke(u.id);
+                      }}
+                      className={btn}
+                    >
+                      Revoke sessions
+                    </button>
+                    {u.stores.map((m, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          if (confirm(`Remove ${u.name} from ${m.store}?`))
+                            onRemove(m.store, u.id);
+                        }}
+                        className={`${btn} border-rose-700/50 text-rose-300`}
+                      >
+                        Remove from {m.store}
+                      </button>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-6 text-center text-slate-500"
+                >
+                  No matching accounts.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

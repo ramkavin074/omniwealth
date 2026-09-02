@@ -1,12 +1,14 @@
 'use server';
 
 import crypto from 'crypto';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { Resend } from 'resend';
 import { db } from '@/db';
 import {
   adminAudit,
+  households,
   passwordResets,
+  rateLimits,
   sessions,
   storeMembers,
   storeProducts,
@@ -315,6 +317,212 @@ export async function adminAuditAction(opts?: {
 
   rows.sort((a, b) => b.when - a.when);
   return { ok: true as const, rows: rows.slice(0, limit) };
+}
+
+// ---------------------------------------------------------------- households
+
+// The "entitlements" view: every household (tenant), which modules it can
+// reach — Wealth vault (every household, unless it is a store-only shell) and
+// Stocking (any member belongs to a store) — plus liveness. No portfolio
+// values, no balances: access matrix only.
+export interface AdminHouseholdRow {
+  id: string;
+  name: string;
+  createdAt: string | null;
+  isStoreShell: boolean;
+  ownerEmail: string | null;
+  members: number;
+  stores: { id: string; name: string; status: string }[];
+  lastLogin: string | null;
+}
+
+export async function adminHouseholdsAction() {
+  const g = await requireSuperAdmin();
+  if (!g) return FORBIDDEN;
+
+  const hhRows = await db.select().from(households).orderBy(households.name);
+
+  const userRows = await db
+    .select({
+      id: users.id,
+      householdId: users.householdId,
+      email: users.email,
+      role: users.role,
+    })
+    .from(users);
+
+  const loginRows = await db
+    .select({
+      userId: sessions.userId,
+      last: sql<string>`max(${sessions.createdAt})`,
+    })
+    .from(sessions)
+    .groupBy(sessions.userId);
+  const loginByUser = new Map(loginRows.map((r) => [r.userId, r.last]));
+
+  // household → linked stores (via any member's store membership)
+  const linkRows = await db
+    .select({
+      householdId: users.householdId,
+      storeId: stores.id,
+      storeName: stores.name,
+      storeStatus: stores.status,
+    })
+    .from(storeMembers)
+    .innerJoin(users, eq(users.id, storeMembers.userId))
+    .innerJoin(stores, eq(stores.id, storeMembers.storeId));
+
+  const rows: AdminHouseholdRow[] = hhRows.map((h) => {
+    const mine = userRows.filter((u) => u.householdId === h.id);
+    const owner =
+      mine.find((u) => u.role === 'OWNER') ??
+      mine.find((u) => u.role === 'SUPER_ADMIN') ??
+      mine[0];
+    const lastMs = mine
+      .map((u) => loginByUser.get(u.id))
+      .filter(Boolean)
+      .map((d) => new Date(d as string).getTime());
+    const storeMap = new Map<
+      string,
+      { id: string; name: string; status: string }
+    >();
+    for (const l of linkRows) {
+      if (l.householdId !== h.id) continue;
+      storeMap.set(l.storeId, {
+        id: l.storeId,
+        name: l.storeName,
+        status: l.storeStatus,
+      });
+    }
+    return {
+      id: h.id,
+      name: h.name,
+      createdAt: h.createdAt ? new Date(h.createdAt).toISOString() : null,
+      isStoreShell: h.isStoreShell,
+      ownerEmail: owner?.email ?? null,
+      members: mine.length,
+      stores: [...storeMap.values()],
+      lastLogin: lastMs.length
+        ? new Date(Math.max(...lastMs)).toISOString()
+        : null,
+    };
+  });
+
+  return { ok: true as const, rows };
+}
+
+// ---------------------------------------------------------------- people
+
+// Every account on the platform — not just store members. Account / access
+// facts only.
+export interface AdminPersonRow {
+  id: string;
+  name: string;
+  email: string;
+  role: string; // global users.role
+  household: string;
+  isStoreShell: boolean;
+  accountCreated: string | null;
+  lastLogin: string | null;
+  activeSessions: number;
+  stores: { store: string; role: string }[];
+  loginLocked: boolean;
+}
+
+export async function adminPeopleAction() {
+  const g = await requireSuperAdmin();
+  if (!g) return FORBIDDEN;
+
+  const userRows = await db
+    .select({
+      id: users.id,
+      name: users.fullName,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt,
+      household: households.name,
+      isStoreShell: households.isStoreShell,
+    })
+    .from(users)
+    .innerJoin(households, eq(households.id, users.householdId));
+
+  const sessionAgg = await db
+    .select({
+      userId: sessions.userId,
+      last: sql<string>`max(${sessions.createdAt})`,
+      active: sql<number>`(count(*) filter (where ${sessions.expiresAt} > now()))::int`,
+    })
+    .from(sessions)
+    .groupBy(sessions.userId);
+  const sByUser = new Map(sessionAgg.map((r) => [r.userId, r]));
+
+  const memberRows = await db
+    .select({
+      userId: storeMembers.userId,
+      store: stores.name,
+      role: storeMembers.role,
+    })
+    .from(storeMembers)
+    .innerJoin(stores, eq(stores.id, storeMembers.storeId));
+
+  // Live per-account login locks (fixed-window brute-force counter).
+  const lockRows = await db
+    .select({ key: rateLimits.key })
+    .from(rateLimits)
+    .where(and(gt(rateLimits.attempts, 4), gt(rateLimits.resetAt, new Date())));
+  const lockedEmails = new Set(
+    lockRows
+      .map((r) => r.key)
+      .filter((k) => k.startsWith('login:email:'))
+      .map((k) => k.slice('login:email:'.length)),
+  );
+
+  const rows: AdminPersonRow[] = userRows.map((u) => {
+    const s = sByUser.get(u.id);
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      household: u.household,
+      isStoreShell: u.isStoreShell,
+      accountCreated: u.createdAt ? new Date(u.createdAt).toISOString() : null,
+      lastLogin: s?.last ? new Date(s.last).toISOString() : null,
+      activeSessions: s?.active ?? 0,
+      stores: memberRows
+        .filter((m) => m.userId === u.id)
+        .map((m) => ({ store: m.store, role: m.role })),
+      loginLocked: lockedEmails.has(u.email.trim().toLowerCase()),
+    };
+  });
+  rows.sort(
+    (a, b) =>
+      (b.lastLogin ? Date.parse(b.lastLogin) : 0) -
+      (a.lastLogin ? Date.parse(a.lastLogin) : 0),
+  );
+
+  return { ok: true as const, rows };
+}
+
+export async function adminUnlockLoginAction(input: { userId: string }) {
+  const g = await requireSuperAdmin();
+  if (!g) return FORBIDDEN;
+  const [u] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, input.userId))
+    .limit(1);
+  if (!u) return { ok: false as const, error: 'User not found.' };
+  const email = u.email.trim().toLowerCase();
+  const cleared = await db
+    .delete(rateLimits)
+    .where(inArray(rateLimits.key, [`login:email:${email}`]))
+    .returning({ key: rateLimits.key });
+  await logAudit(g.user.id, 'account.login-unlocked', {
+    targetUserId: input.userId,
+    detail: email,
+  });
+  return { ok: true as const, cleared: cleared.length };
 }
 
 // ---------------------------------------------------------------- provision
