@@ -7,6 +7,7 @@ import type {
   BarcodeCacheEntry,
   Movement,
   Product,
+  Sale,
   Supplier,
   SupplierPayment,
 } from '../types';
@@ -26,6 +27,7 @@ export class StockingDB extends Dexie {
   syncState!: Table<SyncStateRow, string>;
   suppliers!: Table<Supplier, string>;
   supplierPayments!: Table<SupplierPayment, string>;
+  sales!: Table<Sale, string>;
 
   constructor() {
     super('stocking');
@@ -117,6 +119,16 @@ export class StockingDB extends Dexie {
             if (p.expiryDate === undefined) p.expiryDate = null;
           });
       });
+    // v7: billing — sales (bill header + embedded line items).
+    this.version(7).stores({
+      products: 'id, barcode, name, updatedAt, deletedAt',
+      movements: 'id, productId, createdAt',
+      barcodeCache: 'barcode, fetchedAt',
+      syncState: 'id',
+      suppliers: 'id, name, updatedAt, deletedAt',
+      supplierPayments: 'id, supplierId, updatedAt',
+      sales: 'id, billNo, createdAt, updatedAt',
+    });
   }
 }
 

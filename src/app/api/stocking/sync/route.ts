@@ -2,6 +2,7 @@ import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeProducts,
+  storeSales,
   storeStockMovements,
   supplierPayments,
   suppliers,
@@ -73,6 +74,20 @@ interface InPayment {
   deletedAt: number | null;
 }
 
+interface InSale {
+  id: string;
+  billNo: string;
+  items: unknown;
+  total: number;
+  tenderType: string;
+  cashAmount: number;
+  upiAmount: number;
+  note: string | null;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 const num = (v: unknown, d = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
@@ -93,6 +108,7 @@ export async function POST(request: Request) {
   let inMovements: InMovement[] = [];
   let inSuppliers: InSupplier[] = [];
   let inPayments: InPayment[] = [];
+  let inSales: InSale[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
@@ -100,6 +116,7 @@ export async function POST(request: Request) {
     inMovements = Array.isArray(body?.movements) ? body.movements : [];
     inSuppliers = Array.isArray(body?.suppliers) ? body.suppliers : [];
     inPayments = Array.isArray(body?.payments) ? body.payments : [];
+    inSales = Array.isArray(body?.sales) ? body.sales : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
@@ -108,7 +125,8 @@ export async function POST(request: Request) {
     inProducts.length +
     inMovements.length +
     inSuppliers.length +
-    inPayments.length;
+    inPayments.length +
+    inSales.length;
   if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
   }
@@ -280,10 +298,52 @@ export async function POST(request: Request) {
     }
   }
 
+  // ---- push: sales (upsert, LWW) — every role can ring up a bill ----
+  if (inSales.length) {
+    const rows = inSales
+      .filter((s) => s && typeof s.id === 'string' && Array.isArray(s.items))
+      .map((s) => ({
+        id: s.id,
+        storeId,
+        userId: auth.userId, // server-authoritative
+        billNo: String(s.billNo ?? ''),
+        items: s.items as unknown[],
+        total: String(num(s.total)),
+        tenderType: s.tenderType || 'cash',
+        cashAmount: String(num(s.cashAmount)),
+        upiAmount: String(num(s.upiAmount)),
+        note: s.note ?? null,
+        createdAt: String(num(s.createdAt)),
+        updatedAt: String(num(s.updatedAt)),
+        deletedAt: s.deletedAt == null ? null : String(num(s.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeSales)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeSales.id,
+          set: {
+            note: sql`excluded.note`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeSales.storeId} = ${storeId} AND ${storeSales.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
   // ---- pull: everything newer than the client cursor ----
   const sinceDate = new Date(since);
-  const [pulledProducts, pulledMovements, pulledSuppliers, pulledPayments] =
-    await Promise.all([
+  const [
+    pulledProducts,
+    pulledMovements,
+    pulledSuppliers,
+    pulledPayments,
+    pulledSales,
+  ] = await Promise.all([
       db
         .select()
         .from(storeProducts)
@@ -322,6 +382,13 @@ export async function POST(request: Request) {
             eq(supplierPayments.storeId, storeId),
             gt(supplierPayments.syncedAt, sinceDate),
           ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeSales)
+        .where(
+          and(eq(storeSales.storeId, storeId), gt(storeSales.syncedAt, sinceDate)),
         )
         .limit(MAX_ROWS),
     ]);
@@ -372,6 +439,20 @@ export async function POST(request: Request) {
         paidAt: num(p.paidAt),
         updatedAt: num(p.updatedAt),
         deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
+      })),
+      sales: pulledSales.map((s) => ({
+        id: s.id,
+        billNo: s.billNo,
+        userId: s.userId,
+        items: Array.isArray(s.items) ? s.items : [],
+        total: num(s.total),
+        tenderType: s.tenderType,
+        cashAmount: num(s.cashAmount),
+        upiAmount: num(s.upiAmount),
+        note: s.note,
+        createdAt: num(s.createdAt),
+        updatedAt: num(s.updatedAt),
+        deletedAt: s.deletedAt == null ? null : num(s.deletedAt),
       })),
     },
     200,

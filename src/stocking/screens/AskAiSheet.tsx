@@ -27,6 +27,7 @@ function auth(): { token?: string; storeId?: string } {
 
 const SUGGESTIONS_EN = [
   'What is running low?',
+  'What is expiring soon?',
   "Today's top sellers?",
   'What have I not sold in a month?',
   'Which supplier do I owe the most?',

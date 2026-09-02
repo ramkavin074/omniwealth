@@ -8,6 +8,7 @@ import { db } from './db/dexie';
 import type {
   Movement,
   Product,
+  Sale,
   Supplier,
   SupplierPayment,
 } from './types';
@@ -82,6 +83,10 @@ async function runSync(): Promise<SyncOutcome> {
     .supplierPayments.where('updatedAt')
     .above(cursor)
     .toArray();
+  const dirtySales = await db()
+    .sales.where('updatedAt')
+    .above(cursor)
+    .toArray();
 
   let res: Response;
   try {
@@ -100,6 +105,7 @@ async function runSync(): Promise<SyncOutcome> {
         movements: dirtyMovements,
         suppliers: dirtySuppliers,
         payments: dirtyPayments,
+        sales: dirtySales,
       }),
     });
   } catch {
@@ -120,6 +126,7 @@ async function runSync(): Promise<SyncOutcome> {
     movements: Movement[];
     suppliers?: Supplier[];
     payments?: SupplierPayment[];
+    sales?: Sale[];
   };
 
   // The server is the source of truth for the caller's role — keep the local
@@ -140,6 +147,7 @@ async function runSync(): Promise<SyncOutcome> {
 
   const pulledSuppliers = data.suppliers ?? [];
   const pulledPayments = data.payments ?? [];
+  const pulledSales = data.sales ?? [];
 
   await db().transaction(
     'rw',
@@ -147,6 +155,7 @@ async function runSync(): Promise<SyncOutcome> {
     db().movements,
     db().suppliers,
     db().supplierPayments,
+    db().sales,
     async () => {
       for (const p of data.products) {
         const local = await db().products.get(p.id);
@@ -182,6 +191,16 @@ async function runSync(): Promise<SyncOutcome> {
             .supplierPayments.put({ ...p, deletedAt: p.deletedAt ?? null });
         }
       }
+      for (const s of pulledSales) {
+        const local = await db().sales.get(s.id);
+        if (!local || local.updatedAt < s.updatedAt) {
+          await db().sales.put({
+            ...s,
+            items: Array.isArray(s.items) ? s.items : [],
+            deletedAt: s.deletedAt ?? null,
+          });
+        }
+      }
     },
   );
 
@@ -197,12 +216,14 @@ async function runSync(): Promise<SyncOutcome> {
       dirtyProducts.length +
       dirtyMovements.length +
       dirtySuppliers.length +
-      dirtyPayments.length,
+      dirtyPayments.length +
+      dirtySales.length,
     pulled:
       data.products.length +
       data.movements.length +
       pulledSuppliers.length +
-      pulledPayments.length,
+      pulledPayments.length +
+      pulledSales.length,
   };
 }
 

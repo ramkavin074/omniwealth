@@ -23,6 +23,7 @@ interface Props {
   onOpenSuppliers: () => void;
   onOpenReports: () => void;
   onOpenAudit: () => void;
+  onOpenSales: () => void;
 }
 
 const field =
@@ -36,6 +37,7 @@ export default function SettingsSheet({
   onOpenSuppliers,
   onOpenReports,
   onOpenAudit,
+  onOpenSales,
 }: Props) {
   const initial = getDefaults();
   const [manage] = useState(canManage);
@@ -150,6 +152,13 @@ export default function SettingsSheet({
 
         <section className="space-y-2">
           <p className={heading}>{t(lang, 'settings.tools')}</p>
+          <button
+            type="button"
+            onClick={onOpenSales}
+            className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+          >
+            {t(lang, 'sales.title')}
+          </button>
           {manage && (
             <button
               type="button"

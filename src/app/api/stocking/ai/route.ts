@@ -28,6 +28,15 @@ const n = (v: unknown) => {
   return Number.isFinite(x) ? x : 0;
 };
 
+/** Whole days from today to a 'YYYY-MM-DD' string; null if unparseable. */
+const daysTo = (iso: string | null): number | null => {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  const then = new Date(y, m - 1, d).setHours(0, 0, 0, 0);
+  const today = new Date().setHours(0, 0, 0, 0);
+  return Math.round((then - today) / 864e5);
+};
+
 export async function POST(request: Request) {
   const headers = corsHeaders(request.headers.get('origin'), 'POST, OPTIONS');
   const json = (b: unknown, s: number) => Response.json(b, { status: s, headers });
@@ -99,8 +108,22 @@ export async function POST(request: Request) {
       low: n(p.stockQty) <= n(p.lowStockThreshold),
     };
     if (manage) row.cost = n(p.costPrice);
+    if (p.expiryDate) row.expiry = p.expiryDate;
     return row;
   });
+
+  // Items on hand that are expired or expiring within 30 days.
+  const expiringSoon = products
+    .map((p) => ({ p, d: daysTo(p.expiryDate) }))
+    .filter((x) => x.d !== null && x.d <= 30 && n(x.p.stockQty) > 0)
+    .sort((a, b) => (a.d as number) - (b.d as number))
+    .map((x) => ({
+      name: x.p.name,
+      expiry: x.p.expiryDate,
+      daysLeft: x.d,
+      stock: n(x.p.stockQty),
+      unit: x.p.unit,
+    }));
 
   // 30-day sales from scan-out movements
   const priceOf = new Map(products.map((p) => [p.id, n(p.price)]));
@@ -133,17 +156,21 @@ export async function POST(request: Request) {
   const context = {
     products: catalogue.length,
     lowCount: catalogue.filter((c) => c.low).length,
+    today: new Date().toISOString().slice(0, 10),
     salesLast30Days: Math.round(salesValue),
     topSellers,
+    expiringSoon,
     ...(manage ? { supplierBalances } : {}),
     catalogue,
   };
 
   const system =
     `You are a concise assistant for a small Indian retail shop's stock app. ` +
-    `Answer ONLY from the JSON below. Money is in ₹. If asked something not in ` +
-    `the data, say you don't have that. Keep it short, plain text, no markdown ` +
-    `tables. Reply in the same language as the question.\n\nDATA:\n` +
+    `Answer ONLY from the JSON below. Money is in ₹. Dates are YYYY-MM-DD; ` +
+    `"today" is given and "daysLeft" is days until expiry (negative = already ` +
+    `expired). If asked something not in the data, say you don't have that. ` +
+    `Keep it short, plain text, no markdown tables. Reply in the same language ` +
+    `as the question.\n\nDATA:\n` +
     JSON.stringify(context);
 
   try {

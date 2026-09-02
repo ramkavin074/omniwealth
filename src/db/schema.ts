@@ -8,6 +8,7 @@ import {
   integer,
   numeric,
   date,
+  jsonb,
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
@@ -723,6 +724,41 @@ export const supplierPayments = store.table(
       t.syncedAt,
     ),
     supplierIdx: index('store_supplier_payments_supplier_idx').on(t.supplierId),
+  }),
+);
+
+// Billing (B1). Line items are embedded as JSON — the stock effect of a sale
+// is recorded separately as scan-out rows in stock_movements; this table is
+// the bill record for receipts + day-end reporting.
+export const storeSales = store.table(
+  'sales',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id), // server-stamped
+    billNo: text('bill_no').notNull(),
+    items: jsonb('items').notNull(), // SaleItem[]
+    total: numeric('total').notNull(),
+    tenderType: text('tender_type').notNull(),
+    cashAmount: numeric('cash_amount').notNull().default('0'),
+    upiAmount: numeric('upi_amount').notNull().default('0'),
+    note: text('note'),
+    createdAt: numeric('created_at').notNull(), // epoch ms, client clock
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'), // set when voided
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_sales_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    storeCreatedIdx: index('store_sales_store_created_idx').on(
+      t.storeId,
+      t.createdAt,
+    ),
   }),
 );
 

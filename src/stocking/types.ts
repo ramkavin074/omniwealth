@@ -124,6 +124,37 @@ export type ProductDraft = Omit<
   expiryDate?: string | null;
 };
 
+// ---- billing (B1) ----
+
+export type TenderType = 'cash' | 'upi' | 'split';
+
+export interface SaleItem {
+  productId: string;
+  name: string; // snapshot at sale time — survives a later rename/delete
+  qty: number;
+  unit: Unit;
+  unitPrice: number; // ₹ per unit actually charged (editable at the counter)
+}
+
+export interface Sale {
+  id: string;
+  billNo: string; // per-device, e.g. "K7-0042"
+  createdAt: number; // epoch ms
+  userId: string | null; // who rang it up (server-stamped on sync)
+  items: SaleItem[];
+  total: number; // Σ qty × unitPrice
+  tenderType: TenderType;
+  cashAmount: number; // amount taken as cash (= total for a cash sale)
+  upiAmount: number; // amount taken as UPI
+  note: string | null;
+  updatedAt: number; // epoch ms — LWW for sync / void
+  deletedAt: number | null; // set when the bill is voided
+}
+
+export function saleLineTotal(i: SaleItem): number {
+  return Math.round(i.qty * i.unitPrice * 100) / 100;
+}
+
 export interface BarcodeCacheEntry {
   barcode: string;
   name: string | null;

@@ -14,6 +14,8 @@ import ReportsScreen from './screens/ReportsScreen';
 import AuditScreen from './screens/AuditScreen';
 import AskAiSheet from './screens/AskAiSheet';
 import ScanDocScreen from './screens/ScanDocScreen';
+import SellScreen from './screens/SellScreen';
+import SalesScreen from './screens/SalesScreen';
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
@@ -30,6 +32,8 @@ export default function StockingApp() {
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
   const [scanDoc, setScanDoc] = useState<null | 'invoice' | 'payment'>(null);
+  const [sellOpen, setSellOpen] = useState(false);
+  const [salesOpen, setSalesOpen] = useState(false);
 
   // Opportunistic sync on open; also whenever the device comes back online.
   useEffect(() => {
@@ -98,7 +102,11 @@ export default function StockingApp() {
       </nav>
 
       <main className="flex-1 min-h-0 overflow-y-auto">
-        {scanDoc ? (
+        {sellOpen ? (
+          <SellScreen lang={lang} onClose={() => setSellOpen(false)} />
+        ) : salesOpen ? (
+          <SalesScreen lang={lang} onClose={() => setSalesOpen(false)} />
+        ) : scanDoc ? (
           <ScanDocScreen
             lang={lang}
             kind={scanDoc}
@@ -132,6 +140,7 @@ export default function StockingApp() {
                   setLowOnly(false);
                   setTab('products');
                 }}
+                onOpenSales={() => setSalesOpen(true)}
               />
             )}
             {tab === 'scan' && <ScanScreen lang={lang} />}
@@ -150,6 +159,24 @@ export default function StockingApp() {
         )}
       </main>
 
+      {/* Sell is one tap from anywhere. Hidden only while a sale is in progress
+          or another full-screen flow is open. */}
+      {!sellOpen &&
+        !salesOpen &&
+        !scanDoc &&
+        !suppliersOpen &&
+        !reportsOpen &&
+        !auditOpen && (
+          <button
+            type="button"
+            onClick={() => setSellOpen(true)}
+            className="fixed bottom-20 right-4 z-10 h-14 rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-lg active:scale-95 md:bottom-8"
+            style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+          >
+            {t(lang, 'sell.fab')}
+          </button>
+        )}
+
       {settingsOpen && (
         <SettingsSheet
           lang={lang}
@@ -165,6 +192,10 @@ export default function StockingApp() {
           onOpenAudit={() => {
             setSettingsOpen(false);
             setAuditOpen(true);
+          }}
+          onOpenSales={() => {
+            setSettingsOpen(false);
+            setSalesOpen(true);
           }}
         />
       )}

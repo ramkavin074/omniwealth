@@ -9,6 +9,7 @@ import {
   type MovementWithName,
 } from '../db/products';
 import { expiringSoon } from '../db/analytics';
+import { daySummary } from '../db/sales';
 import type { Product } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow } from '../hooks';
@@ -20,6 +21,7 @@ interface Props {
   lang: Lang;
   onOpenLow: () => void;
   onOpenExpiring: () => void;
+  onOpenSales: () => void;
 }
 
 function timeAgo(now: number, ms: number): string {
@@ -33,9 +35,15 @@ function timeAgo(now: number, ms: number): string {
   return `${Math.round(h / 24)}d`;
 }
 
-export default function HomeScreen({ lang, onOpenLow, onOpenExpiring }: Props) {
+export default function HomeScreen({
+  lang,
+  onOpenLow,
+  onOpenExpiring,
+  onOpenSales,
+}: Props) {
   const stats = useLiveQuery(() => catalogueStats(), []);
   const expiry = useLiveQuery(() => expiringSoon(), []);
+  const today = useLiveQuery(() => daySummary(), []);
   const activity = useLiveQuery(
     () => recentMovements(40),
     [],
@@ -98,6 +106,20 @@ export default function HomeScreen({ lang, onOpenLow, onOpenExpiring }: Props) {
           value={stats?.movementsToday ?? '—'}
         />
       </div>
+
+      <button
+        type="button"
+        onClick={onOpenSales}
+        className="w-full flex items-center justify-between rounded-xl bg-teal-50 px-3 py-2.5 text-sm dark:bg-teal-950/40"
+      >
+        <span className="font-medium text-teal-800 dark:text-teal-300">
+          {t(lang, 'home.todaySales')}
+        </span>
+        <span className="font-semibold tabular-nums text-teal-800 dark:text-teal-300">
+          {money(today?.total ?? 0)} ·{' '}
+          {t(lang, 'home.bills').replace('{n}', String(today?.count ?? 0))} ›
+        </span>
+      </button>
 
       {expiry && expiry.urgent > 0 && (
         <button
