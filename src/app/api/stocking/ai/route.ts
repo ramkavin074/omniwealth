@@ -1,9 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeProducts,
+  storeSales,
   storeStockMovements,
+  stores,
   suppliers,
   supplierPayments,
   users,
@@ -72,7 +74,13 @@ export async function POST(request: Request) {
   const manage = canEditCatalogue(auth.role);
   const dayAgo = new Date(Date.now() - 30 * 864e5);
 
-  const [products, movements, sups, pays] = await Promise.all([
+  // Current Indian financial year (1 Apr – 31 Mar).
+  const nowD = new Date();
+  const fyStart = nowD.getMonth() >= 3 ? nowD.getFullYear() : nowD.getFullYear() - 1;
+  const fyFrom = String(new Date(fyStart, 3, 1).getTime());
+  const fyTo = String(new Date(fyStart + 1, 3, 1).getTime());
+
+  const [products, movements, sups, pays, fySales, storeRow] = await Promise.all([
     db
       .select()
       .from(storeProducts)
@@ -97,6 +105,26 @@ export async function POST(request: Request) {
     manage
       ? db.select().from(supplierPayments).where(eq(supplierPayments.storeId, auth.storeId))
       : Promise.resolve([]),
+    manage
+      ? db
+          .select()
+          .from(storeSales)
+          .where(
+            and(
+              eq(storeSales.storeId, auth.storeId),
+              isNull(storeSales.deletedAt),
+              gt(storeSales.createdAt, fyFrom),
+              lt(storeSales.createdAt, fyTo),
+            ),
+          )
+      : Promise.resolve([]),
+    manage
+      ? db
+          .select()
+          .from(stores)
+          .where(eq(stores.id, auth.storeId))
+          .then((r) => r[0])
+      : Promise.resolve(undefined),
   ]);
 
   const catalogue = products.map((p) => {
@@ -153,6 +181,40 @@ export async function POST(request: Request) {
       })
     : [];
 
+  // FY-to-date tax picture (owner/manager only).
+  let taxSummary: Record<string, unknown> | undefined;
+  if (manage) {
+    let turnover = 0;
+    let cash = 0;
+    let digital = 0;
+    let gstCollected = 0;
+    for (const s of fySales) {
+      turnover += n(s.total);
+      cash += n(s.cashAmount);
+      digital += n(s.upiAmount);
+      gstCollected += n(s.taxTotal);
+    }
+    const presumptive = storeRow?.presumptive ?? true;
+    const profit = presumptive
+      ? Math.round(digital * 0.06 + Math.max(0, cash) * 0.08)
+      : 0;
+    // s.87A new-regime: nil up to ₹12L taxable.
+    const estIncomeTax = presumptive && profit > 1200000 ? 'above ₹12L — consult accountant' : 0;
+    taxSummary = {
+      financialYear: `${fyStart}-${String(fyStart + 1).slice(2)}`,
+      turnoverToDate: Math.round(turnover),
+      cash: Math.round(cash),
+      digital: Math.round(digital),
+      gstRegistered: !!storeRow?.gstEnabled,
+      gstScheme: storeRow?.gstScheme ?? 'regular',
+      gstCollectedToDate: Math.round(gstCollected),
+      presumptiveScheme: presumptive,
+      presumptiveProfitToDate: profit,
+      estimatedIncomeTax: estIncomeTax,
+      note: 'GST return due 20th of next month; advance income tax on 15 Jun / 15 Sep / 15 Dec / 15 Mar. Estimates only.',
+    };
+  }
+
   const context = {
     products: catalogue.length,
     lowCount: catalogue.filter((c) => c.low).length,
@@ -160,7 +222,7 @@ export async function POST(request: Request) {
     salesLast30Days: Math.round(salesValue),
     topSellers,
     expiringSoon,
-    ...(manage ? { supplierBalances } : {}),
+    ...(manage ? { supplierBalances, taxSummary } : {}),
     catalogue,
   };
 

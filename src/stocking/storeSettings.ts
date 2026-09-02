@@ -4,8 +4,8 @@
 // response also echoes the GST fields, so billing has them offline.
 
 import { API_BASE } from './config';
-import { setGstConfig } from './settings';
-import type { GstConfig } from './types';
+import { setGstConfig, setTaxConfig } from './settings';
+import type { GstConfig, GstScheme, TaxConfig } from './types';
 
 export interface StoreSettings {
   name?: string;
@@ -14,6 +14,8 @@ export interface StoreSettings {
   gstEnabled: boolean;
   pricesIncludeTax: boolean;
   defaultGstRate: number;
+  gstScheme: GstScheme;
+  presumptive: boolean;
 }
 
 function auth(): { token?: string; storeId?: string } {
@@ -41,6 +43,8 @@ function normalise(s: Record<string, unknown> | null | undefined): StoreSettings
     gstEnabled: !!s?.gstEnabled,
     pricesIncludeTax: s?.pricesIncludeTax !== false,
     defaultGstRate: Number(s?.defaultGstRate) || 0,
+    gstScheme: s?.gstScheme === 'composition' ? 'composition' : 'regular',
+    presumptive: s?.presumptive !== false,
   };
 }
 
@@ -58,6 +62,12 @@ export function cacheGst(s: Pick<
   setGstConfig(cfg);
 }
 
+/** Mirror the tax-filing config into the local cache the Tax screen reads. */
+export function cacheTax(s: Pick<StoreSettings, 'gstScheme' | 'presumptive'>): void {
+  const cfg: TaxConfig = { gstScheme: s.gstScheme, presumptive: s.presumptive };
+  setTaxConfig(cfg);
+}
+
 export async function getStoreSettings(): Promise<StoreSettings> {
   const { token } = auth();
   const res = await fetch(`${API_BASE}/api/stocking/store`, {
@@ -68,6 +78,7 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   if (!res.ok) throw new Error(body?.error || 'Failed to load');
   const s = normalise(body?.store);
   cacheGst(s);
+  cacheTax(s);
   return s;
 }
 
@@ -75,7 +86,13 @@ export async function saveStoreSettings(
   patch: Partial<
     Pick<
       StoreSettings,
-      'alertPhone' | 'gstin' | 'gstEnabled' | 'pricesIncludeTax' | 'defaultGstRate'
+      | 'alertPhone'
+      | 'gstin'
+      | 'gstEnabled'
+      | 'pricesIncludeTax'
+      | 'defaultGstRate'
+      | 'gstScheme'
+      | 'presumptive'
     >
   >,
 ): Promise<StoreSettings> {
@@ -90,6 +107,7 @@ export async function saveStoreSettings(
   if (!res.ok) throw new Error(body?.error || 'Failed to save');
   const s = normalise(body?.store);
   cacheGst(s);
+  cacheTax(s);
   return s;
 }
 

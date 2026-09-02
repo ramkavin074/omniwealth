@@ -23,6 +23,44 @@ function isoDaysFromNow(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Tax due dates in the next `window` days: GSTR-3B on the 20th (regular),
+ *  CMP-08 on the 18th after a quarter (composition), advance tax on the 15th
+ *  of Jun/Sep/Dec/Mar (presumptive). Returns human lines, or []. */
+function taxDueLines(
+  gstEnabled: boolean,
+  gstScheme: string,
+  presumptive: boolean,
+  window = 7,
+): string[] {
+  const now = new Date();
+  const soon = new Date(now.getTime() + window * 86_400_000);
+  const within = (m: number, day: number) => {
+    for (const yr of [now.getFullYear(), now.getFullYear() + 1]) {
+      const d = new Date(yr, m, day);
+      if (d >= now && d <= soon) return d.toISOString().slice(0, 10);
+    }
+    return null;
+  };
+  const out: string[] = [];
+  if (gstEnabled && gstScheme === 'regular') {
+    const d = within(now.getMonth(), 20) ?? within(now.getMonth() + 1, 20);
+    if (d) out.push(`GST return (GSTR-3B) due ${d}`);
+  }
+  if (gstEnabled && gstScheme === 'composition') {
+    for (const m of [3, 6, 9, 0]) {
+      const d = within(m, 18);
+      if (d) out.push(`GST composition (CMP-08) due ${d}`);
+    }
+  }
+  if (presumptive) {
+    for (const m of [5, 8, 11, 2]) {
+      const d = within(m, 15);
+      if (d) out.push(`Advance income tax instalment due ${d}`);
+    }
+  }
+  return out;
+}
+
 async function run() {
   const allStores = await db.select().from(stores);
   const soon = isoDaysFromNow(7);
@@ -56,7 +94,11 @@ async function run() {
         ),
       );
 
-    if (low.length === 0 && expiring.length === 0) continue;
+    const taxLines = taxDueLines(s.gstEnabled, s.gstScheme, s.presumptive);
+
+    if (low.length === 0 && expiring.length === 0 && taxLines.length === 0) {
+      continue;
+    }
 
     const parts: string[] = [];
     if (low.length) {
@@ -76,6 +118,9 @@ async function run() {
             .map((p) => `• ${p.name} — exp ${p.expiryDate}`)
             .join('\n'),
       );
+    }
+    if (taxLines.length) {
+      parts.push(taxLines.map((l) => `• ${l}`).join('\n'));
     }
     const body = `${s.name}\n\n${parts.join('\n\n')}`;
 

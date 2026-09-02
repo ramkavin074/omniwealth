@@ -26,6 +26,8 @@ export async function GET(request: Request) {
       gstEnabled: stores.gstEnabled,
       pricesIncludeTax: stores.pricesIncludeTax,
       defaultGstRate: stores.defaultGstRate,
+      gstScheme: stores.gstScheme,
+      presumptive: stores.presumptive,
     })
     .from(stores)
     .where(eq(stores.id, auth.storeId));
@@ -73,6 +75,10 @@ export async function POST(request: Request) {
     const n = Number(body.defaultGstRate);
     patch.defaultGstRate = String(Number.isFinite(n) && n >= 0 ? n : 0);
   }
+  if ('gstScheme' in body) {
+    patch.gstScheme = body.gstScheme === 'composition' ? 'composition' : 'regular';
+  }
+  if ('presumptive' in body) patch.presumptive = !!body.presumptive;
   if (Object.keys(patch).length === 0) {
     return Response.json({ error: 'Nothing to update' }, { status: 400, headers });
   }
@@ -87,6 +93,8 @@ export async function POST(request: Request) {
       gstEnabled: stores.gstEnabled,
       pricesIncludeTax: stores.pricesIncludeTax,
       defaultGstRate: stores.defaultGstRate,
+      gstScheme: stores.gstScheme,
+      presumptive: stores.presumptive,
     })
     .from(stores)
     .where(eq(stores.id, auth.storeId));

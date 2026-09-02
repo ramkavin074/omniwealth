@@ -99,6 +99,27 @@ const en: Dict = {
   'sales.refundLeft': 'left:',
   'sales.refundDo': 'Refund',
 
+  'tax.title': 'Tax',
+  'tax.turnover': 'Turnover (this FY)',
+  'tax.gst': 'GST collected',
+  'tax.taxable': 'taxable',
+  'tax.payBy': 'pay by',
+  'tax.noGst': 'No GST sales this year yet',
+  'tax.composition': 'GST composition — 1% of turnover',
+  'tax.income': 'Income tax (presumptive, 44AD)',
+  'tax.profit': 'Deemed profit',
+  'tax.estTax': 'Estimated income tax',
+  'tax.incomeNote':
+    'Profit = 6% of digital + 8% of other receipts. Tax assumes this is your only income, new regime. Confirm with your accountant.',
+  'tax.advance': 'Advance tax',
+  'tax.status.paid': 'paid',
+  'tax.status.overdue': 'overdue',
+  'tax.status.due-soon': 'due soon',
+  'tax.status.upcoming': 'upcoming',
+  'tax.share': 'Send summary to accountant',
+  'tax.disclaimer':
+    'Estimates from your sales only — not tax advice. Use for planning; file through your accountant or the GST/IT portal.',
+
   'numpad.ok': 'OK',
 
   'bulk.enter': 'Rapid / stock-take',
@@ -297,10 +318,13 @@ const en: Dict = {
   'settings.alertSaved': 'Saved',
   'settings.alertErr': "Couldn't save — check your connection",
 
-  'settings.gst': 'GST',
+  'settings.gst': 'GST & tax',
   'settings.gstEnabled': 'Charge / show GST on bills',
   'settings.gstInclusive': 'Prices already include GST',
   'settings.gstin': 'GSTIN (for tax invoices)',
+  'settings.gstScheme.regular': 'Regular',
+  'settings.gstScheme.composition': 'Composition',
+  'settings.presumptive': 'Presumptive income tax (44AD)',
 };
 
 // confirm with shop owners — every Tamil string below is a first draft.
@@ -393,6 +417,27 @@ const ta: Dict = {
   'sales.refunds': 'திரும்பப்பெறுதல்கள்',
   'sales.refundLeft': 'மீதம்:',
   'sales.refundDo': 'திரும்பப்பெறு',
+
+  'tax.title': 'வரி',
+  'tax.turnover': 'விற்றுமுதல் (இந்த நிதியாண்டு)',
+  'tax.gst': 'வசூலித்த GST',
+  'tax.taxable': 'வரிக்குட்பட்டது',
+  'tax.payBy': 'செலுத்த வேண்டிய தேதி',
+  'tax.noGst': 'இந்த ஆண்டு இன்னும் GST விற்பனை இல்லை',
+  'tax.composition': 'GST கம்போசிஷன் — விற்றுமுதலில் 1%',
+  'tax.income': 'வருமான வரி (அனுமான, 44AD)',
+  'tax.profit': 'கருதப்படும் லாபம்',
+  'tax.estTax': 'மதிப்பிடப்பட்ட வருமான வரி',
+  'tax.incomeNote':
+    'லாபம் = டிஜிட்டல் வரவின் 6% + மற்ற வரவின் 8%. இதுவே உங்கள் ஒரே வருமானம் என்று கருதப்படுகிறது (புதிய முறை). உங்கள் கணக்காளரிடம் உறுதிப்படுத்தவும்.',
+  'tax.advance': 'முன்கூட்டிய வரி',
+  'tax.status.paid': 'செலுத்தப்பட்டது',
+  'tax.status.overdue': 'தாமதம்',
+  'tax.status.due-soon': 'விரைவில்',
+  'tax.status.upcoming': 'வரவிருக்கிறது',
+  'tax.share': 'கணக்காளருக்கு சுருக்கம் அனுப்பு',
+  'tax.disclaimer':
+    'உங்கள் விற்பனையிலிருந்து மட்டும் மதிப்பீடு — வரி ஆலோசனை அல்ல. திட்டமிடலுக்கு பயன்படுத்தவும்; கணக்காளர் / GST-IT போர்ட்டல் மூலம் தாக்கல் செய்யவும்.',
 
   'numpad.ok': 'சரி',
 
@@ -597,6 +642,9 @@ const ta: Dict = {
   'settings.gstEnabled': 'பில்களில் GST காட்டு / வசூலி',
   'settings.gstInclusive': 'விலைகளில் GST ஏற்கனவே உள்ளடங்கும்',
   'settings.gstin': 'GSTIN (வரி விலைப்பட்டியலுக்கு)',
+  'settings.gstScheme.regular': 'வழக்கமான',
+  'settings.gstScheme.composition': 'கம்போசிஷன்',
+  'settings.presumptive': 'அனுமான வருமான வரி (44AD)',
 };
 
 const DICTS: Record<Lang, Dict> = { en, ta };

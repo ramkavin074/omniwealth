@@ -658,6 +658,9 @@ export const stores = store.table('stores', {
   gstEnabled: boolean('gst_enabled').notNull().default(false),
   pricesIncludeTax: boolean('prices_include_tax').notNull().default(true),
   defaultGstRate: numeric('default_gst_rate').notNull().default('0'),
+  // Tax-filing helper config.
+  gstScheme: text('gst_scheme').notNull().default('regular'), // regular | composition
+  presumptive: boolean('presumptive').notNull().default(true), // income tax u/s 44AD
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

@@ -30,6 +30,7 @@ export class StockingDB extends Dexie {
   supplierPayments!: Table<SupplierPayment, string>;
   sales!: Table<Sale, string>;
   heldSales!: Table<HeldSale, string>;
+  taxNotes!: Table<{ key: string; done: boolean; note: string; updatedAt: number }, string>;
 
   constructor() {
     super('stocking');
@@ -204,6 +205,18 @@ export class StockingDB extends Dexie {
             if (s.refundOf === undefined) s.refundOf = null;
           });
       });
+    // v11: local "filed / paid" checkmarks for the tax screen.
+    this.version(11).stores({
+      products: 'id, barcode, name, updatedAt, deletedAt',
+      movements: 'id, productId, createdAt',
+      barcodeCache: 'barcode, fetchedAt',
+      syncState: 'id',
+      suppliers: 'id, name, updatedAt, deletedAt',
+      supplierPayments: 'id, supplierId, updatedAt',
+      sales: 'id, billNo, createdAt, updatedAt, refundOf',
+      heldSales: 'id, createdAt',
+      taxNotes: 'key, updatedAt',
+    });
   }
 }
 

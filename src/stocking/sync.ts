@@ -5,7 +5,7 @@
 
 import { API_BASE } from './config';
 import { db } from './db/dexie';
-import { cacheGst } from './storeSettings';
+import { cacheGst, cacheTax } from './storeSettings';
 import type {
   Movement,
   Product,
@@ -133,6 +133,8 @@ async function runSync(): Promise<SyncOutcome> {
       gstEnabled: boolean;
       pricesIncludeTax: boolean;
       defaultGstRate: number;
+      gstScheme?: 'regular' | 'composition';
+      presumptive?: boolean;
     } | null;
   };
 
@@ -156,10 +158,14 @@ async function runSync(): Promise<SyncOutcome> {
   const pulledPayments = data.payments ?? [];
   const pulledSales = data.sales ?? [];
 
-  // Keep the offline GST cache in step with the store's server setup.
+  // Keep the offline GST + tax caches in step with the store's server setup.
   if (data.store) {
     try {
       cacheGst(data.store);
+      cacheTax({
+        gstScheme: data.store.gstScheme ?? 'regular',
+        presumptive: data.store.presumptive ?? true,
+      });
     } catch {
       /* ignore */
     }

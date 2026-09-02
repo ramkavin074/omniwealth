@@ -172,6 +172,18 @@ export const GST_CONFIG_FALLBACK: GstConfig = {
   defaultRate: 0,
 };
 
+export type GstScheme = 'regular' | 'composition';
+
+export interface TaxConfig {
+  gstScheme: GstScheme; // only meaningful when GST is enabled
+  presumptive: boolean; // income tax under s.44AD
+}
+
+export const TAX_CONFIG_FALLBACK: TaxConfig = {
+  gstScheme: 'regular',
+  presumptive: true,
+};
+
 const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 /** Tax breakdown for a set of priced lines. `discount` (₹ off the whole bill)

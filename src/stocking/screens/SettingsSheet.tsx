@@ -28,6 +28,7 @@ interface Props {
   onOpenReports: () => void;
   onOpenAudit: () => void;
   onOpenSales: () => void;
+  onOpenTax: () => void;
 }
 
 const field =
@@ -42,6 +43,7 @@ export default function SettingsSheet({
   onOpenReports,
   onOpenAudit,
   onOpenSales,
+  onOpenTax,
 }: Props) {
   const initial = getDefaults();
   const [manage] = useState(canManage);
@@ -59,11 +61,15 @@ export default function SettingsSheet({
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
 
-  // GST setup
+  // GST + tax setup
   const [gstin, setGstin] = useState('');
   const [gstEnabled, setGstEnabled] = useState(false);
   const [pricesInclTax, setPricesInclTax] = useState(true);
   const [defaultGstRate, setDefaultGstRate] = useState('0');
+  const [gstScheme, setGstScheme] = useState<'regular' | 'composition'>(
+    'regular',
+  );
+  const [presumptive, setPresumptive] = useState(true);
   const [gstState, setGstState] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
@@ -81,6 +87,8 @@ export default function SettingsSheet({
         setGstEnabled(s.gstEnabled);
         setPricesInclTax(s.pricesIncludeTax);
         setDefaultGstRate(String(s.defaultGstRate));
+        setGstScheme(s.gstScheme);
+        setPresumptive(s.presumptive);
       })
       .catch(() => {});
   }, [manage]);
@@ -104,6 +112,8 @@ export default function SettingsSheet({
         gstEnabled,
         pricesIncludeTax: pricesInclTax,
         defaultGstRate: Number(defaultGstRate) || 0,
+        gstScheme,
+        presumptive,
       });
       setGstin(s.gstin ?? '');
       setGstState('saved');
@@ -194,6 +204,15 @@ export default function SettingsSheet({
           >
             {t(lang, 'sales.title')}
           </button>
+          {manage && (
+            <button
+              type="button"
+              onClick={onOpenTax}
+              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'tax.title')}
+            </button>
+          )}
           {manage && (
             <button
               type="button"
@@ -308,8 +327,39 @@ export default function SettingsSheet({
                     ))}
                   </select>
                 </div>
+                <div className="flex gap-2">
+                  {(['regular', 'composition'] as const).map((sc) => (
+                    <button
+                      key={sc}
+                      type="button"
+                      onClick={() => {
+                        setGstScheme(sc);
+                        setGstState('idle');
+                      }}
+                      className={`h-9 flex-1 rounded-lg text-sm font-semibold ${
+                        gstScheme === sc
+                          ? 'bg-teal-700 text-white'
+                          : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {t(lang, `settings.gstScheme.${sc}`)}
+                    </button>
+                  ))}
+                </div>
               </>
             )}
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={presumptive}
+                onChange={(e) => {
+                  setPresumptive(e.target.checked);
+                  setGstState('idle');
+                }}
+                className="h-5 w-5 accent-teal-600"
+              />
+              {t(lang, 'settings.presumptive')}
+            </label>
             <button
               type="button"
               onClick={saveGst}

@@ -16,6 +16,7 @@ import AskAiSheet from './screens/AskAiSheet';
 import ScanDocScreen from './screens/ScanDocScreen';
 import SellScreen from './screens/SellScreen';
 import SalesScreen from './screens/SalesScreen';
+import TaxScreen from './screens/TaxScreen';
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
@@ -34,6 +35,7 @@ export default function StockingApp() {
   const [scanDoc, setScanDoc] = useState<null | 'invoice' | 'payment'>(null);
   const [sellOpen, setSellOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(false);
+  const [taxOpen, setTaxOpen] = useState(false);
 
   // Opportunistic sync on open; also whenever the device comes back online.
   useEffect(() => {
@@ -106,6 +108,8 @@ export default function StockingApp() {
           <SellScreen lang={lang} onClose={() => setSellOpen(false)} />
         ) : salesOpen ? (
           <SalesScreen lang={lang} onClose={() => setSalesOpen(false)} />
+        ) : taxOpen ? (
+          <TaxScreen lang={lang} onClose={() => setTaxOpen(false)} />
         ) : scanDoc ? (
           <ScanDocScreen
             lang={lang}
@@ -163,6 +167,7 @@ export default function StockingApp() {
           or another full-screen flow is open. */}
       {!sellOpen &&
         !salesOpen &&
+        !taxOpen &&
         !scanDoc &&
         !suppliersOpen &&
         !reportsOpen &&
@@ -196,6 +201,10 @@ export default function StockingApp() {
           onOpenSales={() => {
             setSettingsOpen(false);
             setSalesOpen(true);
+          }}
+          onOpenTax={() => {
+            setSettingsOpen(false);
+            setTaxOpen(true);
           }}
         />
       )}

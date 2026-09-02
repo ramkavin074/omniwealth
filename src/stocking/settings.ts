@@ -2,7 +2,13 @@
 // new-product defaults and the about screen.
 
 import { db } from './db/dexie';
-import { GST_CONFIG_FALLBACK, type GstConfig, type Unit } from './types';
+import {
+  GST_CONFIG_FALLBACK,
+  TAX_CONFIG_FALLBACK,
+  type GstConfig,
+  type TaxConfig,
+  type Unit,
+} from './types';
 
 export const APP_VERSION = '0.1.0';
 
@@ -120,6 +126,30 @@ export function getGstConfig(): GstConfig {
 export function setGstConfig(c: GstConfig): void {
   try {
     localStorage.setItem(GST_KEY, JSON.stringify(c));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+const TAX_KEY = 'stocking.tax';
+
+export function getTaxConfig(): TaxConfig {
+  try {
+    const raw = localStorage.getItem(TAX_KEY);
+    if (!raw) return TAX_CONFIG_FALLBACK;
+    const p = JSON.parse(raw) as Partial<TaxConfig>;
+    return {
+      gstScheme: p.gstScheme === 'composition' ? 'composition' : 'regular',
+      presumptive: p.presumptive !== false,
+    };
+  } catch {
+    return TAX_CONFIG_FALLBACK;
+  }
+}
+
+export function setTaxConfig(c: TaxConfig): void {
+  try {
+    localStorage.setItem(TAX_KEY, JSON.stringify(c));
   } catch {
     /* storage unavailable */
   }

@@ -414,6 +414,8 @@ export async function POST(request: Request) {
           gstEnabled: stores.gstEnabled,
           pricesIncludeTax: stores.pricesIncludeTax,
           defaultGstRate: stores.defaultGstRate,
+          gstScheme: stores.gstScheme,
+          presumptive: stores.presumptive,
         })
         .from(stores)
         .where(eq(stores.id, storeId))
@@ -430,6 +432,8 @@ export async function POST(request: Request) {
             gstEnabled: storeRow.gstEnabled,
             pricesIncludeTax: storeRow.pricesIncludeTax,
             defaultGstRate: num(storeRow.defaultGstRate),
+            gstScheme: storeRow.gstScheme,
+            presumptive: storeRow.presumptive,
           }
         : null,
       products: pulledProducts.map((p) => ({
