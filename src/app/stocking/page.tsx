@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionUserAction } from '@/actions/auth';
 import StockingAppClient from './StockingAppClient';
+import '@/stocking/theme.css';
 
 // In-OmniWealth host for the stocking module (desktop / admin / quick testing).
 // The offline shop-counter experience ships as the standalone

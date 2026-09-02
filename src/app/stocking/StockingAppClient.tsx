@@ -48,7 +48,7 @@ export default function StockingAppClient({ userId, displayName, store }: Props)
   if (!ready) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="kadai min-h-screen">
       <StockingApp />
     </div>
   );

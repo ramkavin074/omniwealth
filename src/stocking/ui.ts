@@ -12,4 +12,4 @@ export const SHEET_OVERLAY =
 
 /** The sheet panel itself. */
 export const SHEET_PANEL =
-  'mx-auto w-full max-w-md rounded-t-2xl bg-white p-4 dark:bg-slate-900 md:rounded-2xl';
+  'k-sheet mx-auto w-full max-w-md rounded-t-2xl bg-white p-4 dark:bg-slate-900 md:rounded-2xl';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import {
   catalogueStats,
@@ -71,36 +71,31 @@ export default function HomeScreen({
   return (
     <div className={`p-4 space-y-4 md:mx-auto md:max-w-3xl ${SCREEN_PAD}`}>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Tile label={t(lang, 'home.products')} value={stats?.productCount ?? '—'} />
-        <button
-          type="button"
+        <Tile
+          label={t(lang, 'home.products')}
+          value={stats?.productCount ?? '—'}
+        />
+        <Tile
+          label={t(lang, 'home.low')}
+          value={stats?.lowCount ?? '—'}
+          tone="warn"
           onClick={onOpenLow}
-          className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-4 text-left"
-        >
-          <span className="block text-sm text-amber-700 dark:text-amber-400">
-            {t(lang, 'home.low')}
-          </span>
-          <span className="block text-2xl font-bold text-amber-800 dark:text-amber-300 tabular-nums">
-            {stats?.lowCount ?? '—'}
-          </span>
-        </button>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <span className="block text-sm text-slate-500 dark:text-slate-400">
-            {t(lang, 'home.stockValue')}
-          </span>
-          <span className="block text-2xl font-bold tabular-nums text-slate-900 dark:text-slate-50">
-            {stats ? money(stats.stockValue) : '—'}
-          </span>
-          {canSeeCost() && stats && stats.stockCost > 0 && (
-            <span className="mt-0.5 block text-xs text-slate-400 dark:text-slate-500">
-              {t(lang, 'home.stockCost')} {money(stats.stockCost)} ·{' '}
-              {t(lang, 'home.margin')}{' '}
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {money(stats.marginValue)}
-              </span>
-            </span>
-          )}
-        </div>
+        />
+        <Tile
+          label={t(lang, 'home.stockValue')}
+          value={stats ? money(stats.stockValue) : '—'}
+          sub={
+            canSeeCost() && stats && stats.stockCost > 0 ? (
+              <>
+                {t(lang, 'home.stockCost')} {money(stats.stockCost)} ·{' '}
+                {t(lang, 'home.margin')}{' '}
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  {money(stats.marginValue)}
+                </span>
+              </>
+            ) : undefined
+          }
+        />
         <Tile
           label={t(lang, 'home.today')}
           value={stats?.movementsToday ?? '—'}
@@ -150,9 +145,7 @@ export default function HomeScreen({
       </button>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
-          {t(lang, 'home.activity')}
-        </h2>
+        <h2 className="k-eyebrow mb-2 mt-1">{t(lang, 'home.activity')}</h2>
         {activity.length === 0 ? (
           <p className="text-slate-400 dark:text-slate-500 text-sm">
             {t(lang, 'home.noActivity')}
@@ -191,15 +184,52 @@ export default function HomeScreen({
   );
 }
 
-function Tile({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
-      <span className="block text-sm text-slate-500 dark:text-slate-400">
-        {label}
-      </span>
-      <span className="block text-2xl font-bold text-slate-900 dark:text-slate-50 tabular-nums">
+function Tile({
+  label,
+  value,
+  sub,
+  tone = 'plain',
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  sub?: ReactNode;
+  tone?: 'plain' | 'warn' | 'accent';
+  onClick?: () => void;
+}) {
+  const toneCls =
+    tone === 'warn'
+      ? 'border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40'
+      : tone === 'accent'
+        ? 'border-teal-600 bg-teal-50'
+        : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900';
+  const valueCls =
+    tone === 'warn'
+      ? 'text-amber-800 dark:text-amber-300'
+      : 'text-slate-900 dark:text-slate-50';
+  const inner = (
+    <>
+      <span className="k-eyebrow block">{label}</span>
+      <span
+        className={`mt-1 block text-[1.7rem] font-extrabold leading-none tabular-nums ${valueCls}`}
+      >
         {value}
       </span>
-    </div>
+      {sub && (
+        <span className="mt-1.5 block text-xs text-slate-400 dark:text-slate-500">
+          {sub}
+        </span>
+      )}
+    </>
+  );
+  const cls = `rounded-2xl border p-4 text-left transition ${toneCls} ${
+    onClick ? 'active:scale-[0.98]' : ''
+  }`;
+  return onClick ? (
+    <button type="button" onClick={onClick} className={cls}>
+      {inner}
+    </button>
+  ) : (
+    <div className={cls}>{inner}</div>
   );
 }

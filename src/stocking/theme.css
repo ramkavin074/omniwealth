@@ -1,0 +1,160 @@
+/*
+ * OmniWealth Kadai — "Angadi" theme.
+ *
+ * A warm shop-ledger identity: paper-toned ground, a deep peacock-green
+ * accent (not the stock SaaS teal), softer type, and real card depth. The
+ * screens are built from a small set of Tailwind utilities; rather than
+ * rewrite ~8k lines this retints those utilities inside a `.kadai` scope so
+ * it can't leak into the OmniWealth host around it.
+ *
+ * The app runs light-only today (the `dark:` variants are dormant — nothing
+ * sets a `.dark` ancestor), so dark tokens are defined under `.kadai.dark`
+ * to match that convention and flip together if a host ever wires it.
+ */
+
+.kadai {
+  --k-bg: #f4eede;
+  --k-surface: #fffdf7;
+  --k-surface-2: #faf4e6;
+  --k-sunken: #ece1c9;
+  --k-border: #ded0b2;
+  --k-border-soft: #eadfc6;
+  --k-ink: #241f16;
+  --k-ink-2: #4a4133;
+  --k-ink-soft: #7a6f59;
+  --k-accent: #0e7b64;
+  --k-accent-strong: #0a5a49;
+  --k-accent-tint: #e3efe9;
+  --k-shadow: 0 1px 2px rgba(74, 54, 20, 0.06), 0 8px 20px -12px rgba(74, 54, 20, 0.22);
+  --k-shadow-sheet: 0 -10px 40px -12px rgba(38, 26, 6, 0.28);
+
+  background-color: var(--k-bg);
+  color: var(--k-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.kadai.dark {
+  --k-bg: #18140e;
+  --k-surface: #221d15;
+  --k-surface-2: #26201799;
+  --k-sunken: #2c2419;
+  --k-border: #3a3024;
+  --k-border-soft: #322a1f;
+  --k-ink: #f3ead8;
+  --k-ink-2: #d9ccb2;
+  --k-ink-soft: #a99a7d;
+  --k-accent: #2bb89b;
+  --k-accent-strong: #55ccb2;
+  --k-accent-tint: #17352e;
+  --k-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 26px -14px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- surface + text retint (light utilities the screens use) ------ */
+.kadai .bg-white {
+  background-color: var(--k-surface) !important;
+}
+.kadai .bg-slate-50 {
+  background-color: var(--k-bg) !important;
+}
+.kadai .bg-slate-100 {
+  background-color: var(--k-surface-2) !important;
+}
+.kadai .bg-slate-200,
+.kadai .bg-slate-300 {
+  background-color: var(--k-sunken) !important;
+}
+.kadai .border-slate-200,
+.kadai .border-slate-300 {
+  border-color: var(--k-border) !important;
+}
+.kadai .border-slate-100 {
+  border-color: var(--k-border-soft) !important;
+}
+.kadai .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--k-border) !important;
+}
+.kadai .text-slate-900,
+.kadai .text-slate-950,
+.kadai .text-slate-800 {
+  color: var(--k-ink) !important;
+}
+.kadai .text-slate-700,
+.kadai .text-slate-600 {
+  color: var(--k-ink-2) !important;
+}
+.kadai .text-slate-500,
+.kadai .text-slate-400 {
+  color: var(--k-ink-soft) !important;
+}
+
+/* ---------- accent: flat teal -> peacock green -------------------------- */
+.kadai .bg-teal-700,
+.kadai .bg-teal-600 {
+  background-color: var(--k-accent) !important;
+}
+.kadai .active\:bg-teal-800:active,
+.kadai .hover\:bg-teal-800:hover {
+  background-color: var(--k-accent-strong) !important;
+}
+.kadai .text-teal-600,
+.kadai .text-teal-700,
+.kadai .text-teal-800 {
+  color: var(--k-accent-strong) !important;
+}
+.kadai .bg-teal-50 {
+  background-color: var(--k-accent-tint) !important;
+}
+.kadai .border-teal-600,
+.kadai .border-teal-700 {
+  border-color: var(--k-accent) !important;
+}
+
+/* ---------- give cards real depth (the app is otherwise shadowless) ---- */
+.kadai :is(.rounded-lg, .rounded-xl, .rounded-2xl):is(
+    .bg-white,
+    .border,
+    .bg-teal-50,
+    .bg-amber-50,
+    .bg-rose-50
+  ) {
+  box-shadow: var(--k-shadow);
+}
+/* inputs and pressed toggles shouldn't float */
+.kadai input:is(.rounded-lg, .rounded-xl),
+.kadai select:is(.rounded-lg, .rounded-xl),
+.kadai textarea:is(.rounded-lg, .rounded-xl),
+.kadai button:is(.rounded-lg):is(.border) {
+  box-shadow: none;
+}
+
+/* ---------- identity bits used by hand-styled spots ------------------- */
+.kadai .k-wordmark {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--k-ink);
+}
+.kadai .k-mark {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  background: var(--k-accent);
+  transform: rotate(45deg);
+}
+.kadai .k-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--k-ink-soft);
+}
+.kadai .k-sheet {
+  background-color: var(--k-surface) !important;
+  border: 1px solid var(--k-border);
+  box-shadow: var(--k-shadow-sheet);
+}
+.kadai .k-headrule {
+  border-bottom: 1px solid var(--k-border) !important;
+  background:
+    linear-gradient(var(--k-surface-2), var(--k-surface-2)) padding-box;
+}
