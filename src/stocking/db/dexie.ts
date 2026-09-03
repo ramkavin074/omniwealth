@@ -8,6 +8,7 @@ import type {
   Customer,
   HeldSale,
   Movement,
+  Order,
   Product,
   Receipt,
   Sale,
@@ -37,6 +38,7 @@ export class StockingDB extends Dexie {
   upiReceipts!: Table<UpiReceipt, string>;
   customers!: Table<Customer, string>;
   receipts!: Table<Receipt, string>;
+  orders!: Table<Order, string>;
 
   constructor() {
     super('stocking');
@@ -259,6 +261,32 @@ export class StockingDB extends Dexie {
           .toCollection()
           .modify((s: Sale) => {
             if (s.customerId === undefined) s.customerId = null;
+          });
+      });
+    // v14: orders / job-work. Receipts gain an optional againstOrderId.
+    this.version(14)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt, refundOf, customerId',
+        heldSales: 'id, createdAt',
+        taxNotes: 'key, updatedAt',
+        upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
+        customers: 'id, name, phone, updatedAt, deletedAt',
+        receipts: 'id, customerId, receivedAt, updatedAt, deletedAt',
+        orders:
+          'id, orderNo, customerId, status, dueDate, createdAt, updatedAt, deletedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('receipts')
+          .toCollection()
+          .modify((r: Receipt) => {
+            if (r.againstOrderId === undefined) r.againstOrderId = null;
           });
       });
   }

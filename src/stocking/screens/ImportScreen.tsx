@@ -2,60 +2,130 @@
 
 import { useRef, useState } from 'react';
 import { t, type Lang } from '../i18n';
-import { importProducts, type ImportResult } from '../db/products';
-import { CSV_TEMPLATE, parseCsv } from '../import';
+import { importProducts } from '../db/products';
+import { importCustomers } from '../db/customers';
+import { importOrders } from '../db/orders';
+import {
+  CSV_TEMPLATE,
+  CUSTOMERS_CSV_TEMPLATE,
+  ORDERS_CSV_TEMPLATE,
+  parseCsv,
+  parseCustomersCsv,
+  parseOrdersCsv,
+} from '../import';
 
 interface Props {
   lang: Lang;
   onClose: () => void;
 }
 
+type Kind = 'products' | 'customers' | 'orders';
+
 type State =
   | { kind: 'idle' }
   | { kind: 'preview'; rows: number; unknown: string[]; text: string }
   | { kind: 'error'; message: string }
   | { kind: 'importing' }
-  | { kind: 'done'; result: ImportResult };
+  | { kind: 'done'; added: number; updated: number | null; skipped: number };
+
+const KINDS: Kind[] = ['products', 'customers', 'orders'];
 
 export default function ImportScreen({ lang, onClose }: Props) {
+  const [kind, setKind] = useState<Kind>('products');
   const [state, setState] = useState<State>({ kind: 'idle' });
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const template =
+    kind === 'products'
+      ? CSV_TEMPLATE
+      : kind === 'customers'
+        ? CUSTOMERS_CSV_TEMPLATE
+        : ORDERS_CSV_TEMPLATE;
+
   const onFile = async (file: File) => {
     const text = await file.text();
-    const parsed = parseCsv(text);
-    if (parsed.missingNameColumn) {
-      setState({ kind: 'error', message: t(lang, 'import.noNameColumn') });
+    if (kind === 'products') {
+      const p = parseCsv(text);
+      if (p.missingNameColumn) {
+        setState({ kind: 'error', message: t(lang, 'import.noNameColumn') });
+        return;
+      }
+      if (p.rows.length === 0) {
+        setState({ kind: 'error', message: t(lang, 'import.noRows') });
+        return;
+      }
+      setState({
+        kind: 'preview',
+        rows: p.rows.length,
+        unknown: p.unknownColumns,
+        text,
+      });
       return;
     }
-    if (parsed.rows.length === 0) {
+    if (kind === 'customers') {
+      const p = parseCustomersCsv(text);
+      if (p.missingNameColumn) {
+        setState({ kind: 'error', message: t(lang, 'import.noNameColumn') });
+        return;
+      }
+      if (p.rows.length === 0) {
+        setState({ kind: 'error', message: t(lang, 'import.noRows') });
+        return;
+      }
+      setState({
+        kind: 'preview',
+        rows: p.rows.length,
+        unknown: p.unknownColumns,
+        text,
+      });
+      return;
+    }
+    const p = parseOrdersCsv(text);
+    if (p.missingCustomerColumn) {
+      setState({ kind: 'error', message: t(lang, 'import.noCustomerColumn') });
+      return;
+    }
+    if (p.rows.length === 0) {
       setState({ kind: 'error', message: t(lang, 'import.noRows') });
       return;
     }
     setState({
       kind: 'preview',
-      rows: parsed.rows.length,
-      unknown: parsed.unknownColumns,
+      rows: p.rows.length,
+      unknown: p.unknownColumns,
       text,
     });
   };
 
   const runImport = async () => {
     if (state.kind !== 'preview') return;
+    const { text } = state;
     setState({ kind: 'importing' });
-    const parsed = parseCsv(state.text);
-    const result = await importProducts(parsed.rows);
-    setState({ kind: 'done', result });
+    if (kind === 'products') {
+      const r = await importProducts(parseCsv(text).rows);
+      setState({ kind: 'done', added: r.added, updated: r.updated, skipped: r.skipped });
+    } else if (kind === 'customers') {
+      const r = await importCustomers(parseCustomersCsv(text).rows);
+      setState({ kind: 'done', added: r.added, updated: r.updated, skipped: r.skipped });
+    } else {
+      const r = await importOrders(parseOrdersCsv(text).rows);
+      setState({ kind: 'done', added: r.added, updated: null, skipped: r.skipped });
+    }
   };
 
   const downloadTemplate = () => {
-    const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' });
+    const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'stocking-template.csv';
+    a.download = `kadai-${kind}-template.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const pickKind = (k: Kind) => {
+    setKind(k);
+    setState({ kind: 'idle' });
   };
 
   return (
@@ -73,8 +143,25 @@ export default function ImportScreen({ lang, onClose }: Props) {
         </button>
       </div>
 
+      <div className="grid grid-cols-3 gap-2">
+        {KINDS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => pickKind(k)}
+            className={`h-9 rounded-lg text-sm font-semibold ${
+              kind === k
+                ? 'bg-teal-700 text-white'
+                : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+            }`}
+          >
+            {t(lang, `import.kind.${k}`)}
+          </button>
+        ))}
+      </div>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        {t(lang, 'import.help')}
+        {t(lang, `import.help.${kind}`)}
       </p>
 
       <button
@@ -143,9 +230,11 @@ export default function ImportScreen({ lang, onClose }: Props) {
       {state.kind === 'done' && (
         <div className="space-y-3">
           <div className="rounded-xl bg-emerald-100 dark:bg-emerald-900/40 px-4 py-3 text-emerald-800 dark:text-emerald-200">
-            {t(lang, 'import.added')}: {state.result.added} ·{' '}
-            {t(lang, 'import.updated')}: {state.result.updated} ·{' '}
-            {t(lang, 'import.skipped')}: {state.result.skipped}
+            {t(lang, 'import.added')}: {state.added}
+            {state.updated !== null && (
+              <> · {t(lang, 'import.updated')}: {state.updated}</>
+            )}{' '}
+            · {t(lang, 'import.skipped')}: {state.skipped}
           </div>
           <button
             type="button"

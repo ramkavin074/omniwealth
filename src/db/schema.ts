@@ -858,6 +858,7 @@ export const storeReceipts = store.table(
     amount: numeric('amount').notNull(),
     tender: text('tender').notNull().default('cash'), // 'cash' | 'upi'
     againstBillId: uuid('against_bill_id'),
+    againstOrderId: uuid('against_order_id'), // advance on an order
     note: text('note'),
     receivedAt: numeric('received_at').notNull(), // epoch ms, client clock
     updatedAt: numeric('updated_at').notNull(),
@@ -870,6 +871,39 @@ export const storeReceipts = store.table(
       t.syncedAt,
     ),
     customerIdx: index('store_receipts_customer_idx').on(t.customerId),
+  }),
+);
+
+// Advance-booked jobs (wedding-card printing, tailoring, repairs): taken now,
+// delivered later, balance on collection. Converts to a `sale` on delivery.
+export const storeOrders = store.table(
+  'orders',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    orderNo: text('order_no').notNull(),
+    customerId: uuid('customer_id').notNull(),
+    customerName: text('customer_name').notNull(), // snapshot
+    lines: jsonb('lines').notNull().default('[]'), // OrderLine[]
+    total: numeric('total').notNull().default('0'),
+    advancePaid: numeric('advance_paid').notNull().default('0'),
+    status: text('status').notNull().default('booked'),
+    dueDate: text('due_date'), // 'YYYY-MM-DD'
+    note: text('note'),
+    billId: uuid('bill_id'), // the sale created on delivery
+    createdAt: numeric('created_at').notNull(),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_orders_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    customerIdx: index('store_orders_customer_idx').on(t.customerId),
   }),
 );
 

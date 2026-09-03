@@ -2,6 +2,7 @@ import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeCustomers,
+  storeOrders,
   storeProducts,
   storeReceipts,
   storeSales,
@@ -131,8 +132,26 @@ interface InReceipt {
   amount: number;
   tender: string;
   againstBillId: string | null;
+  againstOrderId: string | null;
   note: string | null;
   receivedAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+interface InOrder {
+  id: string;
+  orderNo: string;
+  customerId: string;
+  customerName: string;
+  lines: unknown;
+  total: number;
+  advancePaid: number;
+  status: string;
+  dueDate: string | null;
+  note: string | null;
+  billId: string | null;
+  createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
 }
@@ -161,6 +180,7 @@ export async function POST(request: Request) {
   let inUpiReceipts: InUpiReceipt[] = [];
   let inCustomers: InCustomer[] = [];
   let inReceipts: InReceipt[] = [];
+  let inOrders: InOrder[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
@@ -172,6 +192,7 @@ export async function POST(request: Request) {
     inUpiReceipts = Array.isArray(body?.upiReceipts) ? body.upiReceipts : [];
     inCustomers = Array.isArray(body?.customers) ? body.customers : [];
     inReceipts = Array.isArray(body?.receipts) ? body.receipts : [];
+    inOrders = Array.isArray(body?.orders) ? body.orders : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
@@ -184,7 +205,8 @@ export async function POST(request: Request) {
     inSales.length +
     inUpiReceipts.length +
     inCustomers.length +
-    inReceipts.length;
+    inReceipts.length +
+    inOrders.length;
   if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
   }
@@ -468,6 +490,10 @@ export async function POST(request: Request) {
           typeof r.againstBillId === 'string' && r.againstBillId
             ? r.againstBillId
             : null,
+        againstOrderId:
+          typeof r.againstOrderId === 'string' && r.againstOrderId
+            ? r.againstOrderId
+            : null,
         note: r.note ?? null,
         receivedAt: String(num(r.receivedAt)),
         updatedAt: String(num(r.updatedAt)),
@@ -484,6 +510,7 @@ export async function POST(request: Request) {
             amount: sql`excluded.amount`,
             tender: sql`excluded.tender`,
             againstBillId: sql`excluded.against_bill_id`,
+            againstOrderId: sql`excluded.against_order_id`,
             note: sql`excluded.note`,
             receivedAt: sql`excluded.received_at`,
             updatedAt: sql`excluded.updated_at`,
@@ -491,6 +518,56 @@ export async function POST(request: Request) {
             syncedAt: sql`excluded.synced_at`,
           },
           setWhere: sql`${storeReceipts.storeId} = ${storeId} AND ${storeReceipts.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
+  // ---- push: orders (upsert, LWW) — a counter action ----
+  if (inOrders.length) {
+    const rows = inOrders
+      .filter(
+        (o) =>
+          o && typeof o.id === 'string' && typeof o.customerId === 'string',
+      )
+      .map((o) => ({
+        id: o.id,
+        storeId,
+        orderNo: String(o.orderNo ?? ''),
+        customerId: o.customerId,
+        customerName: String(o.customerName ?? ''),
+        lines: Array.isArray(o.lines) ? o.lines : [],
+        total: String(num(o.total)),
+        advancePaid: String(num(o.advancePaid)),
+        status: o.status || 'booked',
+        dueDate: o.dueDate ?? null,
+        note: o.note ?? null,
+        billId:
+          typeof o.billId === 'string' && o.billId ? o.billId : null,
+        createdAt: String(num(o.createdAt)),
+        updatedAt: String(num(o.updatedAt)),
+        deletedAt: o.deletedAt == null ? null : String(num(o.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeOrders)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeOrders.id,
+          set: {
+            lines: sql`excluded.lines`,
+            total: sql`excluded.total`,
+            advancePaid: sql`excluded.advance_paid`,
+            status: sql`excluded.status`,
+            dueDate: sql`excluded.due_date`,
+            note: sql`excluded.note`,
+            billId: sql`excluded.bill_id`,
+            customerName: sql`excluded.customer_name`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeOrders.storeId} = ${storeId} AND ${storeOrders.updatedAt} < excluded.updated_at`,
         });
     }
   }
@@ -550,6 +627,7 @@ export async function POST(request: Request) {
     pulledUpi,
     pulledCustomers,
     pulledReceipts,
+    pulledOrders,
     storeRow,
   ] = await Promise.all([
       db
@@ -626,6 +704,16 @@ export async function POST(request: Request) {
           and(
             eq(storeReceipts.storeId, storeId),
             gt(storeReceipts.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeOrders)
+        .where(
+          and(
+            eq(storeOrders.storeId, storeId),
+            gt(storeOrders.syncedAt, sinceDate),
           ),
         )
         .limit(MAX_ROWS),
@@ -751,10 +839,27 @@ export async function POST(request: Request) {
         amount: num(r.amount),
         tender: r.tender,
         againstBillId: r.againstBillId ?? null,
+        againstOrderId: r.againstOrderId ?? null,
         note: r.note,
         receivedAt: num(r.receivedAt),
         updatedAt: num(r.updatedAt),
         deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
+      })),
+      orders: pulledOrders.map((o) => ({
+        id: o.id,
+        orderNo: o.orderNo,
+        customerId: o.customerId,
+        customerName: o.customerName,
+        lines: Array.isArray(o.lines) ? o.lines : [],
+        total: num(o.total),
+        advancePaid: num(o.advancePaid),
+        status: o.status,
+        dueDate: o.dueDate ?? null,
+        note: o.note,
+        billId: o.billId ?? null,
+        createdAt: num(o.createdAt),
+        updatedAt: num(o.updatedAt),
+        deletedAt: o.deletedAt == null ? null : num(o.deletedAt),
       })),
     },
     200,

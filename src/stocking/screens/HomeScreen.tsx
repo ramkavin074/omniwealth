@@ -11,6 +11,7 @@ import {
 import { expiringSoon } from '../db/analytics';
 import { daySummary } from '../db/sales';
 import { allReceivables } from '../db/customers';
+import { ordersSummary } from '../db/orders';
 import type { Product } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow } from '../hooks';
@@ -24,6 +25,7 @@ interface Props {
   onOpenExpiring: () => void;
   onOpenSales: () => void;
   onOpenCustomers: () => void;
+  onOpenOrders: () => void;
 }
 
 function timeAgo(now: number, ms: number): string {
@@ -43,11 +45,13 @@ export default function HomeScreen({
   onOpenExpiring,
   onOpenSales,
   onOpenCustomers,
+  onOpenOrders,
 }: Props) {
   const stats = useLiveQuery(() => catalogueStats(), []);
   const expiry = useLiveQuery(() => expiringSoon(), []);
   const today = useLiveQuery(() => daySummary(), []);
   const recv = useLiveQuery(() => allReceivables(), []);
+  const orders = useLiveQuery(() => ordersSummary(), []);
   const activity = useLiveQuery(
     () => recentMovements(40),
     [],
@@ -134,6 +138,24 @@ export default function HomeScreen({
           </span>
           <span className="font-semibold tabular-nums text-rose-700 dark:text-rose-300">
             {money(recv.total)} ›
+          </span>
+        </button>
+      )}
+
+      {orders && orders.open > 0 && (
+        <button
+          type="button"
+          onClick={onOpenOrders}
+          className="w-full flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2.5 text-sm dark:bg-amber-950/40"
+        >
+          <span className="font-medium text-amber-800 dark:text-amber-300">
+            {t(lang, 'home.orders').replace('{n}', String(orders.open))}
+            {orders.dueSoon > 0
+              ? ` · ${t(lang, 'order.dueSoon').replace('{n}', String(orders.dueSoon))}`
+              : ''}
+          </span>
+          <span className="font-semibold tabular-nums text-amber-800 dark:text-amber-300">
+            {orders.balanceDue > 0 ? `${money(orders.balanceDue)} ` : ''}›
           </span>
         </button>
       )}

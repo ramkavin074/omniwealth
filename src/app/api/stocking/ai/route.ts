@@ -3,6 +3,7 @@ import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeCustomers,
+  storeOrders,
   storeProducts,
   storeReceipts,
   storeSales,
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
     custs,
     creditSales,
     receipts,
+    openOrders,
   ] = await Promise.all([
     db
       .select()
@@ -183,6 +185,12 @@ export async function POST(request: Request) {
             ),
           )
       : Promise.resolve([]),
+    db
+      .select()
+      .from(storeOrders)
+      .where(
+        and(eq(storeOrders.storeId, auth.storeId), isNull(storeOrders.deletedAt)),
+      ),
   ]);
 
   const catalogue = products.map((p) => {
@@ -321,15 +329,16 @@ export async function POST(request: Request) {
     };
   }
 
-  // Customer receivables (owner/manager only). Balance = opening + Σ credit
-  // sale totals (refunds negative) − Σ receipts.
+  // Customer receivables (owner/manager only). Balance = opening + Σ unpaid
+  // portion of every sale (total − cash − upi; refunds net negative) − Σ receipts.
   let receivables: Record<string, unknown> | undefined;
   if (manage) {
     const salesBy = new Map<string, number>();
     for (const s of creditSales) {
       if (!s.customerId) continue;
-      if (s.tenderType !== 'credit' && !s.refundOf) continue;
-      salesBy.set(s.customerId, (salesBy.get(s.customerId) ?? 0) + n(s.total));
+      const owed = n(s.total) - n(s.cashAmount) - n(s.upiAmount);
+      if (owed === 0) continue;
+      salesBy.set(s.customerId, (salesBy.get(s.customerId) ?? 0) + owed);
     }
     const paidBy = new Map<string, number>();
     for (const r of receipts) {
@@ -354,6 +363,39 @@ export async function POST(request: Request) {
     };
   }
 
+  // Open advance-booked orders / job-work (all roles).
+  const openList = openOrders.filter(
+    (o) => o.status !== 'delivered' && o.status !== 'cancelled',
+  );
+  const in7 = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const orders = {
+    open: openList.length,
+    ready: openList.filter((o) => o.status === 'ready').length,
+    dueSoon: openList.filter(
+      (o) => o.dueDate && (o.dueDate <= in7 || o.dueDate < todayStr),
+    ).length,
+    advanceHeld: Math.round(
+      openList.reduce((t, o) => t + n(o.advancePaid), 0),
+    ),
+    balanceDue: Math.round(
+      openList.reduce(
+        (t, o) => t + Math.max(0, n(o.total) - n(o.advancePaid)),
+        0,
+      ),
+    ),
+    byOrder: openList
+      .slice(0, 20)
+      .map((o) => ({
+        orderNo: o.orderNo,
+        customer: o.customerName,
+        total: Math.round(n(o.total)),
+        balance: Math.round(n(o.total) - n(o.advancePaid)),
+        status: o.status,
+        due: o.dueDate ?? null,
+      })),
+  };
+
   const context = {
     products: catalogue.length,
     lowCount: catalogue.filter((c) => c.low).length,
@@ -361,6 +403,7 @@ export async function POST(request: Request) {
     salesLast30Days: Math.round(salesValue),
     topSellers,
     expiringSoon,
+    ...(orders.open > 0 ? { orders } : {}),
     ...(manage
       ? { supplierBalances, taxSummary, upiReconcile, receivables }
       : {}),

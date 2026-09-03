@@ -12,6 +12,7 @@ import ProductListScreen from './screens/ProductListScreen';
 import SettingsSheet from './screens/SettingsSheet';
 import SuppliersScreen from './screens/SuppliersScreen';
 import CustomersScreen from './screens/CustomersScreen';
+import OrdersScreen from './screens/OrdersScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import AuditScreen from './screens/AuditScreen';
 import AskAiSheet from './screens/AskAiSheet';
@@ -34,6 +35,7 @@ export default function StockingApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [suppliersOpen, setSuppliersOpen] = useState(false);
   const [customersOpen, setCustomersOpen] = useState(false);
+  const [ordersOpen, setOrdersOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
@@ -163,6 +165,8 @@ export default function StockingApp() {
             lang={lang}
             onClose={() => setCustomersOpen(false)}
           />
+        ) : ordersOpen ? (
+          <OrdersScreen lang={lang} onClose={() => setOrdersOpen(false)} />
         ) : reportsOpen ? (
           <ReportsScreen lang={lang} onClose={() => setReportsOpen(false)} />
         ) : auditOpen ? (
@@ -184,6 +188,7 @@ export default function StockingApp() {
                 }}
                 onOpenSales={() => setSalesOpen(true)}
                 onOpenCustomers={() => setCustomersOpen(true)}
+                onOpenOrders={() => setOrdersOpen(true)}
               />
             )}
             {tab === 'scan' && <ScanScreen lang={lang} />}
@@ -211,6 +216,7 @@ export default function StockingApp() {
         !scanDoc &&
         !suppliersOpen &&
         !customersOpen &&
+        !ordersOpen &&
         !reportsOpen &&
         !auditOpen && (
           <button
@@ -234,6 +240,10 @@ export default function StockingApp() {
           onOpenCustomers={() => {
             setSettingsOpen(false);
             setCustomersOpen(true);
+          }}
+          onOpenOrders={() => {
+            setSettingsOpen(false);
+            setOrdersOpen(true);
           }}
           onOpenReports={() => {
             setSettingsOpen(false);

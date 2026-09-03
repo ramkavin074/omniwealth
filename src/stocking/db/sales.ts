@@ -15,7 +15,7 @@ const SEQ_KEY = 'stocking.salesSeq';
 
 /** A stable 2-char tag for this device, so bill numbers from two phones in
  *  the same shop never collide. Generated once, kept in localStorage. */
-function deviceTag(): string {
+export function deviceTag(): string {
   try {
     let tag = localStorage.getItem(TAG_KEY);
     if (!tag) {

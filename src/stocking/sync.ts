@@ -9,6 +9,7 @@ import { cacheGst, cacheTax } from './storeSettings';
 import type {
   Customer,
   Movement,
+  Order,
   Product,
   Receipt,
   Sale,
@@ -103,6 +104,10 @@ async function runSync(): Promise<SyncOutcome> {
     .receipts.where('updatedAt')
     .above(cursor)
     .toArray();
+  const dirtyOrders = await db()
+    .orders.where('updatedAt')
+    .above(cursor)
+    .toArray();
 
   let res: Response;
   try {
@@ -125,6 +130,7 @@ async function runSync(): Promise<SyncOutcome> {
         upiReceipts: dirtyUpiReceipts,
         customers: dirtyCustomers,
         receipts: dirtyReceipts,
+        orders: dirtyOrders,
       }),
     });
   } catch {
@@ -149,6 +155,7 @@ async function runSync(): Promise<SyncOutcome> {
     upiReceipts?: UpiReceipt[];
     customers?: Customer[];
     receipts?: Receipt[];
+    orders?: Order[];
     store?: {
       gstin: string | null;
       gstEnabled: boolean;
@@ -181,6 +188,7 @@ async function runSync(): Promise<SyncOutcome> {
   const pulledUpi = data.upiReceipts ?? [];
   const pulledCustomers = data.customers ?? [];
   const pulledReceipts = data.receipts ?? [];
+  const pulledOrders = data.orders ?? [];
 
   // Keep the offline GST + tax caches in step with the store's server setup.
   if (data.store) {
@@ -206,6 +214,7 @@ async function runSync(): Promise<SyncOutcome> {
       db().upiReceipts,
       db().customers,
       db().receipts,
+      db().orders,
     ],
     async () => {
       for (const p of data.products) {
@@ -281,8 +290,25 @@ async function runSync(): Promise<SyncOutcome> {
             ...r,
             tender: r.tender ?? 'cash',
             againstBillId: r.againstBillId ?? null,
+            againstOrderId: r.againstOrderId ?? null,
             note: r.note ?? null,
             deletedAt: r.deletedAt ?? null,
+          });
+        }
+      }
+      for (const o of pulledOrders) {
+        const local = await db().orders.get(o.id);
+        if (!local || local.updatedAt < o.updatedAt) {
+          await db().orders.put({
+            ...o,
+            lines: Array.isArray(o.lines) ? o.lines : [],
+            total: o.total ?? 0,
+            advancePaid: o.advancePaid ?? 0,
+            status: o.status ?? 'booked',
+            dueDate: o.dueDate ?? null,
+            note: o.note ?? null,
+            billId: o.billId ?? null,
+            deletedAt: o.deletedAt ?? null,
           });
         }
       }
@@ -318,7 +344,8 @@ async function runSync(): Promise<SyncOutcome> {
       dirtySales.length +
       dirtyUpiReceipts.length +
       dirtyCustomers.length +
-      dirtyReceipts.length,
+      dirtyReceipts.length +
+      dirtyOrders.length,
     pulled:
       data.products.length +
       data.movements.length +
@@ -327,7 +354,8 @@ async function runSync(): Promise<SyncOutcome> {
       pulledSales.length +
       pulledUpi.length +
       pulledCustomers.length +
-      pulledReceipts.length,
+      pulledReceipts.length +
+      pulledOrders.length,
   };
 }
 

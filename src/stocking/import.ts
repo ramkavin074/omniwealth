@@ -59,6 +59,17 @@ export const CSV_TEMPLATE =
   ',Sugar (loose),,45,40,kg,20,10,,0,\n' +
   ',Amul Butter 500g,,275,255,piece,8,3,2026-11-30,12,0405\n';
 
+export const CUSTOMERS_CSV_TEMPLATE =
+  'name,phone,place,gstin,balance,limit,note\n' +
+  'Ravi Traders,9876543210,Nagercoil,33ABCDE1234F1Z5,4200,10000,wedding cards\n' +
+  'Selvi Stores,9843012345,Marthandam,,0,5000,\n' +
+  'Walk-in (Kumar),,Thuckalay,,1500,,old balance carried over\n';
+
+export const ORDERS_CSV_TEMPLATE =
+  'order_no,customer,phone,item,qty,rate,total,advance,due,status,note\n' +
+  'OLD-101,Ravi Traders,9876543210,500 wedding cards gold foil,500,18,9000,3000,2026-09-20,in_progress,design 12\n' +
+  'OLD-102,Selvi Stores,9843012345,Flex banner 6x4,1,850,850,0,2026-09-10,ready,\n';
+
 /** Normalise a date cell to 'YYYY-MM-DD', or null if unrecognised.
  *  Accepts ISO, or day-first dd/mm/yyyy and dd-mm-yyyy (the Indian norm). */
 function toISODate(v: string | undefined): string | null {
@@ -178,4 +189,216 @@ export function parseCsv(text: string): ParseResult {
   }
 
   return { rows, unknownColumns, missingNameColumn };
+}
+
+// ---- customers (credit / khata migration from an existing billing app) ----
+
+export interface CustomerImportRow {
+  name: string;
+  phone: string | null;
+  place: string | null;
+  gstin: string | null;
+  openingBalance: number; // what the customer already owes on the old system
+  creditLimit: number;
+  note: string | null;
+}
+
+const CUSTOMER_ALIASES: Record<keyof CustomerImportRow, string[]> = {
+  name: ['name', 'customer', 'customer name', 'party', 'party name', 'account'],
+  phone: ['phone', 'mobile', 'mobile no', 'contact', 'phone no', 'whatsapp'],
+  place: ['place', 'area', 'city', 'town', 'village', 'address', 'location'],
+  gstin: ['gstin', 'gst', 'gst no', 'gstn', 'gst number', 'tax no'],
+  openingBalance: [
+    'balance',
+    'opening balance',
+    'opening',
+    'outstanding',
+    'outstanding balance',
+    'due',
+    'closing balance',
+    'to collect',
+    'receivable',
+  ],
+  creditLimit: ['limit', 'credit limit', 'creditlimit', 'max credit'],
+  note: ['note', 'notes', 'remarks', 'remark', 'comment'],
+};
+
+export interface CustomerParseResult {
+  rows: CustomerImportRow[];
+  unknownColumns: string[];
+  missingNameColumn: boolean;
+}
+
+export function parseCustomersCsv(text: string): CustomerParseResult {
+  const lines = text
+    .replace(/^﻿/, '')
+    .split(/\r\n|\n|\r/)
+    .filter((l) => l.trim() !== '');
+  if (lines.length === 0) {
+    return { rows: [], unknownColumns: [], missingNameColumn: true };
+  }
+
+  const headers = splitLine(lines[0]).map((h) => h.toLowerCase());
+  const colIndex: Partial<Record<keyof CustomerImportRow, number>> = {};
+  const known = new Set<string>();
+  (Object.keys(CUSTOMER_ALIASES) as (keyof CustomerImportRow)[]).forEach(
+    (key) => {
+      const idx = headers.findIndex((h) => CUSTOMER_ALIASES[key].includes(h));
+      if (idx !== -1) {
+        colIndex[key] = idx;
+        known.add(headers[idx]);
+      }
+    },
+  );
+
+  const unknownColumns = headers.filter((h) => h && !known.has(h));
+  if (colIndex.name === undefined) {
+    return { rows: [], unknownColumns, missingNameColumn: true };
+  }
+
+  const get = (
+    cells: string[],
+    key: keyof CustomerImportRow,
+  ): string | undefined => {
+    const i = colIndex[key];
+    return i === undefined ? undefined : cells[i];
+  };
+
+  const rows: CustomerImportRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitLine(lines[i]);
+    const name = (get(cells, 'name') ?? '').trim();
+    if (!name) continue;
+    rows.push({
+      name,
+      phone: (get(cells, 'phone') ?? '').trim() || null,
+      place: (get(cells, 'place') ?? '').trim() || null,
+      gstin: (get(cells, 'gstin') ?? '').trim().toUpperCase() || null,
+      openingBalance: num(get(cells, 'openingBalance')),
+      creditLimit: num(get(cells, 'creditLimit')),
+      note: (get(cells, 'note') ?? '').trim() || null,
+    });
+  }
+  return { rows, unknownColumns, missingNameColumn: false };
+}
+
+// ---- open orders / advance-booked jobs ----
+
+export interface OrderImportRow {
+  orderNo: string | null;
+  customerName: string;
+  phone: string | null;
+  description: string;
+  qty: number;
+  rate: number;
+  lineTotal: number | null; // when the sheet only has a total, not qty×rate
+  advance: number;
+  dueDate: string | null;
+  status: string | null;
+  note: string | null;
+}
+
+const ORDER_ALIASES: Record<keyof OrderImportRow, string[]> = {
+  orderNo: [
+    'order_no',
+    'order no',
+    'order',
+    'order number',
+    'bill no',
+    'ref',
+    'reference',
+    'job no',
+    'job card',
+    'token',
+  ],
+  customerName: ['customer', 'customer name', 'party', 'name', 'party name'],
+  phone: ['phone', 'mobile', 'contact', 'mobile no'],
+  description: [
+    'item',
+    'description',
+    'particulars',
+    'work',
+    'details',
+    'product',
+    'job',
+  ],
+  qty: ['qty', 'quantity', 'nos', 'count', 'pcs'],
+  rate: ['rate', 'price', 'unit price', 'unit rate'],
+  lineTotal: ['total', 'amount', 'line total', 'value', 'net', 'net amount'],
+  advance: ['advance', 'advance paid', 'paid', 'advance amount', 'token amount'],
+  dueDate: [
+    'due',
+    'due date',
+    'delivery',
+    'delivery date',
+    'promised',
+    'deliver on',
+    'expected',
+  ],
+  status: ['status', 'stage', 'state'],
+  note: ['note', 'notes', 'remarks', 'remark', 'comment'],
+};
+
+export interface OrderParseResult {
+  rows: OrderImportRow[];
+  unknownColumns: string[];
+  missingCustomerColumn: boolean;
+}
+
+export function parseOrdersCsv(text: string): OrderParseResult {
+  const lines = text
+    .replace(/^﻿/, '')
+    .split(/\r\n|\n|\r/)
+    .filter((l) => l.trim() !== '');
+  if (lines.length === 0) {
+    return { rows: [], unknownColumns: [], missingCustomerColumn: true };
+  }
+
+  const headers = splitLine(lines[0]).map((h) => h.toLowerCase());
+  const colIndex: Partial<Record<keyof OrderImportRow, number>> = {};
+  const known = new Set<string>();
+  (Object.keys(ORDER_ALIASES) as (keyof OrderImportRow)[]).forEach((key) => {
+    const idx = headers.findIndex((h) => ORDER_ALIASES[key].includes(h));
+    if (idx !== -1) {
+      colIndex[key] = idx;
+      known.add(headers[idx]);
+    }
+  });
+
+  const unknownColumns = headers.filter((h) => h && !known.has(h));
+  if (colIndex.customerName === undefined) {
+    return { rows: [], unknownColumns, missingCustomerColumn: true };
+  }
+
+  const get = (
+    cells: string[],
+    key: keyof OrderImportRow,
+  ): string | undefined => {
+    const i = colIndex[key];
+    return i === undefined ? undefined : cells[i];
+  };
+
+  const rows: OrderImportRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitLine(lines[i]);
+    const customerName = (get(cells, 'customerName') ?? '').trim();
+    if (!customerName) continue;
+    const hasTotalCol = colIndex.lineTotal !== undefined;
+    const lineTotal = hasTotalCol ? num(get(cells, 'lineTotal')) : null;
+    rows.push({
+      orderNo: (get(cells, 'orderNo') ?? '').trim() || null,
+      customerName,
+      phone: (get(cells, 'phone') ?? '').trim() || null,
+      description:
+        (get(cells, 'description') ?? '').trim() || 'Order (imported)',
+      qty: num(get(cells, 'qty')) || 1,
+      rate: num(get(cells, 'rate')),
+      lineTotal,
+      advance: num(get(cells, 'advance')),
+      dueDate: toISODate(get(cells, 'dueDate')),
+      status: (get(cells, 'status') ?? '').trim().toLowerCase() || null,
+      note: (get(cells, 'note') ?? '').trim() || null,
+    });
+  }
+  return { rows, unknownColumns, missingCustomerColumn: false };
 }

@@ -138,17 +138,66 @@ export interface Customer {
 
 export type ReceiptTender = 'cash' | 'upi';
 
-/** Money received from a customer against their running balance. */
+/** Money received from a customer — against their credit balance, or as an
+ *  advance/part-payment on an order. */
 export interface Receipt {
   id: string;
   customerId: string;
   amount: number; // ₹ received (positive)
   tender: ReceiptTender;
-  againstBillId: string | null; // optional — the credit bill this clears; null = on account
+  againstBillId: string | null; // optional — the credit bill this clears
+  againstOrderId: string | null; // optional — the order this is an advance on
   note: string | null;
   receivedAt: number; // epoch ms, client clock
   updatedAt: number;
   deletedAt: number | null;
+}
+
+// ---- orders / job-work (C2) ----
+
+export type OrderStatus =
+  | 'booked'
+  | 'in_progress'
+  | 'ready'
+  | 'delivered'
+  | 'cancelled';
+
+export const OPEN_ORDER_STATUSES: OrderStatus[] = [
+  'booked',
+  'in_progress',
+  'ready',
+];
+
+export interface OrderLine {
+  description: string; // free text — "500 wedding cards, gold foil, design 12"
+  qty: number;
+  rate: number; // ₹ per unit agreed
+}
+
+/** An advance-booked job: taken now, delivered later, balance on collection. */
+export interface Order {
+  id: string;
+  orderNo: string; // per-device, e.g. "K7-O-0007"
+  customerId: string;
+  customerName: string; // snapshot at booking
+  lines: OrderLine[];
+  total: number; // Σ qty × rate (the agreed price)
+  advancePaid: number; // ₹ received so far (booking advance + part-payments)
+  status: OrderStatus;
+  dueDate: string | null; // 'YYYY-MM-DD' promised delivery
+  note: string | null;
+  billId: string | null; // the Sale created when the order was delivered
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+export function orderLineTotal(l: OrderLine): number {
+  return Math.round(l.qty * l.rate * 100) / 100;
+}
+
+export function orderBalance(o: Pick<Order, 'total' | 'advancePaid'>): number {
+  return Math.round((o.total - o.advancePaid) * 100) / 100;
 }
 
 /** A customer's current balance and how it compares to their limit. */
