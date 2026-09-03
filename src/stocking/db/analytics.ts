@@ -3,6 +3,7 @@
 
 import { db } from './dexie';
 import { listProducts } from './products';
+import { listSuppliers } from './suppliers';
 import { daysUntil, type Product } from '../types';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -132,6 +133,80 @@ export async function writeOffs(days = 30): Promise<WriteOffSummary> {
     value += -m.delta * (cost.get(m.productId) ?? 0);
   }
   return { units: Math.round(units * 100) / 100, value: Math.round(value) };
+}
+
+export interface ReorderSuggestion {
+  product: Product;
+  perDay: number; // units sold per day over the window
+  daysLeft: number; // stockQty / perDay
+  suggestQty: number; // units to buy to reach the cover target
+  supplierId: string | null; // most recent stock-in supplier
+  supplierName: string | null;
+  supplierPhone: string | null;
+}
+
+/**
+ * What to reorder: items whose remaining cover (stock ÷ recent sales velocity)
+ * is below `coverTargetDays`. `suggestQty` tops each back up to the target.
+ * Sorted most-urgent first. Items that haven't sold in the window are skipped.
+ */
+export async function reorderSuggestions(
+  windowDays = 30,
+  coverTargetDays = 21,
+): Promise<ReorderSuggestion[]> {
+  const since = Date.now() - windowDays * DAY;
+  const [products, movements, suppliers] = await Promise.all([
+    listProducts(),
+    db().movements.where('createdAt').above(since).toArray(),
+    listSuppliers(),
+  ]);
+  const supById = new Map(suppliers.map((s) => [s.id, s]));
+
+  const sold = new Map<string, number>();
+  const lastIn = new Map<string, { at: number; supplierId: string | null }>();
+  // A stock-in older than the window still tells us who last supplied it.
+  const allMovements = await db().movements.toArray();
+  for (const m of allMovements) {
+    if (m.delta > 0 && (m.reason === 'scan-in' || m.reason === 'opening')) {
+      const cur = lastIn.get(m.productId);
+      if (!cur || m.createdAt > cur.at) {
+        lastIn.set(m.productId, {
+          at: m.createdAt,
+          supplierId: m.supplierId ?? null,
+        });
+      }
+    }
+  }
+  for (const m of movements) {
+    if (m.reason === 'scan-out' && m.delta < 0) {
+      sold.set(m.productId, (sold.get(m.productId) ?? 0) + -m.delta);
+    }
+  }
+
+  const out: ReorderSuggestion[] = [];
+  for (const p of products) {
+    const units = sold.get(p.id) ?? 0;
+    if (units <= 0) continue;
+    const perDay = units / windowDays;
+    const daysLeft = perDay > 0 ? p.stockQty / perDay : Infinity;
+    if (daysLeft > coverTargetDays) continue;
+    const suggestQty = Math.max(
+      1,
+      Math.ceil(perDay * coverTargetDays - p.stockQty),
+    );
+    const sup = lastIn.get(p.id)?.supplierId ?? null;
+    const s = sup ? supById.get(sup) : undefined;
+    out.push({
+      product: p,
+      perDay: Math.round(perDay * 100) / 100,
+      daysLeft: Math.round(daysLeft * 10) / 10,
+      suggestQty,
+      supplierId: sup,
+      supplierName: s?.name ?? null,
+      supplierPhone: s?.phone ?? null,
+    });
+  }
+  return out.sort((a, b) => a.daysLeft - b.daysLeft);
 }
 
 export interface DailySale {

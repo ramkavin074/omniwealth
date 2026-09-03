@@ -6,14 +6,17 @@ import {
   dailySales,
   deadStock,
   fastMovers,
+  reorderSuggestions,
   writeOffs,
   type DeadStock,
   type FastMover,
   type DailySale,
+  type ReorderSuggestion,
   type WriteOffSummary,
 } from '../db/analytics';
 import { expensesSummary, type ExpensesSummary } from '../db/expenses';
 import { useLiveQuery } from '../hooks';
+import { getReceiptConfig } from '../settings';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
@@ -25,10 +28,15 @@ const money = (n: number) =>
   '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
 export default function ReportsScreen({ lang, onClose }: Props) {
-  const [tab, setTab] = useState<'week' | 'fast' | 'dead'>('week');
+  const [tab, setTab] = useState<'week' | 'fast' | 'dead' | 'reorder'>('week');
   const week = useLiveQuery(() => dailySales(7), [], [] as DailySale[]);
   const fast = useLiveQuery(() => fastMovers(30), [], [] as FastMover[]);
   const dead = useLiveQuery<DeadStock | undefined>(() => deadStock(), []);
+  const reorder = useLiveQuery(
+    () => reorderSuggestions(),
+    [],
+    [] as ReorderSuggestion[],
+  );
   const loss = useLiveQuery<WriteOffSummary | undefined>(() => writeOffs(30), []);
   const exp30 = useLiveQuery<ExpensesSummary | undefined>(() => {
     const now = Date.now();
@@ -54,7 +62,7 @@ export default function ReportsScreen({ lang, onClose }: Props) {
       </div>
 
       <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-        {(['week', 'fast', 'dead'] as const).map((k) => (
+        {(['week', 'fast', 'dead', 'reorder'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -188,9 +196,102 @@ export default function ReportsScreen({ lang, onClose }: Props) {
         </div>
       )}
 
+      {tab === 'reorder' && (
+        <div className="space-y-4">
+          {reorder.length === 0 && (
+            <p className="pt-4 text-center text-slate-500 dark:text-slate-400">
+              {t(lang, 'rep.reorderNone')}
+            </p>
+          )}
+          {groupBySupplier(reorder).map(([key, group]) => {
+            const name = group[0].supplierName;
+            const phone = group[0].supplierPhone;
+            const draft = () => {
+              const lines = group.map(
+                (r) =>
+                  `- ${r.product.name} × ${r.suggestQty} ${unitLabel(lang, r.product.unit)}`,
+              );
+              const msg =
+                t(lang, 'rep.reorderMsg').replace(
+                  '{shop}',
+                  getReceiptConfig().shopName || 'Shop',
+                ) +
+                '\n' +
+                lines.join('\n');
+              const digits = (phone ?? '').replace(/\D/g, '');
+              const num = digits.length === 10 ? '91' + digits : digits;
+              window.open(
+                `https://wa.me/${num}?text=${encodeURIComponent(msg)}`,
+                '_blank',
+              );
+            };
+            return (
+              <div key={key}>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
+                    {name || t(lang, 'rep.reorderNoSupplier')}
+                  </p>
+                  {phone && (
+                    <button
+                      type="button"
+                      onClick={draft}
+                      className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white"
+                    >
+                      {t(lang, 'rep.reorderSend')}
+                    </button>
+                  )}
+                </div>
+                <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {group.map((r) => (
+                    <li
+                      key={r.product.id}
+                      className="flex items-center justify-between gap-2 py-2 text-sm"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-slate-800 dark:text-slate-100">
+                          {r.product.name}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {r.product.stockQty} {unitLabel(lang, r.product.unit)}{' '}
+                          {t(lang, 'rep.reorderLeft')
+                            .replace('{d}', String(r.daysLeft))
+                            .replace('{v}', String(r.perDay))}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 font-semibold tabular-nums ${
+                          r.daysLeft <= 7
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-amber-700 dark:text-amber-400'
+                        }`}
+                      >
+                        +{r.suggestQty}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <p className="pt-2 text-xs text-slate-400 dark:text-slate-500">
         {t(lang, 'rep.note')}
       </p>
     </div>
   );
+}
+
+function groupBySupplier(
+  rows: ReorderSuggestion[],
+): [string, ReorderSuggestion[]][] {
+  const m = new Map<string, ReorderSuggestion[]>();
+  for (const r of rows) {
+    const key = r.supplierId ?? '__none__';
+    const arr = m.get(key);
+    if (arr) arr.push(r);
+    else m.set(key, [r]);
+  }
+  return [...m.entries()];
 }
