@@ -108,6 +108,8 @@ interface InSale {
   customerId: string | null;
   cashAmount: number;
   upiAmount: number;
+  cardAmount: number;
+  salesman: string | null;
   note: string | null;
   createdAt: number;
   updatedAt: number;
@@ -424,6 +426,9 @@ export async function POST(request: Request) {
             : null,
         cashAmount: String(num(s.cashAmount)),
         upiAmount: String(num(s.upiAmount)),
+        cardAmount: String(num(s.cardAmount)),
+        salesman:
+          typeof s.salesman === 'string' && s.salesman ? s.salesman : null,
         note: s.note ?? null,
         createdAt: String(num(s.createdAt)),
         updatedAt: String(num(s.updatedAt)),
@@ -438,6 +443,8 @@ export async function POST(request: Request) {
           target: storeSales.id,
           set: {
             customerId: sql`excluded.customer_id`,
+            cardAmount: sql`excluded.card_amount`,
+            salesman: sql`excluded.salesman`,
             note: sql`excluded.note`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
@@ -875,6 +882,8 @@ export async function POST(request: Request) {
         customerId: s.customerId ?? null,
         cashAmount: num(s.cashAmount),
         upiAmount: num(s.upiAmount),
+        cardAmount: num(s.cardAmount),
+        salesman: s.salesman ?? null,
         note: s.note,
         createdAt: num(s.createdAt),
         updatedAt: num(s.updatedAt),

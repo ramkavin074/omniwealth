@@ -83,6 +83,9 @@ export default function SalesScreen({ lang, onClose }: Props) {
                   {i.name}{' '}
                   <span className="text-slate-400">
                     {i.qty} {unitLabel(lang, i.unit)} × {money(i.unitPrice)}
+                    {i.discount > 0 && (
+                      <span className="text-rose-500"> −{money(i.discount)}</span>
+                    )}
                   </span>
                 </span>
                 <span className="tabular-nums text-slate-800 dark:text-slate-100">
@@ -123,8 +126,21 @@ export default function SalesScreen({ lang, onClose }: Props) {
             {isRefund
               ? `${t(lang, 'sales.refundOf')} ${open.note?.replace('refund ', '') ?? ''}`
               : `${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${open.tenderType}`)}`}
+            {!isRefund &&
+              open.tenderType === 'split' &&
+              ` (${t(lang, 'sell.tender.cash')} ${money(open.cashAmount)}` +
+                (open.upiAmount ? ` · UPI ${money(open.upiAmount)}` : '') +
+                (open.cardAmount
+                  ? ` · ${t(lang, 'sell.tender.card')} ${money(open.cardAmount)}`
+                  : '') +
+                ')'}
             {open.deletedAt ? ` · ${t(lang, 'sales.voided')}` : ''}
           </p>
+          {open.salesman && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t(lang, 'sell.salesman')}: {open.salesman}
+            </p>
+          )}
         </div>
 
         {manage && !open.deletedAt && !isRefund && (
@@ -198,6 +214,8 @@ export default function SalesScreen({ lang, onClose }: Props) {
       {summary && summary.count > 0 && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           {t(lang, 'sales.avgBill')} {money(summary.avgBill)}
+          {summary.card > 0 &&
+            ` · ${t(lang, 'sell.tender.card')} ${money(summary.card)}`}
           {summary.credit > 0 &&
             ` · ${t(lang, 'sales.credit')} ${money(summary.credit)}`}
           {summary.discountTotal > 0 &&
@@ -231,6 +249,27 @@ export default function SalesScreen({ lang, onClose }: Props) {
                 </span>
                 <span className="tabular-nums text-slate-600 dark:text-slate-300">
                   {money(it.value)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {summary && summary.bySalesman.length > 0 && (
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            {t(lang, 'sales.bySalesman')}
+          </p>
+          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+            {summary.bySalesman.map((s) => (
+              <li key={s.name} className="flex justify-between py-1.5 text-sm">
+                <span className="text-slate-700 dark:text-slate-200">
+                  {s.name}{' '}
+                  <span className="text-slate-400">× {s.count}</span>
+                </span>
+                <span className="tabular-nums text-slate-600 dark:text-slate-300">
+                  {money(s.total)}
                 </span>
               </li>
             ))}
@@ -313,9 +352,14 @@ function RefundView({
     ...i,
     remaining: i.qty - (already[i.productId] ?? 0),
     picked: qty[i.productId] ?? 0,
+    // per-unit price after this line's share of its discount
+    effUnit:
+      i.qty > 0
+        ? Math.round((saleLineTotal(i) / i.qty) * 100) / 100
+        : i.unitPrice,
   }));
   const estimate =
-    Math.round(rows.reduce((t, r) => t + r.picked * r.unitPrice, 0) * 100) / 100;
+    Math.round(rows.reduce((t, r) => t + r.picked * r.effUnit, 0) * 100) / 100;
 
   const submit = async () => {
     setBusy(true);
@@ -397,8 +441,8 @@ function RefundView({
         ))}
       </ul>
 
-      <div className="grid grid-cols-3 gap-2">
-        {(['cash', 'upi', 'split'] as const).map((k) => (
+      <div className="grid grid-cols-4 gap-2">
+        {(['cash', 'upi', 'card', 'split'] as const).map((k) => (
           <button
             key={k}
             type="button"

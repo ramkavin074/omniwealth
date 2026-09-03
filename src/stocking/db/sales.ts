@@ -6,12 +6,43 @@
 import { db } from './dexie';
 import { applyMovement, uuid } from './products';
 import { getGstConfig, getUserId } from '../settings';
-import { computeSaleTax, type HeldSale, type Sale, type SaleItem, type TenderType } from '../types';
+import {
+  computeSaleTax,
+  saleLineTotal,
+  type HeldSale,
+  type Sale,
+  type SaleItem,
+  type TenderType,
+} from '../types';
 
 const q2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 const TAG_KEY = 'stocking.deviceTag';
 const SEQ_KEY = 'stocking.salesSeq';
+const SALESMEN_KEY = 'stocking.salesmen';
+
+/** The names typed into the "salesman" field on this device, most-recent
+ *  first, capped. Offline, per-device — a quick-pick list, not a roster. */
+export function getSalesmen(): string[] {
+  try {
+    const raw = localStorage.getItem(SALESMEN_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function rememberSalesman(name: string): void {
+  const n = name.trim();
+  if (!n) return;
+  try {
+    const next = [n, ...getSalesmen().filter((x) => x.toLowerCase() !== n.toLowerCase())].slice(0, 12);
+    localStorage.setItem(SALESMEN_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
 
 /** A stable 2-char tag for this device, so bill numbers from two phones in
  *  the same shop never collide. Generated once, kept in localStorage. */
@@ -46,6 +77,7 @@ export interface SaleLineInput {
   unit: SaleItem['unit'];
   qty: number;
   unitPrice: number;
+  discount?: number; // ₹ off this line
   gstRate?: number;
 }
 
@@ -57,9 +89,11 @@ export interface CompleteSaleInput {
   tenderType: TenderType;
   cashAmount?: number;
   upiAmount?: number;
+  cardAmount?: number;
   /** Required when tenderType is 'credit'; optional otherwise (attributes the
    *  bill to a known customer even when it's paid). */
   customerId?: string;
+  salesman?: string;
   note?: string;
 }
 
@@ -71,24 +105,29 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
   const now = Date.now();
   const items: SaleItem[] = input.items
     .filter((l) => l.qty > 0)
-    .map((l) => ({
-      productId: l.productId,
-      name: l.name,
-      qty: q2(l.qty),
-      unit: l.unit,
-      unitPrice: q2(l.unitPrice),
-      gstRate: Number(l.gstRate) || 0,
-    }));
+    .map((l) => {
+      const unitPrice = q2(l.unitPrice);
+      const qty = q2(l.qty);
+      return {
+        productId: l.productId,
+        name: l.name,
+        qty,
+        unit: l.unit,
+        unitPrice,
+        discount: Math.min(q2(Math.max(0, l.discount ?? 0)), qty * unitPrice),
+        gstRate: Number(l.gstRate) || 0,
+      };
+    });
 
   const subtotal =
     items.length > 0
-      ? items.reduce((t, i) => t + i.qty * i.unitPrice, 0)
+      ? items.reduce((t, i) => t + saleLineTotal(i), 0)
       : q2(input.manualTotal ?? 0);
   const discount = Math.min(q2(Math.max(0, input.discount ?? 0)), subtotal);
 
   const gst = getGstConfig();
   const { taxTotal, addToTotal, breakup } = computeSaleTax(
-    items.map((i) => ({ lineTotal: i.qty * i.unitPrice, gstRate: i.gstRate })),
+    items.map((i) => ({ lineTotal: saleLineTotal(i), gstRate: i.gstRate })),
     discount,
     gst,
   );
@@ -98,18 +137,25 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     throw new Error('Pick a customer for a credit bill');
   }
   // On a credit bill no money changes hands now — it goes to the customer's
-  // account and is cleared later with a receipt.
-  const cashAmount =
-    input.tenderType === 'cash'
-      ? total
-      : input.tenderType === 'split'
-        ? q2(input.cashAmount ?? 0)
-        : 0;
+  // account and is cleared later with a receipt. On a split, the caller gives
+  // the UPI + card parts and cash is whatever is left.
   const upiAmount =
     input.tenderType === 'upi'
       ? total
       : input.tenderType === 'split'
-        ? q2(input.upiAmount ?? 0)
+        ? q2(Math.max(0, input.upiAmount ?? 0))
+        : 0;
+  const cardAmount =
+    input.tenderType === 'card'
+      ? total
+      : input.tenderType === 'split'
+        ? q2(Math.max(0, input.cardAmount ?? 0))
+        : 0;
+  const cashAmount =
+    input.tenderType === 'cash'
+      ? total
+      : input.tenderType === 'split'
+        ? q2(Math.max(0, total - upiAmount - cardAmount))
         : 0;
 
   const sale: Sale = {
@@ -127,10 +173,13 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     customerId: input.customerId ?? null,
     cashAmount,
     upiAmount,
+    cardAmount,
+    salesman: input.salesman?.trim() ? input.salesman.trim() : null,
     note: input.note?.trim() ? input.note.trim() : null,
     updatedAt: now,
     deletedAt: null,
   };
+  if (sale.salesman) rememberSalesman(sale.salesman);
 
   await db().transaction(
     'rw',
@@ -203,7 +252,7 @@ export async function refundSale(
   originalId: string,
   lines: RefundLineInput[],
   tenderType: TenderType,
-  tender?: { cashAmount?: number; upiAmount?: number },
+  tender?: { cashAmount?: number; upiAmount?: number; cardAmount?: number },
 ): Promise<Sale> {
   const now = Date.now();
   const orig = await db().sales.get(originalId);
@@ -228,12 +277,18 @@ export async function refundSale(
     const room = src.qty - (already.get(req.productId) ?? 0);
     const qty = Math.min(q2(Math.max(0, req.qty)), room);
     if (qty <= 0) continue;
+    // Refund at the line's effective unit price (net of any per-line
+    // discount) so the money back is right; the refund line's own discount
+    // is 0 (the reduction is already baked into unitPrice here).
+    const effUnit =
+      src.qty > 0 ? q2(saleLineTotal(src) / src.qty) : src.unitPrice;
     items.push({
       productId: src.productId,
       name: src.name,
       unit: src.unit,
       qty: -qty, // negative — leaving the sale
-      unitPrice: src.unitPrice,
+      unitPrice: effUnit,
+      discount: 0,
       gstRate: src.gstRate,
     });
   }
@@ -245,7 +300,7 @@ export async function refundSale(
     origSubtotal > 0 ? q2((orig.discount * grossBack) / origSubtotal) : 0;
 
   const { taxTotal, addToTotal, breakup } = computeSaleTax(
-    items.map((i) => ({ lineTotal: i.qty * i.unitPrice, gstRate: i.gstRate })),
+    items.map((i) => ({ lineTotal: saleLineTotal(i), gstRate: i.gstRate })),
     -discShare,
     getGstConfig(),
   );
@@ -278,6 +333,13 @@ export async function refundSale(
         : tenderType === 'split'
           ? -q2(Math.abs(tender?.upiAmount ?? 0))
           : 0,
+    cardAmount:
+      tenderType === 'card'
+        ? total
+        : tenderType === 'split'
+          ? -q2(Math.abs(tender?.cardAmount ?? 0))
+          : 0,
+    salesman: orig.salesman ?? null,
     note: `refund ${orig.billNo}`,
     updatedAt: now,
     deletedAt: null,
@@ -318,6 +380,7 @@ export interface DaySummary {
   total: number; // net take = gross sales − refunds (includes credit bills)
   cash: number; // net cash in the drawer
   upi: number; // net UPI
+  card: number; // net card / swipe
   credit: number; // net billed on account — NOT money received today
   units: number;
   discountTotal: number;
@@ -326,6 +389,7 @@ export interface DaySummary {
   refundTotal: number; // positive ₹ value refunded
   avgBill: number;
   topItems: { name: string; qty: number; value: number }[];
+  bySalesman: { name: string; total: number; count: number }[]; // sale bills, desc
   sales: Sale[]; // newest first — includes refund rows
 }
 
@@ -347,6 +411,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let total = 0;
   let cash = 0;
   let upi = 0;
+  let card = 0;
   let credit = 0;
   let units = 0;
   let discountTotal = 0;
@@ -355,10 +420,12 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let refundCount = 0;
   let refundTotal = 0;
   const byItem = new Map<string, { qty: number; value: number }>();
+  const byStaff = new Map<string, { total: number; count: number }>();
   for (const s of rows) {
     total += s.total;
     cash += s.cashAmount;
     upi += s.upiAmount;
+    card += s.cardAmount ?? 0;
     if (s.tenderType === 'credit') credit += s.total;
     discountTotal += s.discount ?? 0;
     taxCollected += s.taxTotal ?? 0;
@@ -367,12 +434,18 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
       refundTotal += -s.total;
     } else {
       saleCount++;
+      if (s.salesman) {
+        const cur = byStaff.get(s.salesman) ?? { total: 0, count: 0 };
+        cur.total += s.total;
+        cur.count += 1;
+        byStaff.set(s.salesman, cur);
+      }
     }
     for (const i of s.items) {
       units += i.qty;
       const cur = byItem.get(i.name) ?? { qty: 0, value: 0 };
       cur.qty += i.qty;
-      cur.value += i.qty * i.unitPrice;
+      cur.value += saleLineTotal(i);
       byItem.set(i.name, cur);
     }
   }
@@ -381,6 +454,9 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     .filter((x) => x.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
+  const bySalesman = [...byStaff.entries()]
+    .map(([name, v]) => ({ name, total: q2(v.total), count: v.count }))
+    .sort((a, b) => b.total - a.total);
 
   return {
     from: f,
@@ -389,6 +465,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     total: q2(total),
     cash: q2(cash),
     upi: q2(upi),
+    card: q2(card),
     credit: q2(credit),
     units: q2(units),
     discountTotal: q2(discountTotal),
@@ -397,6 +474,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     refundTotal: q2(refundTotal),
     avgBill: saleCount ? Math.round((total + refundTotal) / saleCount) : 0,
     topItems,
+    bySalesman,
     sales: rows,
   };
 }

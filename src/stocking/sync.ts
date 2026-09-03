@@ -267,12 +267,17 @@ async function runSync(): Promise<SyncOutcome> {
         if (!local || local.updatedAt < s.updatedAt) {
           await db().sales.put({
             ...s,
-            items: Array.isArray(s.items) ? s.items : [],
+            items: (Array.isArray(s.items) ? s.items : []).map((i) => ({
+              ...i,
+              discount: i.discount ?? 0,
+            })),
             discount: s.discount ?? 0,
             taxTotal: s.taxTotal ?? 0,
             taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
             refundOf: s.refundOf ?? null,
             customerId: s.customerId ?? null,
+            cardAmount: s.cardAmount ?? 0,
+            salesman: s.salesman ?? null,
             deletedAt: s.deletedAt ?? null,
           });
         }

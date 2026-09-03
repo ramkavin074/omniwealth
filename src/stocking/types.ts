@@ -225,7 +225,7 @@ export type ProductDraft = Omit<
 
 // ---- billing (B1) ----
 
-export type TenderType = 'cash' | 'upi' | 'split' | 'credit';
+export type TenderType = 'cash' | 'upi' | 'card' | 'split' | 'credit';
 
 export interface SaleItem {
   productId: string;
@@ -233,6 +233,7 @@ export interface SaleItem {
   qty: number;
   unit: Unit;
   unitPrice: number; // ₹ per unit actually charged (editable at the counter)
+  discount: number; // ₹ off this line (0 = none); applied before bill discount
   gstRate: number; // GST % snapshot (0 when the store isn't charging GST)
 }
 
@@ -328,13 +329,20 @@ export interface Sale {
   customerId: string | null; // set on a credit sale (and any sale attributed to a known customer)
   cashAmount: number; // amount taken as cash (= total for a cash sale; 0 on credit)
   upiAmount: number; // amount taken as UPI (0 on credit)
+  cardAmount: number; // amount taken on a card / swipe machine (0 on credit)
+  salesman: string | null; // free-text name of who made the sale (commission / performance)
   note: string | null;
   updatedAt: number; // epoch ms — LWW for sync / void
   deletedAt: number | null; // set when the bill is voided
 }
 
+/** What a line contributes to the bill: qty × price, less this line's own
+ *  discount. Never negative. (Refund lines carry a negative qty — the sign
+ *  falls out of qty × price and the discount is 0 on those.) */
 export function saleLineTotal(i: SaleItem): number {
-  return Math.round(i.qty * i.unitPrice * 100) / 100;
+  const gross = i.qty * i.unitPrice;
+  const net = gross >= 0 ? Math.max(0, gross - (i.discount ?? 0)) : gross;
+  return Math.round(net * 100) / 100;
 }
 
 export function saleSubtotal(s: Pick<Sale, 'items' | 'total' | 'discount'>): number {

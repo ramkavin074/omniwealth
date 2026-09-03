@@ -349,7 +349,8 @@ export async function POST(request: Request) {
     const salesBy = new Map<string, number>();
     for (const s of creditSales) {
       if (!s.customerId) continue;
-      const owed = n(s.total) - n(s.cashAmount) - n(s.upiAmount);
+      const owed =
+        n(s.total) - n(s.cashAmount) - n(s.upiAmount) - n(s.cardAmount);
       if (owed === 0) continue;
       salesBy.set(s.customerId, (salesBy.get(s.customerId) ?? 0) + owed);
     }

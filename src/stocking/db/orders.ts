@@ -218,6 +218,8 @@ export async function deliverOrder(
     customerId: order.customerId,
     cashAmount: tender === 'cash' ? balance : 0,
     upiAmount: tender === 'upi' ? balance : 0,
+    cardAmount: 0,
+    salesman: null,
     note:
       `order ${order.orderNo} · ${desc}` +
       (order.advancePaid > 0

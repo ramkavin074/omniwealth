@@ -771,6 +771,8 @@ export const storeSales = store.table(
     customerId: uuid('customer_id'), // set on a credit sale
     cashAmount: numeric('cash_amount').notNull().default('0'),
     upiAmount: numeric('upi_amount').notNull().default('0'),
+    cardAmount: numeric('card_amount').notNull().default('0'),
+    salesman: text('salesman'), // free-text name of who made the sale
     refundOf: uuid('refund_of'), // original sale id when this row is a customer refund
     note: text('note'),
     createdAt: numeric('created_at').notNull(), // epoch ms, client clock

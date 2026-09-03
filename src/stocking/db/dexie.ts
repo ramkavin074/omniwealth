@@ -13,6 +13,7 @@ import type {
   Product,
   Receipt,
   Sale,
+  SaleItem,
   Supplier,
   SupplierPayment,
   UpiReceipt,
@@ -309,6 +310,44 @@ export class StockingDB extends Dexie {
         'id, orderNo, customerId, status, dueDate, createdAt, updatedAt, deletedAt',
       expenses: 'id, category, tender, spentAt, updatedAt, deletedAt',
     });
+    // v16: billing depth (C4) — card tender, per-line discount, salesman tag.
+    // No index change; backfill the new fields on existing rows.
+    this.version(16)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt, refundOf, customerId',
+        heldSales: 'id, createdAt',
+        taxNotes: 'key, updatedAt',
+        upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
+        customers: 'id, name, phone, updatedAt, deletedAt',
+        receipts: 'id, customerId, receivedAt, updatedAt, deletedAt',
+        orders:
+          'id, orderNo, customerId, status, dueDate, createdAt, updatedAt, deletedAt',
+        expenses: 'id, category, tender, spentAt, updatedAt, deletedAt',
+      })
+      .upgrade(async (tx) => {
+        const fixItems = (items: SaleItem[] | undefined) => {
+          if (!Array.isArray(items)) return;
+          for (const i of items) if (i.discount === undefined) i.discount = 0;
+        };
+        await tx
+          .table('sales')
+          .toCollection()
+          .modify((s: Sale) => {
+            if (s.cardAmount === undefined) s.cardAmount = 0;
+            if (s.salesman === undefined) s.salesman = null;
+            fixItems(s.items);
+          });
+        await tx
+          .table('heldSales')
+          .toCollection()
+          .modify((h: HeldSale) => fixItems(h.items));
+      });
   }
 }
 

@@ -184,7 +184,7 @@ export async function taxReport(
   for (const s of live) {
     turnover += s.total;
     cash += s.cashAmount;
-    digital += s.upiAmount;
+    digital += s.upiAmount + (s.cardAmount ?? 0); // card is a digital receipt
     gstCollected += s.taxTotal ?? 0;
     if (s.refundOf) refundTotal += -s.total;
     else billCount++;

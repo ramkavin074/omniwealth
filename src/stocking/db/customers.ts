@@ -213,7 +213,8 @@ async function customerSalesFor(customerId: string): Promise<Sale[]> {
 /** What a single bill left the customer owing: total minus whatever they paid
  *  on it at the counter (0 on a pure credit bill; the advance on a delivered
  *  order; 0 on a fully-paid bill). */
-const owedOnBill = (s: Sale): number => s.total - s.cashAmount - s.upiAmount;
+const owedOnBill = (s: Sale): number =>
+  s.total - s.cashAmount - s.upiAmount - (s.cardAmount ?? 0);
 
 export async function customerBalance(id: string): Promise<number> {
   const c = await getCustomer(id);

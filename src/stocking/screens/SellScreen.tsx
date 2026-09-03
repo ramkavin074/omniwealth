@@ -14,6 +14,7 @@ import { findByBarcode, searchProducts } from '../db/products';
 import {
   completeSale,
   discardHeld,
+  getSalesmen,
   holdSale,
   listHeld,
   resumeHeld,
@@ -34,8 +35,12 @@ interface CartLine {
   unit: Unit;
   qty: number;
   unitPrice: number;
+  discount: number; // ₹ off this line
   gstRate: number;
 }
+
+const lineNet = (l: CartLine) =>
+  Math.max(0, Math.round((l.qty * l.unitPrice - (l.discount || 0)) * 100) / 100);
 
 const money = (n: number) =>
   '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -56,6 +61,8 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [tender, setTender] = useState<TenderType>('cash');
   const [cashGiven, setCashGiven] = useState('');
   const [upiPart, setUpiPart] = useState('');
+  const [cardPart, setCardPart] = useState('');
+  const [salesman, setSalesman] = useState('');
   const [custId, setCustId] = useState('');
   const [newCust, setNewCust] = useState(false);
   const [ncName, setNcName] = useState('');
@@ -80,16 +87,24 @@ export default function SellScreen({ lang, onClose }: Props) {
     () =>
       isQuick
         ? Math.max(0, Number(quickAmt) || 0)
-        : Math.round(cart.reduce((s, l) => s + l.qty * l.unitPrice, 0) * 100) /
-          100,
+        : Math.round(cart.reduce((s, l) => s + lineNet(l), 0) * 100) / 100,
     [cart, isQuick, quickAmt],
+  );
+  const lineDiscTotal = useMemo(
+    () =>
+      Math.round(
+        cart.reduce((s, l) => s + Math.min(l.discount || 0, l.qty * l.unitPrice), 0) *
+          100,
+      ) / 100,
+    [cart],
   );
   const disc = Math.min(Math.max(0, Number(discount) || 0), subtotal);
   const [gst] = useState(getGstConfig);
+  const [salesmen] = useState(getSalesmen);
   const tax = useMemo(
     () =>
       computeSaleTax(
-        cart.map((l) => ({ lineTotal: l.qty * l.unitPrice, gstRate: l.gstRate })),
+        cart.map((l) => ({ lineTotal: lineNet(l), gstRate: l.gstRate })),
         disc,
         gst,
       ),
@@ -126,6 +141,7 @@ export default function SellScreen({ lang, onClose }: Props) {
           unit: p.unit as Unit,
           qty: 1,
           unitPrice: p.price || p.mrp || 0,
+          discount: 0,
           gstRate: p.gstRate ?? 0,
         },
       ];
@@ -156,25 +172,30 @@ export default function SellScreen({ lang, onClose }: Props) {
     setCart((c) =>
       c.map((l) => (l.productId === id ? { ...l, unitPrice } : l)),
     );
+  const setLineDisc = (id: string, discount: number) =>
+    setCart((c) =>
+      c.map((l) => (l.productId === id ? { ...l, discount } : l)),
+    );
   const removeLine = (id: string) =>
     setCart((c) => c.filter((l) => l.productId !== id));
 
   const change =
     tender === 'cash' ? Math.round((Number(cashGiven) - total) * 100) / 100 : 0;
+  const splitNonCash =
+    (Number(upiPart) || 0) + (Number(cardPart) || 0);
   const splitCash =
     tender === 'split'
-      ? Math.round((total - (Number(upiPart) || 0)) * 100) / 100
+      ? Math.round((total - splitNonCash) * 100) / 100
       : 0;
   const hasContent = isQuick ? subtotal > 0 : cart.length > 0;
   const custRow = recv.rows.find((r) => r.customer.id === custId) ?? null;
   const canComplete =
     total > 0 &&
     (tender === 'upi' ||
+      tender === 'card' ||
       (tender === 'cash' && (cashGiven === '' || Number(cashGiven) >= total)) ||
       (tender === 'credit' && !!custId) ||
-      (tender === 'split' &&
-        Number(upiPart) >= 0 &&
-        Number(upiPart) <= total));
+      (tender === 'split' && splitNonCash >= 0 && splitNonCash <= total));
 
   const complete = async () => {
     if (!canComplete) return;
@@ -194,14 +215,20 @@ export default function SellScreen({ lang, onClose }: Props) {
               unit: l.unit,
               qty: l.qty,
               unitPrice: l.unitPrice,
+              discount: l.discount || 0,
               gstRate: l.gstRate,
             })),
         ...(isQuick ? { manualTotal: subtotal } : {}),
         discount: disc,
         tenderType: tender,
+        salesman: salesman.trim() || undefined,
         ...(tender === 'credit' ? { customerId } : {}),
         ...(tender === 'split'
-          ? { cashAmount: splitCash, upiAmount: Number(upiPart) || 0 }
+          ? {
+              cashAmount: splitCash,
+              upiAmount: Number(upiPart) || 0,
+              cardAmount: Number(cardPart) || 0,
+            }
           : {}),
       });
       setSaved(sale);
@@ -223,6 +250,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         unit: l.unit,
         qty: l.qty,
         unitPrice: l.unitPrice,
+        discount: l.discount || 0,
         gstRate: l.gstRate,
       })),
       Number(discount) || 0,
@@ -244,6 +272,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         unit: i.unit,
         qty: i.qty,
         unitPrice: i.unitPrice,
+        discount: i.discount ?? 0,
         gstRate: i.gstRate ?? 0,
       })),
     );
@@ -258,6 +287,8 @@ export default function SellScreen({ lang, onClose }: Props) {
     setTender('cash');
     setCashGiven('');
     setUpiPart('');
+    setCardPart('');
+    setSalesman('');
     setCustId('');
     setNewCust(false);
     setNcName('');
@@ -273,7 +304,9 @@ export default function SellScreen({ lang, onClose }: Props) {
       ...(gst.gstin ? [`GSTIN: ${gst.gstin}`] : []),
       ...s.items.map(
         (i) =>
-          `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice} = ${saleLineTotal(i)}`,
+          `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice}` +
+          (i.discount > 0 ? ` (-${i.discount})` : '') +
+          ` = ${saleLineTotal(i)}`,
       ),
       ...(s.discount > 0 ? [`${t(lang, 'sell.discount')}: -${s.discount}`] : []),
       ...s.taxBreakup.map(
@@ -281,7 +314,8 @@ export default function SellScreen({ lang, onClose }: Props) {
           `GST ${r.rate}%  CGST ${r.cgst} + SGST ${r.sgst}`,
       ),
       `${t(lang, 'sell.total')}: ${money(s.total)}`,
-      `${t(lang, 'sell.paid')}: ${s.tenderType.toUpperCase()}`,
+      `${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${s.tenderType}`)}`,
+      ...(s.salesman ? [`${t(lang, 'sell.salesman')}: ${s.salesman}`] : []),
     ].join('\n');
 
   // ---------- DONE / receipt ----------
@@ -322,6 +356,9 @@ export default function SellScreen({ lang, onClose }: Props) {
                   {i.name}{' '}
                   <span className="text-slate-400">
                     {i.qty} × {money(i.unitPrice)}
+                    {i.discount > 0 && (
+                      <span className="text-rose-500"> −{money(i.discount)}</span>
+                    )}
                   </span>
                 </span>
                 <span className="tabular-nums text-slate-800 dark:text-slate-100">
@@ -378,12 +415,25 @@ export default function SellScreen({ lang, onClose }: Props) {
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {t(lang, 'sell.paid')}: {t(lang, `sell.tender.${saved.tenderType}`)}
+            {saved.tenderType === 'split' &&
+              ` · ${t(lang, 'sell.tender.cash')} ${money(saved.cashAmount)}` +
+                (saved.upiAmount
+                  ? ` · UPI ${money(saved.upiAmount)}`
+                  : '') +
+                (saved.cardAmount
+                  ? ` · ${t(lang, 'sell.tender.card')} ${money(saved.cardAmount)}`
+                  : '')}
             {saved.tenderType === 'cash' &&
               Number(cashGiven) > saved.total &&
               ` · ${t(lang, 'sell.change')} ${money(
                 Number(cashGiven) - saved.total,
               )}`}
           </p>
+          {saved.salesman && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t(lang, 'sell.salesman')}: {saved.salesman}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -430,6 +480,11 @@ export default function SellScreen({ lang, onClose }: Props) {
         </div>
 
         <div className="rounded-2xl bg-slate-100 p-4 text-center dark:bg-slate-800">
+          {lineDiscTotal > 0 && (
+            <p className="mb-1 text-xs text-rose-600 dark:text-rose-400">
+              {t(lang, 'sell.lineDiscTotal')} −{money(lineDiscTotal)}
+            </p>
+          )}
           {disc > 0 && (
             <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">
               {t(lang, 'sell.subtotal')} {money(subtotal)} ·{' '}
@@ -467,8 +522,8 @@ export default function SellScreen({ lang, onClose }: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {(['cash', 'upi', 'credit', 'split'] as const).map((k) => (
+        <div className="grid grid-cols-3 gap-2">
+          {(['cash', 'upi', 'card', 'credit', 'split'] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -598,20 +653,59 @@ export default function SellScreen({ lang, onClose }: Props) {
 
         {tender === 'split' && (
           <div className="space-y-2">
-            <label className="block text-sm text-slate-600 dark:text-slate-300">
-              {t(lang, 'sell.upiPart')}
-            </label>
-            <input
-              inputMode="decimal"
-              value={upiPart}
-              onChange={(e) => setUpiPart(e.target.value)}
-              className={`${inputCls} w-full`}
-            />
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-2">
+              <label className="w-28 text-sm text-slate-600 dark:text-slate-300">
+                {t(lang, 'sell.upiPart')}
+              </label>
+              <input
+                inputMode="decimal"
+                value={upiPart}
+                onChange={(e) => setUpiPart(e.target.value)}
+                placeholder="0"
+                className={`${inputCls} flex-1`}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="w-28 text-sm text-slate-600 dark:text-slate-300">
+                {t(lang, 'sell.cardPart')}
+              </label>
+              <input
+                inputMode="decimal"
+                value={cardPart}
+                onChange={(e) => setCardPart(e.target.value)}
+                placeholder="0"
+                className={`${inputCls} flex-1`}
+              />
+            </div>
+            <p
+              className={`text-sm ${
+                splitCash < 0
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`}
+            >
               {t(lang, 'sell.tender.cash')}: {money(splitCash)}
             </p>
           </div>
         )}
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-slate-600 dark:text-slate-300">
+            {t(lang, 'sell.salesman')}
+          </label>
+          <input
+            list="salesman-list"
+            value={salesman}
+            onChange={(e) => setSalesman(e.target.value)}
+            placeholder={t(lang, 'sell.salesmanOpt')}
+            className={`${inputCls} flex-1`}
+          />
+          <datalist id="salesman-list">
+            {salesmen.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+        </div>
 
         <button
           type="button"
@@ -803,8 +897,29 @@ export default function SellScreen({ lang, onClose }: Props) {
                     className={`${inputCls} w-20 text-right`}
                   />
                   <span className="ml-auto shrink-0 font-semibold tabular-nums text-slate-800 dark:text-slate-100">
-                    {money(l.qty * l.unitPrice)}
+                    {money(lineNet(l))}
                   </span>
+                </div>
+                <div className="mt-1 flex items-center justify-end gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  <span>{t(lang, 'sell.lineDisc')}</span>
+                  <span>₹</span>
+                  <input
+                    inputMode="decimal"
+                    value={l.discount ? String(l.discount) : ''}
+                    onChange={(e) =>
+                      setLineDisc(
+                        l.productId,
+                        Math.max(0, Number(e.target.value) || 0),
+                      )
+                    }
+                    placeholder="0"
+                    className={`${inputCls} h-8 w-16 text-right`}
+                  />
+                  {l.discount > 0 && (
+                    <span className="tabular-nums line-through">
+                      {money(l.qty * l.unitPrice)}
+                    </span>
+                  )}
                 </div>
               </li>
             ))}
@@ -826,6 +941,7 @@ export default function SellScreen({ lang, onClose }: Props) {
           onClick={() => {
             setCashGiven('');
             setUpiPart('');
+            setCardPart('');
             setPhase('pay');
           }}
           disabled={!hasContent}
