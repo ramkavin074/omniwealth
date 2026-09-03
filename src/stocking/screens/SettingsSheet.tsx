@@ -188,7 +188,7 @@ export default function SettingsSheet({
   return (
     <div className={`${SHEET_OVERLAY} z-30`}>
       <div
-        className={`${SHEET_PANEL} max-h-[92vh] space-y-5 overflow-y-auto`}
+        className={`${SHEET_PANEL} max-h-[92vh] space-y-5 overflow-y-auto md:max-w-2xl`}
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
         <div className="flex items-center justify-between">
@@ -221,97 +221,34 @@ export default function SettingsSheet({
 
         <section className="space-y-2">
           <p className={heading}>{t(lang, 'settings.tools')}</p>
-          <button
-            type="button"
-            onClick={onOpenSales}
-            className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-          >
-            {t(lang, 'sales.title')}
-          </button>
-          <button
-            type="button"
-            onClick={onOpenCustomers}
-            className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-          >
-            {t(lang, 'cust.title')}
-          </button>
-          <button
-            type="button"
-            onClick={onOpenOrders}
-            className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-          >
-            {t(lang, 'order.title')}
-          </button>
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenExpenses}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'exp.title')}
-            </button>
-          )}
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenTax}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'tax.title')}
-            </button>
-          )}
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenUpi}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'upi.title')}
-            </button>
-          )}
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenSuppliers}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'sup.manage')}
-            </button>
-          )}
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenPurchases}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'pur.title')}
-            </button>
-          )}
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenReports}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'rep.title')}
-            </button>
-          )}
-          {manage && (
-            <button
-              type="button"
-              onClick={onOpenAccountant}
-              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-            >
-              {t(lang, 'acct.title')}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onOpenAudit}
-            className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
-          >
-            {t(lang, 'audit.title')}
-          </button>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {(
+              [
+                ['sales.title', onOpenSales, true],
+                ['cust.title', onOpenCustomers, true],
+                ['order.title', onOpenOrders, true],
+                ['exp.title', onOpenExpenses, manage],
+                ['pur.title', onOpenPurchases, manage],
+                ['sup.manage', onOpenSuppliers, manage],
+                ['tax.title', onOpenTax, manage],
+                ['upi.title', onOpenUpi, manage],
+                ['rep.title', onOpenReports, manage],
+                ['acct.title', onOpenAccountant, manage],
+                ['audit.title', onOpenAudit, true],
+              ] as const
+            )
+              .filter(([, , show]) => show)
+              .map(([key, onClick]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={onClick}
+                  className="flex h-16 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 text-center text-sm font-semibold leading-tight text-slate-700 transition active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  {t(lang, key)}
+                </button>
+              ))}
+          </div>
         </section>
 
         {manage && (
