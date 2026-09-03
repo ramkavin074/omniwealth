@@ -97,6 +97,7 @@ const en: Dict = {
   'receipt.line2': 'Address / phone line',
   'receipt.footer': 'Footer line',
   'receipt.roundBills': 'Round every bill to the nearest ₹1',
+  'receipt.billSeries': 'Bill series prefix',
   'receipt.hint': 'Shown on the printed bill. Print opens your device print dialog — pick a connected or Wi-Fi thermal printer.',
 
   'sales.title': 'Sales',
@@ -653,6 +654,7 @@ const ta: Dict = {
   'receipt.line2': 'முகவரி / தொலைபேசி வரி',
   'receipt.footer': 'கீழ் வரி',
   'receipt.roundBills': 'ஒவ்வொரு பில்லையும் அருகிலுள்ள ₹1 க்கு முழுமைப்படுத்து',
+  'receipt.billSeries': 'பில் எண் முன்னொட்டு',
   'receipt.hint': 'அச்சிடப்பட்ட பில்லில் காட்டப்படும். அச்சிடு உங்கள் சாதனத்தின் அச்சு உரையாடலைத் திறக்கும் — இணைக்கப்பட்ட அல்லது வைஃபை தெர்மல் அச்சுப்பொறியைத் தேர்வு செய்யவும்.',
   'sell.paid': 'செலுத்தியது',
   'sell.whatsapp': 'வாட்ஸ்அப் ரசீது',

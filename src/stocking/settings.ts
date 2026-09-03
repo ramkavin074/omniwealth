@@ -53,6 +53,7 @@ export interface ReceiptConfig {
   footer: string; // "Thank you, visit again"
   paper: 58 | 80; // mm — thermal roll width
   roundBills: boolean; // round every bill total to the nearest ₹1 (Indian norm)
+  billSeries: string; // optional prefix on the bill number, e.g. "A" → "A-K7-0042"
 }
 
 const RECEIPT_KEY = 'stocking.receipt';
@@ -62,7 +63,16 @@ const RECEIPT_FALLBACK: ReceiptConfig = {
   footer: 'Thank you! Visit again.',
   paper: 58,
   roundBills: true,
+  billSeries: '',
 };
+
+/** Normalise a bill-series prefix: uppercase, letters/digits only, max 4. */
+export function cleanBillSeries(raw: string): string {
+  return (raw || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 4);
+}
 
 export function getReceiptConfig(): ReceiptConfig {
   try {
@@ -76,6 +86,8 @@ export function getReceiptConfig(): ReceiptConfig {
         typeof p.footer === 'string' ? p.footer : RECEIPT_FALLBACK.footer,
       paper: p.paper === 80 ? 80 : 58,
       roundBills: p.roundBills !== false, // default on
+      billSeries:
+        typeof p.billSeries === 'string' ? cleanBillSeries(p.billSeries) : '',
     };
   } catch {
     return RECEIPT_FALLBACK;

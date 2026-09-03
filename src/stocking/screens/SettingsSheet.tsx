@@ -8,6 +8,7 @@ import { GST_RATES, UNITS, type Unit } from '../types';
 import {
   APP_VERSION,
   canManage,
+  cleanBillSeries,
   clearAllData,
   getDefaults,
   getReceiptConfig,
@@ -432,6 +433,20 @@ export default function SettingsSheet({
               />
               {t(lang, 'receipt.roundBills')}
             </label>
+            <div className="flex items-center gap-2">
+              <label className="flex-1 text-sm text-slate-700 dark:text-slate-200">
+                {t(lang, 'receipt.billSeries')}
+              </label>
+              <input
+                value={rc.billSeries}
+                onChange={(e) =>
+                  patchRc({ billSeries: cleanBillSeries(e.target.value) })
+                }
+                placeholder="—"
+                maxLength={4}
+                className={`${field} w-20 text-center uppercase`}
+              />
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {rcSaved
                 ? t(lang, 'settings.alertSaved')

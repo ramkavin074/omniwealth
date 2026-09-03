@@ -68,7 +68,9 @@ function nextBillNo(): string {
   } catch {
     /* ignore */
   }
-  return `${deviceTag()}-${String(seq).padStart(4, '0')}`;
+  const core = `${deviceTag()}-${String(seq).padStart(4, '0')}`;
+  const series = getReceiptConfig().billSeries;
+  return series ? `${series}-${core}` : core;
 }
 
 export interface SaleLineInput {
