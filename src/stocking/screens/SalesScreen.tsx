@@ -85,7 +85,10 @@ export default function SalesScreen({ lang, onClose }: Props) {
                   <span className="text-slate-400">
                     {i.qty} {unitLabel(lang, i.unit)} × {money(i.unitPrice)}
                     {i.discount > 0 && (
-                      <span className="text-rose-500"> −{money(i.discount)}</span>
+                      <span className="text-rose-500">
+                        {' '}
+                        −{i.discountPct > 0 ? `${i.discountPct}%` : money(i.discount)}
+                      </span>
                     )}
                   </span>
                 </span>
@@ -113,9 +116,20 @@ export default function SalesScreen({ lang, onClose }: Props) {
               ))}
             </div>
           )}
+          {(open.roundoff ?? 0) !== 0 && (
+            <div className="mt-2 flex justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span>{t(lang, 'sell.roundoff')}</span>
+              <span className="tabular-nums">
+                {open.roundoff > 0 ? '+' : '−'}
+                {money2(Math.abs(open.roundoff))}
+              </span>
+            </div>
+          )}
           <div
             className={`mt-2 flex justify-between ${
-              open.discount > 0 || (open.taxBreakup ?? []).length > 0
+              open.discount > 0 ||
+              (open.taxBreakup ?? []).length > 0 ||
+              (open.roundoff ?? 0) !== 0
                 ? ''
                 : 'border-t border-slate-200 pt-2 dark:border-slate-700'
             } font-bold text-slate-900 dark:text-slate-50`}
@@ -235,6 +249,8 @@ export default function SalesScreen({ lang, onClose }: Props) {
             ` · ${t(lang, 'sales.credit')} ${money(summary.credit)}`}
           {summary.discountTotal > 0 &&
             ` · ${t(lang, 'sales.discounts')} ${money(summary.discountTotal)}`}
+          {Math.abs(summary.roundoffTotal) >= 0.01 &&
+            ` · ${t(lang, 'sell.roundoff')} ${summary.roundoffTotal > 0 ? '+' : '−'}${money(Math.abs(summary.roundoffTotal))}`}
           {summary.taxCollected > 0 &&
             ` · ${t(lang, 'sales.gst')} ${money(summary.taxCollected)}`}
           {summary.refundCount > 0 && (

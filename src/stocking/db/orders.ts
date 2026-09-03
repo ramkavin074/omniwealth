@@ -212,6 +212,7 @@ export async function deliverOrder(
     discount: 0,
     taxTotal: 0,
     taxBreakup: [],
+    roundoff: 0,
     total: q(order.total),
     refundOf: null,
     tenderType: tender,

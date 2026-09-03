@@ -118,6 +118,7 @@ export interface AcctSummary {
   digital: number; // upi + card
   credit: number; // billed on account
   refunds: number;
+  roundoff: number; // Σ rounding adjustments on bills
   gstOutputByRate: { rate: number; taxable: number; cgst: number; sgst: number }[];
   gstOutputTotal: number;
   gstInputTotal: number; // purchases + expenses
@@ -267,11 +268,13 @@ export async function buildAccountantExport(
   let digital = 0;
   let credit = 0;
   let refunds = 0;
+  let roundoff = 0;
   const byRate = new Map<number, { taxable: number; cgst: number; sgst: number }>();
   for (const s of liveSales) {
     turnover += s.total;
     cash += s.cashAmount;
     digital += s.upiAmount + (s.cardAmount ?? 0);
+    roundoff += s.roundoff ?? 0;
     if (s.tenderType === 'credit') credit += s.total;
     if (s.refundOf) refunds += -s.total;
     for (const r of s.taxBreakup ?? []) {
@@ -369,6 +372,7 @@ export async function buildAccountantExport(
       digital: q(digital),
       credit: q(credit),
       refunds: q(refunds),
+      roundoff: q(roundoff),
       gstOutputByRate,
       gstOutputTotal,
       gstInputTotal,

@@ -766,6 +766,7 @@ export const storeSales = store.table(
     discount: numeric('discount').notNull().default('0'),
     taxTotal: numeric('tax_total').notNull().default('0'),
     taxBreakup: jsonb('tax_breakup').notNull().default('[]'), // TaxRow[]
+    roundoff: numeric('roundoff').notNull().default('0'),
     total: numeric('total').notNull(),
     tenderType: text('tender_type').notNull(),
     customerId: uuid('customer_id'), // set on a credit sale

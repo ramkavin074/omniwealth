@@ -99,6 +99,7 @@ export function buildAccountantCsv(x: AccountantExport): string {
   L.push(row(['  Digital (UPI + card)', money(s.digital)]));
   L.push(row(['  On account (credit)', money(s.credit)]));
   L.push(row(['Refunds', money(s.refunds)]));
+  if (s.roundoff) L.push(row(['Rounding adjustment', money(s.roundoff)]));
   L.push(row(['Purchases (invoice value)', money(s.purchaseTotal)]));
   L.push(row(['Expenses', money(s.expenseTotal)]));
   if (x.store.gstEnabled) {

@@ -52,6 +52,7 @@ export interface ReceiptConfig {
   line2: string; // address / phone line under the name
   footer: string; // "Thank you, visit again"
   paper: 58 | 80; // mm — thermal roll width
+  roundBills: boolean; // round every bill total to the nearest ₹1 (Indian norm)
 }
 
 const RECEIPT_KEY = 'stocking.receipt';
@@ -60,6 +61,7 @@ const RECEIPT_FALLBACK: ReceiptConfig = {
   line2: '',
   footer: 'Thank you! Visit again.',
   paper: 58,
+  roundBills: true,
 };
 
 export function getReceiptConfig(): ReceiptConfig {
@@ -73,6 +75,7 @@ export function getReceiptConfig(): ReceiptConfig {
       footer:
         typeof p.footer === 'string' ? p.footer : RECEIPT_FALLBACK.footer,
       paper: p.paper === 80 ? 80 : 58,
+      roundBills: p.roundBills !== false, // default on
     };
   } catch {
     return RECEIPT_FALLBACK;

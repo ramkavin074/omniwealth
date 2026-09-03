@@ -423,6 +423,15 @@ export default function SettingsSheet({
                 </button>
               ))}
             </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={rc.roundBills}
+                onChange={(e) => patchRc({ roundBills: e.target.checked })}
+                className="h-5 w-5 accent-teal-600"
+              />
+              {t(lang, 'receipt.roundBills')}
+            </label>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {rcSaved
                 ? t(lang, 'settings.alertSaved')

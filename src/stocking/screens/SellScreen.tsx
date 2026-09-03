@@ -36,12 +36,16 @@ interface CartLine {
   unit: Unit;
   qty: number;
   unitPrice: number;
-  discount: number; // ₹ off this line
+  discount: number; // ₹ off this line (always kept in sync — authoritative for maths)
+  discPct: number; // the % value, when the line is in % mode
+  discMode: 'amt' | 'pct'; // which unit the discount input takes
   gstRate: number;
 }
 
+const q2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+const lineGross = (l: CartLine) => l.qty * l.unitPrice;
 const lineNet = (l: CartLine) =>
-  Math.max(0, Math.round((l.qty * l.unitPrice - (l.discount || 0)) * 100) / 100);
+  Math.max(0, q2(lineGross(l) - (l.discount || 0)));
 
 const money = (n: number) =>
   '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -101,6 +105,7 @@ export default function SellScreen({ lang, onClose }: Props) {
   );
   const disc = Math.min(Math.max(0, Number(discount) || 0), subtotal);
   const [gst] = useState(getGstConfig);
+  const [roundBills] = useState(() => getReceiptConfig().roundBills);
   const [salesmen] = useState(getSalesmen);
   const tax = useMemo(
     () =>
@@ -111,8 +116,9 @@ export default function SellScreen({ lang, onClose }: Props) {
       ),
     [cart, disc, gst],
   );
-  const total =
-    Math.round((subtotal - disc + tax.addToTotal) * 100) / 100;
+  const preRound = q2(subtotal - disc + tax.addToTotal);
+  const total = roundBills ? Math.round(preRound) : preRound;
+  const roundoff = q2(total - preRound);
 
   const flash = (s: string) => {
     setMsg(s);
@@ -143,6 +149,8 @@ export default function SellScreen({ lang, onClose }: Props) {
           qty: 1,
           unitPrice: p.price || p.mrp || 0,
           discount: 0,
+          discPct: 0,
+          discMode: 'amt',
           gstRate: p.gstRate ?? 0,
         },
       ];
@@ -163,19 +171,43 @@ export default function SellScreen({ lang, onClose }: Props) {
     addProduct(p);
   };
 
+  // Keep the ₹ discount in sync when the line is priced by %.
+  const syncPct = (l: CartLine): CartLine =>
+    l.discMode === 'pct'
+      ? { ...l, discount: Math.min(q2((lineGross(l) * l.discPct) / 100), lineGross(l)) }
+      : l;
+
   const setQty = (id: string, qty: number) =>
     setCart((c) =>
       c
-        .map((l) => (l.productId === id ? { ...l, qty } : l))
+        .map((l) => (l.productId === id ? syncPct({ ...l, qty }) : l))
         .filter((l) => l.qty > 0),
     );
   const setPrice = (id: string, unitPrice: number) =>
     setCart((c) =>
-      c.map((l) => (l.productId === id ? { ...l, unitPrice } : l)),
+      c.map((l) => (l.productId === id ? syncPct({ ...l, unitPrice }) : l)),
     );
-  const setLineDisc = (id: string, discount: number) =>
+  const setLineDisc = (id: string, raw: number) =>
     setCart((c) =>
-      c.map((l) => (l.productId === id ? { ...l, discount } : l)),
+      c.map((l) => {
+        if (l.productId !== id) return l;
+        const v = Math.max(0, raw || 0);
+        return l.discMode === 'pct'
+          ? syncPct({ ...l, discPct: Math.min(v, 100) })
+          : { ...l, discount: Math.min(v, lineGross(l)), discPct: 0 };
+      }),
+    );
+  const toggleLineDiscMode = (id: string) =>
+    setCart((c) =>
+      c.map((l) => {
+        if (l.productId !== id) return l;
+        if (l.discMode === 'amt') {
+          const pct =
+            lineGross(l) > 0 ? q2((l.discount / lineGross(l)) * 100) : 0;
+          return { ...l, discMode: 'pct', discPct: pct };
+        }
+        return { ...l, discMode: 'amt' }; // discount is already in sync
+      }),
     );
   const removeLine = (id: string) =>
     setCart((c) => c.filter((l) => l.productId !== id));
@@ -218,6 +250,7 @@ export default function SellScreen({ lang, onClose }: Props) {
               qty: l.qty,
               unitPrice: l.unitPrice,
               discount: l.discount || 0,
+              discountPct: l.discMode === 'pct' ? l.discPct || 0 : 0,
               gstRate: l.gstRate,
             })),
         ...(isQuick ? { manualTotal: subtotal } : {}),
@@ -253,6 +286,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         qty: l.qty,
         unitPrice: l.unitPrice,
         discount: l.discount || 0,
+        discountPct: l.discMode === 'pct' ? l.discPct || 0 : 0,
         gstRate: l.gstRate,
       })),
       Number(discount) || 0,
@@ -275,6 +309,8 @@ export default function SellScreen({ lang, onClose }: Props) {
         qty: i.qty,
         unitPrice: i.unitPrice,
         discount: i.discount ?? 0,
+        discPct: i.discountPct ?? 0,
+        discMode: (i.discountPct ?? 0) > 0 ? ('pct' as const) : ('amt' as const),
         gstRate: i.gstRate ?? 0,
       })),
     );
@@ -307,7 +343,9 @@ export default function SellScreen({ lang, onClose }: Props) {
       ...s.items.map(
         (i) =>
           `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice}` +
-          (i.discount > 0 ? ` (-${i.discount})` : '') +
+          (i.discount > 0
+            ? ` (-${i.discountPct > 0 ? i.discountPct + '%' : i.discount})`
+            : '') +
           ` = ${saleLineTotal(i)}`,
       ),
       ...(s.discount > 0 ? [`${t(lang, 'sell.discount')}: -${s.discount}`] : []),
@@ -315,6 +353,9 @@ export default function SellScreen({ lang, onClose }: Props) {
         (r) =>
           `GST ${r.rate}%  CGST ${r.cgst} + SGST ${r.sgst}`,
       ),
+      ...(s.roundoff
+        ? [`${t(lang, 'sell.roundoff')}: ${s.roundoff > 0 ? '+' : ''}${s.roundoff}`]
+        : []),
       `${t(lang, 'sell.total')}: ${money(s.total)}`,
       `${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${s.tenderType}`)}`,
       ...(s.salesman ? [`${t(lang, 'sell.salesman')}: ${s.salesman}`] : []),
@@ -359,7 +400,10 @@ export default function SellScreen({ lang, onClose }: Props) {
                   <span className="text-slate-400">
                     {i.qty} × {money(i.unitPrice)}
                     {i.discount > 0 && (
-                      <span className="text-rose-500"> −{money(i.discount)}</span>
+                      <span className="text-rose-500">
+                        {' '}
+                        −{i.discountPct > 0 ? `${i.discountPct}%` : money(i.discount)}
+                      </span>
                     )}
                   </span>
                 </span>
@@ -374,7 +418,7 @@ export default function SellScreen({ lang, onClose }: Props) {
               <div className="flex justify-between text-slate-500 dark:text-slate-400">
                 <span>{t(lang, 'sell.subtotal')}</span>
                 <span className="tabular-nums">
-                  {money(saved.total + saved.discount)}
+                  {money(saved.total - saved.roundoff + saved.discount)}
                 </span>
               </div>
               <div className="flex justify-between text-rose-600 dark:text-rose-400">
@@ -405,9 +449,26 @@ export default function SellScreen({ lang, onClose }: Props) {
               </div>
             </div>
           )}
+          {saved.roundoff !== 0 && (
+            <div
+              className={`mt-2 flex justify-between text-xs text-slate-500 dark:text-slate-400 ${
+                saved.discount > 0 || saved.taxBreakup.length > 0
+                  ? ''
+                  : 'border-t border-slate-200 pt-2 dark:border-slate-700'
+              }`}
+            >
+              <span>{t(lang, 'sell.roundoff')}</span>
+              <span className="tabular-nums">
+                {saved.roundoff > 0 ? '+' : '−'}
+                {money(Math.abs(saved.roundoff))}
+              </span>
+            </div>
+          )}
           <div
             className={`mt-2 flex justify-between ${
-              saved.discount > 0 || saved.taxBreakup.length > 0
+              saved.discount > 0 ||
+              saved.taxBreakup.length > 0 ||
+              saved.roundoff !== 0
                 ? ''
                 : 'border-t border-slate-200 pt-2 dark:border-slate-700'
             } text-lg font-bold text-slate-900 dark:text-slate-50`}
@@ -515,6 +576,13 @@ export default function SellScreen({ lang, onClose }: Props) {
                 ? t(lang, 'sell.taxIncl')
                 : t(lang, 'sell.taxAdd')}{' '}
               {money(tax.taxTotal)}
+            </p>
+          )}
+          {roundoff !== 0 && (
+            <p className="mb-1 text-xs text-slate-500 dark:text-slate-400">
+              {money(preRound)} · {t(lang, 'sell.roundoff')}{' '}
+              {roundoff > 0 ? '+' : '−'}
+              {money(Math.abs(roundoff))}
             </p>
           )}
           <span className="block text-sm text-slate-500 dark:text-slate-400">
@@ -918,10 +986,25 @@ export default function SellScreen({ lang, onClose }: Props) {
                 </div>
                 <div className="mt-1 flex items-center justify-end gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                   <span>{t(lang, 'sell.lineDisc')}</span>
-                  <span>₹</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleLineDiscMode(l.productId)}
+                    className="h-8 w-8 shrink-0 rounded-lg bg-slate-200 font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                    aria-label="toggle discount unit"
+                  >
+                    {l.discMode === 'pct' ? '%' : '₹'}
+                  </button>
                   <input
                     inputMode="decimal"
-                    value={l.discount ? String(l.discount) : ''}
+                    value={
+                      l.discMode === 'pct'
+                        ? l.discPct
+                          ? String(l.discPct)
+                          : ''
+                        : l.discount
+                          ? String(l.discount)
+                          : ''
+                    }
                     onChange={(e) =>
                       setLineDisc(
                         l.productId,
@@ -932,8 +1015,9 @@ export default function SellScreen({ lang, onClose }: Props) {
                     className={`${inputCls} h-8 w-16 text-right`}
                   />
                   {l.discount > 0 && (
-                    <span className="tabular-nums line-through">
-                      {money(l.qty * l.unitPrice)}
+                    <span className="tabular-nums">
+                      <span className="line-through">{money(lineGross(l))}</span>
+                      {l.discMode === 'pct' && ` (−${money(l.discount)})`}
                     </span>
                   )}
                 </div>

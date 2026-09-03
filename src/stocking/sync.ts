@@ -279,10 +279,12 @@ async function runSync(): Promise<SyncOutcome> {
             items: (Array.isArray(s.items) ? s.items : []).map((i) => ({
               ...i,
               discount: i.discount ?? 0,
+              discountPct: i.discountPct ?? 0,
             })),
             discount: s.discount ?? 0,
             taxTotal: s.taxTotal ?? 0,
             taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
+            roundoff: s.roundoff ?? 0,
             refundOf: s.refundOf ?? null,
             customerId: s.customerId ?? null,
             cardAmount: s.cardAmount ?? 0,

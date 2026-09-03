@@ -234,6 +234,7 @@ export interface SaleItem {
   unit: Unit;
   unitPrice: number; // ₹ per unit actually charged (editable at the counter)
   discount: number; // ₹ off this line (0 = none); applied before bill discount
+  discountPct: number; // % it was entered as (0 = entered in ₹ / none) — a display hint; `discount` is authoritative
   gstRate: number; // GST % snapshot (0 when the store isn't charging GST)
 }
 
@@ -323,7 +324,8 @@ export interface Sale {
   discount: number; // ₹ taken off the whole bill (0 = none)
   taxTotal: number; // GST on the bill (0 when the store isn't charging GST)
   taxBreakup: TaxRow[]; // per-rate CGST/SGST split for the receipt
-  total: number; // items − discount (+ taxTotal when tax-exclusive); negative on a refund
+  roundoff: number; // ± adjustment applied to reach a round total (already included in `total`)
+  total: number; // items − discount (+ taxTotal when tax-exclusive) + roundoff; negative on a refund
   refundOf: string | null; // the original sale's id when this row is a refund
   tenderType: TenderType;
   customerId: string | null; // set on a credit sale (and any sale attributed to a known customer)

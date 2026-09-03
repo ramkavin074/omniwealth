@@ -5,7 +5,7 @@
 
 import { db } from './dexie';
 import { applyMovement, uuid } from './products';
-import { getGstConfig, getUserId } from '../settings';
+import { getGstConfig, getReceiptConfig, getUserId } from '../settings';
 import {
   computeSaleTax,
   saleLineTotal,
@@ -78,6 +78,7 @@ export interface SaleLineInput {
   qty: number;
   unitPrice: number;
   discount?: number; // ₹ off this line
+  discountPct?: number; // % off this line (takes precedence over `discount` when > 0)
   gstRate?: number;
 }
 
@@ -108,13 +109,21 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     .map((l) => {
       const unitPrice = q2(l.unitPrice);
       const qty = q2(l.qty);
+      const gross = qty * unitPrice;
+      const pct = q2(Math.max(0, l.discountPct ?? 0));
+      // % is authoritative when given; otherwise use the ₹ amount.
+      const disc =
+        pct > 0
+          ? q2((gross * pct) / 100)
+          : q2(Math.max(0, l.discount ?? 0));
       return {
         productId: l.productId,
         name: l.name,
         qty,
         unit: l.unit,
         unitPrice,
-        discount: Math.min(q2(Math.max(0, l.discount ?? 0)), qty * unitPrice),
+        discount: Math.min(disc, gross),
+        discountPct: pct,
         gstRate: Number(l.gstRate) || 0,
       };
     });
@@ -131,7 +140,14 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     discount,
     gst,
   );
-  const total = q2(subtotal - discount + addToTotal);
+  const preRound = q2(subtotal - discount + addToTotal);
+  // Round the payable to the nearest ₹1 (Indian counter norm). taxBreakup
+  // stays as computed on the pre-round figure — the rounding difference is a
+  // non-GST adjustment, same as VelSoft's ROUNDED line.
+  const roundoff = getReceiptConfig().roundBills
+    ? q2(Math.round(preRound) - preRound)
+    : 0;
+  const total = q2(preRound + roundoff);
   if (total <= 0) throw new Error('Nothing to bill');
   if (input.tenderType === 'credit' && !input.customerId) {
     throw new Error('Pick a customer for a credit bill');
@@ -167,6 +183,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     discount,
     taxTotal,
     taxBreakup: breakup,
+    roundoff,
     total,
     refundOf: null,
     tenderType: input.tenderType,
@@ -289,6 +306,7 @@ export async function refundSale(
       qty: -qty, // negative — leaving the sale
       unitPrice: effUnit,
       discount: 0,
+      discountPct: 0,
       gstRate: src.gstRate,
     });
   }
@@ -304,7 +322,11 @@ export async function refundSale(
     -discShare,
     getGstConfig(),
   );
-  const total = q2(-grossBack + discShare - addToTotal); // negative
+  const preRound = q2(-grossBack + discShare - addToTotal); // negative
+  const roundoff = getReceiptConfig().roundBills
+    ? q2(Math.round(preRound) - preRound)
+    : 0;
+  const total = q2(preRound + roundoff);
 
   const refund: Sale = {
     id: uuid(),
@@ -315,6 +337,7 @@ export async function refundSale(
     discount: -discShare,
     taxTotal,
     taxBreakup: breakup,
+    roundoff,
     total,
     refundOf: originalId,
     tenderType,
@@ -384,6 +407,7 @@ export interface DaySummary {
   credit: number; // net billed on account — NOT money received today
   units: number;
   discountTotal: number;
+  roundoffTotal: number; // Σ rounding adjustments (net)
   taxCollected: number; // net
   refundCount: number;
   refundTotal: number; // positive ₹ value refunded
@@ -415,6 +439,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let credit = 0;
   let units = 0;
   let discountTotal = 0;
+  let roundoffTotal = 0;
   let taxCollected = 0;
   let saleCount = 0;
   let refundCount = 0;
@@ -428,6 +453,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     card += s.cardAmount ?? 0;
     if (s.tenderType === 'credit') credit += s.total;
     discountTotal += s.discount ?? 0;
+    roundoffTotal += s.roundoff ?? 0;
     taxCollected += s.taxTotal ?? 0;
     if (s.refundOf) {
       refundCount++;
@@ -469,6 +495,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     credit: q2(credit),
     units: q2(units),
     discountTotal: q2(discountTotal),
+    roundoffTotal: q2(roundoffTotal),
     taxCollected: q2(taxCollected),
     refundCount,
     refundTotal: q2(refundTotal),

@@ -32,9 +32,15 @@ export function receiptHtml(sale: Sale, opts: PrintOpts): string {
   const rows = sale.items
     .map((i) => {
       const line = saleLineTotal(i);
-      return `<tr><td class="nm">${esc(i.name)}${
-        i.discount > 0 ? ` <span class="dim">(-${i.discount})</span>` : ''
-      }<br><span class="dim">${i.qty} ${esc(unitLabel(lang, i.unit))} × ${rupee(
+      const dtag =
+        i.discount > 0
+          ? ` <span class="dim">(-${
+              i.discountPct > 0 ? i.discountPct + '%' : rupee(i.discount)
+            })</span>`
+          : '';
+      return `<tr><td class="nm">${esc(i.name)}${dtag}<br><span class="dim">${
+        i.qty
+      } ${esc(unitLabel(lang, i.unit))} × ${rupee(
         i.unitPrice,
       )}</span></td><td class="amt">${rupee(line)}</td></tr>`;
     })
@@ -89,13 +95,20 @@ export function receiptHtml(sale: Sale, opts: PrintOpts): string {
     ${
       sale.discount > 0
         ? `<tr><td>${t(lang, 'sell.subtotal')}</td><td class="amt">${rupee(
-            sale.total + sale.discount,
+            sale.total - (sale.roundoff ?? 0) + sale.discount,
           )}</td></tr><tr><td>${t(lang, 'sell.discount')}</td><td class="amt">-${rupee(
             sale.discount,
           )}</td></tr>`
         : ''
     }
     ${taxLines}
+    ${
+      sale.roundoff
+        ? `<tr><td class="dim">${t(lang, 'sell.roundoff')}</td><td class="amt dim">${
+            sale.roundoff > 0 ? '+' : '-'
+          }${rupee(Math.abs(sale.roundoff))}</td></tr>`
+        : ''
+    }
     <tr class="tot"><td>${t(lang, 'sell.total')}</td><td class="amt">${rupee(sale.total)}</td></tr>
   </table>
   <div class="dim" style="margin-top:3px">${t(lang, 'sell.paid')}: ${esc(tenderLabel)}${esc(splitBits)}</div>
@@ -189,16 +202,33 @@ export function escposReceipt(sale: Sale, opts: PrintOpts): Uint8Array {
   for (const i of sale.items) {
     b.line(pad(i.name, rupee(saleLineTotal(i)), cols));
     b.line(`  ${i.qty} ${unitLabel(lang, i.unit)} x ${rupee(i.unitPrice)}` +
-      (i.discount > 0 ? ` -${i.discount}` : ''));
+      (i.discount > 0
+        ? ` -${i.discountPct > 0 ? i.discountPct + '%' : i.discount}`
+        : ''));
   }
   b.line('-'.repeat(cols));
 
   if (sale.discount > 0) {
-    b.line(pad(t(lang, 'sell.subtotal'), rupee(sale.total + sale.discount), cols));
+    b.line(
+      pad(
+        t(lang, 'sell.subtotal'),
+        rupee(sale.total - (sale.roundoff ?? 0) + sale.discount),
+        cols,
+      ),
+    );
     b.line(pad(t(lang, 'sell.discount'), '-' + rupee(sale.discount), cols));
   }
   for (const r of sale.taxBreakup ?? []) {
     b.line(pad(`GST ${r.rate}% (${rupee(r.taxable)})`, rupee(r.cgst + r.sgst), cols));
+  }
+  if (sale.roundoff) {
+    b.line(
+      pad(
+        t(lang, 'sell.roundoff'),
+        (sale.roundoff > 0 ? '+' : '-') + rupee(Math.abs(sale.roundoff)),
+        cols,
+      ),
+    );
   }
   b.bold(true).line(pad(t(lang, 'sell.total'), rupee(sale.total), cols)).bold(false);
   b.line(`${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${sale.tenderType}`)}`);
