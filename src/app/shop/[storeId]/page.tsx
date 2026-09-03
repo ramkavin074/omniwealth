@@ -10,6 +10,11 @@ import ShopScanClient from './ShopScanClient';
 
 export const dynamic = 'force-dynamic';
 
+export const metadata = {
+  title: 'Self-scan',
+  robots: { index: false, follow: false },
+};
+
 const NUM = (v: unknown) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
