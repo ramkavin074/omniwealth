@@ -23,41 +23,45 @@ concurrency:
   group: backup
   cancel-in-progress: false
 
+env:
+  AWS_DEFAULT_REGION: auto
+  # Cloudflare R2 rejects the CRC32 checksum aws-cli v2.23+ adds by default.
+  AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+  AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+
 jobs:
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Install pg_dump 17
-        run: |
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client-17
-          pg_dump --version
-
       - name: Dump, encrypt, upload
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
           AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
-          # Cloudflare R2 rejects the CRC32 checksum aws-cli v2.23+ adds by default.
-          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
-          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
           S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
         run: |
           set -euo pipefail
+          # strip any accidental trailing CR from the pasted secret
+          DB_URL="$(printf '%s' "$BACKUP_DATABASE_URL" | tr -d '\r')"
           STAMP="$(date -u +%Y-%m-%d_%H%M)"
           FILE="omniwealth_${STAMP}.pgc"
-          pg_dump "$BACKUP_DATABASE_URL" --format=custom --no-owner --no-privileges --file="$FILE"
+
+          # pg_dump via the official image (Neon runs Postgres 18) — avoids
+          # apt/version headaches. Bump the tag when Neon upgrades the server.
+          docker run --rm postgres:18 \
+            pg_dump "$DB_URL" --format=custom --no-owner --no-privileges \
+            > "$FILE"
+          test -s "$FILE"
           ls -lh "$FILE"
+
           gpg --batch --yes --pinentry-mode loopback \
             --passphrase "$BACKUP_GPG_PASSPHRASE" \
             --symmetric --cipher-algo AES256 \
             -o "${FILE}.gpg" "$FILE"
+
           aws --endpoint-url "$S3_ENDPOINT" s3 cp "${FILE}.gpg" \
             "s3://${S3_BUCKET}/db/${FILE}.gpg" --no-progress
           echo "Uploaded db/${FILE}.gpg"
@@ -76,12 +80,10 @@ jobs:
           BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
           AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
-          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
-          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
           S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
         run: |
           set -euo pipefail
-          npm i -g @vercel/blob@latest >/dev/null 2>&1
+          # local install so `node scripts/backup-blob.mjs` can resolve it
+          npm install --no-save @vercel/blob@latest
           node scripts/backup-blob.mjs
