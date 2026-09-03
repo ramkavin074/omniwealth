@@ -1,33 +1,46 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { t } from './i18n';
 import { useLang, useTheme } from './hooks';
 import { maybeAutoSync } from './sync';
 import { OMNIWEALTH_LOGO } from './logo';
+
+// Hot-path screens — always reachable in a tap or two, kept in the main bundle.
 import HomeScreen from './screens/HomeScreen';
 import ScanScreen from './screens/ScanScreen';
 import AdjustScreen from './screens/AdjustScreen';
 import ProductListScreen from './screens/ProductListScreen';
 import SettingsSheet from './screens/SettingsSheet';
-import SuppliersScreen from './screens/SuppliersScreen';
 import CustomersScreen from './screens/CustomersScreen';
-import OrdersScreen from './screens/OrdersScreen';
-import ExpensesScreen from './screens/ExpensesScreen';
-import PurchasesScreen from './screens/PurchasesScreen';
-import AccountantScreen from './screens/AccountantScreen';
-import ReportsScreen from './screens/ReportsScreen';
-import AuditScreen from './screens/AuditScreen';
-import AskAiSheet from './screens/AskAiSheet';
-import ScanDocScreen from './screens/ScanDocScreen';
 import SellScreen from './screens/SellScreen';
-import SalesScreen from './screens/SalesScreen';
-import TaxScreen from './screens/TaxScreen';
-import UpiScreen from './screens/UpiScreen';
+
+// Occasional / owner-only screens — split into their own chunks so they don't
+// weigh down first paint. Bundled into the APK, so import() loads from disk.
+const SuppliersScreen = lazy(() => import('./screens/SuppliersScreen'));
+const OrdersScreen = lazy(() => import('./screens/OrdersScreen'));
+const ExpensesScreen = lazy(() => import('./screens/ExpensesScreen'));
+const PurchasesScreen = lazy(() => import('./screens/PurchasesScreen'));
+const AccountantScreen = lazy(() => import('./screens/AccountantScreen'));
+const ReportsScreen = lazy(() => import('./screens/ReportsScreen'));
+const AuditScreen = lazy(() => import('./screens/AuditScreen'));
+const AskAiSheet = lazy(() => import('./screens/AskAiSheet'));
+const ScanDocScreen = lazy(() => import('./screens/ScanDocScreen'));
+const SalesScreen = lazy(() => import('./screens/SalesScreen'));
+const TaxScreen = lazy(() => import('./screens/TaxScreen'));
+const UpiScreen = lazy(() => import('./screens/UpiScreen'));
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
 const TABS: Tab[] = ['home', 'scan', 'adjust', 'products'];
+
+function ScreenFallback() {
+  return (
+    <div className="flex h-full items-center justify-center p-8 text-slate-400 dark:text-slate-500">
+      …
+    </div>
+  );
+}
 
 export default function StockingApp() {
   const { lang, toggle } = useLang();
@@ -143,6 +156,7 @@ export default function StockingApp() {
       </nav>
 
       <main className="flex-1 min-h-0 overflow-y-auto">
+        <Suspense fallback={<ScreenFallback />}>
         {sellOpen ? (
           <SellScreen lang={lang} onClose={() => setSellOpen(false)} />
         ) : salesOpen ? (
@@ -220,6 +234,7 @@ export default function StockingApp() {
             )}
           </>
         )}
+        </Suspense>
       </main>
 
       {/* Sell is one tap from anywhere. Hidden only while a sale is in progress
@@ -299,7 +314,9 @@ export default function StockingApp() {
       )}
 
       {askAiOpen && (
-        <AskAiSheet lang={lang} onClose={() => setAskAiOpen(false)} />
+        <Suspense fallback={null}>
+          <AskAiSheet lang={lang} onClose={() => setAskAiOpen(false)} />
+        </Suspense>
       )}
     </div>
   );

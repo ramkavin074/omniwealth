@@ -33,6 +33,13 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       emptyOutDir: true,
       rollupOptions: {
+        output: {
+          // Split the framework libs into their own long-lived chunk so the
+          // app chunk stays small and cache-stable across releases.
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-dom/client', 'dexie', 'dexie-react-hooks'],
+          },
+        },
         // The screen components keep their "use client" directive because they
         // are also imported by the in-OmniWealth Next host. Harmless here.
         onwarn(warning, warn) {
