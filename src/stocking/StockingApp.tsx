@@ -23,6 +23,7 @@ const ExpensesScreen = lazy(() => import('./screens/ExpensesScreen'));
 const PurchasesScreen = lazy(() => import('./screens/PurchasesScreen'));
 const AccountantScreen = lazy(() => import('./screens/AccountantScreen'));
 const ReportsScreen = lazy(() => import('./screens/ReportsScreen'));
+const CashflowScreen = lazy(() => import('./screens/CashflowScreen'));
 const AuditScreen = lazy(() => import('./screens/AuditScreen'));
 const AskAiSheet = lazy(() => import('./screens/AskAiSheet'));
 const ScanDocScreen = lazy(() => import('./screens/ScanDocScreen'));
@@ -56,6 +57,7 @@ export default function StockingApp() {
   const [purchasesOpen, setPurchasesOpen] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
+  const [cashflowOpen, setCashflowOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
   const [askAiSeed, setAskAiSeed] = useState<string | null>(null);
@@ -199,6 +201,11 @@ export default function StockingApp() {
           <AccountantScreen lang={lang} onClose={() => setAcctOpen(false)} />
         ) : reportsOpen ? (
           <ReportsScreen lang={lang} onClose={() => setReportsOpen(false)} />
+        ) : cashflowOpen ? (
+          <CashflowScreen
+            lang={lang}
+            onClose={() => setCashflowOpen(false)}
+          />
         ) : auditOpen ? (
           <AuditScreen lang={lang} onClose={() => setAuditOpen(false)} />
         ) : (
@@ -256,6 +263,7 @@ export default function StockingApp() {
         !purchasesOpen &&
         !acctOpen &&
         !reportsOpen &&
+        !cashflowOpen &&
         !auditOpen && (
           <button
             type="button"
@@ -298,6 +306,10 @@ export default function StockingApp() {
           onOpenReports={() => {
             setSettingsOpen(false);
             setReportsOpen(true);
+          }}
+          onOpenCashflow={() => {
+            setSettingsOpen(false);
+            setCashflowOpen(true);
           }}
           onOpenAudit={() => {
             setSettingsOpen(false);

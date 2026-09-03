@@ -43,6 +43,7 @@ interface Props {
   onOpenPurchases: () => void;
   onOpenAccountant: () => void;
   onOpenReports: () => void;
+  onOpenCashflow: () => void;
   onOpenAudit: () => void;
   onOpenSales: () => void;
   onOpenTax: () => void;
@@ -64,6 +65,7 @@ export default function SettingsSheet({
   onOpenPurchases,
   onOpenAccountant,
   onOpenReports,
+  onOpenCashflow,
   onOpenAudit,
   onOpenSales,
   onOpenTax,
@@ -273,6 +275,7 @@ export default function SettingsSheet({
                 ['tax.title', onOpenTax, manage],
                 ['upi.title', onOpenUpi, manage],
                 ['rep.title', onOpenReports, manage],
+                ['cf.title', onOpenCashflow, manage],
                 ['acct.title', onOpenAccountant, manage],
                 ['audit.title', onOpenAudit, true],
               ] as const

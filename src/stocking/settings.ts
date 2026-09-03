@@ -106,6 +106,46 @@ export function setReceiptConfig(next: ReceiptConfig): void {
   }
 }
 
+// ---- cash-flow forecast assumptions (per device, not synced) ----
+
+export interface CashflowConfig {
+  custCreditDays: number; // assumed days for a khata customer to pay
+  supplierCreditDays: number; // assumed days the shop takes to pay a supplier
+}
+
+const CASHFLOW_KEY = 'stocking.cashflow';
+const CASHFLOW_FALLBACK: CashflowConfig = {
+  custCreditDays: 15,
+  supplierCreditDays: 30,
+};
+
+export function getCashflowConfig(): CashflowConfig {
+  try {
+    const raw = localStorage.getItem(CASHFLOW_KEY);
+    if (!raw) return CASHFLOW_FALLBACK;
+    const p = JSON.parse(raw) as Partial<CashflowConfig>;
+    const clamp = (n: unknown, d: number) =>
+      Number.isFinite(Number(n)) && Number(n) > 0 ? Math.round(Number(n)) : d;
+    return {
+      custCreditDays: clamp(p.custCreditDays, CASHFLOW_FALLBACK.custCreditDays),
+      supplierCreditDays: clamp(
+        p.supplierCreditDays,
+        CASHFLOW_FALLBACK.supplierCreditDays,
+      ),
+    };
+  } catch {
+    return CASHFLOW_FALLBACK;
+  }
+}
+
+export function setCashflowConfig(next: CashflowConfig): void {
+  try {
+    localStorage.setItem(CASHFLOW_KEY, JSON.stringify(next));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 /** True in the standalone APK build (LoginGate cached a bearer token). The
  *  in-OmniWealth host seeds stocking.auth too, but without a token. */
 export function hasStandaloneAuth(): boolean {
