@@ -59,6 +59,74 @@ export type VoiceResult =
   | { ok: true; text: string }
   | { ok: false; reason: 'permission' | 'unsupported' | 'no-speech' | 'error' };
 
+// ---- parsing a spoken bill into {qty, name} lines --------------------------
+
+export interface SpokenLine {
+  qty: number;
+  name: string;
+}
+
+const EN_NUM: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8,
+  nine: 9, ten: 10, eleven: 11, twelve: 12, dozen: 12, half: 0.5,
+  quarter: 0.25,
+};
+const TA_NUM: Record<string, number> = {
+  'ஒரு': 1, 'ஒன்று': 1, 'இரண்டு': 2, 'ரெண்டு': 2, 'மூன்று': 3, 'நான்கு': 4,
+  'ஐந்து': 5, 'ஆறு': 6, 'ஏழு': 7, 'எட்டு': 8, 'ஒன்பது': 9, 'பத்து': 10,
+  'பதினொன்று': 11, 'பன்னிரண்டு': 12, 'டஜன்': 12, 'அரை': 0.5, 'கால்': 0.25,
+  'முக்கால்': 0.75,
+};
+const UNIT_WORDS = new Set([
+  'kg', 'kgs', 'kilo', 'kilos', 'kilogram', 'kilograms', 'g', 'gram', 'grams',
+  'litre', 'liter', 'litres', 'liters', 'l', 'ml',
+  'packet', 'packets', 'pack', 'packs', 'piece', 'pieces', 'pcs', 'pc',
+  'box', 'boxes', 'nos', 'no', 'unit', 'units', 'bottle', 'bottles',
+  'கிலோ', 'கிராம்', 'லிட்டர்', 'மில்லி', 'பாக்கெட்', 'பாக்கெட்டு', 'பீஸ்',
+  'டப்பா', 'நபர்', 'பாட்டில்',
+]);
+const NOISE = new Set(['of', 'a', 'an', 'x', 'the', 'please', 'add', 'give', 'and']);
+
+function wordToNum(tk: string): number | null {
+  if (/^\d+(\.\d+)?$/.test(tk)) {
+    const n = Number(tk);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  return EN_NUM[tk] ?? TA_NUM[tk] ?? null;
+}
+
+function parseFragment(frag: string): SpokenLine | null {
+  const toks = frag.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (!toks.length) return null;
+  let qty = 1;
+  let qtyIdx = -1;
+  for (let i = 0; i < toks.length; i++) {
+    const n = wordToNum(toks[i]);
+    if (n != null) {
+      qty = n;
+      qtyIdx = i;
+      break;
+    }
+  }
+  const name = toks
+    .filter((tk, i) => i !== qtyIdx && !UNIT_WORDS.has(tk) && !NOISE.has(tk))
+    .join(' ')
+    .trim();
+  if (!name) return null;
+  return { qty: qty > 0 ? qty : 1, name };
+}
+
+/** Break one spoken utterance into billable lines. "2 kg sugar and one
+ *  colgate, 5 wedding cards" → [{2,sugar},{1,colgate},{5,wedding cards}].
+ *  Leading OR trailing quantity, English + Tamil number words, unit words
+ *  stripped. Returns [] when nothing parseable — caller falls back to search. */
+export function parseSpokenItems(text: string): SpokenLine[] {
+  return text
+    .split(/\s*(?:,|&|\band\b|\bplus\b|மற்றும்|\n)\s*/i)
+    .map(parseFragment)
+    .filter((l): l is SpokenLine => l != null);
+}
+
 /** Listen for one short utterance and return the best transcript. `bcp47`
  *  is e.g. 'ta-IN' or 'en-IN'. */
 export async function listenOnce(bcp47: string): Promise<VoiceResult> {

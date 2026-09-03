@@ -29,7 +29,7 @@ import {
 } from '../db/sales';
 import { allReceivables, getCustomer, upsertCustomer } from '../db/customers';
 import { scanBarcode } from '../scanner/barcode';
-import { isVoiceAvailable, listenOnce } from '../voice';
+import { isVoiceAvailable, listenOnce, parseSpokenItems } from '../voice';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 
@@ -155,19 +155,26 @@ export default function SellScreen({ lang, onClose }: Props) {
     setTimeout(() => setMsg(null), 1800);
   };
 
-  const addProduct = (p: {
-    id: string;
-    name: string;
-    unit: string;
-    price: number;
-    mrp: number;
-    gstRate?: number;
-  }) => {
+  const addProduct = (
+    p: {
+      id: string;
+      name: string;
+      unit: string;
+      price: number;
+      mrp: number;
+      gstRate?: number;
+    },
+    qty = 1,
+  ) => {
+    const add = Math.max(qty, 0) || 1;
     setCart((c) => {
       const i = c.findIndex((l) => l.productId === p.id);
       if (i >= 0) {
         const next = c.slice();
-        next[i] = { ...next[i], qty: Math.round((next[i].qty + 1) * 1000) / 1000 };
+        next[i] = {
+          ...next[i],
+          qty: Math.round((next[i].qty + add) * 1000) / 1000,
+        };
         return next;
       }
       return [
@@ -176,7 +183,7 @@ export default function SellScreen({ lang, onClose }: Props) {
           productId: p.id,
           name: p.name,
           unit: p.unit as Unit,
-          qty: 1,
+          qty: add,
           unitPrice: p.price || p.mrp || 0,
           discount: 0,
           discPct: 0,
@@ -201,14 +208,56 @@ export default function SellScreen({ lang, onClose }: Props) {
     addProduct(p);
   };
 
+  /** Best catalogue match for a spoken name: exact, then prefix, then
+   *  substring, then shortest — good enough for a confirm-in-cart flow. */
+  const pickBest = <T extends { name: string }>(list: T[], q: string): T | null => {
+    if (!list.length) return null;
+    const n = q.toLowerCase().trim();
+    return (
+      list.find((p) => p.name.toLowerCase() === n) ??
+      list.find((p) => p.name.toLowerCase().startsWith(n)) ??
+      list.find((p) => p.name.toLowerCase().includes(n)) ??
+      [...list].sort((a, b) => a.name.length - b.name.length)[0]
+    );
+  };
+
   const hearItem = async () => {
     if (listening) return;
     setListening(true);
     const r = await listenOnce(lang === 'ta' ? 'ta-IN' : 'en-IN');
     setListening(false);
-    if (r.ok) setTerm(r.text);
-    else if (r.reason === 'permission') flash(t(lang, 'sell.voicePerm'));
-    else flash(t(lang, 'sell.voiceFail'));
+    if (!r.ok) {
+      flash(t(lang, r.reason === 'permission' ? 'sell.voicePerm' : 'sell.voiceFail'));
+      return;
+    }
+    const lines = parseSpokenItems(r.text);
+    if (lines.length === 0) {
+      setTerm(r.text);
+      return;
+    }
+    const missing: string[] = [];
+    let added = 0;
+    for (const ln of lines) {
+      const best = pickBest(await searchProducts(ln.name), ln.name);
+      if (best) {
+        addProduct(best, ln.qty);
+        added++;
+      } else {
+        missing.push(ln.name);
+      }
+    }
+    if (added && missing.length) {
+      flash(
+        t(lang, 'sell.voicePartial')
+          .replace('{n}', String(added))
+          .replace('{miss}', missing.join(', ')),
+      );
+    } else if (added) {
+      flash(t(lang, 'sell.voiceAdded').replace('{n}', String(added)));
+    } else {
+      setTerm(lines[0].name);
+      flash(t(lang, 'sell.voiceFail'));
+    }
   };
 
   // Keep the ₹ discount in sync when the line is priced by %.
