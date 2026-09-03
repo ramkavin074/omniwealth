@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import {
   computeSaleTax,
@@ -29,6 +29,7 @@ import {
 } from '../db/sales';
 import { allReceivables, getCustomer, upsertCustomer } from '../db/customers';
 import { scanBarcode } from '../scanner/barcode';
+import { isVoiceAvailable, listenOnce } from '../voice';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 
@@ -67,6 +68,18 @@ export default function SellScreen({ lang, onClose }: Props) {
   const debounced = useDebounced(term, 200);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [listening, setListening] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    isVoiceAvailable().then((v) => {
+      if (alive) setVoiceOn(v);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const [discount, setDiscount] = useState('');
   const [quickAmt, setQuickAmt] = useState(''); // non-empty → amount-only sale
@@ -186,6 +199,16 @@ export default function SellScreen({ lang, onClose }: Props) {
       return;
     }
     addProduct(p);
+  };
+
+  const hearItem = async () => {
+    if (listening) return;
+    setListening(true);
+    const r = await listenOnce(lang === 'ta' ? 'ta-IN' : 'en-IN');
+    setListening(false);
+    if (r.ok) setTerm(r.text);
+    else if (r.reason === 'permission') flash(t(lang, 'sell.voicePerm'));
+    else flash(t(lang, 'sell.voiceFail'));
   };
 
   // Keep the ₹ discount in sync when the line is priced by %.
@@ -970,12 +993,30 @@ export default function SellScreen({ lang, onClose }: Props) {
           >
             {busy ? '…' : t(lang, 'sell.scan')}
           </button>
-          <input
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            placeholder={t(lang, 'sell.search')}
-            className={`${inputCls} w-full`}
-          />
+          <div className="flex gap-1">
+            <input
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              placeholder={
+                listening ? t(lang, 'sell.voiceListening') : t(lang, 'sell.search')
+              }
+              className={`${inputCls} min-w-0 flex-1`}
+            />
+            {voiceOn && (
+              <button
+                type="button"
+                onClick={hearItem}
+                aria-label={t(lang, 'sell.voice')}
+                className={`shrink-0 rounded-lg px-3 text-lg ${
+                  listening
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                }`}
+              >
+                🎤
+              </button>
+            )}
+          </div>
         </div>
 
         {(cart.length > 0 || held.length > 0) && (
