@@ -163,6 +163,138 @@ export async function toggleTaxNote(key: string): Promise<void> {
   });
 }
 
+// ---- GSTR-3B: one month, ready to type into the portal ----
+
+export interface Gstr3bReport {
+  monthKey: string; // 'YYYY-MM'
+  monthLabel: string; // 'Sep 2025'
+  billCount: number;
+  invoiceValue: number; // Σ bill totals (incl. tax + rounding), net of refunds
+  // 3.1(a) outward taxable supplies (intra-state — IGST always 0 here)
+  byRate: TaxRow[];
+  outwardTaxable: number;
+  outwardCgst: number;
+  outwardSgst: number;
+  outwardTax: number; // cgst + sgst
+  // 4 eligible ITC (purchases + input-service expenses in the month)
+  itcPurchases: number;
+  itcExpenses: number;
+  itcTotal: number;
+  itcCgst: number;
+  itcSgst: number;
+  // 5.1 net payable
+  netCgst: number;
+  netSgst: number;
+  netPayable: number;
+}
+
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/** The last `n` months as {key,label}, newest first — for the month picker. */
+export function recentMonths(n = 12, now = Date.now()): { key: string; label: string }[] {
+  const out: { key: string; label: string }[] = [];
+  const d = new Date(now);
+  d.setDate(1);
+  for (let i = 0; i < n; i++) {
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    out.push({
+      key: `${y}-${String(m + 1).padStart(2, '0')}`,
+      label: `${MONTHS[m]} ${y}`,
+    });
+    d.setMonth(m - 1);
+  }
+  return out;
+}
+
+/** GSTR-3B figures for one calendar month, from the local ledgers. Regular
+ *  scheme only; intra-state (CGST = SGST = tax / 2, no IGST). */
+export async function gstr3bMonth(monthKey: string): Promise<Gstr3bReport> {
+  const [ys, ms] = monthKey.split('-').map(Number);
+  const from = new Date(ys, ms - 1, 1).getTime();
+  const to = new Date(ys, ms, 1).getTime();
+
+  const [saleRows, purchaseRows, expenseRows] = await Promise.all([
+    db().sales.where('createdAt').between(from, to, true, false).toArray(),
+    db().purchases.where('receivedAt').between(from, to, true, false).toArray(),
+    db().expenses.where('spentAt').between(from, to, true, false).toArray(),
+  ]);
+
+  const live = saleRows.filter((s) => s.deletedAt === null);
+  const byRate = new Map<number, { taxable: number; cgst: number; sgst: number }>();
+  let invoiceValue = 0;
+  let billCount = 0;
+  for (const s of live) {
+    invoiceValue += s.total; // refunds are negative → they net down
+    if (s.refundOf) {
+      /* still counts against the tax, not the bill count */
+    } else {
+      billCount++;
+    }
+    for (const r of s.taxBreakup ?? []) {
+      const cur = byRate.get(r.rate) ?? { taxable: 0, cgst: 0, sgst: 0 };
+      cur.taxable += r.taxable;
+      cur.cgst += r.cgst;
+      cur.sgst += r.sgst;
+      byRate.set(r.rate, cur);
+    }
+  }
+
+  const rates: TaxRow[] = [...byRate.entries()]
+    .filter(([, v]) => Math.abs(v.taxable) >= 0.005 || Math.abs(v.cgst) >= 0.005)
+    .sort((a, b) => a[0] - b[0])
+    .map(([rate, v]) => ({
+      rate,
+      taxable: r2(v.taxable),
+      cgst: r2(v.cgst),
+      sgst: r2(v.sgst),
+    }));
+
+  const outwardTaxable = r2(rates.reduce((t, r) => t + r.taxable, 0));
+  const outwardCgst = r2(rates.reduce((t, r) => t + r.cgst, 0));
+  const outwardSgst = r2(rates.reduce((t, r) => t + r.sgst, 0));
+
+  const itcPurchases = r2(
+    purchaseRows
+      .filter((p) => p.deletedAt === null)
+      .reduce((t, p) => t + (p.gstInput ?? 0), 0),
+  );
+  const itcExpenses = r2(
+    expenseRows
+      .filter((e) => e.deletedAt === null)
+      .reduce((t, e) => t + (e.gstInput ?? 0), 0),
+  );
+  const itcTotal = r2(itcPurchases + itcExpenses);
+  const itcCgst = r2(itcTotal / 2);
+  const itcSgst = r2(itcTotal / 2);
+
+  const netCgst = r2(Math.max(0, outwardCgst - itcCgst));
+  const netSgst = r2(Math.max(0, outwardSgst - itcSgst));
+
+  return {
+    monthKey,
+    monthLabel: `${MONTHS[ms - 1]} ${ys}`,
+    billCount,
+    invoiceValue: r2(invoiceValue),
+    byRate: rates,
+    outwardTaxable,
+    outwardCgst,
+    outwardSgst,
+    outwardTax: r2(outwardCgst + outwardSgst),
+    itcPurchases,
+    itcExpenses,
+    itcTotal,
+    itcCgst,
+    itcSgst,
+    netCgst,
+    netSgst,
+    netPayable: r2(netCgst + netSgst),
+  };
+}
+
 export async function taxReport(
   fyStartYear: number,
   cfg: { gstEnabled: boolean; gstScheme: GstScheme; presumptive: boolean },

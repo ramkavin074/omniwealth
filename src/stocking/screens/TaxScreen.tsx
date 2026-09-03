@@ -5,8 +5,11 @@ import { t, type Lang } from '../i18n';
 import { getGstConfig, getTaxConfig } from '../settings';
 import {
   fyStartYearOf,
+  gstr3bMonth,
+  recentMonths,
   taxReport,
   toggleTaxNote,
+  type Gstr3bReport,
   type TaxReport,
 } from '../db/tax';
 import { useLiveQuery } from '../hooks';
@@ -30,6 +33,15 @@ export default function TaxScreen({ lang, onClose }: Props) {
   const [fy, setFy] = useState(thisFy);
   const [gst] = useState(getGstConfig);
   const [tax] = useState(getTaxConfig);
+  const months = useState(() => recentMonths(12))[0];
+  // Default to last month — that's the return you file this month.
+  const [month, setMonth] = useState(
+    months[1]?.key ?? months[0]?.key ?? '',
+  );
+  const g3b = useLiveQuery<Gstr3bReport | undefined>(
+    () => (month ? gstr3bMonth(month) : Promise.resolve(undefined)),
+    [month],
+  );
 
   const rep = useLiveQuery<TaxReport | undefined>(
     () =>
@@ -108,6 +120,91 @@ export default function TaxScreen({ lang, onClose }: Props) {
               </p>
             </div>
           </section>
+
+          {/* GSTR-3B — one month, ready to file */}
+          {rep.gstEnabled && rep.gstScheme === 'regular' && g3b && (
+            <section className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className={heading}>{t(lang, 'tax.g3b')}</p>
+                <select
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  className="h-8 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-50"
+                >
+                  {months.map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                <div className="space-y-1 text-sm">
+                  <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                    {t(lang, 'tax.g3b.outward')}
+                  </p>
+                  {g3b.byRate.map((r) => (
+                    <div
+                      key={r.rate}
+                      className="flex justify-between text-xs text-slate-500 dark:text-slate-400"
+                    >
+                      <span>
+                        {r.rate}% · {t(lang, 'tax.taxable')} {money(r.taxable)}
+                      </span>
+                      <span className="tabular-nums">
+                        CGST {money2(r.cgst)} · SGST {money2(r.sgst)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between border-t border-slate-200 pt-1 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {t(lang, 'tax.g3b.taxableValue')}
+                    </span>
+                    <span className="tabular-nums font-medium text-slate-800 dark:text-slate-100">
+                      {money(g3b.outwardTaxable)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {t(lang, 'tax.g3b.taxPayable')} (CGST+SGST)
+                    </span>
+                    <span className="tabular-nums font-medium text-slate-800 dark:text-slate-100">
+                      {money2(g3b.outwardCgst)} + {money2(g3b.outwardSgst)}
+                    </span>
+                  </div>
+                  <p className="pt-2 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                    {t(lang, 'tax.g3b.itc')}
+                  </p>
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>
+                      {t(lang, 'pur.title')} {money2(g3b.itcPurchases)} ·{' '}
+                      {t(lang, 'exp.title')} {money2(g3b.itcExpenses)}
+                    </span>
+                    <span className="tabular-nums">{money(g3b.itcTotal)}</span>
+                  </div>
+                  <div className="mt-1 flex justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900 dark:border-slate-700 dark:text-slate-50">
+                    <span>{t(lang, 'tax.g3b.net')}</span>
+                    <span className="tabular-nums">{money(g3b.netPayable)}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      `https://wa.me/?text=${encodeURIComponent(g3bText(lang, g3b))}`,
+                      '_blank',
+                    )
+                  }
+                  className="mt-3 h-10 w-full rounded-xl bg-emerald-600 text-sm font-semibold text-white"
+                >
+                  {t(lang, 'tax.share')}
+                </button>
+              </div>
+              <p className="text-[11px] leading-snug text-slate-400 dark:text-slate-500">
+                {t(lang, 'tax.g3b.note')}
+              </p>
+            </section>
+          )}
 
           {/* GST */}
           {rep.gstEnabled && rep.gstScheme === 'regular' && (
@@ -273,6 +370,26 @@ export default function TaxScreen({ lang, onClose }: Props) {
       )}
     </div>
   );
+}
+
+function g3bText(lang: Lang, g: Gstr3bReport): string {
+  const L: string[] = [
+    `GSTR-3B — ${g.monthLabel}`,
+    `3.1(a) Outward taxable supplies`,
+    `  Taxable value: ${money2(g.outwardTaxable)}`,
+    `  CGST: ${money2(g.outwardCgst)}   SGST: ${money2(g.outwardSgst)}   IGST: 0`,
+  ];
+  for (const r of g.byRate)
+    L.push(
+      `   ${r.rate}%  taxable ${money2(r.taxable)}  CGST ${money2(r.cgst)}  SGST ${money2(r.sgst)}`,
+    );
+  L.push(
+    `4  Eligible ITC: ${money2(g.itcTotal)}  (CGST ${money2(g.itcCgst)}, SGST ${money2(g.itcSgst)})`,
+    `   purchases ${money2(g.itcPurchases)} + input services ${money2(g.itcExpenses)}`,
+    `5.1 Net payable: ${money2(g.netPayable)}  (CGST ${money2(g.netCgst)}, SGST ${money2(g.netSgst)})`,
+    `${g.billCount} ${t(lang, 'sales.bills').toLowerCase()} · ${t(lang, 'tax.g3b.note')}`,
+  );
+  return L.join('\n');
 }
 
 function summaryText(lang: Lang, r: TaxReport): string {

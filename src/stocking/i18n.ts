@@ -146,6 +146,14 @@ const en: Dict = {
   'tax.share': 'Send summary to accountant',
   'tax.disclaimer':
     'Estimates from your sales only — not tax advice. Use for planning; file through your accountant or the GST/IT portal.',
+  'tax.g3b': 'GSTR-3B (month)',
+  'tax.g3b.outward': '3.1(a) Outward taxable supplies',
+  'tax.g3b.taxableValue': 'Total taxable value',
+  'tax.g3b.taxPayable': 'Tax payable',
+  'tax.g3b.itc': '4. Eligible ITC',
+  'tax.g3b.net': '5.1 Net payable',
+  'tax.g3b.note':
+    'Intra-state only (no IGST). ITC includes purchases + GST on input-service expenses. Cross-check with your books before filing.',
 
   'upi.title': 'UPI check',
   'upi.appSays': 'Bills say',
@@ -707,6 +715,14 @@ const ta: Dict = {
   'tax.share': 'கணக்காளருக்கு சுருக்கம் அனுப்பு',
   'tax.disclaimer':
     'உங்கள் விற்பனையிலிருந்து மட்டும் மதிப்பீடு — வரி ஆலோசனை அல்ல. திட்டமிடலுக்கு பயன்படுத்தவும்; கணக்காளர் / GST-IT போர்ட்டல் மூலம் தாக்கல் செய்யவும்.',
+  'tax.g3b': 'GSTR-3B (மாதம்)',
+  'tax.g3b.outward': '3.1(அ) வெளிச்செல் வரிவிதிப்பு விற்பனை',
+  'tax.g3b.taxableValue': 'மொத்த வரிவிதிப்பு மதிப்பு',
+  'tax.g3b.taxPayable': 'செலுத்த வேண்டிய வரி',
+  'tax.g3b.itc': '4. தகுதியான ITC',
+  'tax.g3b.net': '5.1 நிகர செலுத்த வேண்டியது',
+  'tax.g3b.note':
+    'மாநிலத்திற்குள் மட்டும் (IGST இல்லை). ITC-ல் கொள்முதல் + இடு-சேவை செலவுகளின் GST அடங்கும். தாக்கல் செய்வதற்கு முன் உங்கள் கணக்குகளுடன் சரிபார்க்கவும்.',
 
   'upi.title': 'UPI சரிபார்ப்பு',
   'upi.appSays': 'பில் கூறுவது',
