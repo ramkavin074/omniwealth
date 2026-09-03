@@ -195,7 +195,8 @@ export default function SellScreen({ lang, onClose }: Props) {
     (tender === 'upi' ||
       tender === 'card' ||
       (tender === 'cash' && (cashGiven === '' || Number(cashGiven) >= total)) ||
-      (tender === 'credit' && !!custId) ||
+      (tender === 'credit' &&
+        (!!custId || (newCust && ncName.trim().length > 0))) ||
       (tender === 'split' && splitNonCash >= 0 && splitNonCash <= total));
 
   const complete = async () => {
