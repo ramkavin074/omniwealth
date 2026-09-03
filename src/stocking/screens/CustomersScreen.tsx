@@ -5,9 +5,11 @@ import { t, type Lang } from '../i18n';
 import {
   addReceipt,
   allReceivables,
+  creditRisk,
   customerLedger,
   softDeleteCustomer,
   upsertCustomer,
+  type CreditRisk,
 } from '../db/customers';
 import { getSale } from '../db/sales';
 import type { ReceiptTender, Sale } from '../types';
@@ -34,6 +36,11 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
     overLimitCount: 0,
     rows: [],
   });
+  const risk = useLiveQuery(
+    () => creditRisk(),
+    [],
+    new Map<string, CreditRisk>(),
+  );
   const canEdit = useMemo(() => canManage(), []);
 
   const [q, setQ] = useState('');
@@ -318,6 +325,15 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
           </p>
         )}
 
+        {risk.get(c.id)?.watch && (
+          <p className="rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+            {t(lang, 'cust.watchWhy').replace(
+              '{amt}',
+              money(risk.get(c.id)!.balNow - risk.get(c.id)!.bal60),
+            )}
+          </p>
+        )}
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -509,6 +525,11 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
                 <span className="min-w-0">
                   <span className="block truncate font-medium text-slate-900 dark:text-slate-50">
                     {r.customer.name}
+                    {risk.get(r.customer.id)?.watch && (
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
+                        {t(lang, 'cust.watch')}
+                      </span>
+                    )}
                   </span>
                   {r.customer.phone && (
                     <span className="block text-xs text-slate-400 dark:text-slate-500">

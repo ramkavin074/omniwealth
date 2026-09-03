@@ -283,6 +283,77 @@ export function balanceStatus(
   return customer.creditLimit > 0 && balance > customer.creditLimit;
 }
 
+export interface CreditRisk {
+  watch: boolean;
+  balNow: number;
+  bal30: number; // balance ~30 days ago
+  bal60: number; // balance ~60 days ago
+  risePer30: number; // ₹ the balance climbed per 30-day window (avg)
+}
+
+/**
+ * Rule-based "keep an eye on this khata" flag. A customer is on watch when
+ * their balance is non-trivial and has climbed across BOTH the last two
+ * 30-day windows (debt trending up, not just a one-off big bill). Returns a
+ * map keyed by customer id.
+ */
+export async function creditRisk(): Promise<Map<string, CreditRisk>> {
+  const now = Date.now();
+  const DAY = 86_400_000;
+  const [customers, sales, receipts] = await Promise.all([
+    listCustomers(),
+    db().sales.toArray(),
+    db().receipts.toArray(),
+  ]);
+
+  const push = (
+    m: Map<string, { at: number; amt: number }[]>,
+    key: string,
+    v: { at: number; amt: number },
+  ) => {
+    const arr = m.get(key);
+    if (arr) arr.push(v);
+    else m.set(key, [v]);
+  };
+  const billsBy = new Map<string, { at: number; amt: number }[]>();
+  for (const s of sales) {
+    if (!s.customerId || s.deletedAt !== null) continue;
+    const owed = owedOnBill(s);
+    if (owed === 0) continue;
+    push(billsBy, s.customerId, { at: s.createdAt, amt: owed });
+  }
+  const paysBy = new Map<string, { at: number; amt: number }[]>();
+  for (const r of receipts) {
+    if (r.deletedAt !== null) continue;
+    push(paysBy, r.customerId, { at: r.receivedAt, amt: r.amount });
+  }
+
+  const out = new Map<string, CreditRisk>();
+  for (const c of customers) {
+    const bills = billsBy.get(c.id) ?? [];
+    const pays = paysBy.get(c.id) ?? [];
+    const balAt = (t: number) =>
+      q(
+        c.openingBalance +
+          bills.reduce((s, b) => (b.at <= t ? s + b.amt : s), 0) -
+          pays.reduce((s, p) => (p.at <= t ? s + p.amt : s), 0),
+      );
+    const balNow = balAt(now);
+    const bal30 = balAt(now - 30 * DAY);
+    const bal60 = balAt(now - 60 * DAY);
+    const rising = balNow >= bal30 + 1 && bal30 >= bal60 + 1;
+    const watch = rising && balNow >= 500;
+    out.set(c.id, {
+      watch,
+      balNow,
+      bal30,
+      bal60,
+      risePer30: q((balNow - bal60) / 2),
+    });
+  }
+  return out;
+}
+
 export type LedgerEntry =
   | { kind: 'bill'; at: number; billNo: string; amount: number; saleId: string }
   | { kind: 'receipt'; at: number; amount: number; tender: ReceiptTender; receiptId: string };
