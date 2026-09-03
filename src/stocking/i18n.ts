@@ -189,18 +189,22 @@ const en: Dict = {
   'import.kind.products': 'Products',
   'import.kind.customers': 'Customers',
   'import.kind.orders': 'Orders',
+  'import.kind.expenses': 'Expenses',
   'import.help.products':
     'Upload a CSV with columns: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. Only "name" is required. In Excel use File → Save As → CSV.',
   'import.help.customers':
     'Bring your khata / credit customers over from your old billing app. Columns: name, phone, place, gstin, balance, limit, note. Only "name" is required — "balance" becomes their opening balance to collect.',
   'import.help.orders':
     'Bring pending advance orders over. Columns: order_no, customer, phone, item, qty, rate, total, advance, due, status, note. Rows with the same order_no become one order. New customers are created automatically.',
+  'import.help.expenses':
+    'Bring running-cost vouchers over. Columns: date, category, amount, mode, payee, note, gst_input. Only "amount" is required — category and mode text is matched to the nearest type.',
   'import.help':
     'Upload a CSV with columns: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. Only "name" is required. In Excel use File → Save As → CSV.',
   'import.downloadTemplate': 'Download template CSV',
   'import.chooseFile': 'Choose CSV file',
   'import.noNameColumn': 'The file needs a "name" column.',
   'import.noCustomerColumn': 'The file needs a "customer" column.',
+  'import.noAmountColumn': 'The file needs an "amount" column.',
   'import.noRows': 'No rows found in the file.',
   'import.rowsFound': '{n} rows ready to import',
   'import.ignoredColumns': 'Ignored columns',
@@ -430,6 +434,31 @@ const en: Dict = {
   'order.openN': '{n} open orders',
   'order.advanceHeld': 'Advance held {amt}',
   'home.orders': '{n} open orders',
+
+  'exp.title': 'Expenses',
+  'exp.add': '＋ Add expense',
+  'exp.edit': 'Edit expense',
+  'exp.empty': 'No expenses yet',
+  'exp.thisMonth': 'This month',
+  'exp.amount': 'Amount paid',
+  'exp.payee': 'Paid to (optional)',
+  'exp.date': 'Date',
+  'exp.gstInput': 'GST input credit (optional)',
+  'exp.cashOut': 'Cash paid out: {amt}',
+  'exp.deleteConfirm': 'Remove this expense?',
+  'exp.month': 'Expenses (30d)',
+  'exp.cat.rent': 'Rent',
+  'exp.cat.electricity': 'Power',
+  'exp.cat.salary': 'Wages',
+  'exp.cat.transport': 'Transport',
+  'exp.cat.supplies': 'Supplies',
+  'exp.cat.refreshments': 'Tea / snacks',
+  'exp.cat.repairs': 'Repairs',
+  'exp.cat.communication': 'Phone / net',
+  'exp.cat.bank': 'Bank charges',
+  'exp.cat.tax': 'Tax paid',
+  'exp.cat.rent_equipment': 'Hired machine',
+  'exp.cat.other': 'Other',
 };
 
 // confirm with shop owners — every Tamil string below is a first draft.
@@ -613,18 +642,22 @@ const ta: Dict = {
   'import.kind.products': 'பொருட்கள்',
   'import.kind.customers': 'வாடிக்கையாளர்கள்',
   'import.kind.orders': 'ஆர்டர்கள்',
+  'import.kind.expenses': 'செலவுகள்',
   'import.help.products':
     'CSV கோப்பை பதிவேற்றவும்: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. "name" மட்டும் அவசியம். Excel-ல் File → Save As → CSV.',
   'import.help.customers':
     'பழைய பில்லிங் செயலியிலிருந்து கடன் வாடிக்கையாளர்களை கொண்டு வாருங்கள். நெடுவரிசைகள்: name, phone, place, gstin, balance, limit, note. "name" மட்டும் அவசியம் — "balance" அவர்களின் தொடக்க பாக்கியாகும்.',
   'import.help.orders':
     'நிலுவையில் உள்ள முன்பதிவு ஆர்டர்களை கொண்டு வாருங்கள். நெடுவரிசைகள்: order_no, customer, phone, item, qty, rate, total, advance, due, status, note. ஒரே order_no உள்ள வரிகள் ஒரு ஆர்டராகும். புதிய வாடிக்கையாளர்கள் தானாக உருவாக்கப்படுவர்.',
+  'import.help.expenses':
+    'செலவு பதிவுகளை கொண்டு வாருங்கள். நெடுவரிசைகள்: date, category, amount, mode, payee, note, gst_input. "amount" மட்டும் அவசியம் — category, mode உரை அருகிலுள்ள வகையுடன் பொருத்தப்படும்.',
   'import.help':
     'CSV கோப்பை பதிவேற்றவும்: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. "name" மட்டும் அவசியம். Excel-ல் File → Save As → CSV.',
   'import.downloadTemplate': 'மாதிரி CSV பதிவிறக்கு',
   'import.chooseFile': 'CSV கோப்பை தேர்வு செய்',
   'import.noNameColumn': 'கோப்பில் "name" நெடுவரிசை தேவை.',
   'import.noCustomerColumn': 'கோப்பில் "customer" நெடுவரிசை தேவை.',
+  'import.noAmountColumn': 'கோப்பில் "amount" நெடுவரிசை தேவை.',
   'import.noRows': 'கோப்பில் வரிகள் எதுவும் இல்லை.',
   'import.rowsFound': '{n} வரிகள் இறக்குமதிக்கு தயார்',
   'import.ignoredColumns': 'புறக்கணிக்கப்பட்ட நெடுவரிசைகள்',
@@ -855,6 +888,31 @@ const ta: Dict = {
   'order.openN': '{n} நிலுவை ஆர்டர்கள்',
   'order.advanceHeld': 'முன்பணம் {amt}',
   'home.orders': '{n} நிலுவை ஆர்டர்கள்',
+
+  'exp.title': 'செலவுகள்',
+  'exp.add': '＋ செலவு சேர்',
+  'exp.edit': 'செலவைத் திருத்து',
+  'exp.empty': 'இதுவரை செலவு இல்லை',
+  'exp.thisMonth': 'இந்த மாதம்',
+  'exp.amount': 'செலுத்திய தொகை',
+  'exp.payee': 'யாருக்கு (விருப்பம்)',
+  'exp.date': 'தேதி',
+  'exp.gstInput': 'GST உள்ளீட்டு வரவு (விருப்பம்)',
+  'exp.cashOut': 'பணமாக செலுத்தியது: {amt}',
+  'exp.deleteConfirm': 'இந்த செலவை நீக்கவா?',
+  'exp.month': 'செலவுகள் (30நா)',
+  'exp.cat.rent': 'வாடகை',
+  'exp.cat.electricity': 'மின்சாரம்',
+  'exp.cat.salary': 'சம்பளம்',
+  'exp.cat.transport': 'போக்குவரத்து',
+  'exp.cat.supplies': 'பொருட்கள்',
+  'exp.cat.refreshments': 'டீ / சிற்றுண்டி',
+  'exp.cat.repairs': 'பழுதுபார்ப்பு',
+  'exp.cat.communication': 'ஃபோன் / இணையம்',
+  'exp.cat.bank': 'வங்கி கட்டணம்',
+  'exp.cat.tax': 'வரி செலுத்தியது',
+  'exp.cat.rent_equipment': 'வாடகை இயந்திரம்',
+  'exp.cat.other': 'மற்றவை',
 };
 
 const DICTS: Record<Lang, Dict> = { en, ta };

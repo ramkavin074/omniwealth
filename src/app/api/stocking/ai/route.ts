@@ -3,6 +3,7 @@ import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeCustomers,
+  storeExpenses,
   storeOrders,
   storeProducts,
   storeReceipts,
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
     creditSales,
     receipts,
     openOrders,
+    expenseRows,
   ] = await Promise.all([
     db
       .select()
@@ -191,6 +193,17 @@ export async function POST(request: Request) {
       .where(
         and(eq(storeOrders.storeId, auth.storeId), isNull(storeOrders.deletedAt)),
       ),
+    manage
+      ? db
+          .select()
+          .from(storeExpenses)
+          .where(
+            and(
+              eq(storeExpenses.storeId, auth.storeId),
+              isNull(storeExpenses.deletedAt),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
 
   const catalogue = products.map((p) => {
@@ -396,6 +409,28 @@ export async function POST(request: Request) {
       })),
   };
 
+  // Shop running-cost expenses this calendar month (manage only).
+  let expenses: Record<string, unknown> | undefined;
+  if (manage) {
+    const now = new Date();
+    const mFrom = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const rows = expenseRows.filter((e) => n(e.spentAt) >= mFrom);
+    const byCat = new Map<string, number>();
+    let cash = 0;
+    for (const e of rows) {
+      byCat.set(e.category, (byCat.get(e.category) ?? 0) + n(e.amount));
+      if (e.tender !== 'upi') cash += n(e.amount);
+    }
+    expenses = {
+      monthTotal: Math.round(rows.reduce((t, e) => t + n(e.amount), 0)),
+      count: rows.length,
+      cashPaidOut: Math.round(cash),
+      byCategory: [...byCat.entries()]
+        .map(([category, amount]) => ({ category, amount: Math.round(amount) }))
+        .sort((a, b) => b.amount - a.amount),
+    };
+  }
+
   const context = {
     products: catalogue.length,
     lowCount: catalogue.filter((c) => c.low).length,
@@ -405,7 +440,7 @@ export async function POST(request: Request) {
     expiringSoon,
     ...(orders.open > 0 ? { orders } : {}),
     ...(manage
-      ? { supplierBalances, taxSummary, upiReconcile, receivables }
+      ? { supplierBalances, taxSummary, upiReconcile, receivables, expenses }
       : {}),
     catalogue,
   };

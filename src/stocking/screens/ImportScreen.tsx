@@ -5,12 +5,15 @@ import { t, type Lang } from '../i18n';
 import { importProducts } from '../db/products';
 import { importCustomers } from '../db/customers';
 import { importOrders } from '../db/orders';
+import { importExpenses } from '../db/expenses';
 import {
   CSV_TEMPLATE,
   CUSTOMERS_CSV_TEMPLATE,
+  EXPENSES_CSV_TEMPLATE,
   ORDERS_CSV_TEMPLATE,
   parseCsv,
   parseCustomersCsv,
+  parseExpensesCsv,
   parseOrdersCsv,
 } from '../import';
 
@@ -19,7 +22,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Kind = 'products' | 'customers' | 'orders';
+type Kind = 'products' | 'customers' | 'orders' | 'expenses';
 
 type State =
   | { kind: 'idle' }
@@ -28,71 +31,62 @@ type State =
   | { kind: 'importing' }
   | { kind: 'done'; added: number; updated: number | null; skipped: number };
 
-const KINDS: Kind[] = ['products', 'customers', 'orders'];
+const KINDS: Kind[] = ['products', 'customers', 'orders', 'expenses'];
+
+const TEMPLATES: Record<Kind, string> = {
+  products: CSV_TEMPLATE,
+  customers: CUSTOMERS_CSV_TEMPLATE,
+  orders: ORDERS_CSV_TEMPLATE,
+  expenses: EXPENSES_CSV_TEMPLATE,
+};
+
+/** Parse `text` for `kind` → row count + unknown columns, or an error key. */
+function parseFor(
+  kind: Kind,
+  text: string,
+): { rows: number; unknown: string[] } | { errorKey: string } {
+  if (kind === 'products') {
+    const p = parseCsv(text);
+    if (p.missingNameColumn) return { errorKey: 'import.noNameColumn' };
+    if (p.rows.length === 0) return { errorKey: 'import.noRows' };
+    return { rows: p.rows.length, unknown: p.unknownColumns };
+  }
+  if (kind === 'customers') {
+    const p = parseCustomersCsv(text);
+    if (p.missingNameColumn) return { errorKey: 'import.noNameColumn' };
+    if (p.rows.length === 0) return { errorKey: 'import.noRows' };
+    return { rows: p.rows.length, unknown: p.unknownColumns };
+  }
+  if (kind === 'orders') {
+    const p = parseOrdersCsv(text);
+    if (p.missingCustomerColumn) return { errorKey: 'import.noCustomerColumn' };
+    if (p.rows.length === 0) return { errorKey: 'import.noRows' };
+    return { rows: p.rows.length, unknown: p.unknownColumns };
+  }
+  const p = parseExpensesCsv(text);
+  if (p.missingAmountColumn) return { errorKey: 'import.noAmountColumn' };
+  if (p.rows.length === 0) return { errorKey: 'import.noRows' };
+  return { rows: p.rows.length, unknown: p.unknownColumns };
+}
 
 export default function ImportScreen({ lang, onClose }: Props) {
   const [kind, setKind] = useState<Kind>('products');
   const [state, setState] = useState<State>({ kind: 'idle' });
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const template =
-    kind === 'products'
-      ? CSV_TEMPLATE
-      : kind === 'customers'
-        ? CUSTOMERS_CSV_TEMPLATE
-        : ORDERS_CSV_TEMPLATE;
+  const template = TEMPLATES[kind];
 
   const onFile = async (file: File) => {
     const text = await file.text();
-    if (kind === 'products') {
-      const p = parseCsv(text);
-      if (p.missingNameColumn) {
-        setState({ kind: 'error', message: t(lang, 'import.noNameColumn') });
-        return;
-      }
-      if (p.rows.length === 0) {
-        setState({ kind: 'error', message: t(lang, 'import.noRows') });
-        return;
-      }
-      setState({
-        kind: 'preview',
-        rows: p.rows.length,
-        unknown: p.unknownColumns,
-        text,
-      });
-      return;
-    }
-    if (kind === 'customers') {
-      const p = parseCustomersCsv(text);
-      if (p.missingNameColumn) {
-        setState({ kind: 'error', message: t(lang, 'import.noNameColumn') });
-        return;
-      }
-      if (p.rows.length === 0) {
-        setState({ kind: 'error', message: t(lang, 'import.noRows') });
-        return;
-      }
-      setState({
-        kind: 'preview',
-        rows: p.rows.length,
-        unknown: p.unknownColumns,
-        text,
-      });
-      return;
-    }
-    const p = parseOrdersCsv(text);
-    if (p.missingCustomerColumn) {
-      setState({ kind: 'error', message: t(lang, 'import.noCustomerColumn') });
-      return;
-    }
-    if (p.rows.length === 0) {
-      setState({ kind: 'error', message: t(lang, 'import.noRows') });
+    const parsed = parseFor(kind, text);
+    if ('errorKey' in parsed) {
+      setState({ kind: 'error', message: t(lang, parsed.errorKey) });
       return;
     }
     setState({
       kind: 'preview',
-      rows: p.rows.length,
-      unknown: p.unknownColumns,
+      rows: parsed.rows,
+      unknown: parsed.unknown,
       text,
     });
   };
@@ -107,8 +101,11 @@ export default function ImportScreen({ lang, onClose }: Props) {
     } else if (kind === 'customers') {
       const r = await importCustomers(parseCustomersCsv(text).rows);
       setState({ kind: 'done', added: r.added, updated: r.updated, skipped: r.skipped });
-    } else {
+    } else if (kind === 'orders') {
       const r = await importOrders(parseOrdersCsv(text).rows);
+      setState({ kind: 'done', added: r.added, updated: null, skipped: r.skipped });
+    } else {
+      const r = await importExpenses(parseExpensesCsv(text).rows);
       setState({ kind: 'done', added: r.added, updated: null, skipped: r.skipped });
     }
   };
@@ -143,7 +140,7 @@ export default function ImportScreen({ lang, onClose }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {KINDS.map((k) => (
           <button
             key={k}

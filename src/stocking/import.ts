@@ -3,6 +3,7 @@
 // so a shop's existing export usually works without editing.
 
 import type { ImportRow } from './db/products';
+import type { ExpenseCategory, ExpenseTender } from './types';
 
 const ALIASES: Record<keyof ImportRow, string[]> = {
   barcode: ['barcode', 'bar code', 'ean', 'upc', 'code', 'item code'],
@@ -69,6 +70,12 @@ export const ORDERS_CSV_TEMPLATE =
   'order_no,customer,phone,item,qty,rate,total,advance,due,status,note\n' +
   'OLD-101,Ravi Traders,9876543210,500 wedding cards gold foil,500,18,9000,3000,2026-09-20,in_progress,design 12\n' +
   'OLD-102,Selvi Stores,9843012345,Flex banner 6x4,1,850,850,0,2026-09-10,ready,\n';
+
+export const EXPENSES_CSV_TEMPLATE =
+  'date,category,amount,mode,payee,note,gst_input\n' +
+  '2026-09-01,rent,12000,upi,Landlord,September rent,0\n' +
+  '05/09/2026,electricity,2340,cash,TNEB,Aug bill,0\n' +
+  '2026-09-06,refreshments,180,cash,,tea for staff,0\n';
 
 /** Normalise a date cell to 'YYYY-MM-DD', or null if unrecognised.
  *  Accepts ISO, or day-first dd/mm/yyyy and dd-mm-yyyy (the Indian norm). */
@@ -401,4 +408,122 @@ export function parseOrdersCsv(text: string): OrderParseResult {
     });
   }
   return { rows, unknownColumns, missingCustomerColumn: false };
+}
+
+// ---- expenses (running-cost vouchers from an existing billing app) ----
+
+export interface ExpenseImportRow {
+  spentAt: string | null; // 'YYYY-MM-DD' or null (→ today at import)
+  category: ExpenseCategory;
+  amount: number;
+  tender: ExpenseTender;
+  payee: string | null;
+  note: string | null;
+  gstInput: number;
+}
+
+type ExpenseCol =
+  | 'date'
+  | 'category'
+  | 'amount'
+  | 'tender'
+  | 'payee'
+  | 'note'
+  | 'gstInput';
+
+const EXPENSE_ALIASES: Record<ExpenseCol, string[]> = {
+  date: ['date', 'spent on', 'paid on', 'voucher date', 'txn date', 'day'],
+  category: ['category', 'type', 'head', 'expense head', 'account', 'nature'],
+  amount: ['amount', 'value', 'paid', 'total', 'debit', 'expense'],
+  tender: ['mode', 'tender', 'payment mode', 'paid by', 'method', 'through'],
+  payee: ['payee', 'paid to', 'party', 'vendor', 'to', 'name'],
+  note: ['note', 'notes', 'remarks', 'remark', 'narration', 'particulars', 'description'],
+  gstInput: ['gst', 'gst input', 'itc', 'input tax', 'gst_input', 'tax'],
+};
+
+// Order matters — the first hit wins. Specific / easily-confused patterns
+// come first ("current" must not trip \brent\b; "tea for staff" is
+// refreshments, not salary).
+const CATEGORY_MATCH: [RegExp, ExpenseCategory][] = [
+  [/\brent(al|ed)?\b.*(machine|equip|generator|\bgen\b)|\bhired?\b|hiring/, 'rent_equipment'],
+  [/tea|coffee|snack|refresh|biscuit|\bfood\b|lunch|tiffin|water can/, 'refreshments'],
+  [/electric|\bpower\b|current bill|\beb\b|tneb|\bebill\b|energy/, 'electricity'],
+  [/\brent(al|ed)?\b|\blease\b/, 'rent'],
+  [/salary|salaries|\bwages?\b|staff pay|labour|labor|payroll|bonus|coolie/, 'salary'],
+  [/transport|freight|cartage|\bauto\b|lorry|courier|\bcart\b|petrol|diesel|\bfuel\b|travel/, 'transport'],
+  [/stationery|packing|packaging|\bcover\b|carry bag|cleaning|supplies|consumable|printer ink|toner/, 'supplies'],
+  [/repair|maintenance|servicing|\bamc\b|painting|plumb|electrician/, 'repairs'],
+  [/phone|mobile|\binternet\b|\bnet bill\b|broadband|recharge|\bsim\b|wifi|data pack/, 'communication'],
+  [/\bbank\b|bank charge|commission|\bfees?\b|\binterest\b|\bemi\b|loan repay/, 'bank'],
+  [/\bgst\b|\btax\b|income.?tax|\btds\b|professional tax|challan/, 'tax'],
+];
+
+function toCategory(v: string | undefined): ExpenseCategory {
+  const s = (v ?? '').trim().toLowerCase();
+  if (!s) return 'other';
+  for (const [re, cat] of CATEGORY_MATCH) if (re.test(s)) return cat;
+  return 'other';
+}
+
+function toTender(v: string | undefined): ExpenseTender {
+  const s = (v ?? '').trim().toLowerCase();
+  return /upi|g\s*pay|gpay|phonepe|paytm|online|bank|neft|imps|rtgs|transfer|card/.test(
+    s,
+  )
+    ? 'upi'
+    : 'cash';
+}
+
+export interface ExpenseParseResult {
+  rows: ExpenseImportRow[];
+  unknownColumns: string[];
+  missingAmountColumn: boolean;
+}
+
+export function parseExpensesCsv(text: string): ExpenseParseResult {
+  const lines = text
+    .replace(/^﻿/, '')
+    .split(/\r\n|\n|\r/)
+    .filter((l) => l.trim() !== '');
+  if (lines.length === 0) {
+    return { rows: [], unknownColumns: [], missingAmountColumn: true };
+  }
+
+  const headers = splitLine(lines[0]).map((h) => h.toLowerCase());
+  const colIndex: Partial<Record<ExpenseCol, number>> = {};
+  const known = new Set<string>();
+  (Object.keys(EXPENSE_ALIASES) as ExpenseCol[]).forEach((key) => {
+    const idx = headers.findIndex((h) => EXPENSE_ALIASES[key].includes(h));
+    if (idx !== -1) {
+      colIndex[key] = idx;
+      known.add(headers[idx]);
+    }
+  });
+
+  const unknownColumns = headers.filter((h) => h && !known.has(h));
+  if (colIndex.amount === undefined) {
+    return { rows: [], unknownColumns, missingAmountColumn: true };
+  }
+
+  const get = (cells: string[], key: ExpenseCol): string | undefined => {
+    const i = colIndex[key];
+    return i === undefined ? undefined : cells[i];
+  };
+
+  const rows: ExpenseImportRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitLine(lines[i]);
+    const amount = num(get(cells, 'amount'));
+    if (amount <= 0) continue;
+    rows.push({
+      spentAt: toISODate(get(cells, 'date')),
+      category: toCategory(get(cells, 'category')),
+      amount,
+      tender: toTender(get(cells, 'tender')),
+      payee: (get(cells, 'payee') ?? '').trim() || null,
+      note: (get(cells, 'note') ?? '').trim() || null,
+      gstInput: num(get(cells, 'gstInput')),
+    });
+  }
+  return { rows, unknownColumns, missingAmountColumn: false };
 }

@@ -6,6 +6,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   BarcodeCacheEntry,
   Customer,
+  Expense,
   HeldSale,
   Movement,
   Order,
@@ -39,6 +40,7 @@ export class StockingDB extends Dexie {
   customers!: Table<Customer, string>;
   receipts!: Table<Receipt, string>;
   orders!: Table<Order, string>;
+  expenses!: Table<Expense, string>;
 
   constructor() {
     super('stocking');
@@ -289,6 +291,24 @@ export class StockingDB extends Dexie {
             if (r.againstOrderId === undefined) r.againstOrderId = null;
           });
       });
+    // v15: shop running-cost expenses (C3).
+    this.version(15).stores({
+      products: 'id, barcode, name, updatedAt, deletedAt',
+      movements: 'id, productId, createdAt',
+      barcodeCache: 'barcode, fetchedAt',
+      syncState: 'id',
+      suppliers: 'id, name, updatedAt, deletedAt',
+      supplierPayments: 'id, supplierId, updatedAt',
+      sales: 'id, billNo, createdAt, updatedAt, refundOf, customerId',
+      heldSales: 'id, createdAt',
+      taxNotes: 'key, updatedAt',
+      upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
+      customers: 'id, name, phone, updatedAt, deletedAt',
+      receipts: 'id, customerId, receivedAt, updatedAt, deletedAt',
+      orders:
+        'id, orderNo, customerId, status, dueDate, createdAt, updatedAt, deletedAt',
+      expenses: 'id, category, tender, spentAt, updatedAt, deletedAt',
+    });
   }
 }
 

@@ -371,6 +371,54 @@ export interface UpiReceipt {
   deletedAt: number | null;
 }
 
+// ---- expenses (C3) ----
+
+export type ExpenseTender = 'cash' | 'upi';
+
+/** Shop running costs — NOT stock purchases (those are supplier payments). */
+export type ExpenseCategory =
+  | 'rent'
+  | 'electricity'
+  | 'salary'
+  | 'transport'
+  | 'supplies' // packing, stationery, cleaning
+  | 'refreshments' // tea, snacks
+  | 'repairs'
+  | 'communication' // phone, internet, recharge
+  | 'bank' // charges, fees
+  | 'tax' // GST / income-tax paid out
+  | 'rent_equipment' // hired machine / generator
+  | 'other';
+
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  'rent',
+  'electricity',
+  'salary',
+  'transport',
+  'supplies',
+  'refreshments',
+  'repairs',
+  'communication',
+  'bank',
+  'tax',
+  'rent_equipment',
+  'other',
+];
+
+export interface Expense {
+  id: string;
+  category: ExpenseCategory;
+  amount: number; // ₹ paid out
+  tender: ExpenseTender;
+  payee: string | null; // who was paid (landlord, EB, staff name…)
+  note: string | null;
+  gstInput: number; // ITC claimable on this expense (0 = none / not registered)
+  spentAt: number; // epoch ms — the date the money went out
+  createdAt: number;
+  updatedAt: number; // LWW for sync
+  deletedAt: number | null; // tombstone
+}
+
 export interface BarcodeCacheEntry {
   barcode: string;
   name: string | null;

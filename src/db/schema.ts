@@ -907,6 +907,35 @@ export const storeOrders = store.table(
   }),
 );
 
+// Running-cost vouchers (rent, power, wages, transport, tea…). NOT stock
+// purchases — those live in supplier_payments / the payables ledger.
+export const storeExpenses = store.table(
+  'expenses',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    category: text('category').notNull().default('other'),
+    amount: numeric('amount').notNull(),
+    tender: text('tender').notNull().default('cash'), // 'cash' | 'upi'
+    payee: text('payee'),
+    note: text('note'),
+    gstInput: numeric('gst_input').notNull().default('0'), // ITC on this expense
+    spentAt: numeric('spent_at').notNull(), // epoch ms, client clock
+    createdAt: numeric('created_at').notNull(),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_expenses_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+  }),
+);
+
 export const storeProducts = store.table(
   'products',
   {

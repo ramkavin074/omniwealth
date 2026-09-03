@@ -8,6 +8,7 @@ import { db } from './db/dexie';
 import { cacheGst, cacheTax } from './storeSettings';
 import type {
   Customer,
+  Expense,
   Movement,
   Order,
   Product,
@@ -108,6 +109,10 @@ async function runSync(): Promise<SyncOutcome> {
     .orders.where('updatedAt')
     .above(cursor)
     .toArray();
+  const dirtyExpenses = await db()
+    .expenses.where('updatedAt')
+    .above(cursor)
+    .toArray();
 
   let res: Response;
   try {
@@ -131,6 +136,7 @@ async function runSync(): Promise<SyncOutcome> {
         customers: dirtyCustomers,
         receipts: dirtyReceipts,
         orders: dirtyOrders,
+        expenses: dirtyExpenses,
       }),
     });
   } catch {
@@ -156,6 +162,7 @@ async function runSync(): Promise<SyncOutcome> {
     customers?: Customer[];
     receipts?: Receipt[];
     orders?: Order[];
+    expenses?: Expense[];
     store?: {
       gstin: string | null;
       gstEnabled: boolean;
@@ -189,6 +196,7 @@ async function runSync(): Promise<SyncOutcome> {
   const pulledCustomers = data.customers ?? [];
   const pulledReceipts = data.receipts ?? [];
   const pulledOrders = data.orders ?? [];
+  const pulledExpenses = data.expenses ?? [];
 
   // Keep the offline GST + tax caches in step with the store's server setup.
   if (data.store) {
@@ -215,6 +223,7 @@ async function runSync(): Promise<SyncOutcome> {
       db().customers,
       db().receipts,
       db().orders,
+      db().expenses,
     ],
     async () => {
       for (const p of data.products) {
@@ -312,6 +321,20 @@ async function runSync(): Promise<SyncOutcome> {
           });
         }
       }
+      for (const e of pulledExpenses) {
+        const local = await db().expenses.get(e.id);
+        if (!local || local.updatedAt < e.updatedAt) {
+          await db().expenses.put({
+            ...e,
+            category: e.category ?? 'other',
+            tender: e.tender ?? 'cash',
+            payee: e.payee ?? null,
+            note: e.note ?? null,
+            gstInput: e.gstInput ?? 0,
+            deletedAt: e.deletedAt ?? null,
+          });
+        }
+      }
       for (const r of pulledUpi) {
         const local = await db().upiReceipts.get(r.id);
         if (!local || local.updatedAt < r.updatedAt) {
@@ -345,7 +368,8 @@ async function runSync(): Promise<SyncOutcome> {
       dirtyUpiReceipts.length +
       dirtyCustomers.length +
       dirtyReceipts.length +
-      dirtyOrders.length,
+      dirtyOrders.length +
+      dirtyExpenses.length,
     pulled:
       data.products.length +
       data.movements.length +
@@ -355,7 +379,8 @@ async function runSync(): Promise<SyncOutcome> {
       pulledUpi.length +
       pulledCustomers.length +
       pulledReceipts.length +
-      pulledOrders.length,
+      pulledOrders.length +
+      pulledExpenses.length,
   };
 }
 

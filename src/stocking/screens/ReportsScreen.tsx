@@ -12,6 +12,7 @@ import {
   type DailySale,
   type WriteOffSummary,
 } from '../db/analytics';
+import { expensesSummary, type ExpensesSummary } from '../db/expenses';
 import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 
@@ -29,6 +30,10 @@ export default function ReportsScreen({ lang, onClose }: Props) {
   const fast = useLiveQuery(() => fastMovers(30), [], [] as FastMover[]);
   const dead = useLiveQuery<DeadStock | undefined>(() => deadStock(), []);
   const loss = useLiveQuery<WriteOffSummary | undefined>(() => writeOffs(30), []);
+  const exp30 = useLiveQuery<ExpensesSummary | undefined>(() => {
+    const now = Date.now();
+    return expensesSummary(now - 30 * 86_400_000, now);
+  }, []);
 
   const maxVal = Math.max(1, ...week.map((d) => d.value));
   const weekTotal = week.reduce((s, d) => s + d.value, 0);
@@ -78,6 +83,27 @@ export default function ReportsScreen({ lang, onClose }: Props) {
               {t(lang, 'rep.losses')}:{' '}
               <span className="font-semibold">−{money(loss.value)}</span>
             </p>
+          )}
+          {exp30 && exp30.total > 0 && (
+            <div className="text-sm text-slate-600 dark:text-slate-300">
+              <span>
+                {t(lang, 'exp.month')}:{' '}
+                <span className="font-semibold text-rose-600 dark:text-rose-400">
+                  −{money(exp30.total)}
+                </span>
+              </span>
+              {exp30.byCategory.length > 0 && (
+                <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">
+                  ({exp30.byCategory
+                    .slice(0, 3)
+                    .map(
+                      (c) =>
+                        `${t(lang, `exp.cat.${c.category}`)} ${money(c.amount)}`,
+                    )
+                    .join(', ')})
+                </span>
+              )}
+            </div>
           )}
           <div className="flex items-end gap-2 h-40">
             {week.map((d) => (

@@ -2,6 +2,7 @@ import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeCustomers,
+  storeExpenses,
   storeOrders,
   storeProducts,
   storeReceipts,
@@ -156,6 +157,20 @@ interface InOrder {
   deletedAt: number | null;
 }
 
+interface InExpense {
+  id: string;
+  category: string;
+  amount: number;
+  tender: string;
+  payee: string | null;
+  note: string | null;
+  gstInput: number;
+  spentAt: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 const num = (v: unknown, d = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
@@ -181,6 +196,7 @@ export async function POST(request: Request) {
   let inCustomers: InCustomer[] = [];
   let inReceipts: InReceipt[] = [];
   let inOrders: InOrder[] = [];
+  let inExpenses: InExpense[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
@@ -193,6 +209,7 @@ export async function POST(request: Request) {
     inCustomers = Array.isArray(body?.customers) ? body.customers : [];
     inReceipts = Array.isArray(body?.receipts) ? body.receipts : [];
     inOrders = Array.isArray(body?.orders) ? body.orders : [];
+    inExpenses = Array.isArray(body?.expenses) ? body.expenses : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
@@ -206,7 +223,8 @@ export async function POST(request: Request) {
     inUpiReceipts.length +
     inCustomers.length +
     inReceipts.length +
-    inOrders.length;
+    inOrders.length +
+    inExpenses.length;
   if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
   }
@@ -572,6 +590,48 @@ export async function POST(request: Request) {
     }
   }
 
+  // ---- push: expenses (upsert, LWW) — a counter action ----
+  if (inExpenses.length) {
+    const rows = inExpenses
+      .filter((e) => e && typeof e.id === 'string')
+      .map((e) => ({
+        id: e.id,
+        storeId,
+        category: String(e.category || 'other'),
+        amount: String(num(e.amount)),
+        tender: e.tender === 'upi' ? 'upi' : 'cash',
+        payee: e.payee ?? null,
+        note: e.note ?? null,
+        gstInput: String(num(e.gstInput)),
+        spentAt: String(num(e.spentAt)),
+        createdAt: String(num(e.createdAt)),
+        updatedAt: String(num(e.updatedAt)),
+        deletedAt: e.deletedAt == null ? null : String(num(e.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeExpenses)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeExpenses.id,
+          set: {
+            category: sql`excluded.category`,
+            amount: sql`excluded.amount`,
+            tender: sql`excluded.tender`,
+            payee: sql`excluded.payee`,
+            note: sql`excluded.note`,
+            gstInput: sql`excluded.gst_input`,
+            spentAt: sql`excluded.spent_at`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeExpenses.storeId} = ${storeId} AND ${storeExpenses.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
   // ---- push: UPI receipts (upsert, LWW) ----
   if (inUpiReceipts.length) {
     const rows = inUpiReceipts
@@ -628,6 +688,7 @@ export async function POST(request: Request) {
     pulledCustomers,
     pulledReceipts,
     pulledOrders,
+    pulledExpenses,
     storeRow,
   ] = await Promise.all([
       db
@@ -714,6 +775,16 @@ export async function POST(request: Request) {
           and(
             eq(storeOrders.storeId, storeId),
             gt(storeOrders.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeExpenses)
+        .where(
+          and(
+            eq(storeExpenses.storeId, storeId),
+            gt(storeExpenses.syncedAt, sinceDate),
           ),
         )
         .limit(MAX_ROWS),
@@ -860,6 +931,19 @@ export async function POST(request: Request) {
         createdAt: num(o.createdAt),
         updatedAt: num(o.updatedAt),
         deletedAt: o.deletedAt == null ? null : num(o.deletedAt),
+      })),
+      expenses: pulledExpenses.map((e) => ({
+        id: e.id,
+        category: e.category,
+        amount: num(e.amount),
+        tender: e.tender,
+        payee: e.payee,
+        note: e.note,
+        gstInput: num(e.gstInput),
+        spentAt: num(e.spentAt),
+        createdAt: num(e.createdAt),
+        updatedAt: num(e.updatedAt),
+        deletedAt: e.deletedAt == null ? null : num(e.deletedAt),
       })),
     },
     200,
