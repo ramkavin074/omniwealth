@@ -18,7 +18,7 @@ import {
 } from '../settings';
 import { printReceiptSmart } from '../printer';
 import { upiPayLine } from '../upiLink';
-import { findByBarcode, searchProducts } from '../db/products';
+import { findByBarcode, getProduct, searchProducts } from '../db/products';
 import {
   completeSale,
   discardHeld,
@@ -29,7 +29,12 @@ import {
 } from '../db/sales';
 import { allReceivables, getCustomer, upsertCustomer } from '../db/customers';
 import { scanBarcode } from '../scanner/barcode';
-import { isVoiceAvailable, listenOnce, parseSpokenItems } from '../voice';
+import {
+  isVoiceAvailable,
+  listenOnce,
+  parseSpokenItems,
+  resolveItemsAI,
+} from '../voice';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 
@@ -221,15 +226,53 @@ export default function SellScreen({ lang, onClose }: Props) {
     );
   };
 
+  const applyVoice = (added: number, missing: string[], firstName?: string) => {
+    if (added && missing.length) {
+      flash(
+        t(lang, 'sell.voicePartial')
+          .replace('{n}', String(added))
+          .replace('{miss}', missing.join(', ')),
+      );
+    } else if (added) {
+      flash(t(lang, 'sell.voiceAdded').replace('{n}', String(added)));
+    } else {
+      if (firstName) setTerm(firstName);
+      flash(t(lang, 'sell.voiceFail'));
+    }
+  };
+
   const hearItem = async () => {
     if (listening) return;
     setListening(true);
     const r = await listenOnce(lang === 'ta' ? 'ta-IN' : 'en-IN');
-    setListening(false);
     if (!r.ok) {
-      flash(t(lang, r.reason === 'permission' ? 'sell.voicePerm' : 'sell.voiceFail'));
+      setListening(false);
+      flash(
+        t(lang, r.reason === 'permission' ? 'sell.voicePerm' : 'sell.voiceFail'),
+      );
       return;
     }
+
+    // Online: let the server (Gemini) match against the catalogue — handles
+    // Tamil / Tanglish / colloquial names. Offline: local rule-based parse.
+    const ai = await resolveItemsAI(r.text);
+    setListening(false);
+
+    if (ai) {
+      let added = 0;
+      for (const it of ai.items) {
+        const p = await getProduct(it.productId);
+        if (p) {
+          addProduct(p, it.qty);
+          added++;
+        } else {
+          ai.unmatched.push(it.name);
+        }
+      }
+      applyVoice(added, ai.unmatched, ai.items[0]?.name ?? r.text);
+      return;
+    }
+
     const lines = parseSpokenItems(r.text);
     if (lines.length === 0) {
       setTerm(r.text);
@@ -246,18 +289,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         missing.push(ln.name);
       }
     }
-    if (added && missing.length) {
-      flash(
-        t(lang, 'sell.voicePartial')
-          .replace('{n}', String(added))
-          .replace('{miss}', missing.join(', ')),
-      );
-    } else if (added) {
-      flash(t(lang, 'sell.voiceAdded').replace('{n}', String(added)));
-    } else {
-      setTerm(lines[0].name);
-      flash(t(lang, 'sell.voiceFail'));
-    }
+    applyVoice(added, missing, lines[0]?.name);
   };
 
   // Keep the ₹ discount in sync when the line is priced by %.

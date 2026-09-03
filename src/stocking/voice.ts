@@ -1,13 +1,21 @@
-// Voice item entry (EXPERIMENTAL). Speak an item name; it lands in the Sell
-// search box and the normal search-to-add flow takes over.
+// Voice item entry (EXPERIMENTAL). Speak a shopping list; it fills the cart.
 //
-//  - Native: @capacitor-community/speech-recognition (Android's on-device /
-//    Google recogniser). Dynamically imported, only touched on a device.
-//  - Web: the browser SpeechRecognition API when present (Chrome).
-//  - Otherwise unavailable — the mic button hides itself.
+//  Recogniser:
+//   - Native: @capacitor-community/speech-recognition (Android on-device /
+//     Google). Dynamically imported, only touched on a device.
+//   - Web: the browser SpeechRecognition API when present (Chrome).
+//   - Neither → the mic button hides itself.
 //
-// Tamil ('ta-IN') recognition of shop item names + numbers is UNPROVEN. Keep
-// this behind the "is it available" check and field-test before leaning on it.
+//  Matching the transcript to products:
+//   - Online: resolveItemsAI() asks the server (Gemini) to match the spoken
+//     list against the store's catalogue — handles Tamil / Tanglish / short
+//     names / mis-hearings.
+//   - Offline: parseSpokenItems() (rule-based) + the caller's own fuzzy pick.
+//
+// Tamil recognition accuracy is still UNPROVEN — field-test before leaning
+// on it. Nothing is auto-billed; the cart is the review step.
+
+import { API_BASE } from './config';
 
 type SpeechMod = typeof import('@capacitor-community/speech-recognition');
 
@@ -59,7 +67,60 @@ export type VoiceResult =
   | { ok: true; text: string }
   | { ok: false; reason: 'permission' | 'unsupported' | 'no-speech' | 'error' };
 
-// ---- parsing a spoken bill into {qty, name} lines --------------------------
+// ---- AI resolution: transcript -> catalogue rows (online) ------------------
+
+export interface ResolvedItem {
+  productId: string;
+  name: string;
+  qty: number;
+}
+export interface ResolvedItems {
+  items: ResolvedItem[];
+  unmatched: string[];
+}
+
+function auth(): { token?: string; storeId?: string } {
+  try {
+    const raw = localStorage.getItem('stocking.auth');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Ask the server (Gemini) to match a spoken list to this store's catalogue.
+ *  Returns null on any failure — the caller falls back to the local parser. */
+export async function resolveItemsAI(
+  transcript: string,
+): Promise<ResolvedItems | null> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+  try {
+    const { token, storeId } = auth();
+    const res = await fetch(`${API_BASE}/api/stocking/resolve-items`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(storeId ? { 'x-store-id': storeId } : {}),
+      },
+      credentials: token ? 'omit' : 'include',
+      body: JSON.stringify({ transcript }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<ResolvedItems>;
+    if (!Array.isArray(data.items)) return null;
+    return {
+      items: data.items.filter(
+        (i) => i && typeof i.productId === 'string' && Number(i.qty) > 0,
+      ),
+      unmatched: Array.isArray(data.unmatched) ? data.unmatched : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ---- parsing a spoken bill into {qty, name} lines (offline fallback) -------
 
 export interface SpokenLine {
   qty: number;
