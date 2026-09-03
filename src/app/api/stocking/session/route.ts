@@ -3,7 +3,14 @@ import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { sessions, storeMembers, stores, users } from '@/db/schema';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { corsHeaders, corsPreflight } from '@/lib/stockingCors';
+
+function clientIp(request: Request): string {
+  const fwd = request.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+}
 
 // Lightweight JSON auth for the standalone stocking APK. Verifies the user's
 // OmniWealth password and issues a bearer token backed by the same `sessions`
@@ -41,6 +48,22 @@ export async function POST(request: Request) {
 
   if (!email || !password) {
     return json({ error: 'Email and password are required.' }, 400);
+  }
+
+  // Brute-force protection: this endpoint verifies a password and is
+  // reachable cross-origin from the APK. Limit per IP and per target email.
+  const ip = clientIp(request);
+  const ipLimit = await checkRateLimit(`stocking-session:ip:${ip}`, 15, 15);
+  const emailLimit = await checkRateLimit(
+    `stocking-session:email:${email}`,
+    7,
+    15,
+  );
+  if (!ipLimit.allowed || !emailLimit.allowed) {
+    return json(
+      { error: 'Too many sign-in attempts. Try again in a few minutes.' },
+      429,
+    );
   }
 
   const [user] = await db

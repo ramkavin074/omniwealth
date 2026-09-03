@@ -542,6 +542,12 @@ return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-cen
               ? 'Create Household'
               : 'Join Household'}
       </button>
+
+      <p className="mt-4 text-center text-[11px] text-slate-400">
+        <a href="/privacy" className="hover:text-slate-600">Privacy Policy</a>
+        <span className="mx-2">·</span>
+        <a href="/terms" className="hover:text-slate-600">Terms of Service</a>
+      </p>
     </form>
   </div>
 </div>

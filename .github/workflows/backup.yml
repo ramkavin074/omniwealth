@@ -1,0 +1,82 @@
+name: Backup
+
+# Independent, off-Neon backup of the database and the uploaded-document
+# blob store. Runs daily; also runnable on demand from the Actions tab.
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   BACKUP_DATABASE_URL       direct (non-pooled) Neon connection string
+#   BACKUP_GPG_PASSPHRASE     strong random string — ALSO keep a copy in a
+#                             password manager; without it a backup can't be restored
+#   BACKUP_S3_ENDPOINT        e.g. https://<accountid>.r2.cloudflarestorage.com
+#   BACKUP_S3_BUCKET          bucket name
+#   BACKUP_S3_ACCESS_KEY_ID
+#   BACKUP_S3_SECRET_ACCESS_KEY
+#   BACKUP_BLOB_TOKEN         the BLOB_READ_WRITE_TOKEN value
+#   BACKUP_S3_REGION          optional (default: auto)
+
+on:
+  schedule:
+    - cron: "20 2 * * *" # 02:20 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Install pg_dump 17
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Dump, encrypt, upload
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
+          S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+        run: |
+          set -euo pipefail
+          STAMP="$(date -u +%Y-%m-%d_%H%M)"
+          FILE="omniwealth_${STAMP}.pgc"
+          pg_dump "$BACKUP_DATABASE_URL" --format=custom --no-owner --no-privileges --file="$FILE"
+          ls -lh "$FILE"
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 \
+            -o "${FILE}.gpg" "$FILE"
+          aws --endpoint-url "$S3_ENDPOINT" s3 cp "${FILE}.gpg" \
+            "s3://${S3_BUCKET}/db/${FILE}.gpg" --no-progress
+          echo "Uploaded db/${FILE}.gpg"
+
+  blob:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Mirror blob store to S3
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BACKUP_BLOB_TOKEN }}
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
+          S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+        run: |
+          set -euo pipefail
+          npm i -g @vercel/blob@latest >/dev/null 2>&1
+          node scripts/backup-blob.mjs

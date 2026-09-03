@@ -16,6 +16,10 @@ export default function Footer() {
         <Link href="/vault" className="hover:text-slate-900 transition-colors">Vault</Link>
         <span>•</span>
         <Link href="/profile" className="hover:text-slate-900 transition-colors">Settings</Link>
+        <span>•</span>
+        <Link href="/privacy" className="hover:text-slate-900 transition-colors">Privacy</Link>
+        <span>•</span>
+        <Link href="/terms" className="hover:text-slate-900 transition-colors">Terms</Link>
       </div>
     </footer>
   );

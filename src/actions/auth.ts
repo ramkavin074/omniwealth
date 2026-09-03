@@ -11,9 +11,11 @@ import {
   invitations,
   rateLimits,
   passwordResets,
+  documents,
   stores,
   storeMembers,
 } from '@/db/schema';
+import { del, list } from '@vercel/blob';
 
 import {
   and,
@@ -1508,6 +1510,38 @@ export async function deleteAccountAction(formData: FormData) {
     targetId: user.id,
     meta: { removedHousehold: others.length === 0 },
   });
+
+  // Purge uploaded documents from blob storage. The `documents` rows
+  // cascade-delete below, but the blob objects would otherwise be
+  // orphaned — and the privacy policy promises the data is deleted.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      if (others.length === 0) {
+        let cursor: string | undefined;
+        do {
+          const page = await list({
+            prefix: `documents/${householdId}/`,
+            cursor,
+          });
+          if (page.blobs.length) {
+            await del(page.blobs.map((b) => b.url));
+          }
+          cursor = page.cursor;
+        } while (cursor);
+      } else {
+        const docs = await db
+          .select({ fileUrl: documents.fileUrl })
+          .from(documents)
+          .where(eq(documents.userId, user.id));
+        const urls = docs
+          .map((d) => d.fileUrl)
+          .filter((u): u is string => !!u);
+        if (urls.length) await del(urls);
+      }
+    } catch (e) {
+      logError('deleteAccountAction.blob', e, { userId: user.id });
+    }
+  }
 
   if (others.length === 0) {
     await db.delete(households).where(eq(households.id, householdId));
