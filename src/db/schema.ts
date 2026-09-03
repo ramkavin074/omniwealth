@@ -664,8 +664,35 @@ export const stores = store.table('stores', {
   // Tax-filing helper config.
   gstScheme: text('gst_scheme').notNull().default('regular'), // regular | composition
   presumptive: boolean('presumptive').notNull().default(true), // income tax u/s 44AD
+  // Customer self-scan: when on, the public /shop/<id> page + catalogue
+  // endpoint work and customers can build a basket the counter pulls in.
+  selfScanEnabled: boolean('self_scan_enabled').notNull().default(false),
+  // The shop's UPI VPA (name@bank). Used for `upi://pay` links on WhatsApp
+  // bills and the self-scan "pay now" button.
+  upiId: text('upi_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+// A basket a customer built on the /shop page, waiting for the counter to pull
+// it in by short code. Ephemeral — expired rows are swept by the cleanup cron.
+// Prices are NOT stored here; the counter re-prices from its own catalogue.
+export const storeBaskets = store.table(
+  'baskets',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    code: text('code').notNull(), // 4 chars, shown to the customer
+    items: jsonb('items').notNull(), // [{ barcode, qty }]
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    claimedAt: timestamp('claimed_at'),
+    expiresAt: timestamp('expires_at').notNull(),
+  },
+  (t) => ({
+    storeCodeIdx: index('store_baskets_store_code_idx').on(t.storeId, t.code),
+  }),
+);
 
 // Operator-console audit trail: account / access actions only (who created a
 // store, added a member, sent a reset…). Never business data.

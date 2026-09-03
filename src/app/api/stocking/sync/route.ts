@@ -895,6 +895,7 @@ export async function POST(request: Request) {
           defaultGstRate: stores.defaultGstRate,
           gstScheme: stores.gstScheme,
           presumptive: stores.presumptive,
+          upiId: stores.upiId,
         })
         .from(stores)
         .where(eq(stores.id, storeId))
@@ -913,6 +914,7 @@ export async function POST(request: Request) {
             defaultGstRate: num(storeRow.defaultGstRate),
             gstScheme: storeRow.gstScheme,
             presumptive: storeRow.presumptive,
+            upiId: storeRow.upiId,
           }
         : null,
       products: pulledProducts.map((p) => ({

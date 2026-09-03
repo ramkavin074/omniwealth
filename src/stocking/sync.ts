@@ -5,7 +5,7 @@
 
 import { API_BASE } from './config';
 import { db } from './db/dexie';
-import { cacheGst, cacheTax } from './storeSettings';
+import { cacheGst, cacheTax, cacheUpiId } from './storeSettings';
 import type {
   Customer,
   Expense,
@@ -177,6 +177,7 @@ async function runSync(): Promise<SyncOutcome> {
       defaultGstRate: number;
       gstScheme?: 'regular' | 'composition';
       presumptive?: boolean;
+      upiId?: string | null;
     } | null;
   };
 
@@ -214,6 +215,7 @@ async function runSync(): Promise<SyncOutcome> {
         gstScheme: data.store.gstScheme ?? 'regular',
         presumptive: data.store.presumptive ?? true,
       });
+      cacheUpiId({ upiId: data.store.upiId ?? null });
     } catch {
       /* ignore */
     }

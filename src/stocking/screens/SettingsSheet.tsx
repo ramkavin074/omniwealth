@@ -13,6 +13,7 @@ import {
   getDefaults,
   getLoyaltyConfig,
   getReceiptConfig,
+  getStoreId,
   hasStandaloneAuth,
   setDefaults,
   setLoyaltyConfig,
@@ -30,6 +31,8 @@ import {
   testPrint,
 } from '../printer';
 import { isLikelyVpa } from '../upiLink';
+import { API_BASE } from '../config';
+import QRCode from 'qrcode';
 import {
   getStoreSettings,
   saveAlertPhone,
@@ -85,6 +88,9 @@ export default function SettingsSheet({
   const [printer, setPrinter] = useState(getPrinter);
   const [prBusy, setPrBusy] = useState(false);
   const [prMsg, setPrMsg] = useState<string | null>(null);
+
+  const [selfScan, setSelfScan] = useState(false);
+  const [shopQr, setShopQr] = useState('');
 
   const [lc, setLc] = useState<LoyaltyConfig>(getLoyaltyConfig);
   const patchLc = (p: Partial<LoyaltyConfig>) => {
@@ -165,9 +171,34 @@ export default function SettingsSheet({
         setDefaultGstRate(String(s.defaultGstRate));
         setGstScheme(s.gstScheme);
         setPresumptive(s.presumptive);
+        setSelfScan(s.selfScanEnabled);
       })
       .catch(() => {});
   }, [manage]);
+
+  const shopUrl =
+    (API_BASE || (typeof window !== 'undefined' ? window.location.origin : '')) +
+    '/shop/' +
+    (getStoreId() ?? '');
+
+  useEffect(() => {
+    if (selfScan && shopUrl.includes('/shop/') && !shopUrl.endsWith('/shop/')) {
+      QRCode.toDataURL(shopUrl, { margin: 1, width: 240 })
+        .then(setShopQr)
+        .catch(() => setShopQr(''));
+    } else {
+      setShopQr('');
+    }
+  }, [selfScan, shopUrl]);
+
+  const toggleSelfScan = async (on: boolean) => {
+    setSelfScan(on);
+    try {
+      await saveStoreSettings({ selfScanEnabled: on });
+    } catch {
+      setSelfScan(!on);
+    }
+  };
 
   const saveAlert = async () => {
     setAlertState('saving');
@@ -339,6 +370,48 @@ export default function SettingsSheet({
 
         {manage && (
           <section className="space-y-2">
+            <p className={heading}>{t(lang, 'scan2.title')}</p>
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={selfScan}
+                onChange={(e) => toggleSelfScan(e.target.checked)}
+                className="h-5 w-5 accent-teal-600"
+              />
+              {t(lang, 'scan2.enable')}
+            </label>
+            {selfScan && (
+              <div className="space-y-2 rounded-xl border border-slate-200 p-3 text-center dark:border-slate-700">
+                {shopQr && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={shopQr}
+                    alt="shop self-scan QR"
+                    className="mx-auto w-40 rounded-lg border border-slate-200 dark:border-slate-700"
+                  />
+                )}
+                <p className="break-all text-xs text-slate-500 dark:text-slate-400">
+                  {shopUrl}
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigator.clipboard?.writeText(shopUrl).catch(() => {})
+                  }
+                  className="text-sm font-medium text-teal-700 dark:text-teal-300"
+                >
+                  {t(lang, 'scan2.copy')}
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t(lang, 'scan2.hint')}
+            </p>
+          </section>
+        )}
+
+        {manage && (
+          <section className="space-y-2">
             <p className={heading}>{t(lang, 'settings.gst')}</p>
             <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <input
@@ -504,6 +577,12 @@ export default function SettingsSheet({
               onChange={(e) =>
                 patchRc({ upiId: e.target.value.trim().toLowerCase() })
               }
+              onBlur={(e) => {
+                const v = e.target.value.trim().toLowerCase();
+                if (!v || isLikelyVpa(v)) {
+                  saveStoreSettings({ upiId: v || null }).catch(() => {});
+                }
+              }}
               placeholder={t(lang, 'receipt.upiId')}
               inputMode="email"
               autoCapitalize="none"

@@ -16,6 +16,8 @@ export interface StoreSettings {
   defaultGstRate: number;
   gstScheme: GstScheme;
   presumptive: boolean;
+  selfScanEnabled: boolean;
+  upiId: string | null;
 }
 
 function auth(): { token?: string; storeId?: string } {
@@ -45,6 +47,8 @@ function normalise(s: Record<string, unknown> | null | undefined): StoreSettings
     defaultGstRate: Number(s?.defaultGstRate) || 0,
     gstScheme: s?.gstScheme === 'composition' ? 'composition' : 'regular',
     presumptive: s?.presumptive !== false,
+    selfScanEnabled: !!s?.selfScanEnabled,
+    upiId: (s?.upiId as string) ?? null,
   };
 }
 
@@ -68,6 +72,19 @@ export function cacheTax(s: Pick<StoreSettings, 'gstScheme' | 'presumptive'>): v
   setTaxConfig(cfg);
 }
 
+/** Mirror the store's UPI id into the receipt config so the offline bill /
+ *  reminder `upi://pay` links keep working. */
+export function cacheUpiId(s: Pick<StoreSettings, 'upiId'>): void {
+  try {
+    const raw = localStorage.getItem('stocking.receipt');
+    const rc = raw ? JSON.parse(raw) : {};
+    rc.upiId = (s.upiId ?? '').trim().toLowerCase();
+    localStorage.setItem('stocking.receipt', JSON.stringify(rc));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 export async function getStoreSettings(): Promise<StoreSettings> {
   const { token } = auth();
   const res = await fetch(`${API_BASE}/api/stocking/store`, {
@@ -79,6 +96,7 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   const s = normalise(body?.store);
   cacheGst(s);
   cacheTax(s);
+  cacheUpiId(s);
   return s;
 }
 
@@ -93,6 +111,8 @@ export async function saveStoreSettings(
       | 'defaultGstRate'
       | 'gstScheme'
       | 'presumptive'
+      | 'selfScanEnabled'
+      | 'upiId'
     >
   >,
 ): Promise<StoreSettings> {
@@ -108,6 +128,7 @@ export async function saveStoreSettings(
   const s = normalise(body?.store);
   cacheGst(s);
   cacheTax(s);
+  cacheUpiId(s);
   return s;
 }
 

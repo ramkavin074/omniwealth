@@ -28,6 +28,8 @@ export async function GET(request: Request) {
       defaultGstRate: stores.defaultGstRate,
       gstScheme: stores.gstScheme,
       presumptive: stores.presumptive,
+      selfScanEnabled: stores.selfScanEnabled,
+      upiId: stores.upiId,
     })
     .from(stores)
     .where(eq(stores.id, auth.storeId));
@@ -79,6 +81,8 @@ export async function POST(request: Request) {
     patch.gstScheme = body.gstScheme === 'composition' ? 'composition' : 'regular';
   }
   if ('presumptive' in body) patch.presumptive = !!body.presumptive;
+  if ('selfScanEnabled' in body) patch.selfScanEnabled = !!body.selfScanEnabled;
+  if ('upiId' in body) patch.upiId = String(body.upiId ?? '').trim().toLowerCase() || null;
   if (Object.keys(patch).length === 0) {
     return Response.json({ error: 'Nothing to update' }, { status: 400, headers });
   }
@@ -95,6 +99,8 @@ export async function POST(request: Request) {
       defaultGstRate: stores.defaultGstRate,
       gstScheme: stores.gstScheme,
       presumptive: stores.presumptive,
+      selfScanEnabled: stores.selfScanEnabled,
+      upiId: stores.upiId,
     })
     .from(stores)
     .where(eq(stores.id, auth.storeId));

@@ -29,6 +29,7 @@ import {
 } from '../db/sales';
 import { allReceivables, getCustomer, upsertCustomer } from '../db/customers';
 import { scanBarcode } from '../scanner/barcode';
+import { fetchBasketByCode, parseBasketQr, type BasketPull } from '../basket';
 import {
   isVoiceAvailable,
   listenOnce,
@@ -75,6 +76,10 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
+  const [basketCode, setBasketCode] = useState('');
+  const [basketBusy, setBasketBusy] = useState(false);
+  const [basketPaidUpi, setBasketPaidUpi] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -239,6 +244,72 @@ export default function SellScreen({ lang, onClose }: Props) {
       if (firstName) setTerm(firstName);
       flash(t(lang, 'sell.voiceFail'));
     }
+  };
+
+  const pullBasket = async (pull: BasketPull) => {
+    const missing: string[] = [];
+    let added = 0;
+    for (const ln of pull.lines) {
+      const p = await findByBarcode(ln.barcode);
+      if (p) {
+        addProduct(p, ln.qty);
+        added++;
+      } else {
+        missing.push(ln.barcode);
+      }
+    }
+    if (pull.paidUpi) {
+      setBasketPaidUpi(true);
+      setTender('upi');
+    }
+    setBasketOpen(false);
+    setBasketCode('');
+    if (added && missing.length) {
+      flash(
+        t(lang, 'sell.voicePartial')
+          .replace('{n}', String(added))
+          .replace('{miss}', missing.join(', ')),
+      );
+    } else if (added) {
+      flash(
+        (pull.paidUpi ? `${t(lang, 'sell.basketPaid')} · ` : '') +
+          t(lang, 'sell.voiceAdded').replace('{n}', String(added)),
+      );
+    } else {
+      flash(t(lang, 'sell.basketEmpty'));
+    }
+  };
+
+  const scanBasketQr = async () => {
+    if (basketBusy) return;
+    setBasketBusy(true);
+    const r = await scanBarcode(t(lang, 'scan.manualPrompt'));
+    setBasketBusy(false);
+    if (!r.ok) return;
+    const parsed = parseBasketQr(r.barcode);
+    if (!parsed) {
+      flash(t(lang, 'sell.basketBadQr'));
+      return;
+    }
+    if ('wrongStore' in parsed) {
+      flash(t(lang, 'sell.basketWrongStore'));
+      return;
+    }
+    await pullBasket(parsed);
+  };
+
+  const pullBasketByCode = async () => {
+    if (basketBusy || basketCode.trim().length < 4) return;
+    setBasketBusy(true);
+    const res = await fetchBasketByCode(basketCode);
+    setBasketBusy(false);
+    if ('error' in res) {
+      flash(
+        t(lang, res.error === 'network' ? 'sell.voiceFail' : 'sell.basketNoCode'),
+      );
+      return;
+    }
+    await pullBasket(res);
   };
 
   const hearItem = async () => {
@@ -467,6 +538,9 @@ export default function SellScreen({ lang, onClose }: Props) {
     setCustId('');
     setRedeemPts(0);
     setLastCustId('');
+    setBasketOpen(false);
+    setBasketCode('');
+    setBasketPaidUpi(false);
     setNewCust(false);
     setNcName('');
     setNcPhone('');
@@ -775,6 +849,12 @@ export default function SellScreen({ lang, onClose }: Props) {
             className={`${inputCls} w-24 text-right`}
           />
         </div>
+
+        {basketPaidUpi && (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+            {t(lang, 'sell.basketPaidHint')}
+          </p>
+        )}
 
         <div className="grid grid-cols-3 gap-2">
           {(['cash', 'upi', 'card', 'credit', 'split'] as const).map((k) => (
@@ -1099,6 +1179,46 @@ export default function SellScreen({ lang, onClose }: Props) {
             )}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setBasketOpen((v) => !v)}
+          className="h-9 w-full rounded-lg bg-slate-100 text-sm font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+        >
+          {t(lang, 'sell.basketPull')}
+        </button>
+        {basketOpen && (
+          <div className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={scanBasketQr}
+              disabled={basketBusy}
+              className="h-11 w-full rounded-lg bg-teal-700 font-semibold text-white disabled:opacity-50"
+            >
+              {t(lang, 'sell.basketScanQr')}
+            </button>
+            <div className="flex gap-2">
+              <input
+                value={basketCode}
+                onChange={(e) =>
+                  setBasketCode(
+                    e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4),
+                  )
+                }
+                placeholder={t(lang, 'sell.basketCode')}
+                className={`${inputCls} min-w-0 flex-1 text-center uppercase tracking-widest`}
+              />
+              <button
+                type="button"
+                onClick={pullBasketByCode}
+                disabled={basketBusy || basketCode.length < 4}
+                className="h-11 shrink-0 rounded-lg bg-slate-200 px-4 font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-200"
+              >
+                {t(lang, 'sell.basketGet')}
+              </button>
+            </div>
+          </div>
+        )}
 
         {(cart.length > 0 || held.length > 0) && (
           <div className="flex items-center gap-2 text-sm">
