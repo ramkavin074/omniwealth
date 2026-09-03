@@ -4,8 +4,14 @@
 // Bill numbers are per-device — offline shops never coordinate a counter.
 
 import { db } from './dexie';
+import { addLoyaltyPoints } from './customers';
 import { applyMovement, uuid } from './products';
-import { getGstConfig, getReceiptConfig, getUserId } from '../settings';
+import {
+  getGstConfig,
+  getLoyaltyConfig,
+  getReceiptConfig,
+  getUserId,
+} from '../settings';
 import {
   computeSaleTax,
   saleLineTotal,
@@ -101,6 +107,10 @@ export interface CompleteSaleInput {
   /** 'YYYY-MM-DD' — record the bill against a past date (owner entering a
    *  missed bill). Ignored if empty, today, or in the future. */
   billDate?: string;
+  /** Loyalty points the customer is spending on this bill. Their ₹ value is
+   *  already included in `discount` by the caller; this just tells us how
+   *  many points to deduct. */
+  loyaltyRedeemPoints?: number;
 }
 
 /** Resolve an optional back-date to an epoch-ms timestamp, pinned to noon so
@@ -234,6 +244,19 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
       await db().sales.add(sale);
     },
   );
+
+  // Loyalty: credit points earned on this bill, debit any redeemed. Kept out
+  // of the sale transaction — a missed points update is recoverable, a rolled
+  // -back sale is not.
+  if (sale.customerId) {
+    const loy = getLoyaltyConfig();
+    const earned =
+      loy.enabled && loy.earnPer > 0 ? Math.floor(total / loy.earnPer) : 0;
+    const redeemed = Math.max(0, Math.round(input.loyaltyRedeemPoints ?? 0));
+    if (earned - redeemed !== 0) {
+      await addLoyaltyPoints(sale.customerId, earned - redeemed);
+    }
+  }
 
   return sale;
 }

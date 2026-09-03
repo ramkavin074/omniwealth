@@ -11,11 +11,14 @@ import {
   cleanBillSeries,
   clearAllData,
   getDefaults,
+  getLoyaltyConfig,
   getReceiptConfig,
   hasStandaloneAuth,
   setDefaults,
+  setLoyaltyConfig,
   setReceiptConfig,
   signOut,
+  type LoyaltyConfig,
   type ReceiptConfig,
 } from '../settings';
 import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
@@ -82,6 +85,13 @@ export default function SettingsSheet({
   const [printer, setPrinter] = useState(getPrinter);
   const [prBusy, setPrBusy] = useState(false);
   const [prMsg, setPrMsg] = useState<string | null>(null);
+
+  const [lc, setLc] = useState<LoyaltyConfig>(getLoyaltyConfig);
+  const patchLc = (p: Partial<LoyaltyConfig>) => {
+    const next = { ...lc, ...p };
+    setLc(next);
+    setLoyaltyConfig(next);
+  };
 
   const pairThermal = async () => {
     setPrBusy(true);
@@ -556,6 +566,54 @@ export default function SettingsSheet({
                     : t(lang, 'receipt.printerWeb'))}
               </p>
             </div>
+          </section>
+        )}
+
+        {manage && (
+          <section className="space-y-2">
+            <p className={heading}>{t(lang, 'loy.title')}</p>
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={lc.enabled}
+                onChange={(e) => patchLc({ enabled: e.target.checked })}
+                className="h-5 w-5 accent-teal-600"
+              />
+              {t(lang, 'loy.enable')}
+            </label>
+            {lc.enabled && (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="flex-1 text-slate-700 dark:text-slate-200">
+                    {t(lang, 'loy.earnPer')}
+                  </label>
+                  <input
+                    inputMode="numeric"
+                    value={lc.earnPer}
+                    onChange={(e) =>
+                      patchLc({ earnPer: Number(e.target.value) || 1 })
+                    }
+                    className={`${field} w-20 text-right`}
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="flex-1 text-slate-700 dark:text-slate-200">
+                    {t(lang, 'loy.redeemValue')}
+                  </label>
+                  <input
+                    inputMode="numeric"
+                    value={lc.redeemValue}
+                    onChange={(e) =>
+                      patchLc({ redeemValue: Number(e.target.value) || 1 })
+                    }
+                    className={`${field} w-20 text-right`}
+                  />
+                </div>
+              </>
+            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t(lang, 'loy.hint')}
+            </p>
           </section>
         )}
 

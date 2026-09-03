@@ -409,6 +409,35 @@ export class StockingDB extends Dexie {
           .toCollection()
           .modify((h: HeldSale) => fixItems(h.items));
       });
+    // v19: customer loyalty points. No index change; backfill 0.
+    this.version(19)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt, refundOf, customerId',
+        heldSales: 'id, createdAt',
+        taxNotes: 'key, updatedAt',
+        upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
+        customers: 'id, name, phone, updatedAt, deletedAt',
+        receipts: 'id, customerId, receivedAt, updatedAt, deletedAt',
+        orders:
+          'id, orderNo, customerId, status, dueDate, createdAt, updatedAt, deletedAt',
+        expenses: 'id, category, tender, spentAt, updatedAt, deletedAt',
+        purchases:
+          'id, supplierId, invoiceDate, receivedAt, updatedAt, deletedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('customers')
+          .toCollection()
+          .modify((c: { loyaltyPoints?: number }) => {
+            if (c.loyaltyPoints === undefined) c.loyaltyPoints = 0;
+          });
+      });
   }
 }
 

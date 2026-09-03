@@ -86,6 +86,11 @@ const en: Dict = {
   'sell.salesman': 'Salesman',
   'sell.salesmanOpt': 'Name (optional)',
   'sell.billDate': 'Bill date',
+  'sell.customerOpt': 'Customer (optional)',
+  'sell.loyaltyBalance': '{n} points',
+  'sell.loyaltyRedeem': 'Redeem {n} → {amt} off',
+  'sell.loyaltyUndo': 'Undo {n} pts',
+  'sell.loyaltyEarned': 'Earned {e} points · balance {bal}',
   'sell.complete': 'Complete sale',
   'sell.failed': 'Could not save the sale',
   'sell.done': 'Sale complete',
@@ -104,6 +109,13 @@ const en: Dict = {
   'receipt.upiIdHint':
     'Added as a "pay by UPI" link on WhatsApp bills and khata reminders that still have a balance. Free — opens the customer’s own UPI app.',
   'upi.payBy': 'Pay by UPI',
+
+  'loy.title': 'Loyalty points',
+  'loy.enable': 'Give points on billing (by phone number)',
+  'loy.earnPer': '₹ spent per 1 point',
+  'loy.redeemValue': '₹ off per 1 point redeemed',
+  'loy.hint':
+    'Points ride on the existing customer (phone) record. Redeeming fills the bill discount. Confirm the rate with the shop owner before switching on. No card, no expiry.',
   'receipt.hint': 'Shown on the printed bill. Print opens your device print dialog — pick a connected or Wi-Fi thermal printer.',
   'receipt.sent': 'Sent to printer',
   'receipt.printer': 'Bluetooth thermal printer',
@@ -693,6 +705,11 @@ const ta: Dict = {
   'sell.salesman': 'விற்பனையாளர்',
   'sell.salesmanOpt': 'பெயர் (விருப்பம்)',
   'sell.billDate': 'பில் தேதி',
+  'sell.customerOpt': 'வாடிக்கையாளர் (விருப்பம்)',
+  'sell.loyaltyBalance': '{n} புள்ளிகள்',
+  'sell.loyaltyRedeem': '{n} பயன்படுத்து → {amt} தள்ளுபடி',
+  'sell.loyaltyUndo': '{n} புள்ளிகளை ரத்து செய்',
+  'sell.loyaltyEarned': '{e} புள்ளிகள் கிடைத்தது · இருப்பு {bal}',
   'sell.complete': 'விற்பனையை முடி',
   'sell.failed': 'விற்பனையை சேமிக்க முடியவில்லை',
   'sell.print': 'ரசீது அச்சிடு',
@@ -708,6 +725,13 @@ const ta: Dict = {
   'receipt.upiIdHint':
     'நிலுவைத் தொகை உள்ள WhatsApp பில்கள் / கடன் நினைவூட்டல்களில் "UPI-யில் செலுத்து" இணைப்பாகச் சேர்க்கப்படும். இலவசம் — வாடிக்கையாளரின் UPI செயலியைத் திறக்கும்.',
   'upi.payBy': 'UPI-யில் செலுத்து',
+
+  'loy.title': 'லாயல்டி புள்ளிகள்',
+  'loy.enable': 'பில்லிங்கின் போது புள்ளிகள் வழங்கு (தொலைபேசி எண் மூலம்)',
+  'loy.earnPer': '1 புள்ளிக்கு செலவழிக்கும் ₹',
+  'loy.redeemValue': '1 புள்ளி பயன்படுத்தினால் ₹ தள்ளுபடி',
+  'loy.hint':
+    'புள்ளிகள் ஏற்கனவே உள்ள வாடிக்கையாளர் (தொலைபேசி) பதிவில் சேரும். பயன்படுத்தினால் பில் தள்ளுபடியில் நிரப்பப்படும். இயக்குவதற்கு முன் கடை உரிமையாளரிடம் விகிதத்தை உறுதிப்படுத்தவும். கார்டு இல்லை, காலாவधि இல்லை.',
   'receipt.sent': 'அச்சுப்பொறிக்கு அனுப்பப்பட்டது',
   'receipt.printer': 'புளூடூத் தெர்மல் அச்சுப்பொறி',
   'receipt.printerConnect': 'அச்சுப்பொறியை இணைக்கவும்',

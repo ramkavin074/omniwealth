@@ -126,6 +126,7 @@ interface InCustomer {
   gstin: string | null;
   creditLimit: number;
   openingBalance: number;
+  loyaltyPoints: number;
   note: string | null;
   updatedAt: number;
   deletedAt: number | null;
@@ -496,6 +497,7 @@ export async function POST(request: Request) {
         gstin: c.gstin ?? null,
         creditLimit: String(num(c.creditLimit)),
         openingBalance: String(num(c.openingBalance)),
+        loyaltyPoints: String(num(c.loyaltyPoints)),
         note: c.note ?? null,
         updatedAt: String(num(c.updatedAt)),
         deletedAt: c.deletedAt == null ? null : String(num(c.deletedAt)),
@@ -514,6 +516,7 @@ export async function POST(request: Request) {
             gstin: sql`excluded.gstin`,
             creditLimit: sql`excluded.credit_limit`,
             openingBalance: sql`excluded.opening_balance`,
+            loyaltyPoints: sql`excluded.loyalty_points`,
             note: sql`excluded.note`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
@@ -999,6 +1002,7 @@ export async function POST(request: Request) {
         gstin: c.gstin,
         creditLimit: num(c.creditLimit),
         openingBalance: num(c.openingBalance),
+        loyaltyPoints: num(c.loyaltyPoints),
         note: c.note,
         updatedAt: num(c.updatedAt),
         deletedAt: c.deletedAt == null ? null : num(c.deletedAt),

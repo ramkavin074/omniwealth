@@ -836,6 +836,7 @@ export const storeCustomers = store.table(
     gstin: text('gstin'),
     creditLimit: numeric('credit_limit').notNull().default('0'),
     openingBalance: numeric('opening_balance').notNull().default('0'),
+    loyaltyPoints: numeric('loyalty_points').notNull().default('0'),
     note: text('note'),
     updatedAt: numeric('updated_at').notNull(),
     deletedAt: numeric('deleted_at'),

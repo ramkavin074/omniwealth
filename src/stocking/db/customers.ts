@@ -63,12 +63,29 @@ export async function upsertCustomer(draft: CustomerDraft): Promise<Customer> {
     gstin: draft.gstin?.trim().toUpperCase() || null,
     creditLimit: q(Math.max(0, draft.creditLimit ?? 0)),
     openingBalance: q(draft.openingBalance ?? 0),
+    loyaltyPoints: 0,
     note: draft.note?.trim() || null,
     updatedAt: now,
     deletedAt: null,
   };
   await db().customers.add(customer);
   return customer;
+}
+
+/** Adjust a customer's loyalty balance (+earned, −redeemed), clamped ≥ 0.
+ *  Bumps updatedAt so the change syncs LWW. No-op if the customer is gone. */
+export async function addLoyaltyPoints(
+  id: string,
+  delta: number,
+): Promise<void> {
+  if (!id || !Number.isFinite(delta) || delta === 0) return;
+  const c = await db().customers.get(id);
+  if (!c || c.deletedAt !== null) return;
+  const next = Math.max(0, Math.round((c.loyaltyPoints ?? 0) + delta));
+  await db().customers.update(id, {
+    loyaltyPoints: next,
+    updatedAt: Date.now(),
+  });
 }
 
 export async function softDeleteCustomer(id: string): Promise<void> {
@@ -141,6 +158,7 @@ export async function importCustomers(
         gstin: row.gstin,
         creditLimit: q(Math.max(0, row.creditLimit)),
         openingBalance: q(row.openingBalance),
+        loyaltyPoints: 0,
         note: row.note,
         updatedAt: now,
         deletedAt: null,

@@ -146,6 +146,46 @@ export function setCashflowConfig(next: CashflowConfig): void {
   }
 }
 
+// ---- phone-number loyalty (per device, not synced — the shop's own rate) ----
+
+export interface LoyaltyConfig {
+  enabled: boolean;
+  earnPer: number; // ₹ spent that earns 1 point
+  redeemValue: number; // ₹ discount per 1 point redeemed
+}
+
+const LOYALTY_KEY = 'stocking.loyalty';
+const LOYALTY_FALLBACK: LoyaltyConfig = {
+  enabled: false,
+  earnPer: 100,
+  redeemValue: 1,
+};
+
+export function getLoyaltyConfig(): LoyaltyConfig {
+  try {
+    const raw = localStorage.getItem(LOYALTY_KEY);
+    if (!raw) return LOYALTY_FALLBACK;
+    const p = JSON.parse(raw) as Partial<LoyaltyConfig>;
+    const pos = (n: unknown, d: number) =>
+      Number.isFinite(Number(n)) && Number(n) > 0 ? Number(n) : d;
+    return {
+      enabled: !!p.enabled,
+      earnPer: pos(p.earnPer, LOYALTY_FALLBACK.earnPer),
+      redeemValue: pos(p.redeemValue, LOYALTY_FALLBACK.redeemValue),
+    };
+  } catch {
+    return LOYALTY_FALLBACK;
+  }
+}
+
+export function setLoyaltyConfig(next: LoyaltyConfig): void {
+  try {
+    localStorage.setItem(LOYALTY_KEY, JSON.stringify(next));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 /** True in the standalone APK build (LoginGate cached a bearer token). The
  *  in-OmniWealth host seeds stocking.auth too, but without a token. */
 export function hasStandaloneAuth(): boolean {

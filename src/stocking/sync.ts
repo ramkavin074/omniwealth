@@ -303,6 +303,7 @@ async function runSync(): Promise<SyncOutcome> {
             gstin: c.gstin ?? null,
             creditLimit: c.creditLimit ?? 0,
             openingBalance: c.openingBalance ?? 0,
+            loyaltyPoints: c.loyaltyPoints ?? 0,
             note: c.note ?? null,
             deletedAt: c.deletedAt ?? null,
           });

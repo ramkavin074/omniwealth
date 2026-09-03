@@ -131,6 +131,7 @@ export interface Customer {
   gstin: string | null; // optional — for a B2B customer
   creditLimit: number; // ₹; 0 = no limit set
   openingBalance: number; // ₹ they already owed when added (+ve = owes the shop)
+  loyaltyPoints: number; // earned on billing, redeemable as a bill discount
   note: string | null;
   updatedAt: number;
   deletedAt: number | null;

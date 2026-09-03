@@ -10,7 +10,12 @@ import {
   type TenderType,
   type Unit,
 } from '../types';
-import { canManage, getGstConfig, getReceiptConfig } from '../settings';
+import {
+  canManage,
+  getGstConfig,
+  getLoyaltyConfig,
+  getReceiptConfig,
+} from '../settings';
 import { printReceiptSmart } from '../printer';
 import { upiPayLine } from '../upiLink';
 import { findByBarcode, searchProducts } from '../db/products';
@@ -22,7 +27,7 @@ import {
   listHeld,
   resumeHeld,
 } from '../db/sales';
-import { allReceivables, upsertCustomer } from '../db/customers';
+import { allReceivables, getCustomer, upsertCustomer } from '../db/customers';
 import { scanBarcode } from '../scanner/barcode';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
@@ -76,6 +81,9 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [custId, setCustId] = useState('');
   const [newCust, setNewCust] = useState(false);
   const [ncName, setNcName] = useState('');
+  const [redeemPts, setRedeemPts] = useState(0);
+  const [lastCustId, setLastCustId] = useState('');
+  const [loyalty] = useState(getLoyaltyConfig);
   const [ncPhone, setNcPhone] = useState('');
   const [saved, setSaved] = useState<Sale | null>(null);
 
@@ -91,6 +99,10 @@ export default function SellScreen({ lang, onClose }: Props) {
     [],
   );
   const held = useLiveQuery(() => listHeld(), [], []);
+  const doneCust = useLiveQuery(
+    () => (lastCustId ? getCustomer(lastCustId) : Promise.resolve(undefined)),
+    [lastCustId],
+  );
 
   const isQuick = quickAmt.trim() !== '';
   const subtotal = useMemo(
@@ -227,6 +239,18 @@ export default function SellScreen({ lang, onClose }: Props) {
       : 0;
   const hasContent = isQuick ? subtotal > 0 : cart.length > 0;
   const custRow = recv.rows.find((r) => r.customer.id === custId) ?? null;
+  // Loyalty: show a "redeem" prompt when a known customer with points is
+  // attached and redemption is enabled. Points buy a whole-bill discount.
+  const custPoints = custRow?.customer.loyaltyPoints ?? 0;
+  const showCustPicker = tender === 'credit' || loyalty.enabled;
+  const redeemMaxPts =
+    loyalty.enabled && loyalty.redeemValue > 0
+      ? Math.min(
+          custPoints,
+          Math.floor(Math.max(0, subtotal) / loyalty.redeemValue),
+        )
+      : 0;
+  const redeemRs = Math.round(redeemMaxPts * loyalty.redeemValue);
   const canComplete =
     total > 0 &&
     (tender === 'upi' ||
@@ -241,10 +265,11 @@ export default function SellScreen({ lang, onClose }: Props) {
     setBusy(true);
     try {
       let customerId = custId;
-      if (tender === 'credit' && newCust && ncName.trim()) {
+      if (newCust && ncName.trim() && (tender === 'credit' || loyalty.enabled)) {
         const c = await upsertCustomer({ name: ncName, phone: ncPhone });
         customerId = c.id;
       }
+      setLastCustId(customerId);
       const sale = await completeSale({
         items: isQuick
           ? []
@@ -263,7 +288,8 @@ export default function SellScreen({ lang, onClose }: Props) {
         tenderType: tender,
         salesman: salesman.trim() || undefined,
         ...(billDate !== today ? { billDate } : {}),
-        ...(tender === 'credit' ? { customerId } : {}),
+        ...(customerId ? { customerId } : {}),
+        ...(redeemPts > 0 ? { loyaltyRedeemPoints: redeemPts } : {}),
         ...(tender === 'split'
           ? {
               cashAmount: splitCash,
@@ -335,6 +361,8 @@ export default function SellScreen({ lang, onClose }: Props) {
     setSalesman('');
     setBillDate(today);
     setCustId('');
+    setRedeemPts(0);
+    setLastCustId('');
     setNewCust(false);
     setNcName('');
     setNcPhone('');
@@ -517,6 +545,20 @@ export default function SellScreen({ lang, onClose }: Props) {
               {t(lang, 'sell.salesman')}: {saved.salesman}
             </p>
           )}
+          {loyalty.enabled && doneCust && (
+            <p className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-400">
+              {t(lang, 'sell.loyaltyEarned')
+                .replace(
+                  '{e}',
+                  String(
+                    loyalty.earnPer > 0
+                      ? Math.floor(saved.total / loyalty.earnPer)
+                      : 0,
+                  ),
+                )
+                .replace('{bal}', String(doneCust.loyaltyPoints ?? 0))}
+            </p>
+          )}
         </div>
 
         <button
@@ -621,7 +663,10 @@ export default function SellScreen({ lang, onClose }: Props) {
           <input
             inputMode="decimal"
             value={discount}
-            onChange={(e) => setDiscount(e.target.value)}
+            onChange={(e) => {
+              setDiscount(e.target.value);
+              setRedeemPts(0);
+            }}
             placeholder="0"
             className={`${inputCls} w-24 text-right`}
           />
@@ -644,8 +689,13 @@ export default function SellScreen({ lang, onClose }: Props) {
           ))}
         </div>
 
-        {tender === 'credit' && (
+        {showCustPicker && (
           <div className="space-y-2">
+            {tender !== 'credit' && (
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t(lang, 'sell.customerOpt')}
+              </label>
+            )}
             {newCust ? (
               <>
                 <input
@@ -701,7 +751,7 @@ export default function SellScreen({ lang, onClose }: Props) {
                 </button>
               </>
             )}
-            {custRow && (
+            {custRow && tender === 'credit' && (
               <p
                 className={`text-sm ${
                   custRow.customer.creditLimit > 0 &&
@@ -718,6 +768,47 @@ export default function SellScreen({ lang, onClose }: Props) {
                   custRow.balance + total > custRow.customer.creditLimit &&
                   ` · ${t(lang, 'sell.overLimit')}`}
               </p>
+            )}
+
+            {loyalty.enabled && custRow && (
+              <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm dark:bg-amber-950/40">
+                <span className="text-amber-800 dark:text-amber-300">
+                  {t(lang, 'sell.loyaltyBalance').replace(
+                    '{n}',
+                    String(custPoints),
+                  )}
+                </span>
+                {redeemPts > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRedeemPts(0);
+                      setDiscount('');
+                    }}
+                    className="ml-2 font-semibold text-rose-600 dark:text-rose-400"
+                  >
+                    {t(lang, 'sell.loyaltyUndo').replace(
+                      '{n}',
+                      String(redeemPts),
+                    )}
+                  </button>
+                ) : (
+                  redeemMaxPts > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRedeemPts(redeemMaxPts);
+                        setDiscount(String(redeemRs));
+                      }}
+                      className="ml-2 font-semibold text-teal-700 dark:text-teal-300"
+                    >
+                      {t(lang, 'sell.loyaltyRedeem')
+                        .replace('{n}', String(redeemMaxPts))
+                        .replace('{amt}', money(redeemRs))}
+                    </button>
+                  )
+                )}
+              </div>
             )}
           </div>
         )}
