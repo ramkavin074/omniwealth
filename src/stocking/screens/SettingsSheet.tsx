@@ -26,6 +26,7 @@ import {
   pairPrinter,
   testPrint,
 } from '../printer';
+import { isLikelyVpa } from '../upiLink';
 import {
   getStoreSettings,
   saveAlertPhone,
@@ -485,6 +486,23 @@ export default function SettingsSheet({
                 className={`${field} w-20 text-center uppercase`}
               />
             </div>
+            <input
+              value={rc.upiId}
+              onChange={(e) =>
+                patchRc({ upiId: e.target.value.trim().toLowerCase() })
+              }
+              placeholder={t(lang, 'receipt.upiId')}
+              inputMode="email"
+              autoCapitalize="none"
+              className={`${field} w-full ${
+                rc.upiId && !isLikelyVpa(rc.upiId)
+                  ? 'border-rose-400 dark:border-rose-500'
+                  : ''
+              }`}
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t(lang, 'receipt.upiIdHint')}
+            </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {rcSaved
                 ? t(lang, 'settings.alertSaved')

@@ -12,7 +12,8 @@ import {
 import { getSale } from '../db/sales';
 import type { ReceiptTender, Sale } from '../types';
 import { useLiveQuery } from '../hooks';
-import { canManage } from '../settings';
+import { canManage, getReceiptConfig } from '../settings';
+import { upiPayLine } from '../upiLink';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
@@ -251,9 +252,20 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
       if (!c.phone) return;
       const digits = c.phone.replace(/\D/g, '');
       const num = digits.length === 10 ? '91' + digits : digits;
-      const msg = t(lang, 'cust.reminderMsg')
-        .replace('{name}', c.name)
-        .replace('{amt}', money(current.balance));
+      const rc = getReceiptConfig();
+      const msg =
+        t(lang, 'cust.reminderMsg')
+          .replace('{name}', c.name)
+          .replace('{amt}', money(current.balance)) +
+        upiPayLine(
+          {
+            pa: rc.upiId,
+            pn: rc.shopName || undefined,
+            am: current.balance,
+            tn: `${c.name} khata`,
+          },
+          t(lang, 'upi.payBy'),
+        );
       window.open(
         `https://wa.me/${num}?text=${encodeURIComponent(msg)}`,
         '_blank',

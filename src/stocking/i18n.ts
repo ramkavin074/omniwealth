@@ -100,6 +100,10 @@ const en: Dict = {
   'receipt.footer': 'Footer line',
   'receipt.roundBills': 'Round every bill to the nearest ₹1',
   'receipt.billSeries': 'Bill series prefix',
+  'receipt.upiId': 'Shop UPI ID (e.g. name@okhdfc)',
+  'receipt.upiIdHint':
+    'Added as a "pay by UPI" link on WhatsApp bills and khata reminders that still have a balance. Free — opens the customer’s own UPI app.',
+  'upi.payBy': 'Pay by UPI',
   'receipt.hint': 'Shown on the printed bill. Print opens your device print dialog — pick a connected or Wi-Fi thermal printer.',
   'receipt.sent': 'Sent to printer',
   'receipt.printer': 'Bluetooth thermal printer',
@@ -676,6 +680,10 @@ const ta: Dict = {
   'receipt.footer': 'கீழ் வரி',
   'receipt.roundBills': 'ஒவ்வொரு பில்லையும் அருகிலுள்ள ₹1 க்கு முழுமைப்படுத்து',
   'receipt.billSeries': 'பில் எண் முன்னொட்டு',
+  'receipt.upiId': 'கடை UPI ஐடி (எ.கா. name@okhdfc)',
+  'receipt.upiIdHint':
+    'நிலுவைத் தொகை உள்ள WhatsApp பில்கள் / கடன் நினைவூட்டல்களில் "UPI-யில் செலுத்து" இணைப்பாகச் சேர்க்கப்படும். இலவசம் — வாடிக்கையாளரின் UPI செயலியைத் திறக்கும்.',
+  'upi.payBy': 'UPI-யில் செலுத்து',
   'receipt.sent': 'அச்சுப்பொறிக்கு அனுப்பப்பட்டது',
   'receipt.printer': 'புளூடூத் தெர்மல் அச்சுப்பொறி',
   'receipt.printerConnect': 'அச்சுப்பொறியை இணைக்கவும்',

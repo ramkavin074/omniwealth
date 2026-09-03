@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { canManage, getGstConfig, getReceiptConfig } from '../settings';
 import { printReceiptSmart } from '../printer';
+import { upiPayLine } from '../upiLink';
 import { findByBarcode, searchProducts } from '../db/products';
 import {
   completeSale,
@@ -341,6 +342,19 @@ export default function SellScreen({ lang, onClose }: Props) {
     setPhase('cart');
   };
 
+  // A "pay by UPI" link, only when money is still owed on this bill.
+  const upiTail = (s: Sale) => {
+    const rc = getReceiptConfig();
+    const owed = q2(
+      s.total - s.cashAmount - s.upiAmount - (s.cardAmount ?? 0),
+    );
+    if (owed <= 0 || !rc.upiId) return '';
+    return upiPayLine(
+      { pa: rc.upiId, pn: rc.shopName || undefined, am: owed, tn: s.billNo },
+      t(lang, 'upi.payBy'),
+    );
+  };
+
   const receiptText = (s: Sale) =>
     [
       s.billNo,
@@ -365,7 +379,7 @@ export default function SellScreen({ lang, onClose }: Props) {
       `${t(lang, 'sell.total')}: ${money(s.total)}`,
       `${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${s.tenderType}`)}`,
       ...(s.salesman ? [`${t(lang, 'sell.salesman')}: ${s.salesman}`] : []),
-    ].join('\n');
+    ].join('\n') + upiTail(s);
 
   // ---------- DONE / receipt ----------
   if (phase === 'done' && saved) {

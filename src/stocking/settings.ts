@@ -54,6 +54,7 @@ export interface ReceiptConfig {
   paper: 58 | 80; // mm — thermal roll width
   roundBills: boolean; // round every bill total to the nearest ₹1 (Indian norm)
   billSeries: string; // optional prefix on the bill number, e.g. "A" → "A-K7-0042"
+  upiId: string; // the shop's UPI VPA, for `upi://pay` links on WhatsApp bills
 }
 
 const RECEIPT_KEY = 'stocking.receipt';
@@ -64,6 +65,7 @@ const RECEIPT_FALLBACK: ReceiptConfig = {
   paper: 58,
   roundBills: true,
   billSeries: '',
+  upiId: '',
 };
 
 /** Normalise a bill-series prefix: uppercase, letters/digits only, max 4. */
@@ -88,6 +90,8 @@ export function getReceiptConfig(): ReceiptConfig {
       roundBills: p.roundBills !== false, // default on
       billSeries:
         typeof p.billSeries === 'string' ? cleanBillSeries(p.billSeries) : '',
+      upiId:
+        typeof p.upiId === 'string' ? p.upiId.trim().toLowerCase() : '',
     };
   } catch {
     return RECEIPT_FALLBACK;
