@@ -1,7 +1,9 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
+  storeCustomers,
   storeProducts,
+  storeReceipts,
   storeSales,
   storeStockMovements,
   storeUpiReceipts,
@@ -101,10 +103,36 @@ interface InSale {
   total: number;
   refundOf: string | null;
   tenderType: string;
+  customerId: string | null;
   cashAmount: number;
   upiAmount: number;
   note: string | null;
   createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+interface InCustomer {
+  id: string;
+  name: string;
+  phone: string | null;
+  place: string | null;
+  gstin: string | null;
+  creditLimit: number;
+  openingBalance: number;
+  note: string | null;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+interface InReceipt {
+  id: string;
+  customerId: string;
+  amount: number;
+  tender: string;
+  againstBillId: string | null;
+  note: string | null;
+  receivedAt: number;
   updatedAt: number;
   deletedAt: number | null;
 }
@@ -131,6 +159,8 @@ export async function POST(request: Request) {
   let inPayments: InPayment[] = [];
   let inSales: InSale[] = [];
   let inUpiReceipts: InUpiReceipt[] = [];
+  let inCustomers: InCustomer[] = [];
+  let inReceipts: InReceipt[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
@@ -140,6 +170,8 @@ export async function POST(request: Request) {
     inPayments = Array.isArray(body?.payments) ? body.payments : [];
     inSales = Array.isArray(body?.sales) ? body.sales : [];
     inUpiReceipts = Array.isArray(body?.upiReceipts) ? body.upiReceipts : [];
+    inCustomers = Array.isArray(body?.customers) ? body.customers : [];
+    inReceipts = Array.isArray(body?.receipts) ? body.receipts : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
@@ -150,7 +182,9 @@ export async function POST(request: Request) {
     inSuppliers.length +
     inPayments.length +
     inSales.length +
-    inUpiReceipts.length;
+    inUpiReceipts.length +
+    inCustomers.length +
+    inReceipts.length;
   if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
   }
@@ -344,6 +378,10 @@ export async function POST(request: Request) {
         refundOf:
           typeof s.refundOf === 'string' && s.refundOf ? s.refundOf : null,
         tenderType: s.tenderType || 'cash',
+        customerId:
+          typeof s.customerId === 'string' && s.customerId
+            ? s.customerId
+            : null,
         cashAmount: String(num(s.cashAmount)),
         upiAmount: String(num(s.upiAmount)),
         note: s.note ?? null,
@@ -359,12 +397,100 @@ export async function POST(request: Request) {
         .onConflictDoUpdate({
           target: storeSales.id,
           set: {
+            customerId: sql`excluded.customer_id`,
             note: sql`excluded.note`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
             syncedAt: sql`excluded.synced_at`,
           },
           setWhere: sql`${storeSales.storeId} = ${storeId} AND ${storeSales.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
+  // ---- push: customers (upsert, LWW) — credit billing is a counter action ----
+  if (inCustomers.length) {
+    const rows = inCustomers
+      .filter(
+        (c) => c && typeof c.id === 'string' && typeof c.name === 'string',
+      )
+      .map((c) => ({
+        id: c.id,
+        storeId,
+        name: c.name,
+        phone: c.phone ?? null,
+        place: c.place ?? null,
+        gstin: c.gstin ?? null,
+        creditLimit: String(num(c.creditLimit)),
+        openingBalance: String(num(c.openingBalance)),
+        note: c.note ?? null,
+        updatedAt: String(num(c.updatedAt)),
+        deletedAt: c.deletedAt == null ? null : String(num(c.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeCustomers)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeCustomers.id,
+          set: {
+            name: sql`excluded.name`,
+            phone: sql`excluded.phone`,
+            place: sql`excluded.place`,
+            gstin: sql`excluded.gstin`,
+            creditLimit: sql`excluded.credit_limit`,
+            openingBalance: sql`excluded.opening_balance`,
+            note: sql`excluded.note`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeCustomers.storeId} = ${storeId} AND ${storeCustomers.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
+  // ---- push: receipts (upsert, LWW) ----
+  if (inReceipts.length) {
+    const rows = inReceipts
+      .filter(
+        (r) =>
+          r && typeof r.id === 'string' && typeof r.customerId === 'string',
+      )
+      .map((r) => ({
+        id: r.id,
+        storeId,
+        customerId: r.customerId,
+        amount: String(num(r.amount)),
+        tender: r.tender === 'upi' ? 'upi' : 'cash',
+        againstBillId:
+          typeof r.againstBillId === 'string' && r.againstBillId
+            ? r.againstBillId
+            : null,
+        note: r.note ?? null,
+        receivedAt: String(num(r.receivedAt)),
+        updatedAt: String(num(r.updatedAt)),
+        deletedAt: r.deletedAt == null ? null : String(num(r.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeReceipts)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeReceipts.id,
+          set: {
+            amount: sql`excluded.amount`,
+            tender: sql`excluded.tender`,
+            againstBillId: sql`excluded.against_bill_id`,
+            note: sql`excluded.note`,
+            receivedAt: sql`excluded.received_at`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeReceipts.storeId} = ${storeId} AND ${storeReceipts.updatedAt} < excluded.updated_at`,
         });
     }
   }
@@ -422,6 +548,8 @@ export async function POST(request: Request) {
     pulledPayments,
     pulledSales,
     pulledUpi,
+    pulledCustomers,
+    pulledReceipts,
     storeRow,
   ] = await Promise.all([
       db
@@ -478,6 +606,26 @@ export async function POST(request: Request) {
           and(
             eq(storeUpiReceipts.storeId, storeId),
             gt(storeUpiReceipts.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeCustomers)
+        .where(
+          and(
+            eq(storeCustomers.storeId, storeId),
+            gt(storeCustomers.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeReceipts)
+        .where(
+          and(
+            eq(storeReceipts.storeId, storeId),
+            gt(storeReceipts.syncedAt, sinceDate),
           ),
         )
         .limit(MAX_ROWS),
@@ -565,6 +713,7 @@ export async function POST(request: Request) {
         total: num(s.total),
         refundOf: s.refundOf ?? null,
         tenderType: s.tenderType,
+        customerId: s.customerId ?? null,
         cashAmount: num(s.cashAmount),
         upiAmount: num(s.upiAmount),
         note: s.note,
@@ -581,6 +730,29 @@ export async function POST(request: Request) {
         source: r.source,
         matchedSaleId: r.matchedSaleId ?? null,
         note: r.note,
+        updatedAt: num(r.updatedAt),
+        deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
+      })),
+      customers: pulledCustomers.map((c) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        place: c.place,
+        gstin: c.gstin,
+        creditLimit: num(c.creditLimit),
+        openingBalance: num(c.openingBalance),
+        note: c.note,
+        updatedAt: num(c.updatedAt),
+        deletedAt: c.deletedAt == null ? null : num(c.deletedAt),
+      })),
+      receipts: pulledReceipts.map((r) => ({
+        id: r.id,
+        customerId: r.customerId,
+        amount: num(r.amount),
+        tender: r.tender,
+        againstBillId: r.againstBillId ?? null,
+        note: r.note,
+        receivedAt: num(r.receivedAt),
         updatedAt: num(r.updatedAt),
         deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
       })),

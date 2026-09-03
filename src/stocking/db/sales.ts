@@ -57,6 +57,9 @@ export interface CompleteSaleInput {
   tenderType: TenderType;
   cashAmount?: number;
   upiAmount?: number;
+  /** Required when tenderType is 'credit'; optional otherwise (attributes the
+   *  bill to a known customer even when it's paid). */
+  customerId?: string;
   note?: string;
 }
 
@@ -91,6 +94,11 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
   );
   const total = q2(subtotal - discount + addToTotal);
   if (total <= 0) throw new Error('Nothing to bill');
+  if (input.tenderType === 'credit' && !input.customerId) {
+    throw new Error('Pick a customer for a credit bill');
+  }
+  // On a credit bill no money changes hands now — it goes to the customer's
+  // account and is cleared later with a receipt.
   const cashAmount =
     input.tenderType === 'cash'
       ? total
@@ -116,6 +124,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
     total,
     refundOf: null,
     tenderType: input.tenderType,
+    customerId: input.customerId ?? null,
     cashAmount,
     upiAmount,
     note: input.note?.trim() ? input.note.trim() : null,
@@ -254,6 +263,9 @@ export async function refundSale(
     total,
     refundOf: originalId,
     tenderType,
+    // Carry the original's customer so a refund of a credit bill nets that
+    // customer's balance down.
+    customerId: orig.customerId ?? null,
     cashAmount:
       tenderType === 'cash'
         ? total
@@ -303,9 +315,10 @@ export interface DaySummary {
   from: number;
   to: number;
   count: number; // number of sale bills (refunds excluded)
-  total: number; // net take = gross sales − refunds
-  cash: number; // net
-  upi: number; // net
+  total: number; // net take = gross sales − refunds (includes credit bills)
+  cash: number; // net cash in the drawer
+  upi: number; // net UPI
+  credit: number; // net billed on account — NOT money received today
   units: number;
   discountTotal: number;
   taxCollected: number; // net
@@ -334,6 +347,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
   let total = 0;
   let cash = 0;
   let upi = 0;
+  let credit = 0;
   let units = 0;
   let discountTotal = 0;
   let taxCollected = 0;
@@ -345,6 +359,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     total += s.total;
     cash += s.cashAmount;
     upi += s.upiAmount;
+    if (s.tenderType === 'credit') credit += s.total;
     discountTotal += s.discount ?? 0;
     taxCollected += s.taxTotal ?? 0;
     if (s.refundOf) {
@@ -374,6 +389,7 @@ export async function daySummary(from?: number, to?: number): Promise<DaySummary
     total: q2(total),
     cash: q2(cash),
     upi: q2(upi),
+    credit: q2(credit),
     units: q2(units),
     discountTotal: q2(discountTotal),
     taxCollected: q2(taxCollected),

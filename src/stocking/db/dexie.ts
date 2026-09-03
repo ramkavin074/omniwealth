@@ -5,9 +5,11 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   BarcodeCacheEntry,
+  Customer,
   HeldSale,
   Movement,
   Product,
+  Receipt,
   Sale,
   Supplier,
   SupplierPayment,
@@ -33,6 +35,8 @@ export class StockingDB extends Dexie {
   heldSales!: Table<HeldSale, string>;
   taxNotes!: Table<{ key: string; done: boolean; note: string; updatedAt: number }, string>;
   upiReceipts!: Table<UpiReceipt, string>;
+  customers!: Table<Customer, string>;
+  receipts!: Table<Receipt, string>;
 
   constructor() {
     super('stocking');
@@ -232,6 +236,31 @@ export class StockingDB extends Dexie {
       taxNotes: 'key, updatedAt',
       upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
     });
+    // v13: customers + receipts (the credit / khata ledger). `sales` gains a
+    // customerId index for per-customer bill lookups.
+    this.version(13)
+      .stores({
+        products: 'id, barcode, name, updatedAt, deletedAt',
+        movements: 'id, productId, createdAt',
+        barcodeCache: 'barcode, fetchedAt',
+        syncState: 'id',
+        suppliers: 'id, name, updatedAt, deletedAt',
+        supplierPayments: 'id, supplierId, updatedAt',
+        sales: 'id, billNo, createdAt, updatedAt, refundOf, customerId',
+        heldSales: 'id, createdAt',
+        taxNotes: 'key, updatedAt',
+        upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
+        customers: 'id, name, phone, updatedAt, deletedAt',
+        receipts: 'id, customerId, receivedAt, updatedAt, deletedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('sales')
+          .toCollection()
+          .modify((s: Sale) => {
+            if (s.customerId === undefined) s.customerId = null;
+          });
+      });
   }
 }
 

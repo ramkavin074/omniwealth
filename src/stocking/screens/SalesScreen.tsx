@@ -198,6 +198,8 @@ export default function SalesScreen({ lang, onClose }: Props) {
       {summary && summary.count > 0 && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           {t(lang, 'sales.avgBill')} {money(summary.avgBill)}
+          {summary.credit > 0 &&
+            ` · ${t(lang, 'sales.credit')} ${money(summary.credit)}`}
           {summary.discountTotal > 0 &&
             ` · ${t(lang, 'sales.discounts')} ${money(summary.discountTotal)}`}
           {summary.taxCollected > 0 &&

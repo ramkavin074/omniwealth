@@ -18,6 +18,7 @@ import {
   listHeld,
   resumeHeld,
 } from '../db/sales';
+import { allReceivables, upsertCustomer } from '../db/customers';
 import { scanBarcode } from '../scanner/barcode';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
@@ -55,7 +56,17 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [tender, setTender] = useState<TenderType>('cash');
   const [cashGiven, setCashGiven] = useState('');
   const [upiPart, setUpiPart] = useState('');
+  const [custId, setCustId] = useState('');
+  const [newCust, setNewCust] = useState(false);
+  const [ncName, setNcName] = useState('');
+  const [ncPhone, setNcPhone] = useState('');
   const [saved, setSaved] = useState<Sale | null>(null);
+
+  const recv = useLiveQuery(() => allReceivables(), [], {
+    total: 0,
+    overLimitCount: 0,
+    rows: [],
+  });
 
   const results = useLiveQuery(
     () => (term.trim() ? searchProducts(debounced) : Promise.resolve([])),
@@ -155,10 +166,12 @@ export default function SellScreen({ lang, onClose }: Props) {
       ? Math.round((total - (Number(upiPart) || 0)) * 100) / 100
       : 0;
   const hasContent = isQuick ? subtotal > 0 : cart.length > 0;
+  const custRow = recv.rows.find((r) => r.customer.id === custId) ?? null;
   const canComplete =
     total > 0 &&
     (tender === 'upi' ||
       (tender === 'cash' && (cashGiven === '' || Number(cashGiven) >= total)) ||
+      (tender === 'credit' && !!custId) ||
       (tender === 'split' &&
         Number(upiPart) >= 0 &&
         Number(upiPart) <= total));
@@ -167,6 +180,11 @@ export default function SellScreen({ lang, onClose }: Props) {
     if (!canComplete) return;
     setBusy(true);
     try {
+      let customerId = custId;
+      if (tender === 'credit' && newCust && ncName.trim()) {
+        const c = await upsertCustomer({ name: ncName, phone: ncPhone });
+        customerId = c.id;
+      }
       const sale = await completeSale({
         items: isQuick
           ? []
@@ -181,6 +199,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         ...(isQuick ? { manualTotal: subtotal } : {}),
         discount: disc,
         tenderType: tender,
+        ...(tender === 'credit' ? { customerId } : {}),
         ...(tender === 'split'
           ? { cashAmount: splitCash, upiAmount: Number(upiPart) || 0 }
           : {}),
@@ -239,6 +258,10 @@ export default function SellScreen({ lang, onClose }: Props) {
     setTender('cash');
     setCashGiven('');
     setUpiPart('');
+    setCustId('');
+    setNewCust(false);
+    setNcName('');
+    setNcPhone('');
     setSaved(null);
     setPhase('cart');
   };
@@ -444,8 +467,8 @@ export default function SellScreen({ lang, onClose }: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {(['cash', 'upi', 'split'] as const).map((k) => (
+        <div className="grid grid-cols-2 gap-2">
+          {(['cash', 'upi', 'credit', 'split'] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -460,6 +483,84 @@ export default function SellScreen({ lang, onClose }: Props) {
             </button>
           ))}
         </div>
+
+        {tender === 'credit' && (
+          <div className="space-y-2">
+            {newCust ? (
+              <>
+                <input
+                  autoFocus
+                  value={ncName}
+                  onChange={(e) => setNcName(e.target.value)}
+                  placeholder={t(lang, 'cust.name')}
+                  className={`${inputCls} w-full`}
+                />
+                <input
+                  value={ncPhone}
+                  onChange={(e) => setNcPhone(e.target.value)}
+                  inputMode="tel"
+                  placeholder={t(lang, 'cust.phone')}
+                  className={`${inputCls} w-full`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCust(false);
+                    setNcName('');
+                    setNcPhone('');
+                  }}
+                  className="text-sm font-medium text-teal-700 dark:text-teal-300"
+                >
+                  {t(lang, 'sell.pickExisting')}
+                </button>
+              </>
+            ) : (
+              <>
+                <select
+                  value={custId}
+                  onChange={(e) => setCustId(e.target.value)}
+                  className={`${inputCls} w-full`}
+                >
+                  <option value="">{t(lang, 'sell.pickCustomer')}</option>
+                  {recv.rows.map((r) => (
+                    <option key={r.customer.id} value={r.customer.id}>
+                      {r.customer.name}
+                      {r.balance > 0 ? ` — ${money(r.balance)}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCust(true);
+                    setCustId('');
+                  }}
+                  className="text-sm font-medium text-teal-700 dark:text-teal-300"
+                >
+                  {t(lang, 'sell.newCustomer')}
+                </button>
+              </>
+            )}
+            {custRow && (
+              <p
+                className={`text-sm ${
+                  custRow.customer.creditLimit > 0 &&
+                  custRow.balance + total > custRow.customer.creditLimit
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                {t(lang, 'sell.balanceAfter').replace(
+                  '{amt}',
+                  money(custRow.balance + total),
+                )}
+                {custRow.customer.creditLimit > 0 &&
+                  custRow.balance + total > custRow.customer.creditLimit &&
+                  ` · ${t(lang, 'sell.overLimit')}`}
+              </p>
+            )}
+          </div>
+        )}
 
         {tender === 'cash' && (
           <div className="space-y-2">

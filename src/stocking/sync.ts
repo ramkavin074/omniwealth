@@ -7,8 +7,10 @@ import { API_BASE } from './config';
 import { db } from './db/dexie';
 import { cacheGst, cacheTax } from './storeSettings';
 import type {
+  Customer,
   Movement,
   Product,
+  Receipt,
   Sale,
   Supplier,
   SupplierPayment,
@@ -93,6 +95,14 @@ async function runSync(): Promise<SyncOutcome> {
     .upiReceipts.where('updatedAt')
     .above(cursor)
     .toArray();
+  const dirtyCustomers = await db()
+    .customers.where('updatedAt')
+    .above(cursor)
+    .toArray();
+  const dirtyReceipts = await db()
+    .receipts.where('updatedAt')
+    .above(cursor)
+    .toArray();
 
   let res: Response;
   try {
@@ -113,6 +123,8 @@ async function runSync(): Promise<SyncOutcome> {
         payments: dirtyPayments,
         sales: dirtySales,
         upiReceipts: dirtyUpiReceipts,
+        customers: dirtyCustomers,
+        receipts: dirtyReceipts,
       }),
     });
   } catch {
@@ -135,6 +147,8 @@ async function runSync(): Promise<SyncOutcome> {
     payments?: SupplierPayment[];
     sales?: Sale[];
     upiReceipts?: UpiReceipt[];
+    customers?: Customer[];
+    receipts?: Receipt[];
     store?: {
       gstin: string | null;
       gstEnabled: boolean;
@@ -165,6 +179,8 @@ async function runSync(): Promise<SyncOutcome> {
   const pulledPayments = data.payments ?? [];
   const pulledSales = data.sales ?? [];
   const pulledUpi = data.upiReceipts ?? [];
+  const pulledCustomers = data.customers ?? [];
+  const pulledReceipts = data.receipts ?? [];
 
   // Keep the offline GST + tax caches in step with the store's server setup.
   if (data.store) {
@@ -188,6 +204,8 @@ async function runSync(): Promise<SyncOutcome> {
       db().supplierPayments,
       db().sales,
       db().upiReceipts,
+      db().customers,
+      db().receipts,
     ],
     async () => {
       for (const p of data.products) {
@@ -236,7 +254,35 @@ async function runSync(): Promise<SyncOutcome> {
             taxTotal: s.taxTotal ?? 0,
             taxBreakup: Array.isArray(s.taxBreakup) ? s.taxBreakup : [],
             refundOf: s.refundOf ?? null,
+            customerId: s.customerId ?? null,
             deletedAt: s.deletedAt ?? null,
+          });
+        }
+      }
+      for (const c of pulledCustomers) {
+        const local = await db().customers.get(c.id);
+        if (!local || local.updatedAt < c.updatedAt) {
+          await db().customers.put({
+            ...c,
+            phone: c.phone ?? null,
+            place: c.place ?? null,
+            gstin: c.gstin ?? null,
+            creditLimit: c.creditLimit ?? 0,
+            openingBalance: c.openingBalance ?? 0,
+            note: c.note ?? null,
+            deletedAt: c.deletedAt ?? null,
+          });
+        }
+      }
+      for (const r of pulledReceipts) {
+        const local = await db().receipts.get(r.id);
+        if (!local || local.updatedAt < r.updatedAt) {
+          await db().receipts.put({
+            ...r,
+            tender: r.tender ?? 'cash',
+            againstBillId: r.againstBillId ?? null,
+            note: r.note ?? null,
+            deletedAt: r.deletedAt ?? null,
           });
         }
       }
@@ -270,14 +316,18 @@ async function runSync(): Promise<SyncOutcome> {
       dirtySuppliers.length +
       dirtyPayments.length +
       dirtySales.length +
-      dirtyUpiReceipts.length,
+      dirtyUpiReceipts.length +
+      dirtyCustomers.length +
+      dirtyReceipts.length,
     pulled:
       data.products.length +
       data.movements.length +
       pulledSuppliers.length +
       pulledPayments.length +
       pulledSales.length +
-      pulledUpi.length,
+      pulledUpi.length +
+      pulledCustomers.length +
+      pulledReceipts.length,
   };
 }
 

@@ -121,6 +121,43 @@ export interface SupplierPayment {
   deletedAt: number | null;
 }
 
+// ---- customers & credit (C1) ----
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string | null;
+  place: string | null; // area / village / landmark
+  gstin: string | null; // optional — for a B2B customer
+  creditLimit: number; // ₹; 0 = no limit set
+  openingBalance: number; // ₹ they already owed when added (+ve = owes the shop)
+  note: string | null;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+export type ReceiptTender = 'cash' | 'upi';
+
+/** Money received from a customer against their running balance. */
+export interface Receipt {
+  id: string;
+  customerId: string;
+  amount: number; // ₹ received (positive)
+  tender: ReceiptTender;
+  againstBillId: string | null; // optional — the credit bill this clears; null = on account
+  note: string | null;
+  receivedAt: number; // epoch ms, client clock
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+/** A customer's current balance and how it compares to their limit. */
+export interface CustomerBalance {
+  customerId: string;
+  balance: number; // ₹ owed to the shop (negative = shop owes them / advance)
+  overLimit: boolean; // creditLimit > 0 && balance > creditLimit
+}
+
 export type ProductDraft = Omit<
   Product,
   | 'id'
@@ -139,7 +176,7 @@ export type ProductDraft = Omit<
 
 // ---- billing (B1) ----
 
-export type TenderType = 'cash' | 'upi' | 'split';
+export type TenderType = 'cash' | 'upi' | 'split' | 'credit';
 
 export interface SaleItem {
   productId: string;
@@ -239,8 +276,9 @@ export interface Sale {
   total: number; // items − discount (+ taxTotal when tax-exclusive); negative on a refund
   refundOf: string | null; // the original sale's id when this row is a refund
   tenderType: TenderType;
-  cashAmount: number; // amount taken as cash (= total for a cash sale)
-  upiAmount: number; // amount taken as UPI
+  customerId: string | null; // set on a credit sale (and any sale attributed to a known customer)
+  cashAmount: number; // amount taken as cash (= total for a cash sale; 0 on credit)
+  upiAmount: number; // amount taken as UPI (0 on credit)
   note: string | null;
   updatedAt: number; // epoch ms — LWW for sync / void
   deletedAt: number | null; // set when the bill is voided

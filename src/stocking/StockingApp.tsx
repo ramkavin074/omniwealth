@@ -11,6 +11,7 @@ import AdjustScreen from './screens/AdjustScreen';
 import ProductListScreen from './screens/ProductListScreen';
 import SettingsSheet from './screens/SettingsSheet';
 import SuppliersScreen from './screens/SuppliersScreen';
+import CustomersScreen from './screens/CustomersScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import AuditScreen from './screens/AuditScreen';
 import AskAiSheet from './screens/AskAiSheet';
@@ -32,6 +33,7 @@ export default function StockingApp() {
   const [expOnly, setExpOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [suppliersOpen, setSuppliersOpen] = useState(false);
+  const [customersOpen, setCustomersOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
@@ -156,6 +158,11 @@ export default function StockingApp() {
               setScanDoc('payment');
             }}
           />
+        ) : customersOpen ? (
+          <CustomersScreen
+            lang={lang}
+            onClose={() => setCustomersOpen(false)}
+          />
         ) : reportsOpen ? (
           <ReportsScreen lang={lang} onClose={() => setReportsOpen(false)} />
         ) : auditOpen ? (
@@ -176,6 +183,7 @@ export default function StockingApp() {
                   setTab('products');
                 }}
                 onOpenSales={() => setSalesOpen(true)}
+                onOpenCustomers={() => setCustomersOpen(true)}
               />
             )}
             {tab === 'scan' && <ScanScreen lang={lang} />}
@@ -202,6 +210,7 @@ export default function StockingApp() {
         !upiOpen &&
         !scanDoc &&
         !suppliersOpen &&
+        !customersOpen &&
         !reportsOpen &&
         !auditOpen && (
           <button
@@ -221,6 +230,10 @@ export default function StockingApp() {
           onOpenSuppliers={() => {
             setSettingsOpen(false);
             setSuppliersOpen(true);
+          }}
+          onOpenCustomers={() => {
+            setSettingsOpen(false);
+            setCustomersOpen(true);
           }}
           onOpenReports={() => {
             setSettingsOpen(false);

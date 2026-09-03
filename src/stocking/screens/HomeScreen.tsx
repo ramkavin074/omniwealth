@@ -10,6 +10,7 @@ import {
 } from '../db/products';
 import { expiringSoon } from '../db/analytics';
 import { daySummary } from '../db/sales';
+import { allReceivables } from '../db/customers';
 import type { Product } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow } from '../hooks';
@@ -22,6 +23,7 @@ interface Props {
   onOpenLow: () => void;
   onOpenExpiring: () => void;
   onOpenSales: () => void;
+  onOpenCustomers: () => void;
 }
 
 function timeAgo(now: number, ms: number): string {
@@ -40,10 +42,12 @@ export default function HomeScreen({
   onOpenLow,
   onOpenExpiring,
   onOpenSales,
+  onOpenCustomers,
 }: Props) {
   const stats = useLiveQuery(() => catalogueStats(), []);
   const expiry = useLiveQuery(() => expiringSoon(), []);
   const today = useLiveQuery(() => daySummary(), []);
+  const recv = useLiveQuery(() => allReceivables(), []);
   const activity = useLiveQuery(
     () => recentMovements(40),
     [],
@@ -115,6 +119,24 @@ export default function HomeScreen({
           {t(lang, 'home.bills').replace('{n}', String(today?.count ?? 0))} ›
         </span>
       </button>
+
+      {recv && recv.total > 0 && (
+        <button
+          type="button"
+          onClick={onOpenCustomers}
+          className="w-full flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2.5 text-sm dark:bg-rose-950/40"
+        >
+          <span className="font-medium text-rose-700 dark:text-rose-300">
+            {t(lang, 'home.receivables').replace(
+              '{n}',
+              String(recv.rows.filter((r) => r.balance > 0).length),
+            )}
+          </span>
+          <span className="font-semibold tabular-nums text-rose-700 dark:text-rose-300">
+            {money(recv.total)} ›
+          </span>
+        </button>
+      )}
 
       {expiry && expiry.urgent > 0 && (
         <button

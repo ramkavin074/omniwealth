@@ -2,7 +2,9 @@ import { GoogleGenAI } from '@google/genai';
 import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import {
+  storeCustomers,
   storeProducts,
+  storeReceipts,
   storeSales,
   storeStockMovements,
   storeUpiReceipts,
@@ -81,8 +83,18 @@ export async function POST(request: Request) {
   const fyFrom = String(new Date(fyStart, 3, 1).getTime());
   const fyTo = String(new Date(fyStart + 1, 3, 1).getTime());
 
-  const [products, movements, sups, pays, fySales, storeRow, upiReceipts] =
-    await Promise.all([
+  const [
+    products,
+    movements,
+    sups,
+    pays,
+    fySales,
+    storeRow,
+    upiReceipts,
+    custs,
+    creditSales,
+    receipts,
+  ] = await Promise.all([
     db
       .select()
       .from(storeProducts)
@@ -135,6 +147,39 @@ export async function POST(request: Request) {
             and(
               eq(storeUpiReceipts.storeId, auth.storeId),
               isNull(storeUpiReceipts.deletedAt),
+            ),
+          )
+      : Promise.resolve([]),
+    manage
+      ? db
+          .select()
+          .from(storeCustomers)
+          .where(
+            and(
+              eq(storeCustomers.storeId, auth.storeId),
+              isNull(storeCustomers.deletedAt),
+            ),
+          )
+      : Promise.resolve([]),
+    manage
+      ? db
+          .select()
+          .from(storeSales)
+          .where(
+            and(
+              eq(storeSales.storeId, auth.storeId),
+              isNull(storeSales.deletedAt),
+            ),
+          )
+      : Promise.resolve([]),
+    manage
+      ? db
+          .select()
+          .from(storeReceipts)
+          .where(
+            and(
+              eq(storeReceipts.storeId, auth.storeId),
+              isNull(storeReceipts.deletedAt),
             ),
           )
       : Promise.resolve([]),
@@ -276,6 +321,39 @@ export async function POST(request: Request) {
     };
   }
 
+  // Customer receivables (owner/manager only). Balance = opening + Σ credit
+  // sale totals (refunds negative) − Σ receipts.
+  let receivables: Record<string, unknown> | undefined;
+  if (manage) {
+    const salesBy = new Map<string, number>();
+    for (const s of creditSales) {
+      if (!s.customerId) continue;
+      if (s.tenderType !== 'credit' && !s.refundOf) continue;
+      salesBy.set(s.customerId, (salesBy.get(s.customerId) ?? 0) + n(s.total));
+    }
+    const paidBy = new Map<string, number>();
+    for (const r of receipts) {
+      paidBy.set(r.customerId, (paidBy.get(r.customerId) ?? 0) + n(r.amount));
+    }
+    const rows = custs
+      .map((c) => {
+        const bal =
+          n(c.openingBalance) +
+          (salesBy.get(c.id) ?? 0) -
+          (paidBy.get(c.id) ?? 0);
+        const overLimit = n(c.creditLimit) > 0 && bal > n(c.creditLimit);
+        return { name: c.name, owed: Math.round(bal), overLimit };
+      })
+      .filter((r) => r.owed !== 0)
+      .sort((a, b) => b.owed - a.owed);
+    receivables = {
+      totalToCollect: rows.reduce((t, r) => t + Math.max(0, r.owed), 0),
+      customerCount: rows.filter((r) => r.owed > 0).length,
+      overLimitCount: rows.filter((r) => r.overLimit).length,
+      byCustomer: rows.slice(0, 20),
+    };
+  }
+
   const context = {
     products: catalogue.length,
     lowCount: catalogue.filter((c) => c.low).length,
@@ -283,7 +361,9 @@ export async function POST(request: Request) {
     salesLast30Days: Math.round(salesValue),
     topSellers,
     expiringSoon,
-    ...(manage ? { supplierBalances, taxSummary, upiReconcile } : {}),
+    ...(manage
+      ? { supplierBalances, taxSummary, upiReconcile, receivables }
+      : {}),
     catalogue,
   };
 

@@ -768,6 +768,7 @@ export const storeSales = store.table(
     taxBreakup: jsonb('tax_breakup').notNull().default('[]'), // TaxRow[]
     total: numeric('total').notNull(),
     tenderType: text('tender_type').notNull(),
+    customerId: uuid('customer_id'), // set on a credit sale
     cashAmount: numeric('cash_amount').notNull().default('0'),
     upiAmount: numeric('upi_amount').notNull().default('0'),
     refundOf: uuid('refund_of'), // original sale id when this row is a customer refund
@@ -814,6 +815,61 @@ export const storeUpiReceipts = store.table(
       t.storeId,
       t.syncedAt,
     ),
+  }),
+);
+
+// Credit / khata customers (C1). Balance is derived on the client from credit
+// sales + receipts, never stored here.
+export const storeCustomers = store.table(
+  'customers',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    phone: text('phone'),
+    place: text('place'),
+    gstin: text('gstin'),
+    creditLimit: numeric('credit_limit').notNull().default('0'),
+    openingBalance: numeric('opening_balance').notNull().default('0'),
+    note: text('note'),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_customers_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+  }),
+);
+
+// Money received from a customer against their running balance.
+export const storeReceipts = store.table(
+  'receipts',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    customerId: uuid('customer_id').notNull(),
+    amount: numeric('amount').notNull(),
+    tender: text('tender').notNull().default('cash'), // 'cash' | 'upi'
+    againstBillId: uuid('against_bill_id'),
+    note: text('note'),
+    receivedAt: numeric('received_at').notNull(), // epoch ms, client clock
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_receipts_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    customerIdx: index('store_receipts_customer_idx').on(t.customerId),
   }),
 );
 
