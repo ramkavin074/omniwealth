@@ -74,6 +74,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+      - name: Install deps
+        # scripts-only job — skip native postinstalls (sharp, etc.)
+        run: npm ci --no-audit --no-fund --ignore-scripts
       - name: Mirror blob store to S3
         env:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BACKUP_BLOB_TOKEN }}
@@ -82,8 +86,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
           S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
           S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
-        run: |
-          set -euo pipefail
-          # local install so `node scripts/backup-blob.mjs` can resolve it
-          npm install --no-save @vercel/blob@latest
-          node scripts/backup-blob.mjs
+        run: node scripts/backup-blob.mjs
