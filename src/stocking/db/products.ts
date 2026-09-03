@@ -214,6 +214,9 @@ interface MovementInput {
   supplierId?: string | null;
   /** Skip the below-zero guard (the caller has confirmed with the user). */
   allowNegative?: boolean;
+  /** Override the movement timestamp (epoch ms) — used when a bill is
+   *  back-dated so the ledger lands on the bill's date, not "now". */
+  createdAt?: number;
 }
 
 export interface MovementResult {
@@ -269,7 +272,10 @@ export async function applyMovement(
       supplierId: input.supplierId ?? null,
       userId: getUserId(),
       note: input.note?.trim() ? input.note.trim() : null,
-      createdAt: now,
+      createdAt:
+        typeof input.createdAt === 'number' && input.createdAt > 0
+          ? input.createdAt
+          : now,
     };
 
     await db().movements.add(movement);

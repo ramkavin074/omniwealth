@@ -5,11 +5,12 @@ import { t, unitLabel, type Lang } from '../i18n';
 import {
   computeSaleTax,
   saleLineTotal,
+  todayISO,
   type Sale,
   type TenderType,
   type Unit,
 } from '../types';
-import { getGstConfig, getReceiptConfig } from '../settings';
+import { canManage, getGstConfig, getReceiptConfig } from '../settings';
 import { printReceipt } from '../print';
 import { findByBarcode, searchProducts } from '../db/products';
 import {
@@ -68,6 +69,9 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [upiPart, setUpiPart] = useState('');
   const [cardPart, setCardPart] = useState('');
   const [salesman, setSalesman] = useState('');
+  const today = todayISO();
+  const [billDate, setBillDate] = useState(today);
+  const [canBackdate] = useState(canManage);
   const [custId, setCustId] = useState('');
   const [newCust, setNewCust] = useState(false);
   const [ncName, setNcName] = useState('');
@@ -257,6 +261,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         discount: disc,
         tenderType: tender,
         salesman: salesman.trim() || undefined,
+        ...(billDate !== today ? { billDate } : {}),
         ...(tender === 'credit' ? { customerId } : {}),
         ...(tender === 'split'
           ? {
@@ -327,6 +332,7 @@ export default function SellScreen({ lang, onClose }: Props) {
     setUpiPart('');
     setCardPart('');
     setSalesman('');
+    setBillDate(today);
     setCustId('');
     setNewCust(false);
     setNcName('');
@@ -790,6 +796,30 @@ export default function SellScreen({ lang, onClose }: Props) {
             ))}
           </datalist>
         </div>
+
+        {canBackdate && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600 dark:text-slate-300">
+              {t(lang, 'sell.billDate')}
+            </label>
+            <input
+              type="date"
+              value={billDate}
+              max={today}
+              onChange={(e) => setBillDate(e.target.value || today)}
+              className={`${inputCls} flex-1`}
+            />
+            {billDate !== today && (
+              <button
+                type="button"
+                onClick={() => setBillDate(today)}
+                className="shrink-0 rounded-lg bg-slate-200 px-3 text-sm font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-200"
+              >
+                {t(lang, 'sales.range.0')}
+              </button>
+            )}
+          </div>
+        )}
 
         <button
           type="button"

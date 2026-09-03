@@ -98,6 +98,20 @@ export interface CompleteSaleInput {
   customerId?: string;
   salesman?: string;
   note?: string;
+  /** 'YYYY-MM-DD' — record the bill against a past date (owner entering a
+   *  missed bill). Ignored if empty, today, or in the future. */
+  billDate?: string;
+}
+
+/** Resolve an optional back-date to an epoch-ms timestamp, pinned to noon so
+ *  it sits inside the local day. Falls back to `now` for empty / today /
+ *  future / unparseable input. */
+export function resolveBillTime(billDate: string | undefined, now: number): number {
+  if (!billDate) return now;
+  const todayISO = new Date(now).toLocaleDateString('en-CA'); // YYYY-MM-DD
+  if (billDate >= todayISO) return now;
+  const t = new Date(`${billDate}T12:00:00`).getTime();
+  return Number.isFinite(t) && t < now ? t : now;
 }
 
 /** Ring up a bill: writes the sale row + one stock-out movement per line,
@@ -106,6 +120,7 @@ export interface CompleteSaleInput {
  *  A sale with no items (quick amount entry) records revenue only. */
 export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
   const now = Date.now();
+  const billTime = resolveBillTime(input.billDate, now);
   const items: SaleItem[] = input.items
     .filter((l) => l.qty > 0)
     .map((l) => {
@@ -179,7 +194,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
   const sale: Sale = {
     id: uuid(),
     billNo: nextBillNo(),
-    createdAt: now,
+    createdAt: billTime,
     userId: getUserId(),
     items,
     discount,
@@ -213,6 +228,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
           delta: -i.qty,
           note: `bill ${sale.billNo}`,
           allowNegative: true,
+          createdAt: billTime,
         });
       }
       await db().sales.add(sale);
