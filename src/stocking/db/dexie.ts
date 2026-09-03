@@ -11,6 +11,7 @@ import type {
   Movement,
   Order,
   Product,
+  Purchase,
   Receipt,
   Sale,
   SaleItem,
@@ -42,6 +43,7 @@ export class StockingDB extends Dexie {
   receipts!: Table<Receipt, string>;
   orders!: Table<Order, string>;
   expenses!: Table<Expense, string>;
+  purchases!: Table<Purchase, string>;
 
   constructor() {
     super('stocking');
@@ -348,6 +350,26 @@ export class StockingDB extends Dexie {
           .toCollection()
           .modify((h: HeldSale) => fixItems(h.items));
       });
+    // v17: purchase / inward invoices with GST input credit (C5).
+    this.version(17).stores({
+      products: 'id, barcode, name, updatedAt, deletedAt',
+      movements: 'id, productId, createdAt',
+      barcodeCache: 'barcode, fetchedAt',
+      syncState: 'id',
+      suppliers: 'id, name, updatedAt, deletedAt',
+      supplierPayments: 'id, supplierId, updatedAt',
+      sales: 'id, billNo, createdAt, updatedAt, refundOf, customerId',
+      heldSales: 'id, createdAt',
+      taxNotes: 'key, updatedAt',
+      upiReceipts: 'id, receivedAt, matchedSaleId, updatedAt, deletedAt',
+      customers: 'id, name, phone, updatedAt, deletedAt',
+      receipts: 'id, customerId, receivedAt, updatedAt, deletedAt',
+      orders:
+        'id, orderNo, customerId, status, dueDate, createdAt, updatedAt, deletedAt',
+      expenses: 'id, category, tender, spentAt, updatedAt, deletedAt',
+      purchases:
+        'id, supplierId, invoiceDate, receivedAt, updatedAt, deletedAt',
+    });
   }
 }
 

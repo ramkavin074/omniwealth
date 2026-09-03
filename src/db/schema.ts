@@ -938,6 +938,41 @@ export const storeExpenses = store.table(
   }),
 );
 
+// Supplier / inward invoices. Lines add stock (movements, ex-GST cost); the
+// GST portion is the shop's input tax credit. Balance owed = total − paid,
+// with the paid part mirrored into supplier_payments.
+export const storePurchases = store.table(
+  'purchases',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    invoiceNo: text('invoice_no').notNull().default(''),
+    supplierId: uuid('supplier_id').notNull(),
+    supplierName: text('supplier_name').notNull(), // snapshot
+    invoiceDate: text('invoice_date'), // 'YYYY-MM-DD'
+    lines: jsonb('lines').notNull().default('[]'), // PurchaseLine[]
+    subtotal: numeric('subtotal').notNull().default('0'),
+    gstInput: numeric('gst_input').notNull().default('0'),
+    total: numeric('total').notNull().default('0'),
+    paid: numeric('paid').notNull().default('0'),
+    note: text('note'),
+    receivedAt: numeric('received_at').notNull(),
+    createdAt: numeric('created_at').notNull(),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_purchases_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+    supplierIdx: index('store_purchases_supplier_idx').on(t.supplierId),
+  }),
+);
+
 export const storeProducts = store.table(
   'products',
   {

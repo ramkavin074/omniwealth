@@ -6,6 +6,7 @@ import {
   storeExpenses,
   storeOrders,
   storeProducts,
+  storePurchases,
   storeReceipts,
   storeSales,
   storeStockMovements,
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
     receipts,
     openOrders,
     expenseRows,
+    purchaseRows,
   ] = await Promise.all([
     db
       .select()
@@ -204,6 +206,17 @@ export async function POST(request: Request) {
             ),
           )
       : Promise.resolve([]),
+    manage
+      ? db
+          .select()
+          .from(storePurchases)
+          .where(
+            and(
+              eq(storePurchases.storeId, auth.storeId),
+              isNull(storePurchases.deletedAt),
+            ),
+          )
+      : Promise.resolve([]),
   ]);
 
   const catalogue = products.map((p) => {
@@ -250,13 +263,16 @@ export async function POST(request: Request) {
 
   const supplierBalances = manage
     ? sups.map((s) => {
-        const purchased = movements
+        const goods = movements
           .filter((m) => m.supplierId === s.id && n(m.delta) > 0 && m.unitCost)
           .reduce((t, m) => t + n(m.delta) * n(m.unitCost), 0);
+        const gstOnPurchases = purchaseRows
+          .filter((p) => p.supplierId === s.id)
+          .reduce((t, p) => t + n(p.gstInput), 0);
         const paid = pays
           .filter((p) => p.supplierId === s.id && p.deletedAt == null)
           .reduce((t, p) => t + n(p.amount), 0);
-        return { name: s.name, owed: Math.round(purchased - paid) };
+        return { name: s.name, owed: Math.round(goods + gstOnPurchases - paid) };
       })
     : [];
 
@@ -279,14 +295,31 @@ export async function POST(request: Request) {
       : 0;
     // s.87A new-regime: nil up to ₹12L taxable.
     const estIncomeTax = presumptive && profit > 1200000 ? 'above ₹12L — consult accountant' : 0;
+    const fyFromMs = Number(fyFrom);
+    const fyToMs = Number(fyTo);
+    const gstInputToDate = storeRow?.gstEnabled
+      ? Math.round(
+          purchaseRows
+            .filter((p) => {
+              const ra = n(p.receivedAt);
+              return ra >= fyFromMs && ra < fyToMs;
+            })
+            .reduce((t, p) => t + n(p.gstInput), 0),
+        )
+      : 0;
     taxSummary = {
       financialYear: `${fyStart}-${String(fyStart + 1).slice(2)}`,
       turnoverToDate: Math.round(turnover),
       cash: Math.round(cash),
-      digital: Math.round(digital),
+      digital: Math.round(digital + fySales.reduce((t, s) => t + n(s.cardAmount), 0)),
       gstRegistered: !!storeRow?.gstEnabled,
       gstScheme: storeRow?.gstScheme ?? 'regular',
       gstCollectedToDate: Math.round(gstCollected),
+      gstInputCreditToDate: gstInputToDate,
+      netGstPayableToDate:
+        (storeRow?.gstScheme ?? 'regular') === 'regular'
+          ? Math.max(0, Math.round(gstCollected) - gstInputToDate)
+          : 0,
       presumptiveScheme: presumptive,
       presumptiveProfitToDate: profit,
       estimatedIncomeTax: estIncomeTax,

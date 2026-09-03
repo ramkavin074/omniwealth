@@ -137,7 +137,9 @@ export interface TaxReport {
   gstEnabled: boolean;
   gstScheme: GstScheme;
   gstByRate: TaxRow[];
-  gstCollected: number;
+  gstCollected: number; // output tax on sales
+  gstInputCredit: number; // input tax on purchases (ITC) this FY
+  netGstPayable: number; // collected − input (regular scheme only; ≥0 view)
   gstMonths: GstMonth[];
   compositionQuarters: CompositionQuarter[];
   presumptive: boolean;
@@ -166,11 +168,19 @@ export async function taxReport(
   cfg: { gstEnabled: boolean; gstScheme: GstScheme; presumptive: boolean },
 ): Promise<TaxReport> {
   const { from, to, label } = fyBounds(fyStartYear);
-  const [rows, paid] = await Promise.all([
+  const [rows, paid, purchaseRows] = await Promise.all([
     db().sales.where('createdAt').between(from, to, true, false).toArray(),
     paidKeys(),
+    db().purchases.where('receivedAt').between(from, to, true, false).toArray(),
   ]);
   const live = rows.filter((s) => s.deletedAt === null);
+  const gstInputCredit = cfg.gstEnabled
+    ? r2(
+        purchaseRows
+          .filter((p) => p.deletedAt === null)
+          .reduce((s, p) => s + (p.gstInput ?? 0), 0),
+      )
+    : 0;
 
   let turnover = 0;
   let cash = 0;
@@ -279,6 +289,11 @@ export async function taxReport(
     gstScheme: cfg.gstScheme,
     gstByRate,
     gstCollected: r2(gstCollected),
+    gstInputCredit,
+    netGstPayable:
+      cfg.gstEnabled && cfg.gstScheme === 'regular'
+        ? r2(Math.max(0, gstCollected - gstInputCredit))
+        : 0,
     gstMonths,
     compositionQuarters,
     presumptive: cfg.presumptive,

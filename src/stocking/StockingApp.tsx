@@ -14,6 +14,7 @@ import SuppliersScreen from './screens/SuppliersScreen';
 import CustomersScreen from './screens/CustomersScreen';
 import OrdersScreen from './screens/OrdersScreen';
 import ExpensesScreen from './screens/ExpensesScreen';
+import PurchasesScreen from './screens/PurchasesScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import AuditScreen from './screens/AuditScreen';
 import AskAiSheet from './screens/AskAiSheet';
@@ -38,6 +39,7 @@ export default function StockingApp() {
   const [customersOpen, setCustomersOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [expensesOpen, setExpensesOpen] = useState(false);
+  const [purchasesOpen, setPurchasesOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
@@ -171,6 +173,11 @@ export default function StockingApp() {
           <OrdersScreen lang={lang} onClose={() => setOrdersOpen(false)} />
         ) : expensesOpen ? (
           <ExpensesScreen lang={lang} onClose={() => setExpensesOpen(false)} />
+        ) : purchasesOpen ? (
+          <PurchasesScreen
+            lang={lang}
+            onClose={() => setPurchasesOpen(false)}
+          />
         ) : reportsOpen ? (
           <ReportsScreen lang={lang} onClose={() => setReportsOpen(false)} />
         ) : auditOpen ? (
@@ -222,6 +229,7 @@ export default function StockingApp() {
         !customersOpen &&
         !ordersOpen &&
         !expensesOpen &&
+        !purchasesOpen &&
         !reportsOpen &&
         !auditOpen && (
           <button
@@ -253,6 +261,10 @@ export default function StockingApp() {
           onOpenExpenses={() => {
             setSettingsOpen(false);
             setExpensesOpen(true);
+          }}
+          onOpenPurchases={() => {
+            setSettingsOpen(false);
+            setPurchasesOpen(true);
           }}
           onOpenReports={() => {
             setSettingsOpen(false);

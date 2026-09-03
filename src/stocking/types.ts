@@ -379,6 +379,56 @@ export interface UpiReceipt {
   deletedAt: number | null;
 }
 
+// ---- purchases (C5) ----
+
+export interface PurchaseLine {
+  productId: string; // the stock item this line restocks
+  name: string; // snapshot at purchase time
+  qty: number;
+  unit: Unit;
+  costPrice: number; // ₹ per unit, EX-GST (the taxable value)
+  gstRate: number; // GST % on this line (0 when not registered)
+}
+
+/** A supplier's purchase / inward invoice. Its lines add stock (a `scan-in`
+ *  movement each, ex-GST unitCost) and its GST portion is the shop's input
+ *  tax credit for the period. Balance owed = total − paid; the paid part is
+ *  written as a supplier payment so the payables ledger stays in one place. */
+export interface Purchase {
+  id: string;
+  invoiceNo: string; // the SUPPLIER's invoice number (free text)
+  supplierId: string;
+  supplierName: string; // snapshot
+  invoiceDate: string; // 'YYYY-MM-DD'
+  lines: PurchaseLine[];
+  subtotal: number; // Σ qty × costPrice (ex-GST)
+  gstInput: number; // Σ CGST + SGST on the invoice (claimable ITC)
+  total: number; // subtotal + gstInput (invoice value)
+  paid: number; // ₹ paid at entry (0 = fully on credit)
+  note: string | null;
+  receivedAt: number; // epoch ms — when the goods came in
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
+export function purchaseLineValue(l: Pick<PurchaseLine, 'qty' | 'costPrice'>): number {
+  return Math.round(l.qty * l.costPrice * 100) / 100;
+}
+
+/** CGST + SGST on one line (intra-state; supplier invoices are tax-exclusive). */
+export function purchaseLineTax(
+  l: Pick<PurchaseLine, 'qty' | 'costPrice' | 'gstRate'>,
+  gstEnabled: boolean,
+): number {
+  if (!gstEnabled || !l.gstRate) return 0;
+  return Math.round(l.qty * l.costPrice * (l.gstRate / 100) * 100) / 100;
+}
+
+export function purchaseBalance(p: Pick<Purchase, 'total' | 'paid'>): number {
+  return Math.round((p.total - p.paid) * 100) / 100;
+}
+
 // ---- expenses (C3) ----
 
 export type ExpenseTender = 'cash' | 'upi';

@@ -115,6 +115,9 @@ const en: Dict = {
   'tax.title': 'Tax',
   'tax.turnover': 'Turnover (this FY)',
   'tax.gst': 'GST collected',
+  'tax.gstOut': 'Output GST (sales)',
+  'tax.gstIn': 'Input credit (purchases)',
+  'tax.gstNet': 'Net GST payable',
   'tax.taxable': 'taxable',
   'tax.payBy': 'pay by',
   'tax.noGst': 'No GST sales this year yet',
@@ -197,6 +200,7 @@ const en: Dict = {
   'import.kind.customers': 'Customers',
   'import.kind.orders': 'Orders',
   'import.kind.expenses': 'Expenses',
+  'import.kind.purchases': 'Purchases',
   'import.help.products':
     'Upload a CSV with columns: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. Only "name" is required. In Excel use File → Save As → CSV.',
   'import.help.customers':
@@ -205,6 +209,8 @@ const en: Dict = {
     'Bring pending advance orders over. Columns: order_no, customer, phone, item, qty, rate, total, advance, due, status, note. Rows with the same order_no become one order. New customers are created automatically.',
   'import.help.expenses':
     'Bring running-cost vouchers over. Columns: date, category, amount, mode, payee, note, gst_input. Only "amount" is required — category and mode text is matched to the nearest type.',
+  'import.help.purchases':
+    'Bring your purchase register over. Columns: invoice_no, date, supplier, item, qty, rate, gst, paid, note. Rows with the same invoice_no become one purchase; each line restocks and its GST becomes input credit. Suppliers are created automatically.',
   'import.help':
     'Upload a CSV with columns: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. Only "name" is required. In Excel use File → Save As → CSV.',
   'import.downloadTemplate': 'Download template CSV',
@@ -212,6 +218,7 @@ const en: Dict = {
   'import.noNameColumn': 'The file needs a "name" column.',
   'import.noCustomerColumn': 'The file needs a "customer" column.',
   'import.noAmountColumn': 'The file needs an "amount" column.',
+  'import.noPurchaseColumns': 'The file needs supplier, item and rate columns.',
   'import.noRows': 'No rows found in the file.',
   'import.rowsFound': '{n} rows ready to import',
   'import.ignoredColumns': 'Ignored columns',
@@ -466,6 +473,30 @@ const en: Dict = {
   'exp.cat.tax': 'Tax paid',
   'exp.cat.rent_equipment': 'Hired machine',
   'exp.cat.other': 'Other',
+
+  'pur.title': 'Purchases',
+  'pur.new': '＋ New purchase',
+  'pur.empty': 'No purchases yet',
+  'pur.thisMonth': 'This month',
+  'pur.supplier': 'Supplier',
+  'pur.pickSupplier': 'Pick supplier',
+  'pur.newSupplier': '＋ New supplier',
+  'pur.invoiceNo': 'Invoice no',
+  'pur.lines': 'Items',
+  'pur.item': 'Item name',
+  'pur.qty': 'Qty',
+  'pur.cost': 'Cost / unit',
+  'pur.addLine': '＋ Add line',
+  'pur.subtotal': 'Subtotal',
+  'pur.gstInput': 'GST input (ITC)',
+  'pur.total': 'Total',
+  'pur.paid': 'Paid now',
+  'pur.payFull': 'Full',
+  'pur.balance': 'Balance',
+  'pur.itcNote': 'Input tax credit on this invoice: {amt}',
+  'pur.itcMonth': 'Input tax credit {amt}',
+  'pur.unpaidMonth': 'Unpaid {amt}',
+  'pur.deleteConfirm': 'Remove this purchase and pull its stock back?',
 };
 
 // confirm with shop owners — every Tamil string below is a first draft.
@@ -575,6 +606,9 @@ const ta: Dict = {
   'tax.title': 'வரி',
   'tax.turnover': 'விற்றுமுதல் (இந்த நிதியாண்டு)',
   'tax.gst': 'வசூலித்த GST',
+  'tax.gstOut': 'வெளியீட்டு GST (விற்பனை)',
+  'tax.gstIn': 'உள்ளீட்டு வரவு (கொள்முதல்)',
+  'tax.gstNet': 'செலுத்த வேண்டிய நிகர GST',
   'tax.taxable': 'வரிக்குட்பட்டது',
   'tax.payBy': 'செலுத்த வேண்டிய தேதி',
   'tax.noGst': 'இந்த ஆண்டு இன்னும் GST விற்பனை இல்லை',
@@ -657,6 +691,7 @@ const ta: Dict = {
   'import.kind.customers': 'வாடிக்கையாளர்கள்',
   'import.kind.orders': 'ஆர்டர்கள்',
   'import.kind.expenses': 'செலவுகள்',
+  'import.kind.purchases': 'கொள்முதல்',
   'import.help.products':
     'CSV கோப்பை பதிவேற்றவும்: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. "name" மட்டும் அவசியம். Excel-ல் File → Save As → CSV.',
   'import.help.customers':
@@ -665,6 +700,8 @@ const ta: Dict = {
     'நிலுவையில் உள்ள முன்பதிவு ஆர்டர்களை கொண்டு வாருங்கள். நெடுவரிசைகள்: order_no, customer, phone, item, qty, rate, total, advance, due, status, note. ஒரே order_no உள்ள வரிகள் ஒரு ஆர்டராகும். புதிய வாடிக்கையாளர்கள் தானாக உருவாக்கப்படுவர்.',
   'import.help.expenses':
     'செலவு பதிவுகளை கொண்டு வாருங்கள். நெடுவரிசைகள்: date, category, amount, mode, payee, note, gst_input. "amount" மட்டும் அவசியம் — category, mode உரை அருகிலுள்ள வகையுடன் பொருத்தப்படும்.',
+  'import.help.purchases':
+    'கொள்முதல் பதிவேட்டை கொண்டு வாருங்கள். நெடுவரிசைகள்: invoice_no, date, supplier, item, qty, rate, gst, paid, note. ஒரே invoice_no உள்ள வரிகள் ஒரு கொள்முதலாகும்; ஒவ்வொரு வரியும் இருப்பை சேர்க்கும், அதன் GST உள்ளீட்டு வரவாகும். சப்ளையர்கள் தானாக உருவாக்கப்படுவர்.',
   'import.help':
     'CSV கோப்பை பதிவேற்றவும்: barcode, name, mrp, price, unit, opening_stock, low_stock_threshold, expiry, gst, hsn. "name" மட்டும் அவசியம். Excel-ல் File → Save As → CSV.',
   'import.downloadTemplate': 'மாதிரி CSV பதிவிறக்கு',
@@ -672,6 +709,7 @@ const ta: Dict = {
   'import.noNameColumn': 'கோப்பில் "name" நெடுவரிசை தேவை.',
   'import.noCustomerColumn': 'கோப்பில் "customer" நெடுவரிசை தேவை.',
   'import.noAmountColumn': 'கோப்பில் "amount" நெடுவரிசை தேவை.',
+  'import.noPurchaseColumns': 'supplier, item, rate நெடுவரிசைகள் தேவை.',
   'import.noRows': 'கோப்பில் வரிகள் எதுவும் இல்லை.',
   'import.rowsFound': '{n} வரிகள் இறக்குமதிக்கு தயார்',
   'import.ignoredColumns': 'புறக்கணிக்கப்பட்ட நெடுவரிசைகள்',
@@ -927,6 +965,30 @@ const ta: Dict = {
   'exp.cat.tax': 'வரி செலுத்தியது',
   'exp.cat.rent_equipment': 'வாடகை இயந்திரம்',
   'exp.cat.other': 'மற்றவை',
+
+  'pur.title': 'கொள்முதல்',
+  'pur.new': '＋ புதிய கொள்முதல்',
+  'pur.empty': 'இதுவரை கொள்முதல் இல்லை',
+  'pur.thisMonth': 'இந்த மாதம்',
+  'pur.supplier': 'சப்ளையர்',
+  'pur.pickSupplier': 'சப்ளையரைத் தேர்வு',
+  'pur.newSupplier': '＋ புதிய சப்ளையர்',
+  'pur.invoiceNo': 'விலைப்பட்டியல் எண்',
+  'pur.lines': 'பொருட்கள்',
+  'pur.item': 'பொருள் பெயர்',
+  'pur.qty': 'அளவு',
+  'pur.cost': 'விலை / அலகு',
+  'pur.addLine': '＋ வரி சேர்',
+  'pur.subtotal': 'கூட்டுத்தொகை',
+  'pur.gstInput': 'GST உள்ளீடு (ITC)',
+  'pur.total': 'மொத்தம்',
+  'pur.paid': 'இப்போது செலுத்தியது',
+  'pur.payFull': 'முழுவதும்',
+  'pur.balance': 'பாக்கி',
+  'pur.itcNote': 'இந்த பட்டியலின் உள்ளீட்டு வரி வரவு: {amt}',
+  'pur.itcMonth': 'உள்ளீட்டு வரி வரவு {amt}',
+  'pur.unpaidMonth': 'செலுத்தாதது {amt}',
+  'pur.deleteConfirm': 'இந்த கொள்முதலை நீக்கி இருப்பை திரும்பப் பெறவா?',
 };
 
 const DICTS: Record<Lang, Dict> = { en, ta };

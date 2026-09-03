@@ -5,6 +5,7 @@ import {
   storeExpenses,
   storeOrders,
   storeProducts,
+  storePurchases,
   storeReceipts,
   storeSales,
   storeStockMovements,
@@ -173,6 +174,24 @@ interface InExpense {
   deletedAt: number | null;
 }
 
+interface InPurchase {
+  id: string;
+  invoiceNo: string;
+  supplierId: string;
+  supplierName: string;
+  invoiceDate: string | null;
+  lines: unknown;
+  subtotal: number;
+  gstInput: number;
+  total: number;
+  paid: number;
+  note: string | null;
+  receivedAt: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 const num = (v: unknown, d = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
@@ -199,6 +218,7 @@ export async function POST(request: Request) {
   let inReceipts: InReceipt[] = [];
   let inOrders: InOrder[] = [];
   let inExpenses: InExpense[] = [];
+  let inPurchases: InPurchase[] = [];
   try {
     const body = await request.json();
     since = num(body?.since, 0);
@@ -212,6 +232,7 @@ export async function POST(request: Request) {
     inReceipts = Array.isArray(body?.receipts) ? body.receipts : [];
     inOrders = Array.isArray(body?.orders) ? body.orders : [];
     inExpenses = Array.isArray(body?.expenses) ? body.expenses : [];
+    inPurchases = Array.isArray(body?.purchases) ? body.purchases : [];
   } catch {
     return json({ error: 'Invalid body' }, 400);
   }
@@ -226,16 +247,19 @@ export async function POST(request: Request) {
     inCustomers.length +
     inReceipts.length +
     inOrders.length +
-    inExpenses.length;
+    inExpenses.length +
+    inPurchases.length;
   if (total > MAX_ROWS) {
     return json({ error: `Send at most ${MAX_ROWS} rows per sync` }, 413);
   }
 
-  // Suppliers, the payables ledger and UPI reconciliation are owner/manager only.
+  // Suppliers, the payables ledger, purchases and UPI reconciliation are
+  // owner/manager only.
   if (!fullEdit) {
     inSuppliers = [];
     inPayments = [];
     inUpiReceipts = [];
+    inPurchases = [];
   }
 
   const now = Date.now();
@@ -639,6 +663,58 @@ export async function POST(request: Request) {
     }
   }
 
+  // ---- push: purchases (upsert, LWW) — owner/manager only ----
+  if (inPurchases.length) {
+    const rows = inPurchases
+      .filter(
+        (p) =>
+          p && typeof p.id === 'string' && typeof p.supplierId === 'string',
+      )
+      .map((p) => ({
+        id: p.id,
+        storeId,
+        invoiceNo: String(p.invoiceNo ?? ''),
+        supplierId: p.supplierId,
+        supplierName: String(p.supplierName ?? ''),
+        invoiceDate: p.invoiceDate ?? null,
+        lines: Array.isArray(p.lines) ? p.lines : [],
+        subtotal: String(num(p.subtotal)),
+        gstInput: String(num(p.gstInput)),
+        total: String(num(p.total)),
+        paid: String(num(p.paid)),
+        note: p.note ?? null,
+        receivedAt: String(num(p.receivedAt)),
+        createdAt: String(num(p.createdAt)),
+        updatedAt: String(num(p.updatedAt)),
+        deletedAt: p.deletedAt == null ? null : String(num(p.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storePurchases)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storePurchases.id,
+          set: {
+            invoiceNo: sql`excluded.invoice_no`,
+            supplierName: sql`excluded.supplier_name`,
+            invoiceDate: sql`excluded.invoice_date`,
+            lines: sql`excluded.lines`,
+            subtotal: sql`excluded.subtotal`,
+            gstInput: sql`excluded.gst_input`,
+            total: sql`excluded.total`,
+            paid: sql`excluded.paid`,
+            note: sql`excluded.note`,
+            receivedAt: sql`excluded.received_at`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storePurchases.storeId} = ${storeId} AND ${storePurchases.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
   // ---- push: UPI receipts (upsert, LWW) ----
   if (inUpiReceipts.length) {
     const rows = inUpiReceipts
@@ -696,6 +772,7 @@ export async function POST(request: Request) {
     pulledReceipts,
     pulledOrders,
     pulledExpenses,
+    pulledPurchases,
     storeRow,
   ] = await Promise.all([
       db
@@ -792,6 +869,16 @@ export async function POST(request: Request) {
           and(
             eq(storeExpenses.storeId, storeId),
             gt(storeExpenses.syncedAt, sinceDate),
+          ),
+        )
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storePurchases)
+        .where(
+          and(
+            eq(storePurchases.storeId, storeId),
+            gt(storePurchases.syncedAt, sinceDate),
           ),
         )
         .limit(MAX_ROWS),
@@ -953,6 +1040,23 @@ export async function POST(request: Request) {
         createdAt: num(e.createdAt),
         updatedAt: num(e.updatedAt),
         deletedAt: e.deletedAt == null ? null : num(e.deletedAt),
+      })),
+      purchases: pulledPurchases.map((p) => ({
+        id: p.id,
+        invoiceNo: p.invoiceNo,
+        supplierId: p.supplierId,
+        supplierName: p.supplierName,
+        invoiceDate: p.invoiceDate ?? null,
+        lines: Array.isArray(p.lines) ? p.lines : [],
+        subtotal: num(p.subtotal),
+        gstInput: num(p.gstInput),
+        total: num(p.total),
+        paid: num(p.paid),
+        note: p.note,
+        receivedAt: num(p.receivedAt),
+        createdAt: num(p.createdAt),
+        updatedAt: num(p.updatedAt),
+        deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),
     },
     200,

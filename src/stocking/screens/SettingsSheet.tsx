@@ -28,6 +28,7 @@ interface Props {
   onOpenCustomers: () => void;
   onOpenOrders: () => void;
   onOpenExpenses: () => void;
+  onOpenPurchases: () => void;
   onOpenReports: () => void;
   onOpenAudit: () => void;
   onOpenSales: () => void;
@@ -47,6 +48,7 @@ export default function SettingsSheet({
   onOpenCustomers,
   onOpenOrders,
   onOpenExpenses,
+  onOpenPurchases,
   onOpenReports,
   onOpenAudit,
   onOpenSales,
@@ -260,6 +262,15 @@ export default function SettingsSheet({
               className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
             >
               {t(lang, 'sup.manage')}
+            </button>
+          )}
+          {manage && (
+            <button
+              type="button"
+              onClick={onOpenPurchases}
+              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'pur.title')}
             </button>
           )}
           {manage && (

@@ -88,26 +88,37 @@ export async function paymentsFor(
 
 export interface SupplierLedgerRow {
   supplier: Supplier;
-  purchased: number; // Σ delta × unitCost tagged to this supplier (net of returns)
+  purchased: number; // goods value (Σ delta × unitCost) + Σ purchase GST input
   paid: number;
   balance: number; // purchased − paid (positive = owed)
 }
 
 export async function supplierLedger(): Promise<SupplierLedgerRow[]> {
-  const [sups, movements, payments] = await Promise.all([
+  const [sups, movements, payments, purchases] = await Promise.all([
     listSuppliers(),
     db().movements.toArray(),
     db().supplierPayments.toArray(),
+    db().purchases.toArray(),
   ]);
 
   // delta × unitCost, both signs: a stock-in adds to what's owed, a return
-  // (negative delta, same supplier + cost) subtracts from it.
+  // (negative delta, same supplier + cost) subtracts from it. This is the
+  // ex-GST goods value (purchases write movements at the taxable rate).
   const purchasedBy = new Map<string, number>();
   for (const m of movements) {
     if (!m.supplierId || !m.unitCost || m.delta === 0) continue;
     purchasedBy.set(
       m.supplierId,
       (purchasedBy.get(m.supplierId) ?? 0) + m.delta * m.unitCost,
+    );
+  }
+  // A purchase invoice's GST sits on top of the goods value the movement
+  // already added — the supplier is owed the tax-inclusive total.
+  for (const p of purchases) {
+    if (p.deletedAt !== null || !p.gstInput) continue;
+    purchasedBy.set(
+      p.supplierId,
+      (purchasedBy.get(p.supplierId) ?? 0) + p.gstInput,
     );
   }
   const paidBy = new Map<string, number>();

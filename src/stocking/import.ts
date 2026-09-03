@@ -77,6 +77,12 @@ export const EXPENSES_CSV_TEMPLATE =
   '05/09/2026,electricity,2340,cash,TNEB,Aug bill,0\n' +
   '2026-09-06,refreshments,180,cash,,tea for staff,0\n';
 
+export const PURCHASES_CSV_TEMPLATE =
+  'invoice_no,date,supplier,item,qty,rate,gst,paid,note\n' +
+  'INV-88,2026-09-02,Sri Paper Mart,Art card 300gsm,20,45,12,0,\n' +
+  'INV-88,2026-09-02,Sri Paper Mart,Gold foil roll,3,220,18,0,\n' +
+  'INV-91,05/09/2026,Lenin Mobiles,Screen guard,50,12,18,600,part paid\n';
+
 /** Normalise a date cell to 'YYYY-MM-DD', or null if unrecognised.
  *  Accepts ISO, or day-first dd/mm/yyyy and dd-mm-yyyy (the Indian norm). */
 function toISODate(v: string | undefined): string | null {
@@ -526,4 +532,112 @@ export function parseExpensesCsv(text: string): ExpenseParseResult {
     });
   }
   return { rows, unknownColumns, missingAmountColumn: false };
+}
+
+// ---- purchases (supplier / inward invoices from an existing billing app) ----
+
+export interface PurchaseImportRow {
+  invoiceNo: string | null;
+  invoiceDate: string | null;
+  supplierName: string;
+  item: string;
+  qty: number;
+  rate: number; // ex-GST cost per unit
+  gstRate: number;
+  paid: number; // ₹ paid against this invoice (taken from the first row of a group)
+  note: string | null;
+}
+
+type PurchaseCol =
+  | 'invoiceNo'
+  | 'date'
+  | 'supplier'
+  | 'item'
+  | 'qty'
+  | 'rate'
+  | 'gst'
+  | 'paid'
+  | 'note';
+
+const PURCHASE_ALIASES: Record<PurchaseCol, string[]> = {
+  invoiceNo: ['invoice_no', 'invoice no', 'invoice', 'bill no', 'bill_no', 'inv no', 'inv', 'ref'],
+  date: ['date', 'invoice date', 'bill date', 'purchase date'],
+  supplier: ['supplier', 'party', 'vendor', 'supplier name', 'party name', 'from'],
+  item: ['item', 'description', 'particulars', 'product', 'goods', 'name'],
+  qty: ['qty', 'quantity', 'nos', 'pcs', 'count'],
+  rate: ['rate', 'price', 'cost', 'unit rate', 'unit price', 'purchase rate'],
+  gst: ['gst', 'gst%', 'gst rate', 'tax', 'tax%', 'gst_rate'],
+  paid: ['paid', 'amount paid', 'advance', 'payment'],
+  note: ['note', 'notes', 'remarks', 'remark', 'narration'],
+};
+
+const GST_SLABS = [0, 5, 12, 18, 28];
+const nearestSlab = (n: number): number => {
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return GST_SLABS.reduce((best, s) =>
+    Math.abs(s - n) < Math.abs(best - n) ? s : best,
+  );
+};
+
+export interface PurchaseParseResult {
+  rows: PurchaseImportRow[];
+  unknownColumns: string[];
+  missingColumns: boolean; // needs at least supplier + item + qty + rate
+}
+
+export function parsePurchasesCsv(text: string): PurchaseParseResult {
+  const lines = text
+    .replace(/^﻿/, '')
+    .split(/\r\n|\n|\r/)
+    .filter((l) => l.trim() !== '');
+  if (lines.length === 0) {
+    return { rows: [], unknownColumns: [], missingColumns: true };
+  }
+
+  const headers = splitLine(lines[0]).map((h) => h.toLowerCase());
+  const colIndex: Partial<Record<PurchaseCol, number>> = {};
+  const known = new Set<string>();
+  (Object.keys(PURCHASE_ALIASES) as PurchaseCol[]).forEach((key) => {
+    const idx = headers.findIndex((h) => PURCHASE_ALIASES[key].includes(h));
+    if (idx !== -1) {
+      colIndex[key] = idx;
+      known.add(headers[idx]);
+    }
+  });
+
+  const unknownColumns = headers.filter((h) => h && !known.has(h));
+  const missingColumns =
+    colIndex.supplier === undefined ||
+    colIndex.item === undefined ||
+    colIndex.rate === undefined;
+  if (missingColumns) {
+    return { rows: [], unknownColumns, missingColumns };
+  }
+
+  const get = (cells: string[], key: PurchaseCol): string | undefined => {
+    const i = colIndex[key];
+    return i === undefined ? undefined : cells[i];
+  };
+
+  const rows: PurchaseImportRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = splitLine(lines[i]);
+    const supplierName = (get(cells, 'supplier') ?? '').trim();
+    const item = (get(cells, 'item') ?? '').trim();
+    const qty = num(get(cells, 'qty')) || 1;
+    const rate = num(get(cells, 'rate'));
+    if (!supplierName || !item || rate <= 0) continue;
+    rows.push({
+      invoiceNo: (get(cells, 'invoiceNo') ?? '').trim() || null,
+      invoiceDate: toISODate(get(cells, 'date')),
+      supplierName,
+      item,
+      qty,
+      rate,
+      gstRate: nearestSlab(num(get(cells, 'gst'))),
+      paid: num(get(cells, 'paid')),
+      note: (get(cells, 'note') ?? '').trim() || null,
+    });
+  }
+  return { rows, unknownColumns, missingColumns: false };
 }

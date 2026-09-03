@@ -129,6 +129,22 @@ export default function TaxScreen({ lang, onClose }: Props) {
                   ))}
                 </div>
               )}
+              <div className="space-y-0.5 rounded-xl bg-slate-100 p-3 text-sm dark:bg-slate-800">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                  <span>{t(lang, 'tax.gstOut')}</span>
+                  <span className="tabular-nums">{money(rep.gstCollected)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                  <span>{t(lang, 'tax.gstIn')}</span>
+                  <span className="tabular-nums">
+                    −{money(rep.gstInputCredit)}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold text-slate-900 dark:text-slate-50">
+                  <span>{t(lang, 'tax.gstNet')}</span>
+                  <span className="tabular-nums">{money(rep.netGstPayable)}</span>
+                </div>
+              </div>
               <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                 {rep.gstMonths.map((m) => (
                   <li key={m.key} className="flex items-center gap-3 py-2 text-sm">
@@ -265,9 +281,11 @@ function summaryText(lang: Lang, r: TaxReport): string {
     `${t(lang, 'tax.turnover')}: ${money2(r.turnover)} (cash ${money2(r.cash)}, digital ${money2(r.digital)})`,
   ];
   if (r.gstEnabled && r.gstScheme === 'regular') {
-    L.push(`GST collected: ${money2(r.gstCollected)}`);
+    L.push(`GST collected (output): ${money2(r.gstCollected)}`);
     for (const g of r.gstByRate)
       L.push(`  ${g.rate}%  taxable ${money2(g.taxable)}  CGST ${money2(g.cgst)}  SGST ${money2(g.sgst)}`);
+    L.push(`GST input credit (ITC): ${money2(r.gstInputCredit)}`);
+    L.push(`Net GST payable: ${money2(r.netGstPayable)}`);
   }
   if (r.gstEnabled && r.gstScheme === 'composition') {
     for (const q of r.compositionQuarters)
