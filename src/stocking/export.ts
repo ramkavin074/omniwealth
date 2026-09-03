@@ -163,6 +163,45 @@ export function buildAccountantCsv(x: AccountantExport): string {
   for (const r of x.payments) L.push(row([r.date, r.supplier, money(r.amount)]));
   L.push('');
 
+  L.push('# ITEM-WISE SALES PROFIT');
+  L.push(row(['Code', 'Item', 'MRP', 'Qty sold', 'Sale value', 'Cost value', 'Profit', 'Profit %']));
+  for (const r of x.itemProfit)
+    L.push(
+      row([
+        r.code,
+        r.name,
+        money(r.mrp),
+        r.qty,
+        money(r.saleValue),
+        money(r.costValue),
+        money(r.profit),
+        r.pct,
+      ]),
+    );
+  const ipT = x.itemProfit.reduce(
+    (a, r) => ({
+      s: a.s + r.saleValue,
+      c: a.c + r.costValue,
+      p: a.p + r.profit,
+    }),
+    { s: 0, c: 0, p: 0 },
+  );
+  L.push(row(['', 'TOTAL', '', '', money(ipT.s), money(ipT.c), money(ipT.p), '']));
+  L.push('');
+
+  L.push('# PROFIT & LOSS');
+  const p = x.summary.pnl;
+  L.push(row(['Gross sales', money(p.grossSales)]));
+  L.push(row(['Less: returns', money(p.returns)]));
+  L.push(row(['Net sales', money(p.netSales)]));
+  L.push(row(['Less: cost of goods sold', money(p.cogs)]));
+  L.push(row(['Gross profit', money(p.grossProfit)]));
+  L.push(row(['Less: expenses', money(p.expenseTotal)]));
+  for (const c of x.summary.expenseByCategory)
+    L.push(row([`  ${c.category}`, money(c.amount)]));
+  L.push(row(['Net profit', money(p.netProfit)]));
+  L.push('');
+
   return L.join('\n') + '\n';
 }
 

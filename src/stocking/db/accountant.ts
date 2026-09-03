@@ -5,7 +5,7 @@
 import { db } from './dexie';
 import { getGstConfig } from '../settings';
 import { fyBounds, fyStartYearOf } from './tax';
-import type { Purchase, Sale } from '../types';
+import { saleLineTotal, type Purchase, type Sale } from '../types';
 
 const q = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 const isoDay = (ms: number) => {
@@ -112,6 +112,28 @@ export interface AcctPaymentRow {
   amount: number;
 }
 
+/** One row of the item-wise sales profit report (mirrors VelSoft's). */
+export interface AcctItemProfitRow {
+  code: string;
+  name: string;
+  mrp: number;
+  qty: number; // net units sold (refunds subtract)
+  saleValue: number; // Σ line net (post per-line discount, pre bill discount/tax)
+  costValue: number; // qty × current cost price
+  profit: number; // saleValue − costValue
+  pct: number; // profit / costValue × 100
+}
+
+export interface AcctPnl {
+  grossSales: number; // Σ sale-bill totals (excl refunds)
+  returns: number; // Σ refund totals (positive)
+  netSales: number;
+  cogs: number; // Σ sold units × current cost
+  grossProfit: number; // netSales − cogs
+  expenseTotal: number;
+  netProfit: number; // grossProfit − expenses
+}
+
 export interface AcctSummary {
   turnover: number; // net of refunds
   cash: number;
@@ -129,6 +151,7 @@ export interface AcctSummary {
   grossProfitApprox: number; // turnover − COGS(sold qty × costPrice) − expenses; label as approx
   receivablesNow: number; // as of today, not range end
   payablesNow: number;
+  pnl: AcctPnl;
 }
 
 export interface AccountantExport {
@@ -140,6 +163,7 @@ export interface AccountantExport {
   expenses: AcctExpenseRow[];
   receipts: AcctReceiptRow[];
   payments: AcctPaymentRow[];
+  itemProfit: AcctItemProfitRow[];
   summary: AcctSummary;
 }
 
@@ -185,8 +209,8 @@ export async function buildAccountantExport(
     customers.find((c) => c.id === id)?.name ?? 'Customer';
   const supName = (id: string) =>
     suppliers.find((s) => s.id === id)?.name ?? 'Supplier';
-  const costOf = (id: string) =>
-    products.find((p) => p.id === id)?.costPrice ?? 0;
+  const prodOf = (id: string) => products.find((p) => p.id === id);
+  const costOf = (id: string) => prodOf(id)?.costPrice ?? 0;
 
   // ---- sales register ----
   const liveSales = sales.filter((s) => s.deletedAt === null);
@@ -301,11 +325,52 @@ export async function buildAccountantExport(
       liveExp.reduce((t, e) => t + (e.gstInput ?? 0), 0),
   );
 
-  // COGS: units sold in range × current cost (approx — cost can drift).
+  // COGS + item-wise profit: units sold in range × current cost (approx —
+  // cost can drift). Refund lines carry a negative qty, so they net down.
   let cogs = 0;
+  const byItem = new Map<
+    string,
+    { name: string; code: string; mrp: number; qty: number; sale: number; cost: number }
+  >();
   for (const s of liveSales) {
-    for (const i of s.items) cogs += i.qty * costOf(i.productId);
+    for (const i of s.items) {
+      const c = costOf(i.productId);
+      cogs += i.qty * c;
+      const p = prodOf(i.productId);
+      const cur =
+        byItem.get(i.productId) ??
+        {
+          name: i.name,
+          code: p?.barcode ?? '',
+          mrp: p?.mrp ?? 0,
+          qty: 0,
+          sale: 0,
+          cost: 0,
+        };
+      cur.qty += i.qty;
+      // saleLineTotal handles the sign for refund (negative-qty) lines.
+      cur.sale += saleLineTotal(i);
+      cur.cost += i.qty * c;
+      byItem.set(i.productId, cur);
+    }
   }
+  const itemProfit: AcctItemProfitRow[] = [...byItem.values()]
+    .filter((v) => v.qty !== 0 || v.sale !== 0)
+    .map((v) => {
+      const profit = q(v.sale - v.cost);
+      return {
+        code: v.code,
+        name: v.name,
+        mrp: q(v.mrp),
+        qty: q(v.qty),
+        saleValue: q(v.sale),
+        costValue: q(v.cost),
+        profit,
+        pct: v.cost > 0 ? Math.round((profit / v.cost) * 1000) / 10 : 0,
+      };
+    })
+    .sort((a, b) => b.profit - a.profit);
+
   const expenseTotal = q(liveExp.reduce((t, e) => t + e.amount, 0));
   const expenseByCategory = [
     ...liveExp
@@ -357,6 +422,12 @@ export async function buildAccountantExport(
     [...owedBySup.values()].reduce((t, v) => t + Math.max(0, v), 0),
   );
 
+  const grossSales = q(
+    liveSales.filter((s) => !s.refundOf).reduce((t, s) => t + s.total, 0),
+  );
+  const netSales = q(grossSales - refunds);
+  const grossProfit = q(netSales - cogs);
+
   return {
     generatedAt: Date.now(),
     range,
@@ -366,6 +437,7 @@ export async function buildAccountantExport(
     expenses: expRows,
     receipts: rcptRows,
     payments: payRows,
+    itemProfit,
     summary: {
       turnover: q(turnover),
       cash: q(cash),
@@ -385,6 +457,15 @@ export async function buildAccountantExport(
       grossProfitApprox: q(turnover - cogs - expenseTotal),
       receivablesNow,
       payablesNow,
+      pnl: {
+        grossSales,
+        returns: q(refunds),
+        netSales,
+        cogs: q(cogs),
+        grossProfit,
+        expenseTotal,
+        netProfit: q(grossProfit - expenseTotal),
+      },
     },
   };
 }

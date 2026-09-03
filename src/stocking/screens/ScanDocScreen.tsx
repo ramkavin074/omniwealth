@@ -2,16 +2,19 @@
 
 import { useRef, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
-import { UNITS, type Unit } from '../types';
-import { receiveStock, type ReceiveLine } from '../db/products';
+import { GST_RATES, UNITS, type Unit } from '../types';
 import {
   createSupplier,
   listSuppliers,
   recordPayment,
 } from '../db/suppliers';
+import { recordPurchase } from '../db/purchases';
+import { getGstConfig } from '../settings';
 import { parseInvoice, parsePayment, type InvoiceLine } from '../parseDoc';
 import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
+
+const isoToday = () => new Date().toISOString().slice(0, 10);
 
 interface Props {
   lang: Lang;
@@ -22,17 +25,25 @@ interface Props {
 const field =
   'h-10 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 text-slate-900 dark:text-slate-50';
 
+interface InvLine extends InvoiceLine {
+  gstRate: number;
+}
+
 type State =
   | { s: 'idle' }
   | { s: 'reading' }
   | { s: 'error'; msg: string }
-  | { s: 'invoice'; lines: InvoiceLine[] }
+  | { s: 'invoice'; lines: InvLine[] }
   | { s: 'payment'; name: string; amount: string; date?: string }
   | { s: 'done'; msg: string };
 
 export default function ScanDocScreen({ lang, kind, onClose }: Props) {
+  const gst = getGstConfig();
   const [state, setState] = useState<State>({ s: 'idle' });
   const [supplierId, setSupplierId] = useState('');
+  const [invNo, setInvNo] = useState('');
+  const [invDate, setInvDate] = useState(isoToday());
+  const [paid, setPaid] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const suppliers = useLiveQuery(() => listSuppliers(), [], []);
 
@@ -40,12 +51,16 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
     setState({ s: 'reading' });
     try {
       if (kind === 'invoice') {
-        const lines = (await parseInvoice(file)).filter((l) => l.name);
-        if (lines.length === 0) {
+        const parsed = (await parseInvoice(file)).filter((l) => l.name);
+        if (parsed.length === 0) {
           setState({ s: 'error', msg: t(lang, 'doc.nothing') });
           return;
         }
-        setState({ s: 'invoice', lines });
+        const dflt = gst.enabled ? gst.defaultRate : 0;
+        setState({
+          s: 'invoice',
+          lines: parsed.map((l) => ({ ...l, gstRate: dflt })),
+        });
       } else {
         const p = await parsePayment(file);
         const match = suppliers.find((x) =>
@@ -64,7 +79,7 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
     }
   };
 
-  const setLine = (i: number, patch: Partial<InvoiceLine>) =>
+  const setLine = (i: number, patch: Partial<InvLine>) =>
     setState((st) =>
       st.s === 'invoice'
         ? {
@@ -77,24 +92,39 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
   const commitInvoice = async () => {
     if (state.s !== 'invoice') return;
     let sup = supplierId;
-    if (supplierId === '__new') {
+    let supName = suppliers.find((x) => x.id === supplierId)?.name ?? '';
+    if (!sup || sup === '__new') {
       const n = window.prompt(t(lang, 'sup.name'))?.trim();
       if (!n) return;
-      sup = (await createSupplier({ name: n })).id;
+      const created = await createSupplier({ name: n });
+      sup = created.id;
+      supName = created.name;
     }
-    const rows: ReceiveLine[] = state.lines.map((l) => ({
-      name: l.name,
-      barcode: l.barcode,
-      qty: Number(l.qty) || 0,
-      unit: l.unit || 'piece',
-      rate: Number(l.rate) || 0,
-    }));
-    const r = await receiveStock(rows, sup && sup !== '__new' ? sup : null);
+    const lines = state.lines
+      .filter((l) => l.name.trim() && (Number(l.qty) || 0) > 0)
+      .map((l) => ({
+        name: l.name,
+        barcode: l.barcode ?? null,
+        qty: Number(l.qty) || 0,
+        unit: l.unit || 'piece',
+        costPrice: Number(l.rate) || 0,
+        gstRate: gst.enabled ? Number(l.gstRate) || 0 : 0,
+      }));
+    if (lines.length === 0) return;
+    const p = await recordPurchase({
+      invoiceNo: invNo.trim() || undefined,
+      supplierId: sup,
+      supplierName: supName,
+      invoiceDate: invDate || undefined,
+      paid: Number(paid) || 0,
+      note: 'scanned bill',
+      lines,
+    });
     setState({
       s: 'done',
-      msg: t(lang, 'doc.received')
-        .replace('{n}', String(r.received))
-        .replace('{c}', String(r.created)),
+      msg: t(lang, 'doc.purchased')
+        .replace('{n}', String(p.lines.length))
+        .replace('{amt}', '₹' + Math.round(p.total).toLocaleString('en-IN')),
     });
   };
 
@@ -176,42 +206,6 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {t(lang, 'doc.review')}
           </p>
-          {state.lines.map((l, i) => (
-            <div key={i} className="space-y-1 border-b border-slate-200 pb-2 dark:border-slate-800">
-              <input
-                value={l.name}
-                onChange={(e) => setLine(i, { name: e.target.value })}
-                className={`${field} w-full`}
-              />
-              <div className="grid grid-cols-3 gap-1">
-                <input
-                  inputMode="decimal"
-                  value={String(l.qty)}
-                  onChange={(e) => setLine(i, { qty: Number(e.target.value) })}
-                  className={field}
-                  aria-label="qty"
-                />
-                <input
-                  inputMode="decimal"
-                  value={String(l.rate)}
-                  onChange={(e) => setLine(i, { rate: Number(e.target.value) })}
-                  className={field}
-                  aria-label="rate"
-                />
-                <select
-                  value={l.unit}
-                  onChange={(e) => setLine(i, { unit: e.target.value })}
-                  className={field}
-                >
-                  {UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {unitLabel(lang, u as Unit)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ))}
 
           <select
             value={supplierId}
@@ -226,13 +220,96 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
             ))}
             <option value="__new">＋ {t(lang, 'sup.add')}</option>
           </select>
+          <div className="grid grid-cols-2 gap-1">
+            <input
+              value={invNo}
+              onChange={(e) => setInvNo(e.target.value)}
+              placeholder={t(lang, 'pur.invoiceNo')}
+              className={field}
+            />
+            <input
+              type="date"
+              value={invDate}
+              max={isoToday()}
+              onChange={(e) => setInvDate(e.target.value)}
+              className={field}
+            />
+          </div>
+
+          {state.lines.map((l, i) => (
+            <div key={i} className="space-y-1 border-b border-slate-200 pb-2 dark:border-slate-800">
+              <input
+                value={l.name}
+                onChange={(e) => setLine(i, { name: e.target.value })}
+                className={`${field} w-full`}
+              />
+              <div className={`grid gap-1 ${gst.enabled ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                <input
+                  inputMode="decimal"
+                  value={String(l.qty)}
+                  onChange={(e) => setLine(i, { qty: Number(e.target.value) })}
+                  className={field}
+                  aria-label="qty"
+                  placeholder={t(lang, 'pur.qty')}
+                />
+                <input
+                  inputMode="decimal"
+                  value={String(l.rate)}
+                  onChange={(e) => setLine(i, { rate: Number(e.target.value) })}
+                  className={field}
+                  aria-label="rate"
+                  placeholder={t(lang, 'pur.cost')}
+                />
+                <select
+                  value={l.unit}
+                  onChange={(e) => setLine(i, { unit: e.target.value })}
+                  className={field}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {unitLabel(lang, u as Unit)}
+                    </option>
+                  ))}
+                </select>
+                {gst.enabled && (
+                  <select
+                    value={String(l.gstRate)}
+                    onChange={(e) =>
+                      setLine(i, { gstRate: Number(e.target.value) })
+                    }
+                    className={field}
+                    aria-label="gst"
+                  >
+                    {GST_RATES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}%
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600 dark:text-slate-300">
+              {t(lang, 'pur.paid')}
+            </label>
+            <input
+              inputMode="decimal"
+              value={paid}
+              onChange={(e) => setPaid(e.target.value)}
+              placeholder="0"
+              className={`${field} flex-1`}
+            />
+          </div>
 
           <button
             type="button"
             onClick={commitInvoice}
             className="h-12 w-full rounded-xl bg-teal-700 font-bold text-white"
           >
-            {t(lang, 'doc.addToStock').replace(
+            {t(lang, 'doc.bookPurchase').replace(
               '{n}',
               String(state.lines.length),
             )}
