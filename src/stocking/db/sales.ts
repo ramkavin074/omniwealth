@@ -335,11 +335,22 @@ export async function refundSale(
   const discShare =
     origSubtotal > 0 ? q2((orig.discount * grossBack) / origSubtotal) : 0;
 
-  const { taxTotal, addToTotal, breakup } = computeSaleTax(
-    items.map((i) => ({ lineTotal: saleLineTotal(i), gstRate: i.gstRate })),
-    -discShare,
+  // computeSaleTax bails on a non-positive subtotal, so run it on the positive
+  // magnitudes and flip the sign — a refund reverses the same GST the original
+  // bill charged (blank breakup here would over-state output GST on GSTR-3B).
+  const posTax = computeSaleTax(
+    items.map((i) => ({ lineTotal: -saleLineTotal(i), gstRate: i.gstRate })),
+    discShare,
     getGstConfig(),
   );
+  const taxTotal = q2(-posTax.taxTotal);
+  const addToTotal = posTax.addToTotal;
+  const breakup = posTax.breakup.map((r) => ({
+    rate: r.rate,
+    taxable: q2(-r.taxable),
+    cgst: q2(-r.cgst),
+    sgst: q2(-r.sgst),
+  }));
   const preRound = q2(-grossBack + discShare - addToTotal); // negative
   const roundoff = getReceiptConfig().roundBills
     ? q2(Math.round(preRound) - preRound)
