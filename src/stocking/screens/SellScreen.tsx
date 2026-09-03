@@ -17,6 +17,7 @@ import {
   getReceiptConfig,
 } from '../settings';
 import { printReceiptSmart } from '../printer';
+import { shareReceiptImage } from '../receiptImage';
 import { upiPayLine } from '../upiLink';
 import { findByBarcode, getProduct, searchProducts } from '../db/products';
 import {
@@ -757,12 +758,19 @@ export default function SellScreen({ lang, onClose }: Props) {
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={() =>
-              window.open(
-                `https://wa.me/?text=${encodeURIComponent(receiptText(saved))}`,
-                '_blank',
-              )
-            }
+            onClick={async () => {
+              const r = await shareReceiptImage(
+                saved,
+                { lang, gst, receipt: getReceiptConfig() },
+                upiTail(saved),
+              );
+              if (r === 'unsupported' || r === 'error') {
+                window.open(
+                  `https://wa.me/?text=${encodeURIComponent(receiptText(saved))}`,
+                  '_blank',
+                );
+              }
+            }}
             className="h-12 rounded-xl bg-emerald-600 font-semibold text-white"
           >
             {t(lang, 'sell.whatsapp')}
