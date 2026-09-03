@@ -9,7 +9,8 @@ import {
   type TenderType,
   type Unit,
 } from '../types';
-import { getGstConfig } from '../settings';
+import { getGstConfig, getReceiptConfig } from '../settings';
+import { printReceipt } from '../print';
 import { findByBarcode, searchProducts } from '../db/products';
 import {
   completeSale,
@@ -435,6 +436,20 @@ export default function SellScreen({ lang, onClose }: Props) {
             </p>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            printReceipt(saved, {
+              lang,
+              gst,
+              receipt: getReceiptConfig(),
+            })
+          }
+          className="h-12 w-full rounded-xl bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+        >
+          {t(lang, 'sell.print')}
+        </button>
 
         <div className="grid grid-cols-2 gap-2">
           <button

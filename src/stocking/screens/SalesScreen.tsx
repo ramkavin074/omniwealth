@@ -5,7 +5,8 @@ import { t, unitLabel, type Lang } from '../i18n';
 import { saleLineTotal, type Sale, type TenderType } from '../types';
 import { daySummary, refundSale, refundsFor, voidSale } from '../db/sales';
 import { useLiveQuery } from '../hooks';
-import { canManage } from '../settings';
+import { canManage, getGstConfig, getReceiptConfig } from '../settings';
+import { printReceipt } from '../print';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
@@ -142,6 +143,20 @@ export default function SalesScreen({ lang, onClose }: Props) {
             </p>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            printReceipt(open, {
+              lang,
+              gst: getGstConfig(),
+              receipt: getReceiptConfig(),
+            })
+          }
+          className="h-11 w-full rounded-xl bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+        >
+          {t(lang, 'sell.print')}
+        </button>
 
         {manage && !open.deletedAt && !isRefund && (
           <div className="flex items-center gap-4">

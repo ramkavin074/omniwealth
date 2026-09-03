@@ -45,6 +45,48 @@ export function setDefaults(next: Defaults): void {
   }
 }
 
+// ---- receipt / printing (C7) — per device, not synced ----
+
+export interface ReceiptConfig {
+  shopName: string;
+  line2: string; // address / phone line under the name
+  footer: string; // "Thank you, visit again"
+  paper: 58 | 80; // mm — thermal roll width
+}
+
+const RECEIPT_KEY = 'stocking.receipt';
+const RECEIPT_FALLBACK: ReceiptConfig = {
+  shopName: '',
+  line2: '',
+  footer: 'Thank you! Visit again.',
+  paper: 58,
+};
+
+export function getReceiptConfig(): ReceiptConfig {
+  try {
+    const raw = localStorage.getItem(RECEIPT_KEY);
+    if (!raw) return RECEIPT_FALLBACK;
+    const p = JSON.parse(raw) as Partial<ReceiptConfig>;
+    return {
+      shopName: typeof p.shopName === 'string' ? p.shopName : '',
+      line2: typeof p.line2 === 'string' ? p.line2 : '',
+      footer:
+        typeof p.footer === 'string' ? p.footer : RECEIPT_FALLBACK.footer,
+      paper: p.paper === 80 ? 80 : 58,
+    };
+  } catch {
+    return RECEIPT_FALLBACK;
+  }
+}
+
+export function setReceiptConfig(next: ReceiptConfig): void {
+  try {
+    localStorage.setItem(RECEIPT_KEY, JSON.stringify(next));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 /** True in the standalone APK build (LoginGate cached a bearer token). The
  *  in-OmniWealth host seeds stocking.auth too, but without a token. */
 export function hasStandaloneAuth(): boolean {

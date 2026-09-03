@@ -15,6 +15,7 @@ import CustomersScreen from './screens/CustomersScreen';
 import OrdersScreen from './screens/OrdersScreen';
 import ExpensesScreen from './screens/ExpensesScreen';
 import PurchasesScreen from './screens/PurchasesScreen';
+import AccountantScreen from './screens/AccountantScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import AuditScreen from './screens/AuditScreen';
 import AskAiSheet from './screens/AskAiSheet';
@@ -40,6 +41,7 @@ export default function StockingApp() {
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [expensesOpen, setExpensesOpen] = useState(false);
   const [purchasesOpen, setPurchasesOpen] = useState(false);
+  const [acctOpen, setAcctOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
@@ -178,6 +180,8 @@ export default function StockingApp() {
             lang={lang}
             onClose={() => setPurchasesOpen(false)}
           />
+        ) : acctOpen ? (
+          <AccountantScreen lang={lang} onClose={() => setAcctOpen(false)} />
         ) : reportsOpen ? (
           <ReportsScreen lang={lang} onClose={() => setReportsOpen(false)} />
         ) : auditOpen ? (
@@ -230,6 +234,7 @@ export default function StockingApp() {
         !ordersOpen &&
         !expensesOpen &&
         !purchasesOpen &&
+        !acctOpen &&
         !reportsOpen &&
         !auditOpen && (
           <button
@@ -265,6 +270,10 @@ export default function StockingApp() {
           onOpenPurchases={() => {
             setSettingsOpen(false);
             setPurchasesOpen(true);
+          }}
+          onOpenAccountant={() => {
+            setSettingsOpen(false);
+            setAcctOpen(true);
           }}
           onOpenReports={() => {
             setSettingsOpen(false);

@@ -10,9 +10,12 @@ import {
   canManage,
   clearAllData,
   getDefaults,
+  getReceiptConfig,
   hasStandaloneAuth,
   setDefaults,
+  setReceiptConfig,
   signOut,
+  type ReceiptConfig,
 } from '../settings';
 import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
 import {
@@ -29,6 +32,7 @@ interface Props {
   onOpenOrders: () => void;
   onOpenExpenses: () => void;
   onOpenPurchases: () => void;
+  onOpenAccountant: () => void;
   onOpenReports: () => void;
   onOpenAudit: () => void;
   onOpenSales: () => void;
@@ -49,6 +53,7 @@ export default function SettingsSheet({
   onOpenOrders,
   onOpenExpenses,
   onOpenPurchases,
+  onOpenAccountant,
   onOpenReports,
   onOpenAudit,
   onOpenSales,
@@ -59,7 +64,16 @@ export default function SettingsSheet({
   const [manage] = useState(canManage);
   const [unit, setUnit] = useState<Unit>(initial.unit);
   const [threshold, setThreshold] = useState(String(initial.lowStockThreshold));
+  const [rc, setRc] = useState<ReceiptConfig>(getReceiptConfig);
+  const [rcSaved, setRcSaved] = useState(false);
   const standalone = hasStandaloneAuth();
+
+  const patchRc = (p: Partial<ReceiptConfig>) => {
+    const next = { ...rc, ...p };
+    setRc(next);
+    setReceiptConfig(next);
+    setRcSaved(true);
+  };
 
   const now = useNow();
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
@@ -282,6 +296,15 @@ export default function SettingsSheet({
               {t(lang, 'rep.title')}
             </button>
           )}
+          {manage && (
+            <button
+              type="button"
+              onClick={onOpenAccountant}
+              className="h-11 w-full rounded-lg bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'acct.title')}
+            </button>
+          )}
           <button
             type="button"
             onClick={onOpenAudit}
@@ -423,6 +446,51 @@ export default function SettingsSheet({
                   ? t(lang, 'settings.alertErr')
                   : t(lang, 'settings.alertSave')}
             </button>
+          </section>
+        )}
+
+        {manage && (
+          <section className="space-y-2">
+            <p className={heading}>{t(lang, 'receipt.title')}</p>
+            <input
+              value={rc.shopName}
+              onChange={(e) => patchRc({ shopName: e.target.value })}
+              placeholder={t(lang, 'receipt.shopName')}
+              className={`${field} w-full`}
+            />
+            <input
+              value={rc.line2}
+              onChange={(e) => patchRc({ line2: e.target.value })}
+              placeholder={t(lang, 'receipt.line2')}
+              className={`${field} w-full`}
+            />
+            <input
+              value={rc.footer}
+              onChange={(e) => patchRc({ footer: e.target.value })}
+              placeholder={t(lang, 'receipt.footer')}
+              className={`${field} w-full`}
+            />
+            <div className="flex gap-2">
+              {([58, 80] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => patchRc({ paper: p })}
+                  className={`h-9 flex-1 rounded-lg text-sm font-semibold ${
+                    rc.paper === p
+                      ? 'bg-teal-700 text-white'
+                      : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                  }`}
+                >
+                  {p}mm
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {rcSaved
+                ? t(lang, 'settings.alertSaved')
+                : t(lang, 'receipt.hint')}
+            </p>
           </section>
         )}
 

@@ -88,7 +88,14 @@ const en: Dict = {
   'sell.done': 'Sale complete',
   'sell.paid': 'Paid',
   'sell.whatsapp': 'WhatsApp receipt',
+  'sell.print': 'Print receipt',
   'sell.new': 'New sale',
+
+  'receipt.title': 'Receipt / printer',
+  'receipt.shopName': 'Shop name',
+  'receipt.line2': 'Address / phone line',
+  'receipt.footer': 'Footer line',
+  'receipt.hint': 'Shown on the printed bill. Print opens your device print dialog — pick a connected or Wi-Fi thermal printer.',
 
   'sales.title': 'Sales',
   'sales.total': 'Sales',
@@ -497,6 +504,30 @@ const en: Dict = {
   'pur.itcMonth': 'Input tax credit {amt}',
   'pur.unpaidMonth': 'Unpaid {amt}',
   'pur.deleteConfirm': 'Remove this purchase and pull its stock back?',
+
+  'acct.title': 'Accountant export',
+  'acct.help':
+    'Download every sale, purchase, expense, receipt and payment for a period, plus a GST summary — hand it to your CA / accountant.',
+  'acct.building': 'Building the report…',
+  'acct.range.this-month': 'This month',
+  'acct.range.last-month': 'Last month',
+  'acct.range.this-quarter': 'This quarter',
+  'acct.range.this-fy': 'This FY',
+  'acct.range.custom': 'Custom',
+  'acct.turnover': 'Turnover',
+  'acct.purchases': 'Purchases',
+  'acct.expenses': 'Expenses',
+  'acct.gstOut': 'GST output',
+  'acct.gstIn': 'GST input credit',
+  'acct.gstNet': 'Net GST payable',
+  'acct.grossProfit': 'Gross profit (approx)',
+  'acct.receivables': 'Receivables (today)',
+  'acct.payables': 'Payables (today)',
+  'acct.counts': '{s} sales · {p} purchases · {e} expenses',
+  'acct.csv': 'Download CSV',
+  'acct.tally': 'Tally XML',
+  'acct.disclaimer':
+    'Figures from your own entries only — not audited, not a tax filing. Gross profit uses current cost prices (approximate). Give this to your accountant to verify and file.',
 };
 
 // confirm with shop owners — every Tamil string below is a first draft.
@@ -576,7 +607,14 @@ const ta: Dict = {
   'sell.salesmanOpt': 'பெயர் (விருப்பம்)',
   'sell.complete': 'விற்பனையை முடி',
   'sell.failed': 'விற்பனையை சேமிக்க முடியவில்லை',
+  'sell.print': 'ரசீது அச்சிடு',
   'sell.done': 'விற்பனை முடிந்தது',
+
+  'receipt.title': 'ரசீது / அச்சுப்பொறி',
+  'receipt.shopName': 'கடை பெயர்',
+  'receipt.line2': 'முகவரி / தொலைபேசி வரி',
+  'receipt.footer': 'கீழ் வரி',
+  'receipt.hint': 'அச்சிடப்பட்ட பில்லில் காட்டப்படும். அச்சிடு உங்கள் சாதனத்தின் அச்சு உரையாடலைத் திறக்கும் — இணைக்கப்பட்ட அல்லது வைஃபை தெர்மல் அச்சுப்பொறியைத் தேர்வு செய்யவும்.',
   'sell.paid': 'செலுத்தியது',
   'sell.whatsapp': 'வாட்ஸ்அப் ரசீது',
   'sell.new': 'புதிய விற்பனை',
@@ -989,6 +1027,30 @@ const ta: Dict = {
   'pur.itcMonth': 'உள்ளீட்டு வரி வரவு {amt}',
   'pur.unpaidMonth': 'செலுத்தாதது {amt}',
   'pur.deleteConfirm': 'இந்த கொள்முதலை நீக்கி இருப்பை திரும்பப் பெறவா?',
+
+  'acct.title': 'கணக்காளர் ஏற்றுமதி',
+  'acct.help':
+    'ஒரு காலகட்டத்தின் அனைத்து விற்பனை, கொள்முதல், செலவு, வரவு, செலுத்துதல் மற்றும் GST சுருக்கத்தை பதிவிறக்கவும் — உங்கள் கணக்காளரிடம் கொடுங்கள்.',
+  'acct.building': 'அறிக்கை தயாராகிறது…',
+  'acct.range.this-month': 'இந்த மாதம்',
+  'acct.range.last-month': 'கடந்த மாதம்',
+  'acct.range.this-quarter': 'இந்த காலாண்டு',
+  'acct.range.this-fy': 'இந்த நிதியாண்டு',
+  'acct.range.custom': 'விருப்பம்',
+  'acct.turnover': 'வருவாய்',
+  'acct.purchases': 'கொள்முதல்',
+  'acct.expenses': 'செலவுகள்',
+  'acct.gstOut': 'GST வெளியீடு',
+  'acct.gstIn': 'GST உள்ளீட்டு வரவு',
+  'acct.gstNet': 'செலுத்த வேண்டிய நிகர GST',
+  'acct.grossProfit': 'மொத்த லாபம் (தோராயம்)',
+  'acct.receivables': 'வரவேண்டியவை (இன்று)',
+  'acct.payables': 'கொடுக்க வேண்டியவை (இன்று)',
+  'acct.counts': '{s} விற்பனை · {p} கொள்முதல் · {e} செலவுகள்',
+  'acct.csv': 'CSV பதிவிறக்கு',
+  'acct.tally': 'Tally XML',
+  'acct.disclaimer':
+    'உங்கள் பதிவுகளிலிருந்து மட்டும் — தணிக்கை செய்யப்படவில்லை, வரி தாக்கல் அல்ல. மொத்த லாபம் தற்போதைய விலையை பயன்படுத்துகிறது (தோராயம்). சரிபார்த்து தாக்கல் செய்ய கணக்காளரிடம் கொடுங்கள்.',
 };
 
 const DICTS: Record<Lang, Dict> = { en, ta };
