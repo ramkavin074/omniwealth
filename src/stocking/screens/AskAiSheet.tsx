@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { t, type Lang } from '../i18n';
 import { API_BASE } from '../config';
 import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
@@ -8,6 +8,8 @@ import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
 interface Props {
   lang: Lang;
   onClose: () => void;
+  /** When set, the sheet opens already asking this. */
+  initialQuestion?: string;
 }
 
 interface Turn {
@@ -33,7 +35,7 @@ const SUGGESTIONS_EN = [
   'Which supplier do I owe the most?',
 ];
 
-export default function AskAiSheet({ lang, onClose }: Props) {
+export default function AskAiSheet({ lang, onClose, initialQuestion }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -78,6 +80,16 @@ export default function AskAiSheet({ lang, onClose }: Props) {
       setBusy(false);
     }
   };
+
+  // Fire the seed question once, on open.
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
+    const seed = initialQuestion?.trim();
+    if (seed) void ask(seed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className={`${SHEET_OVERLAY} z-30`}>

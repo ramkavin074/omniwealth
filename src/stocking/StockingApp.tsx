@@ -58,6 +58,7 @@ export default function StockingApp() {
   const [reportsOpen, setReportsOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [askAiOpen, setAskAiOpen] = useState(false);
+  const [askAiSeed, setAskAiSeed] = useState<string | null>(null);
   const [scanDoc, setScanDoc] = useState<null | 'invoice' | 'payment'>(null);
   const [sellOpen, setSellOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(false);
@@ -218,6 +219,10 @@ export default function StockingApp() {
                 onOpenSales={() => setSalesOpen(true)}
                 onOpenCustomers={() => setCustomersOpen(true)}
                 onOpenOrders={() => setOrdersOpen(true)}
+                onAsk={(question) => {
+                  setAskAiSeed(question || null);
+                  setAskAiOpen(true);
+                }}
               />
             )}
             {tab === 'scan' && <ScanScreen lang={lang} />}
@@ -315,7 +320,14 @@ export default function StockingApp() {
 
       {askAiOpen && (
         <Suspense fallback={null}>
-          <AskAiSheet lang={lang} onClose={() => setAskAiOpen(false)} />
+          <AskAiSheet
+            lang={lang}
+            initialQuestion={askAiSeed ?? undefined}
+            onClose={() => {
+              setAskAiOpen(false);
+              setAskAiSeed(null);
+            }}
+          />
         </Suspense>
       )}
     </div>

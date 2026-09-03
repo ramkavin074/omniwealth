@@ -27,6 +27,7 @@ const en: Dict = {
   'home.bills': '{n} bills',
   'home.activity': 'Recent activity',
   'home.noActivity': 'No stock changes yet',
+  'home.askPlaceholder': 'Ask about sales, stock or GST…',
 
   'history.title': 'Recent movements',
   'export.button': 'Export',
@@ -605,6 +606,7 @@ const ta: Dict = {
   'home.bills': '{n} பில்கள்',
   'home.activity': 'சமீபத்திய செயல்பாடு',
   'home.noActivity': 'இன்னும் மாற்றங்கள் இல்லை',
+  'home.askPlaceholder': 'விற்பனை, கையிருப்பு, GST பற்றி கேளுங்கள்…',
 
   'history.title': 'சமீபத்திய மாற்றங்கள்',
   'export.button': 'ஏற்றுமதி',

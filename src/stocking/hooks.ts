@@ -82,3 +82,20 @@ export function useDebounced<T>(value: T, ms = 200): T {
   }, [value, ms]);
   return debounced;
 }
+
+/** Tracks navigator connectivity. Starts optimistic (true) so SSR / first
+ *  paint don't flash an offline state. */
+export function useOnline(): boolean {
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const sync = () => setOnline(navigator.onLine);
+    sync();
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    return () => {
+      window.removeEventListener('online', sync);
+      window.removeEventListener('offline', sync);
+    };
+  }, []);
+  return online;
+}

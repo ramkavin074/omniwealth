@@ -14,7 +14,7 @@ import { allReceivables } from '../db/customers';
 import { ordersSummary } from '../db/orders';
 import type { Product } from '../types';
 import { db } from '../db/dexie';
-import { useLiveQuery, useNow } from '../hooks';
+import { useLiveQuery, useNow, useOnline } from '../hooks';
 import { canSeeCost } from '../settings';
 import { SCREEN_PAD } from '../ui';
 import { syncNow } from '../sync';
@@ -26,6 +26,8 @@ interface Props {
   onOpenSales: () => void;
   onOpenCustomers: () => void;
   onOpenOrders: () => void;
+  /** Empty string = open the assistant with no question. */
+  onAsk: (question: string) => void;
 }
 
 function timeAgo(now: number, ms: number): string {
@@ -46,7 +48,10 @@ export default function HomeScreen({
   onOpenSales,
   onOpenCustomers,
   onOpenOrders,
+  onAsk,
 }: Props) {
+  const [askText, setAskText] = useState('');
+  const online = useOnline();
   const stats = useLiveQuery(() => catalogueStats(), []);
   const expiry = useLiveQuery(() => expiringSoon(), []);
   const today = useLiveQuery(() => daySummary(), []);
@@ -78,6 +83,36 @@ export default function HomeScreen({
 
   return (
     <div className={`p-4 space-y-4 md:mx-auto md:max-w-3xl ${SCREEN_PAD}`}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!online) return;
+          onAsk(askText.trim());
+          setAskText('');
+        }}
+        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      >
+        <span aria-hidden className="text-teal-600 dark:text-teal-400">
+          ✦
+        </span>
+        <input
+          value={askText}
+          onChange={(e) => setAskText(e.target.value)}
+          disabled={!online}
+          placeholder={
+            online ? t(lang, 'home.askPlaceholder') : t(lang, 'ai.offline')
+          }
+          className="h-8 flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:opacity-60 dark:text-slate-50"
+        />
+        <button
+          type="submit"
+          disabled={!online}
+          className="rounded-lg bg-teal-700 px-3 py-1 text-xs font-semibold text-white disabled:opacity-40"
+        >
+          {t(lang, 'ai.ask')}
+        </button>
+      </form>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile
           label={t(lang, 'home.products')}
