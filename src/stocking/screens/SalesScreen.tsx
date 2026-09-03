@@ -6,7 +6,7 @@ import { saleLineTotal, type Sale, type TenderType } from '../types';
 import { daySummary, refundSale, refundsFor, voidSale } from '../db/sales';
 import { useLiveQuery } from '../hooks';
 import { canManage, getGstConfig, getReceiptConfig } from '../settings';
-import { printReceipt } from '../print';
+import { printReceiptSmart } from '../printer';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
@@ -161,7 +161,7 @@ export default function SalesScreen({ lang, onClose }: Props) {
         <button
           type="button"
           onClick={() =>
-            printReceipt(open, {
+            printReceiptSmart(open, {
               lang,
               gst: getGstConfig(),
               receipt: getReceiptConfig(),

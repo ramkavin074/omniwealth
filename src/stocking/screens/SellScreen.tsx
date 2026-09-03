@@ -11,7 +11,7 @@ import {
   type Unit,
 } from '../types';
 import { canManage, getGstConfig, getReceiptConfig } from '../settings';
-import { printReceipt } from '../print';
+import { printReceiptSmart } from '../printer';
 import { findByBarcode, searchProducts } from '../db/products';
 import {
   completeSale,
@@ -507,13 +507,14 @@ export default function SellScreen({ lang, onClose }: Props) {
 
         <button
           type="button"
-          onClick={() =>
-            printReceipt(saved, {
+          onClick={async () => {
+            const r = await printReceiptSmart(saved, {
               lang,
               gst,
               receipt: getReceiptConfig(),
-            })
-          }
+            });
+            if (r.ok && r.via === 'bluetooth') flash(t(lang, 'receipt.sent'));
+          }}
           className="h-12 w-full rounded-xl bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
         >
           {t(lang, 'sell.print')}

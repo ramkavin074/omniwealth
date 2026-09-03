@@ -20,6 +20,13 @@ import {
 } from '../settings';
 import { lastSyncAt, syncNow, type SyncOutcome } from '../sync';
 import {
+  forgetPrinter,
+  getPrinter,
+  isBlePrintingAvailable,
+  pairPrinter,
+  testPrint,
+} from '../printer';
+import {
   getStoreSettings,
   saveAlertPhone,
   saveStoreSettings,
@@ -68,6 +75,37 @@ export default function SettingsSheet({
   const [rc, setRc] = useState<ReceiptConfig>(getReceiptConfig);
   const [rcSaved, setRcSaved] = useState(false);
   const standalone = hasStandaloneAuth();
+
+  const [printer, setPrinter] = useState(getPrinter);
+  const [prBusy, setPrBusy] = useState(false);
+  const [prMsg, setPrMsg] = useState<string | null>(null);
+
+  const pairThermal = async () => {
+    setPrBusy(true);
+    setPrMsg(null);
+    const r = await pairPrinter();
+    setPrBusy(false);
+    if (r.ok) {
+      setPrinter(r.printer);
+      setPrMsg(t(lang, 'receipt.printerPaired'));
+    } else {
+      setPrMsg(
+        t(lang, r.reason === 'unsupported' ? 'receipt.printerWeb' : 'receipt.printerFail'),
+      );
+    }
+  };
+  const testThermal = async () => {
+    setPrBusy(true);
+    setPrMsg(null);
+    const r = await testPrint(rc);
+    setPrBusy(false);
+    setPrMsg(t(lang, r.ok ? 'receipt.sent' : 'receipt.printerFail'));
+  };
+  const forgetThermal = () => {
+    forgetPrinter();
+    setPrinter(null);
+    setPrMsg(null);
+  };
 
   const patchRc = (p: Partial<ReceiptConfig>) => {
     const next = { ...rc, ...p };
@@ -452,6 +490,51 @@ export default function SettingsSheet({
                 ? t(lang, 'settings.alertSaved')
                 : t(lang, 'receipt.hint')}
             </p>
+
+            <div className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                {t(lang, 'receipt.printer')}
+              </p>
+              {printer ? (
+                <>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {printer.name}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={testThermal}
+                      disabled={prBusy}
+                      className="h-9 flex-1 rounded-lg bg-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 dark:bg-slate-700 dark:text-slate-200"
+                    >
+                      {t(lang, 'receipt.printerTest')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={forgetThermal}
+                      className="h-9 flex-1 rounded-lg bg-slate-100 text-sm font-medium text-rose-600 dark:bg-slate-800 dark:text-rose-400"
+                    >
+                      {t(lang, 'receipt.printerForget')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={pairThermal}
+                  disabled={prBusy}
+                  className="h-9 w-full rounded-lg bg-teal-700 text-sm font-semibold text-white disabled:opacity-40"
+                >
+                  {t(lang, 'receipt.printerConnect')}
+                </button>
+              )}
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {prMsg ??
+                  (isBlePrintingAvailable()
+                    ? t(lang, 'receipt.printerHint')
+                    : t(lang, 'receipt.printerWeb'))}
+              </p>
+            </div>
           </section>
         )}
 
