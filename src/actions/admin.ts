@@ -3,7 +3,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
-import { Resend } from 'resend';
+import { sendMail } from '@/lib/mailer';
 import { db } from '@/db';
 import {
   adminAudit,
@@ -697,14 +697,9 @@ async function issueSetPasswordLink(
   await db.insert(passwordResets).values({ userId, tokenHash, expiresAt });
 
   const link = `${appUrl()}/login?reset-token=${encodeURIComponent(rawToken)}`;
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return { link, sent: false };
   try {
-    const resend = new Resend(key);
-    await resend.emails.send({
-      from:
-        process.env.RESEND_FROM_EMAIL || 'OmniWealth <onboarding@resend.dev>',
-      to: [email],
+    await sendMail({
+      to: email,
       subject: 'Set your OmniWealth password',
       html: `<div style="font-family:Arial,sans-serif;background:#0b1220;color:#e2e8f0;padding:28px;border-radius:14px">
         <h2 style="color:#2dd4bf;margin:0 0 12px">Set your password</h2>

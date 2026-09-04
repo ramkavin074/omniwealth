@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { desc } from 'drizzle-orm';
-import { Resend } from 'resend';
+import { sendMail } from '@/lib/mailer';
 import { db } from '@/db';
 import { households, assets, users, netWorthSnapshots } from '@/db/schema';
 import { fetchLiveExchangeRatesAction } from '@/actions/vault';
@@ -73,9 +73,6 @@ async function run() {
     }
   }
 
-  const from = process.env.RESEND_FROM_EMAIL || 'Global Family Vault <onboarding@resend.dev>';
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
   let sent = 0;
   for (const u of optedIn) {
     const hh = allHouseholds.find((h) => h.id === u.householdId);
@@ -86,8 +83,7 @@ async function run() {
     const prev = baseline.get(hh.id);
 
     try {
-      await resend.emails.send({
-        from,
+      await sendMail({
         to: u.email as string,
         subject: `Your weekly net-worth digest — ${formatFull(current, base)} ${base}`,
         html: digestHtml({

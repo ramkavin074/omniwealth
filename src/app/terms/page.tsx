@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 // Public, unauthenticated page. Keep it reachable with no login.
 
-const UPDATED = '2 September 2026';
-const CONTACT_EMAIL = 'dreambeenetwork074@gmail.com';
+const UPDATED = '4 September 2026';
+const CONTACT_EMAIL = 'admin@omniwealth.org';
 const LLC_STATE = 'the State of Texas';
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {

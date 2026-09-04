@@ -12,7 +12,9 @@
     "stocking:cap": "node scripts/with-stocking-capacitor.mjs",
     "stocking:add-android": "node scripts/with-stocking-capacitor.mjs add android",
     "stocking:sync": "npm run stocking:build && node scripts/with-stocking-capacitor.mjs sync android",
-    "stocking:apk": "npm run stocking:sync && cd android-stocking && gradlew.bat assembleDebug"
+    "stocking:apk": "npm run stocking:sync && cd android-stocking && gradlew.bat assembleDebug",
+    "stocking:add-ios": "node scripts/with-stocking-capacitor.mjs add ios",
+    "stocking:sync-ios": "npm run stocking:build && node scripts/with-stocking-capacitor.mjs sync ios"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
@@ -23,6 +25,7 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.1",
     "@google/genai": "^2.18.0",
     "@neondatabase/serverless": "^1.1.0",
     "@sentry/nextjs": "^10.72.0",
@@ -40,7 +43,7 @@
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "resend": "^6.22.0",
+    "resend": "^6.26.0",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

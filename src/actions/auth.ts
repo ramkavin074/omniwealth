@@ -42,9 +42,7 @@ import bcrypt from 'bcryptjs';
 
 import crypto from 'crypto';
 
-import {
-  Resend,
-} from 'resend';
+import { sendMail } from '@/lib/mailer';
 
 import { logError } from '@/lib/log';
 import { logAudit } from '@/lib/audit';
@@ -87,28 +85,6 @@ const DUMMY_PASSWORD_HASH =
 
 const EMAIL_REGEX =
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/**
- * ============================================================
- * RESEND
- * ============================================================
- */
-
-function getResendClient(): Resend {
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      'RESEND_API_KEY is not configured.'
-    );
-  }
-
-  return new Resend(apiKey);
-}
-
-const resend = new Resend(
-  process.env.RESEND_API_KEY || 're_placeholder'
-);
 
 /**
  * ============================================================
@@ -861,24 +837,16 @@ export async function addFamilyMemberAction(
     </div>
   `;
 
-  const senderAddress =
-    process.env.RESEND_FROM_EMAIL ||
-    'Global Family Vault <onboarding@resend.dev>';
-
   try {
-    const resend =
-      getResendClient();
-
-    await resend.emails.send({
-      from: senderAddress,
-      to: [email],
+    await sendMail({
+      to: email,
       subject:
         `Invitation to join ${session.household.name} Wealth Command Center`,
       html: emailHtml,
     });
   } catch (error: unknown) {
     console.error(
-      'Resend error:',
+      'Invite email send failed:',
       error
     );
 
@@ -1304,86 +1272,6 @@ export async function loginAction(formData: FormData) {
     return {
       success: false,
       error: 'Unable to sign in right now. Please try again.',
-    };
-  }
-}
-
-/* ============================================================
-   FAMILY MEMBERS / INVITES
-   ============================================================ */
-
-export async function sendInviteEmail(
-  toEmail: string,
-  householdName: string,
-  inviteCode?: string
-) {
-  try {
-    const response =
-      await resend.emails.send({
-        from:
-          process.env.RESEND_FROM_EMAIL ||
-          'Global Family Vault <onboarding@resend.dev>',
-
-        to: [toEmail],
-
-        subject:
-          `Welcome to ${householdName} Wealth Command Center`,
-
-        html: `
-          <div style="font-family: Arial, sans-serif; background-color: #090d16; color: #f8fafc; padding: 32px; border-radius: 16px;">
-
-            <h2 style="color: #818cf8; margin-top: 0;">
-              Global Family Vault Invitation
-            </h2>
-
-            <p style="color: #cbd5e1; font-size: 14px;">
-              You have been invited to collaborate on the
-              <strong>${householdName}</strong>
-              wealth command center.
-            </p>
-
-            ${
-              inviteCode
-                ? `
-                  <p style="color: #cbd5e1; font-size: 14px;">
-                    Your household invite code is:
-                  </p>
-
-                  <div style="background-color: #1e293b; border: 1px solid #334155; padding: 16px; border-radius: 12px; margin: 20px 0; text-align: center;">
-                    <span style="font-size: 22px; font-weight: bold; color: #38bdf8; letter-spacing: 2px;">
-                      ${inviteCode}
-                    </span>
-                  </div>
-                `
-                : ''
-            }
-
-            <a
-              href="${getAppUrl()}/login"
-              style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 10px;"
-            >
-              Access Wealth Vault →
-            </a>
-
-          </div>
-        `,
-      });
-
-    if (response.error) {
-      return {
-        success: false,
-        error: response.error,
-      };
-    }
-
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error,
     };
   }
 }
@@ -2446,14 +2334,8 @@ export async function requestPasswordResetAction(
     `;
 
     try {
-      const resend =
-        getResendClient();
-
-      await resend.emails.send({
-        from:
-          process.env.RESEND_FROM_EMAIL ||
-          'Global Family Vault <onboarding@resend.dev>',
-        to: [email],
+      await sendMail({
+        to: email,
         subject:
           'Reset your password',
         html: emailHtml,

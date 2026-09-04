@@ -16,6 +16,16 @@ import { CapacitorConfig } from '@capacitor/cli';
 //
 // After the one-time scaffold, add the CAMERA permission to
 // android-stocking/app/src/main/AndroidManifest.xml.
+//
+// iOS mirrors the above into ./ios-stocking:
+//   npm run stocking:add-ios
+//   npm run stocking:sync-ios
+// `pod install` (CocoaPods) and any build/signing need an actual Mac, but the
+// project itself scaffolds fine cross-platform — already done once. Its
+// Info.plist already carries the NS*UsageDescription keys the bundled
+// plugins need (camera, bluetooth, microphone, speech recognition, Face ID) —
+// keep both this app's and the main app's ios/App/App/Info.plist in sync if
+// a plugin's permission needs change.
 
 const debugWebview = process.env.CAP_DEBUG === 'true';
 
@@ -25,6 +35,10 @@ const config: CapacitorConfig = {
   webDir: 'stocking-standalone/dist',
   android: {
     path: 'android-stocking',
+    webContentsDebuggingEnabled: debugWebview,
+  },
+  ios: {
+    path: 'ios-stocking',
     webContentsDebuggingEnabled: debugWebview,
   },
 };
