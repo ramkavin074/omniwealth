@@ -11,6 +11,7 @@ type Dict = Record<string, string>;
 
 const en: Dict = {
   'app.title': 'Kadai',
+  'nav.exitHint': 'Press Back again to exit',
   'tab.home': 'Home',
   'tab.scan': 'Scan',
   'tab.adjust': 'Adjust',
@@ -652,6 +653,7 @@ const en: Dict = {
 // confirm with shop owners — every Tamil string below is a first draft.
 const ta: Dict = {
   'app.title': 'கடை',
+  'nav.exitHint': 'வெளியேற மீண்டும் பின் அழுத்தவும்',
   'tab.home': 'முகப்பு',
   'tab.scan': 'ஸ்கேன்',
   'tab.adjust': 'திருத்து',

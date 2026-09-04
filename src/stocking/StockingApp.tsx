@@ -1,8 +1,9 @@
 'use client';
 
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { t } from './i18n';
-import { useLang, useTheme } from './hooks';
+import { useBackHandler, useLang, useTheme } from './hooks';
+import { initBackButton } from './back';
 import { maybeAutoSync } from './sync';
 import { OMNIWEALTH_LOGO } from './logo';
 
@@ -74,6 +75,70 @@ export default function StockingApp() {
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
   }, []);
+
+  // Android Back: unwind one layer of UI per press instead of suspending the
+  // app. Order mirrors the render precedence below; deeper screens (SellScreen
+  // etc.) register their own handlers, which run first. A press with nothing
+  // left to close falls through to press-again-to-exit (see back.ts).
+  useEffect(() => {
+    void initBackButton(() => t(lang, 'nav.exitHint'));
+  }, [lang]);
+
+  const handleBack = useCallback((): boolean => {
+    if (askAiOpen) {
+      setAskAiOpen(false);
+      setAskAiSeed(null);
+      return true;
+    }
+    const overlay: [boolean, () => void][] = [
+      [settingsOpen, () => setSettingsOpen(false)],
+      [sellOpen, () => setSellOpen(false)],
+      [salesOpen, () => setSalesOpen(false)],
+      [taxOpen, () => setTaxOpen(false)],
+      [upiOpen, () => setUpiOpen(false)],
+      [!!scanDoc, () => setScanDoc(null)],
+      [suppliersOpen, () => setSuppliersOpen(false)],
+      [customersOpen, () => setCustomersOpen(false)],
+      [ordersOpen, () => setOrdersOpen(false)],
+      [expensesOpen, () => setExpensesOpen(false)],
+      [purchasesOpen, () => setPurchasesOpen(false)],
+      [acctOpen, () => setAcctOpen(false)],
+      [reportsOpen, () => setReportsOpen(false)],
+      [cashflowOpen, () => setCashflowOpen(false)],
+      [auditOpen, () => setAuditOpen(false)],
+    ];
+    for (const [open, close] of overlay) {
+      if (open) {
+        close();
+        return true;
+      }
+    }
+    if (tab !== 'home') {
+      setTab('home');
+      return true;
+    }
+    return false;
+  }, [
+    askAiOpen,
+    settingsOpen,
+    sellOpen,
+    salesOpen,
+    taxOpen,
+    upiOpen,
+    scanDoc,
+    suppliersOpen,
+    customersOpen,
+    ordersOpen,
+    expensesOpen,
+    purchasesOpen,
+    acctOpen,
+    reportsOpen,
+    cashflowOpen,
+    auditOpen,
+    tab,
+  ]);
+
+  useBackHandler(true, handleBack);
 
   return (
     <div className="kadai mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:max-w-4xl md:border-x md:border-slate-200 md:dark:border-slate-800">

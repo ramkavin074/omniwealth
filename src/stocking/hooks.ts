@@ -1,11 +1,26 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getLang, setLang, type Lang } from './i18n';
 import { applyTheme, getTheme, setTheme, type Theme } from './theme';
+import { pushBackHandler } from './back';
 
 export { useLiveQuery };
+
+/** Run `handler` on an Android Back press while `active`. Return `true` from it
+ *  to consume the press; return `false` to let the next handler down the stack
+ *  (or the press-again-to-exit fallback) take it. Handlers mounted later win. */
+export function useBackHandler(active: boolean, handler: () => boolean): void {
+  const ref = useRef(handler);
+  useEffect(() => {
+    ref.current = handler;
+  });
+  useEffect(() => {
+    if (!active) return;
+    return pushBackHandler(() => ref.current());
+  }, [active]);
+}
 
 /** Current light/dark theme + a toggle, persisted to localStorage. */
 export function useTheme(): { theme: Theme; toggle: () => void } {

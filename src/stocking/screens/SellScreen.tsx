@@ -37,7 +37,7 @@ import {
   parseSpokenItems,
   resolveItemsAI,
 } from '../voice';
-import { useDebounced, useLiveQuery } from '../hooks';
+import { useBackHandler, useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
@@ -91,6 +91,20 @@ export default function SellScreen({ lang, onClose }: Props) {
       alive = false;
     };
   }, []);
+
+  // Android Back inside a sale: close the basket sheet, or step payment → cart,
+  // before letting <StockingApp> close the whole sale.
+  useBackHandler(true, () => {
+    if (basketOpen) {
+      setBasketOpen(false);
+      return true;
+    }
+    if (phase === 'pay') {
+      setPhase('cart');
+      return true;
+    }
+    return false;
+  });
 
   const [discount, setDiscount] = useState('');
   const [quickAmt, setQuickAmt] = useState(''); // non-empty → amount-only sale
