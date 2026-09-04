@@ -1,19 +1,23 @@
 -- ===========================================================================
--- Sample data for the two pilot stores, so every screen + report shows
--- realistic content. Re-runnable: it deletes prior rows tagged note='SAMPLE'
--- (products: hsn='SAMPLE') before re-inserting.
+-- Sample data for EVERY store in store.stores, so every screen + report shows
+-- realistic content on every test account. Re-runnable: it deletes prior rows
+-- tagged note='SAMPLE' (products: hsn='SAMPLE') before re-inserting.
 --
---   Kavin Store    50000000-0000-0000-0000-000000000001   (kirana, NOT GST)
---   Lenin Mobiles  50000000-0000-0000-0000-000000000002   (LB Cards, GST 5/12/18/28)
+-- Each store's catalogue + tax behaviour is chosen from its own `gst_enabled`
+-- flag: GST stores get the LB-cards catalogue with 5/12/18/28 slabs, non-GST
+-- stores get the kirana catalogue at 0%. (The two original pilots ---
+-- 50000000-…-0001 Kavin Store, 50000000-…-0002 Lenin Mobiles --- are just two
+-- more rows now.)
 --
 -- Run AFTER round29..round34. Needs gen_random_uuid() (Neon has pgcrypto).
 -- Clients pick this up on their next sync (server synced_at > client cursor).
 --
--- Volume per store: 16 products, 5 suppliers, 7 customers, ~47 sales
+-- Volume PER store: 16 products, 5 suppliers, 7 customers, ~47 sales
 -- (multi-line, per-line + bill discounts, multi-rate GST) + 2 refunds,
 -- ~20 UPI receipts, ~14 customer/order receipts, 8 purchases, 6 supplier
 -- payments, 16 expenses, 6 orders (booked / in-progress / ready / delivered /
--- cancelled), plus write-off + stock-take movements.
+-- cancelled), plus write-off + stock-take movements. Scales linearly with the
+-- store count --- fine for the test phase, revisit if stores.count gets large.
 -- ===========================================================================
 
 DELETE FROM "store"."sales"             WHERE note = 'SAMPLE';
@@ -45,11 +49,13 @@ DECLARE
   bill_seq int;
 BEGIN
 FOR s IN
-  SELECT id, (id = '50000000-0000-0000-0000-000000000002') AS gst
+  SELECT id, gst_enabled AS gst
   FROM "store"."stores"
-  WHERE id IN ('50000000-0000-0000-0000-000000000001',
-               '50000000-0000-0000-0000-000000000002')
 LOOP
+  -- Per-store bill ledger — reset so refunds below only ever point at a bill
+  -- from THIS store (billids is declared once, outside this loop).
+  billids := ARRAY[]::uuid[];
+
   ---------------------------------------------------------------- products
   IF s.gst THEN
     pname  := ARRAY['Wedding Card Premium','Wedding Card Standard','Visiting Card 1000',
@@ -518,5 +524,4 @@ SELECT st.name,
        (SELECT count(*) FROM "store"."suppliers"         x WHERE x.store_id = st.id AND x.note = 'SAMPLE') AS suppliers,
        (SELECT count(*) FROM "store"."orders"            x WHERE x.store_id = st.id AND x.note = 'SAMPLE') AS orders
 FROM "store"."stores" st
-WHERE st.id IN ('50000000-0000-0000-0000-000000000001',
-                '50000000-0000-0000-0000-000000000002');
+ORDER BY st.name;

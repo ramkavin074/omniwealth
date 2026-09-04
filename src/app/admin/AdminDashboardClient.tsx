@@ -308,6 +308,9 @@ export default function AdminDashboardClient() {
               onDisableStocking={(storeId) =>
                 onStoreStatus(storeId, 'suspended')
               }
+              onReEnableStocking={(storeId) =>
+                onStoreStatus(storeId, 'active')
+              }
             />
           )}
 
@@ -456,12 +459,14 @@ function HouseholdsTab({
   busy,
   onEnableStocking,
   onDisableStocking,
+  onReEnableStocking,
 }: {
   now: number;
   houses: AdminHouseholdRow[];
   busy: string | null;
   onEnableStocking: (h: AdminHouseholdRow) => void;
   onDisableStocking: (storeId: string) => void;
+  onReEnableStocking: (storeId: string) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -480,6 +485,9 @@ function HouseholdsTab({
           <tbody>
             {houses.map((h) => {
               const liveStore = h.stores.find((s) => s.status !== 'suspended');
+              const suspendedStore = h.stores.find(
+                (s) => s.status === 'suspended',
+              );
               return (
                 <tr
                   key={h.id}
@@ -558,11 +566,19 @@ function HouseholdsTab({
                         >
                           Disable stocking
                         </button>
-                      ) : (
-                        <span className="text-xs text-slate-600">
-                          suspended
-                        </span>
-                      )}
+                      ) : suspendedStore ? (
+                        <button
+                          type="button"
+                          disabled={busy === `st:${suspendedStore.id}`}
+                          onClick={() =>
+                            onReEnableStocking(suspendedStore.id)
+                          }
+                          className={`${btn} border-teal-600 text-teal-200`}
+                          title={`Re-activate "${suspendedStore.name}" — its data was kept`}
+                        >
+                          Enable stocking
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
