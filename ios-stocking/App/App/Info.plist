@@ -32,6 +32,8 @@
 	<string>Kadai uses speech recognition to turn what you say into items on a sale.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Kadai uses Face ID to securely unlock the app.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

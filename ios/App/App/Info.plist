@@ -32,6 +32,8 @@
 	<string>OmniWealth uses speech recognition to turn what you say into items on a sale in the Stocking module.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>OmniWealth uses Face ID to securely unlock the app.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
