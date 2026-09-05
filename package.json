@@ -14,7 +14,8 @@
     "stocking:sync": "npm run stocking:build && node scripts/with-stocking-capacitor.mjs sync android",
     "stocking:apk": "npm run stocking:sync && cd android-stocking && gradlew.bat assembleDebug",
     "stocking:add-ios": "node scripts/with-stocking-capacitor.mjs add ios",
-    "stocking:sync-ios": "npm run stocking:build && node scripts/with-stocking-capacitor.mjs sync ios"
+    "stocking:sync-ios": "npm run stocking:build && node scripts/with-stocking-capacitor.mjs sync ios",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
@@ -59,6 +60,7 @@
     "drizzle-orm": "^0.45.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
+    "patch-package": "^8.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^6.0.7"

@@ -41,6 +41,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Pre-download the ML Kit barcode scanner model at install time so
+             the first scan (via the embedded /stocking route) doesn't stall
+             on a module download. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
     </application>
 
     <!-- Permissions -->
@@ -52,4 +59,42 @@
          USE_BIOMETRIC, enabling the app lock crashes on Android 9+. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <!-- Barcode scanning (@capacitor-mlkit/barcode-scanning), used by
+         households with stocking access via the embedded /stocking route.
+         required="false" (unlike android-stocking's own manifest): this is
+         the general wealth app, not a scanner app — a device with no camera
+         must still be able to install it. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <!-- Direct thermal printing over BLE (@capacitor-community/bluetooth-le),
+         stocking-only. Android 12+ split permissions; the app never derives
+         location from a scan, so neverForLocation is asserted. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+
+    <!-- Voice item entry (@capacitor-community/speech-recognition), stocking-only. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 </manifest>
