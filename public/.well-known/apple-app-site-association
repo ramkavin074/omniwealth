@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["DX8SZ5W6LJ.com.omniwealth.app"],
+        "components": [
+          { "/": "/api/*", "exclude": true },
+          { "/": "/*", "comment": "Open every omniwealth.org path in the app when installed" }
+        ]
+      }
+    ]
+  }
+}

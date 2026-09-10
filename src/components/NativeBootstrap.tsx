@@ -1,16 +1,19 @@
 'use client';
 
-// Native-shell initialisation: status-bar styling, keyboard behaviour and
-// dismissing the launch splash once the web app has painted. Renders nothing.
-// On web every branch is skipped.
+// Native-shell initialisation: status-bar styling, keyboard behaviour,
+// dismissing the launch splash, and routing Universal Links into the WebView.
+// Renders nothing. On web every branch is skipped.
 
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+
+const APP_HOSTS = new Set(['omniwealth.org', 'www.omniwealth.org']);
 
 export default function NativeBootstrap() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let cancelled = false;
+    const cleanups: Array<() => void> = [];
 
     (async () => {
       // Status bar: the app chrome is dark slate, so we want light glyphs.
@@ -36,6 +39,28 @@ export default function NativeBootstrap() {
         /* iOS-only / unavailable */
       }
 
+      // Universal Links: a tap on an https://omniwealth.org/... link elsewhere
+      // on the device opens the app here — navigate the WebView to that path.
+      try {
+        const { App } = await import('@capacitor/app');
+        const handle = await App.addListener('appUrlOpen', ({ url }) => {
+          try {
+            const target = new URL(url);
+            if (target.protocol !== 'https:' || !APP_HOSTS.has(target.host)) return;
+            const dest = target.pathname + target.search + target.hash;
+            if (dest && dest !== window.location.pathname + window.location.search + window.location.hash) {
+              window.location.assign(dest);
+            }
+          } catch {
+            /* not a URL we handle */
+          }
+        });
+        if (cancelled) handle.remove();
+        else cleanups.push(() => handle.remove());
+      } catch {
+        /* @capacitor/app unavailable */
+      }
+
       // The web app has mounted — drop the launch screen.
       try {
         const { SplashScreen } = await import('@capacitor/splash-screen');
@@ -48,6 +73,7 @@ export default function NativeBootstrap() {
 
     return () => {
       cancelled = true;
+      cleanups.forEach((fn) => fn());
     };
   }, []);
 

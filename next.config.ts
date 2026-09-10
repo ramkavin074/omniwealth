@@ -47,6 +47,12 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      {
+        // Apple fetches this with no regard for extension; force JSON so
+        // strict clients and CDNs don't mislabel it.
+        source: "/.well-known/apple-app-site-association",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
     ];
   },
 };
