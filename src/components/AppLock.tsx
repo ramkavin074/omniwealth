@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { Lock } from 'lucide-react';
+import { haptic } from '@/lib/native';
 import {
   APP_LOCK_KEY,
   lockEnabled,
@@ -61,6 +62,7 @@ async function runAuth() {
     );
     locked = false;
     publish();
+    void haptic('success');
   } catch (err: any) {
     lastError = err?.message || err?.code || String(err);
     // stay locked; the Unlock button retries

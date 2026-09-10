@@ -24,6 +24,21 @@ const config: CapacitorConfig = {
   },
   ios: {
     webContentsDebuggingEnabled: debugWebview
+  },
+  plugins: {
+    SplashScreen: {
+      // The web app calls SplashScreen.hide() as soon as it has painted
+      // (NativeBootstrap), so normally the splash is dismissed well before
+      // this. The duration is only a safety net for the offline / failed-load
+      // case so the branded screen can't hang forever.
+      launchAutoHide: true,
+      launchShowDuration: 3000,
+      backgroundColor: '#020617',
+      showSpinner: false
+    },
+    Keyboard: {
+      resize: 'native'
+    }
   }
 };
 
