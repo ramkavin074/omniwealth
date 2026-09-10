@@ -4,6 +4,7 @@ import "./globals.css";
 import PortfolioAIChat from "@/components/PortfolioAIChat";
 import AppLock from "@/components/AppLock";
 import NativeBootstrap from "@/components/NativeBootstrap";
+import PushRegistrar from "@/components/PushRegistrar";
 import { getSessionUserAction } from "@/actions/vault";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -79,6 +80,7 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-teal-600 selection:text-white transition-colors">
         {children}
         <NativeBootstrap />
+        <PushRegistrar enabled={Boolean(session?.user?.id)} />
         <AppLock />
         {/* Keyed by user id so the chat state is dropped on logout / user switch,
             and only rendered for an authenticated session. */}

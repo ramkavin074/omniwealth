@@ -7,5 +7,7 @@
 		<string>applinks:www.omniwealth.org</string>
 		<string>applinks:omniwealth.org</string>
 	</array>
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

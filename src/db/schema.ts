@@ -623,6 +623,37 @@ export const netWorthSnapshots = pgTable(
 
 /**
  * ============================================================
+ * PUSH TOKENS
+ * ============================================================
+ *
+ * One row per (user, device). APNs/FCM token registered by the native app
+ * after the user grants notification permission. Deleted on unregister or
+ * when the provider reports the token as stale.
+ */
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+
+    // 'ios' | 'android' | 'web'
+    platform: text('platform').notNull(),
+
+    token: text('token').notNull().unique(),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('push_tokens_user_id_idx').on(table.userId),
+  })
+);
+
+/**
+ * ============================================================
  * STORE MODULE  (schema: `store`)
  * ============================================================
  *
