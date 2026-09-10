@@ -13,6 +13,7 @@ import {
 } from '@/actions/vault';
 import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, Menu, Sun, Moon, Package } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
+import { pushNetWorthToWidget } from '@/lib/widget';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
@@ -77,6 +78,11 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
     const label = ['IRA', 'ROTH_IRA', '401K'].includes(rawCat) ? 'Retirement' : rawCat;
     categorySubtotals[label] = (categorySubtotals[label] || 0) + netVal;
   });
+
+  // Mirror the headline number into the iOS Home Screen widget (no-op elsewhere).
+  useEffect(() => {
+    void pushNetWorthToWidget(totalNetWorth, baseCurrency);
+  }, [totalNetWorth, baseCurrency]);
 
   // Keep the strip compact: show the largest categories, fold the long
   // tail (tiny payout streams etc.) into a single "Other" card.
