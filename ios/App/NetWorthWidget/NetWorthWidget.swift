@@ -93,6 +93,8 @@ struct NetWorthWidgetEntryView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .containerBackground(for: .widget) { Color(.systemBackground) }
+        // Tapping the widget opens the app (Universal Link → dashboard).
+        .widgetURL(URL(string: "https://www.omniwealth.org/"))
     }
 }
 
