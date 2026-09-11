@@ -3,6 +3,12 @@
 import { useState, useEffect, useTransition } from 'react';
 import { X, CheckCircle2, Wallet, CreditCard, Building2, Trash2 } from 'lucide-react';
 import { updateAssetAction, deleteAssetAction } from '@/actions/vault';
+import { formatFull } from '@/lib/format';
+
+// Keep in sync with AddAssetModal.tsx — asset types with a real per-unit
+// market price get a quantity + price-per-unit input (total computed), so
+// editing never re-invites the "did I mean total or per-share" mistake.
+const QUANTIFIABLE_TYPES = new Set(['STOCK', 'CRYPTO', 'COMMODITY']);
 
 interface EditAssetModalProps {
   asset: any;
@@ -20,6 +26,7 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
   const [subRows, setSubRows] = useState<any[]>([]);
   const [singleValue, setSingleValue] = useState('');
   const [singleQty, setSingleQty] = useState('');
+  const [singlePricePerUnit, setSinglePricePerUnit] = useState('');
   const [singleCurrency, setSingleCurrency] = useState('USD');
 
   useEffect(() => {
@@ -60,8 +67,8 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
         ]);
       }
 
-      setSingleValue(asset.totalNative ?? asset.nativeValue ?? asset.value ?? '');
-      setSingleQty(
+      const totalNative = asset.totalNative ?? asset.nativeValue ?? asset.value ?? '';
+      const qty =
         asset.totalQty ??
         asset.quantity ??
         asset.qty ??
@@ -69,7 +76,17 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
         asset.totalQuantity ??
         asset.holdingQty ??
         asset.nativeQuantity ??
-        ''
+        '';
+      setSingleValue(totalNative);
+      setSingleQty(qty);
+      // Back-compute a price-per-unit to pre-fill the field below — doesn't
+      // touch the stored total unless the user actually edits and saves.
+      const totalNum = parseFloat(totalNative);
+      const qtyNum = parseFloat(qty);
+      setSinglePricePerUnit(
+        Number.isFinite(totalNum) && Number.isFinite(qtyNum) && qtyNum !== 0
+          ? String(totalNum / qtyNum)
+          : ''
       );
       setSingleCurrency(asset.nativeCurrency || asset.currency || 'USD');
     }
@@ -79,6 +96,16 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
 
   const isLiability = asset.assetType === 'LIABILITY' || asset.assetType === 'DEBT' || asset.accountCategory === 'LIABILITY';
   const isConsolidated = subRows.length > 1;
+  const isQuantifiable = !isLiability && !isConsolidated && QUANTIFIABLE_TYPES.has((asset.assetType || '').toUpperCase());
+
+  // Plain arithmetic, not a hook — this runs after the early `return null`
+  // above, so it must not be a useMemo/useState call.
+  const singleQtyNum = parseFloat(singleQty);
+  const singlePriceNum = parseFloat(singlePricePerUnit);
+  const computedSingleTotal =
+    isQuantifiable && Number.isFinite(singleQtyNum) && Number.isFinite(singlePriceNum)
+      ? singleQtyNum * singlePriceNum
+      : null;
 
   async function handleDelete() {
     const ids: string[] = (isConsolidated ? subRows.map((r) => r.id) : [subRows[0]?.id || asset.id]).filter(Boolean);
@@ -134,8 +161,13 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
           if (!res?.success) break;
         }
       } else {
-        formData.set('nativeValue', singleValue);
-        formData.set('quantity', singleQty);
+        if (isQuantifiable) {
+          formData.set('quantity', singleQty || '1');
+          formData.set('nativeValue', String(computedSingleTotal ?? 0));
+        } else {
+          formData.set('quantity', '1');
+          formData.set('nativeValue', singleValue);
+        }
         formData.set('nativeCurrency', singleCurrency);
 
         const targetId = subRows[0]?.id || asset.id;
@@ -291,38 +323,72 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
                 </div>
               ))}
             </div>
+          ) : isQuantifiable ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Quantity</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={singleQty}
+                    onChange={(e) => setSingleQty(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Price per unit</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={singlePricePerUnit}
+                    onChange={(e) => setSinglePricePerUnit(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Currency</label>
+                  <select
+                    value={singleCurrency}
+                    onChange={(e) => setSingleCurrency(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono"
+                  >
+                    {['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY'].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Total value:{' '}
+                <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                  {computedSingleTotal != null ? `${formatFull(computedSingleTotal, singleCurrency)} ${singleCurrency}` : '—'}
+                </span>{' '}
+                (quantity × price)
+              </p>
+            </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Total Value</label>
-                <input 
-                  type="number" 
+                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">{isLiability ? 'Debt Amount' : 'Total Value'}</label>
+                <input
+                  type="number"
                   step="any"
-                  value={singleValue} 
+                  value={singleValue}
                   onChange={(e) => setSingleValue(e.target.value)}
                   required
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono" 
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono"
                 />
               </div>
               <div>
                 <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Currency</label>
-                <select 
-                  value={singleCurrency} 
+                <select
+                  value={singleCurrency}
                   onChange={(e) => setSingleCurrency(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono"
                 >
                   {['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">Quantity / Shares</label>
-                <input 
-                  type="number" 
-                  step="any"
-                  value={singleQty} 
-                  onChange={(e) => setSingleQty(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-mono" 
-                />
               </div>
             </div>
           )}
