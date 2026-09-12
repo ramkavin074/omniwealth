@@ -17,7 +17,7 @@ import { pushNetWorthToWidget } from '@/lib/widget';
 import { haptic, nativeShare } from '@/lib/native';
 
 const FX_RATES: { [key: string]: number } = {
-  USD: 1, EUR: 1.08, GBP: 1.28, CAD: 0.74, AUD: 0.65, INR: 0.012, JPY: 0.0067, CHF: 1.12, CNY: 0.149,
+  USD: 1, EUR: 0.93, GBP: 0.78, CAD: 1.35, AUD: 1.54, INR: 83.3, JPY: 149.3, CHF: 0.89, CNY: 6.71,
 };
 
 function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates: { [key: string]: number } = FX_RATES): number {

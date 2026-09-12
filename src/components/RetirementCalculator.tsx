@@ -32,44 +32,45 @@ const COUNTRIES: { [key: string]: CountryConfig } = {
   Japan: { name: 'Japan', currency: 'JPY', symbol: '¥', defaultInflation: 1.2, swr: 0.03, defaultIncome: 6000000, defaultContribution: 100000, defaultTaxRate: 30, taxAdvantaged: 'iDeCo / NISA' },
 };
 
+// Units of currency per 1 USD — same convention as fetchLiveExchangeRatesAction
+// and every other convertCurrency() in the dashboard, so a liveRates object
+// from any of them can be dropped in here unchanged.
 const FX_RATES: { [key: string]: number } = {
-  USD: 1,
-  EUR: 1.08,
-  GBP: 1.28,
-  CAD: 0.74,
-  AUD: 0.65,
-  INR: 0.012,
-  JPY: 0.0067,
-  CHF: 1.12,
-  CNY: 0.149,
+  USD: 1, EUR: 0.93, GBP: 0.78, CAD: 1.35, AUD: 1.54, INR: 83.3, JPY: 149.3, CHF: 0.89, CNY: 6.71,
 };
 
-function convertCurrency(amount: number, fromCurr: string, toCurr: string): number {
+function convertCurrency(amount: number, fromCurr: string, toCurr: string, rates: { [key: string]: number } = FX_RATES): number {
   if (fromCurr === toCurr) return amount;
-  const rateFrom = FX_RATES[fromCurr] || 1;
-  const rateTo = FX_RATES[toCurr] || 1;
-  return (amount * rateFrom) / rateTo;
+  const rateFrom = rates[fromCurr] || 1;
+  const rateTo = rates[toCurr] || 1;
+  return (amount * rateTo) / rateFrom;
 }
 
-export default function RetirementCalculator({ 
-  currentTotalValue = 100000, 
+export default function RetirementCalculator({
+  currentTotalValue = 100000,
   baseCurrency = 'USD',
   initialCurrentAge = 35,
   initialRetirementAge = 65,
   initialDesiredIncome,
-  initialCountry = 'US'
-}: { 
-  currentTotalValue?: number; 
+  initialCountry = 'US',
+  liveRates,
+}: {
+  currentTotalValue?: number;
   baseCurrency?: string;
   initialCurrentAge?: number;
   initialRetirementAge?: number;
   initialDesiredIncome?: number;
   initialCountry?: string;
+  /** USD-per-unit is wrong here — pass the same units-per-USD rates (e.g.
+   * from fetchLiveExchangeRatesAction) used elsewhere on the dashboard.
+   * Falls back to a static snapshot if omitted. */
+  liveRates?: { [key: string]: number };
 }) {
+  const rates = liveRates || FX_RATES;
   const [selectedCountryKey, setSelectedCountryKey] = useState<string>(initialCountry in COUNTRIES ? initialCountry : 'US');
   const country = COUNTRIES[selectedCountryKey] || COUNTRIES['US'];
 
-  const convertedInitialSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, country.currency));
+  const convertedInitialSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, country.currency, rates));
 
   const [currentAge, setCurrentAge] = useState<number | ''>(initialCurrentAge);
   const [retirementAge, setRetirementAge] = useState<number | ''>(initialRetirementAge);
