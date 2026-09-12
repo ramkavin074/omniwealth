@@ -101,7 +101,7 @@ export default function RetirementCalculator({
       setMonthlyContribution(cfg.defaultContribution);
       setAnnualSalary(cfg.defaultIncome);
       setTaxRate(cfg.defaultTaxRate);
-      const newSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, cfg.currency));
+      const newSavings = Math.round(convertCurrency(currentTotalValue, baseCurrency, cfg.currency, rates));
       setCurrentSavings(newSavings);
     }
   };
@@ -128,12 +128,18 @@ export default function RetirementCalculator({
   const mContrib = monthlyContribution === '' ? 0 : monthlyContribution;
   const rRate = returnRate === '' ? 0 : returnRate;
   const dIncome = desiredAnnualIncome === '' ? 0 : desiredAnnualIncome;
+  const infl = inflationRate === '' ? 0 : inflationRate;
 
   const baseYearsToRetirement = Math.max(0, rAge - cAge);
   const totalYearsToRetirement = baseYearsToRetirement;
 
   const totalMonths = totalYearsToRetirement * 12;
-  const monthlyRate = rRate / 100 / 12;
+  // Everything here (current savings, desired income, the target corpus) is
+  // entered and shown in today's purchasing power, so growth is compounded
+  // at the *real* (inflation-adjusted) rate rather than the nominal Expected
+  // Return — otherwise the Inflation Rate slider had no effect on anything.
+  const realAnnualReturn = (1 + rRate / 100) / (1 + infl / 100) - 1;
+  const monthlyRate = realAnnualReturn / 12;
 
   const fvCurrent = cSavings * Math.pow(1 + monthlyRate, totalMonths);
   const fvContributions = monthlyRate > 0 
