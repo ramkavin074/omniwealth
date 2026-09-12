@@ -234,6 +234,9 @@ export async function refreshLiveMarketPricesAction() {
 
   let updatedCount = 0;
   const fiatTickers = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY', 'USDT_FIAT'];
+  // Every currency CoinGecko's simple/price endpoint is queried in below —
+  // matches the household currency list used throughout the app.
+  const SUPPORTED_VS_CURRENCIES = new Set(['usd', 'eur', 'gbp', 'cad', 'aud', 'inr', 'jpy', 'chf', 'cny']);
 
   for (const asset of householdAssets) {
     const assetType = (asset.assetType || '').toUpperCase().trim();
@@ -259,9 +262,17 @@ export async function refreshLiveMarketPricesAction() {
         };
         const coinId = coinMap[ticker];
         if (coinId) {
-          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`, { next: { revalidate: 60 } });
+          // Ask CoinGecko for the price in the holding's own currency — it
+          // was previously hardcoded to USD, so a crypto holding valued in
+          // any other currency (INR, GBP, ...) got the raw USD number
+          // written in as if it were that currency, understating it by
+          // roughly the USD exchange rate.
+          const vsCurrency = SUPPORTED_VS_CURRENCIES.has((asset.nativeCurrency || '').toLowerCase())
+            ? asset.nativeCurrency.toLowerCase()
+            : 'usd';
+          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=${vsCurrency}`, { next: { revalidate: 60 } });
           const data = await res.json();
-          livePrice = data[coinId]?.usd || null;
+          livePrice = data[coinId]?.[vsCurrency] || null;
         }
       } else if (assetType === 'MUTUAL_FUND') {
         // Indian mutual funds: NAV by AMFI scheme code via mfapi.in (a free
