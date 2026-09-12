@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { desc } from 'drizzle-orm';
 import { sendMail } from '@/lib/mailer';
 import { db } from '@/db';
-import { households, assets, users, netWorthSnapshots } from '@/db/schema';
+import { households, assets, users, netWorthSnapshots, pushTokens } from '@/db/schema';
 import { fetchLiveExchangeRatesAction } from '@/actions/vault';
 import { netWorthOf } from '@/lib/networth';
 import { formatFull } from '@/lib/format';
 import { logError } from '@/lib/log';
+import { sendPushToUser } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -54,8 +55,16 @@ function digestHtml(opts: {
 }
 
 async function run() {
-  const optedIn = (await db.select().from(users)).filter((u) => u.emailDigest && u.email);
-  if (optedIn.length === 0) return { optedIn: 0, sent: 0 };
+  const allUsers = await db.select().from(users);
+  const emailOptedIn = allUsers.filter((u) => u.emailDigest && u.email);
+
+  const pushRows = await db.select({ userId: pushTokens.userId }).from(pushTokens);
+  const pushUserIds = new Set(pushRows.map((r) => r.userId));
+
+  // Email and push are independent opt-ins (registering a device token is
+  // the push opt-in signal) — process anyone eligible for either channel.
+  const targets = allUsers.filter((u) => (u.emailDigest && u.email) || pushUserIds.has(u.id));
+  if (targets.length === 0) return { optedIn: 0, sentEmail: 0, sentPush: 0 };
 
   const rates = await fetchLiveExchangeRatesAction();
   const allHouseholds = await db.select().from(households);
@@ -73,34 +82,53 @@ async function run() {
     }
   }
 
-  let sent = 0;
-  for (const u of optedIn) {
+  let sentEmail = 0;
+  let sentPush = 0;
+  for (const u of targets) {
     const hh = allHouseholds.find((h) => h.id === u.householdId);
     if (!hh) continue;
     const base = hh.baseCurrency || 'USD';
     const rows = allAssets.filter((a) => a.householdId === hh.id);
     const current = netWorthOf(rows, base, rates);
     const prev = baseline.get(hh.id);
+    const delta = prev ? current - prev.total : null;
 
-    try {
-      await sendMail({
-        to: u.email as string,
-        subject: `Your weekly net-worth digest — ${formatFull(current, base)} ${base}`,
-        html: digestHtml({
-          name: u.fullName || '',
-          base,
-          current,
-          delta: prev ? current - prev.total : null,
-          sinceDate: prev ? prev.date : null,
-        }),
-      });
-      sent++;
-    } catch (err) {
-      logError('cron/weekly-digest.send', err, { userId: u.id });
+    if (u.emailDigest && u.email) {
+      try {
+        await sendMail({
+          to: u.email as string,
+          subject: `Your weekly net-worth digest — ${formatFull(current, base)} ${base}`,
+          html: digestHtml({
+            name: u.fullName || '',
+            base,
+            current,
+            delta,
+            sinceDate: prev ? prev.date : null,
+          }),
+        });
+        sentEmail++;
+      } catch (err) {
+        logError('cron/weekly-digest.send', err, { userId: u.id });
+      }
+    }
+
+    if (pushUserIds.has(u.id)) {
+      try {
+        const deltaText =
+          delta != null ? ` (${delta >= 0 ? '+' : '-'}${formatFull(Math.abs(delta), base)} ${base} this week)` : '';
+        const delivered = await sendPushToUser(u.id, {
+          title: 'Weekly Net-Worth Digest',
+          body: `${formatFull(current, base)} ${base}${deltaText}`,
+          threadId: 'weekly-digest',
+        });
+        if (delivered > 0) sentPush++;
+      } catch (err) {
+        logError('cron/weekly-digest.push', err, { userId: u.id });
+      }
     }
   }
 
-  return { optedIn: optedIn.length, sent };
+  return { optedIn: emailOptedIn.length, sentEmail, sentPush };
 }
 
 // Weekly via Vercel Cron (see vercel.json). Vercel attaches
