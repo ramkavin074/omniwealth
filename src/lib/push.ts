@@ -89,8 +89,22 @@ async function sendToToken(
   });
 
   return new Promise((resolve) => {
+    // A stuck connection/request must not hang forever: sendPushToUser and the
+    // weekly-digest cron both await this sequentially per user, so one bad
+    // connection would otherwise stall email+push delivery for everyone after it.
+    let settled = false;
+    const settle = (result: { ok: boolean; status?: number; reason?: string }) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      client.close();
+      resolve(result);
+    };
+
     const client = http2.connect(apnsHost());
-    client.on('error', (err) => resolve({ ok: false, reason: String(err) }));
+    client.on('error', (err) => settle({ ok: false, reason: String(err) }));
+
+    const timer = setTimeout(() => settle({ ok: false, reason: 'timeout' }), 8000);
 
     const req = client.request({
       ':method': 'POST',
@@ -101,6 +115,7 @@ async function sendToToken(
       authorization: `bearer ${jwt}`,
       'content-type': 'application/json',
     });
+    req.on('error', (err) => settle({ ok: false, reason: String(err) }));
 
     let status = 0;
     let bodyText = '';
@@ -110,15 +125,14 @@ async function sendToToken(
     req.setEncoding('utf8');
     req.on('data', (chunk) => (bodyText += chunk));
     req.on('end', () => {
-      client.close();
-      if (status === 200) return resolve({ ok: true, status });
+      if (status === 200) return settle({ ok: true, status });
       let reason = bodyText;
       try {
         reason = JSON.parse(bodyText).reason ?? bodyText;
       } catch {
         /* keep raw */
       }
-      resolve({ ok: false, status, reason });
+      settle({ ok: false, status, reason });
     });
     req.write(payload);
     req.end();
