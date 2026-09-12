@@ -93,7 +93,14 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
   let totalVal = 0;
   const portfolioSummary = await Promise.all(householdAssets.map(async (a) => {
     const fx = await getExchangeRate(a.nativeCurrency || 'USD', session.household.baseCurrency);
-    const converted = parseFloat(a.nativeValue || '0') * fx;
+    const magnitude = Math.abs(parseFloat(a.nativeValue || '0') * fx);
+    // nativeValue is stored as a positive magnitude for liabilities too
+    // (same convention the dashboard totals use) — subtract, don't add.
+    const isLiability =
+      (a.assetType || '').toUpperCase() === 'LIABILITY' ||
+      (a.assetType || '').toUpperCase() === 'DEBT' ||
+      (a.accountCategory || '').toUpperCase() === 'LIABILITY';
+    const converted = isLiability ? -magnitude : magnitude;
     totalVal += converted;
     return {
       name: a.name,
@@ -104,8 +111,8 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
     };
   }));
 
-  const systemPrompt = `You are a warm, reassuring family wealth assistant. 
-  Household Net Worth: ${Math.round(totalVal)} ${session.household.baseCurrency}.
+  const systemPrompt = `You are a warm, reassuring family wealth assistant.
+  Household Net Worth: ${Math.round(totalVal)} ${session.household.baseCurrency} (assets minus liabilities; a negative "valueInBaseCurrency" below is a liability/debt).
   Portfolio: ${JSON.stringify(portfolioSummary)}
   Keep answers clean, concise, use Markdown bullet points (*), and never use LaTeX math brackets.`;
 
