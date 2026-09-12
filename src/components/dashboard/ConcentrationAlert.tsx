@@ -3,83 +3,15 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { formatCompact } from '@/lib/format';
+import { detectConcentrationFlags, type ConcentrationFlag } from '@/lib/networth';
 
 const STORAGE_KEY = 'omniwealth_concentration_dismissed';
 
-// A single holding above this share of gross assets, or an asset class
-// above the class threshold, is worth surfacing.
-const SINGLE_ASSET_PCT = 25;
-const ASSET_CLASS_PCT = 50;
-
-function convert(
-  amount: number,
-  from: string,
-  to: string,
-  rates: Record<string, number>,
-): number {
-  if (from === to) return amount;
-  const rf = rates[from] || 1;
-  const rt = rates[to] || 1;
-  return (amount * rt) / rf;
-}
-
-function classLabel(raw: string): string {
-  const map: Record<string, string> = {
-    REAL_ESTATE: 'Real estate',
-    CRYPTO: 'Crypto',
-    STOCK: 'Stocks',
-    EQUITY: 'Equities',
-    CASH: 'Cash',
-    BOND: 'Bonds',
-    MUTUAL_FUND: 'Mutual funds',
-    ETF: 'ETFs',
-    COMMODITY: 'Commodities',
-  };
-  return map[raw] || raw.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
-}
-
-type Flag = { key: string; label: string; pct: number; value: number };
-
 export default function ConcentrationAlert({ assets = [], baseCurrency = 'USD', liveRates = {} }: any) {
-  const flags = useMemo<Flag[]>(() => {
-    const holdings: { name: string; cls: string; value: number }[] = [];
-    for (const a of assets) {
-      const type = (a.assetType || '').toUpperCase();
-      const cat = (a.accountCategory || '').toUpperCase();
-      if (type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY') continue;
-      const raw = parseFloat(a.nativeValue || '0');
-      const value = Math.abs(convert(raw, a.nativeCurrency || 'USD', baseCurrency, liveRates));
-      if (value <= 0) continue;
-      holdings.push({
-        name: a.name || 'Unnamed holding',
-        cls: type || cat || 'OTHER',
-        value,
-      });
-    }
-
-    const total = holdings.reduce((s, h) => s + h.value, 0);
-    if (total <= 0 || holdings.length < 2) return [];
-
-    const out: Flag[] = [];
-
-    for (const h of holdings) {
-      const pct = (h.value / total) * 100;
-      if (pct >= SINGLE_ASSET_PCT) {
-        out.push({ key: `asset:${h.name}`, label: h.name, pct, value: h.value });
-      }
-    }
-
-    const byClass = new Map<string, number>();
-    for (const h of holdings) byClass.set(h.cls, (byClass.get(h.cls) || 0) + h.value);
-    for (const [cls, value] of byClass) {
-      const pct = (value / total) * 100;
-      if (pct >= ASSET_CLASS_PCT && byClass.size > 1) {
-        out.push({ key: `class:${cls}`, label: `${classLabel(cls)} (all holdings)`, pct, value });
-      }
-    }
-
-    return out.sort((a, b) => b.pct - a.pct);
-  }, [assets, baseCurrency, liveRates]);
+  const flags = useMemo<ConcentrationFlag[]>(
+    () => detectConcentrationFlags(assets, baseCurrency, liveRates),
+    [assets, baseCurrency, liveRates],
+  );
 
   // Signature changes when the flagged set or any share moves by ~5 points,
   // so a dismissed alert reappears if the picture materially shifts.

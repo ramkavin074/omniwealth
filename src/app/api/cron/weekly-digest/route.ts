@@ -4,7 +4,7 @@ import { sendMail } from '@/lib/mailer';
 import { db } from '@/db';
 import { households, assets, users, netWorthSnapshots, pushTokens } from '@/db/schema';
 import { fetchLiveExchangeRatesAction } from '@/actions/vault';
-import { netWorthOf } from '@/lib/networth';
+import { netWorthOf, detectConcentrationFlags } from '@/lib/networth';
 import { formatFull } from '@/lib/format';
 import { logError } from '@/lib/log';
 import { sendPushToUser } from '@/lib/push';
@@ -122,6 +122,24 @@ async function run() {
           threadId: 'weekly-digest',
         });
         if (delivered > 0) sentPush++;
+
+        // A second, distinct notification for concentration risk — only
+        // sent when something actually crosses the threshold, so it reads
+        // as a real alert rather than routine noise.
+        const flags = detectConcentrationFlags(rows, base, rates);
+        if (flags.length > 0) {
+          const top = flags[0];
+          const body =
+            flags.length === 1
+              ? `${top.label} is ${top.pct.toFixed(0)}% of your household assets.`
+              : `${top.label} is ${top.pct.toFixed(0)}% of your assets, plus ${flags.length - 1} more flagged position${flags.length > 2 ? 's' : ''}.`;
+          const riskDelivered = await sendPushToUser(u.id, {
+            title: 'Concentration check',
+            body,
+            threadId: 'concentration-risk',
+          });
+          if (riskDelivered > 0) sentPush++;
+        }
       } catch (err) {
         logError('cron/weekly-digest.push', err, { userId: u.id });
       }
