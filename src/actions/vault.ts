@@ -656,6 +656,21 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   if (!draft) return { success: false, error: 'Draft not found' };
 
   const targetUserId = selectedUserId || draft.userId || session.user.id;
+
+  // A member may only approve drafts into their own portfolio; ADMIN+ may
+  // target anyone in the household. Either way the target must be a member —
+  // without this check targetUserId (client-supplied) could point at a user
+  // in a different household entirely.
+  if (targetUserId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
+  }
+  const [targetUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, targetUserId), eq(users.householdId, session.household.id)));
+  if (!targetUser) {
+    return { success: false, error: 'Selected user does not belong to this household.' };
+  }
   const finalCategory = selectedCategory || draft.accountCategory || 'INDIVIDUAL';
   const finalAccountNumber = selectedAccountNumber || draft.accountNumber || 'DEFAULT';
   const finalRationale = selectedRationale || draft.rationale || 'General Long-Term Growth';
@@ -931,6 +946,12 @@ export async function exportAssetsCsvAction(): Promise<
   }
 }
 
+// Matches the currency set offered everywhere else in the app (asset forms,
+// FX fallback tables) — keep in sync if that set ever changes.
+const SUPPORTED_BASE_CURRENCIES = new Set([
+  'USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY',
+]);
+
 export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
   const session = await getSessionUserAction();
   if (!session || !session.household?.id) {
@@ -940,11 +961,16 @@ export async function updateHouseholdBaseCurrencyAction(newCurrency: string) {
     throw new Error(FORBIDDEN_ERROR);
   }
 
+  const currency = String(newCurrency || '').trim().toUpperCase();
+  if (!SUPPORTED_BASE_CURRENCIES.has(currency)) {
+    throw new Error('Unsupported currency.');
+  }
+
   await db
     .update(households)
-    .set({ baseCurrency: newCurrency })
+    .set({ baseCurrency: currency })
     .where(eq(households.id, session.household.id));
-  await audit(session, 'household.currency_change', 'household', session.household.id, { to: newCurrency });
+  await audit(session, 'household.currency_change', 'household', session.household.id, { to: currency });
 
   revalidatePath('/');
 }
