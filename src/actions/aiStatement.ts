@@ -1,11 +1,11 @@
 'use server';
 
 import { db } from '@/db';
-import { draftLineItems, assets, transactions, portfolios } from '@/db/schema';
+import { draftLineItems, assets, transactions, portfolios, users } from '@/db/schema';
 import { getSessionUserAction } from './auth';
 import { getExchangeRate } from '@/lib/fx';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { canWrite, READ_ONLY_ERROR } from '@/lib/permissions';
+import { canWrite, canManageHousehold, READ_ONLY_ERROR, FORBIDDEN_ERROR } from '@/lib/permissions';
 import { toNumeric } from '@/lib/num';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -203,6 +203,21 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   if (!draft) return { success: false, error: 'Draft not found' };
 
   const targetUserId = selectedUserId || draft.userId || session.user.id;
+
+  // A member may only approve drafts into their own portfolio; ADMIN+ may
+  // target anyone in the household. Either way the target must be a member —
+  // without this check targetUserId (client-supplied) could point at a user
+  // in a different household entirely.
+  if (targetUserId !== session.user.id && !canManageHousehold(session.user.role)) {
+    return { success: false, error: FORBIDDEN_ERROR };
+  }
+  const [targetUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, targetUserId), eq(users.householdId, session.household.id)));
+  if (!targetUser) {
+    return { success: false, error: 'Selected user does not belong to this household.' };
+  }
   const finalCategory = selectedCategory || draft.accountCategory || 'INDIVIDUAL';
   const finalAccountNumber = selectedAccountNumber || draft.accountNumber || 'DEFAULT';
   const finalRationale = selectedRationale || draft.rationale || 'General Long-Term Growth';
