@@ -10,12 +10,13 @@ import { formatFull } from '@/lib/format';
 // whether a number typed into "value" means the total or a single unit's
 // price. Everything else (cash, real estate, PPF, pension...) has no
 // meaningful "quantity", so it just asks for the total.
-const QUANTIFIABLE_TYPES = new Set(['STOCK', 'CRYPTO', 'COMMODITY']);
+const QUANTIFIABLE_TYPES = new Set(['STOCK', 'CRYPTO', 'COMMODITY', 'MUTUAL_FUND']);
 
 const TICKER_HINTS: Record<string, string> = {
   STOCK: 'e.g. AAPL — Indian exchanges: RELIANCE.NS (NSE) or TCS.BO (BSE)',
   CRYPTO: 'e.g. BTC, ETH, SOL',
   COMMODITY: 'Optional — leave blank for physical gold/silver you value manually',
+  MUTUAL_FUND: "AMFI scheme code, e.g. 120503 — look it up at amfiindia.com or mfapi.in. Quantity = units held.",
 };
 
 export default function AddAssetModal({ legacyPillars, members, onClose, isLiability }: any) {
@@ -77,6 +78,7 @@ export default function AddAssetModal({ legacyPillars, members, onClose, isLiabi
                 <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Asset Type</label>
                 <select name="assetType" value={assetType} onChange={(e) => setAssetType(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-3 py-2.5 text-sm text-slate-900 dark:text-white shadow-sm">
                   <option value="STOCK">Stock</option>
+                  <option value="MUTUAL_FUND">Mutual Fund</option>
                   <option value="CRYPTO">Crypto</option>
                   <option value="COMMODITY">Commodity / Gold</option>
                   <option value="CASH">Cash</option>

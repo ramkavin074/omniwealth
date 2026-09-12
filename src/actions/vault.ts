@@ -263,6 +263,18 @@ export async function refreshLiveMarketPricesAction() {
           const data = await res.json();
           livePrice = data[coinId]?.usd || null;
         }
+      } else if (assetType === 'MUTUAL_FUND') {
+        // Indian mutual funds: NAV by AMFI scheme code via mfapi.in (a free
+        // wrapper over AMFI's daily NAV feed — no API key). The "ticker"
+        // field holds the scheme code, e.g. 120503. NAV is published once a
+        // day, so this is cached longer than the intraday stock/crypto quotes.
+        const schemeCode = ticker.replace(/\D/g, '');
+        if (schemeCode) {
+          const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { next: { revalidate: 3600 } });
+          const data = await res.json();
+          const nav = data?.data?.[0]?.nav;
+          livePrice = nav ? parseFloat(nav) : null;
+        }
       } else {
         const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },

@@ -8,7 +8,7 @@ import { formatFull } from '@/lib/format';
 // Keep in sync with AddAssetModal.tsx — asset types with a real per-unit
 // market price get a quantity + price-per-unit input (total computed), so
 // editing never re-invites the "did I mean total or per-share" mistake.
-const QUANTIFIABLE_TYPES = new Set(['STOCK', 'CRYPTO', 'COMMODITY']);
+const QUANTIFIABLE_TYPES = new Set(['STOCK', 'CRYPTO', 'COMMODITY', 'MUTUAL_FUND']);
 
 interface EditAssetModalProps {
   asset: any;
