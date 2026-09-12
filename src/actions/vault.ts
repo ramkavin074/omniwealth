@@ -276,12 +276,22 @@ export async function refreshLiveMarketPricesAction() {
           livePrice = nav ? parseFloat(nav) : null;
         }
       } else {
+        // Works for any exchange Yahoo covers by ticker suffix, e.g.
+        // RELIANCE.NS/.BO (India), .L (London), .TO (Toronto), .AX (Sydney),
+        // .T (Tokyo), .SW (Switzerland), .DE/.PA/.MI/.AS (EU), .SS/.SZ (China A-shares).
         const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
           next: { revalidate: 60 }
         });
         const data = await res.json();
-        livePrice = data?.chart?.result?.[0]?.meta?.regularMarketPrice || null;
+        const meta = data?.chart?.result?.[0]?.meta;
+        livePrice = meta?.regularMarketPrice || null;
+        // London Stock Exchange quotes in pence, not pounds — Yahoo flags
+        // this with currency "GBp" (lowercase p). Left unconverted, a
+        // holding priced in GBP would be overstated 100x.
+        if (livePrice !== null && meta?.currency === 'GBp') {
+          livePrice = livePrice / 100;
+        }
       }
 
       if (livePrice !== null && livePrice > 0) {

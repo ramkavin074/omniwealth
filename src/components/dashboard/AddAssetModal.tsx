@@ -13,10 +13,16 @@ import { formatFull } from '@/lib/format';
 const QUANTIFIABLE_TYPES = new Set(['STOCK', 'CRYPTO', 'COMMODITY', 'MUTUAL_FUND']);
 
 const TICKER_HINTS: Record<string, string> = {
-  STOCK: 'e.g. AAPL — Indian exchanges: RELIANCE.NS (NSE) or TCS.BO (BSE)',
+  STOCK:
+    'US: AAPL — India: RELIANCE.NS / TCS.BO — UK: BARC.L — Canada: SHOP.TO — ' +
+    'Australia: BHP.AX — Japan: 7203.T — Switzerland: NESN.SW — Germany/EU: SAP.DE. ' +
+    'Set Currency to match the exchange (e.g. GBP for .L, JPY for .T).',
   CRYPTO: 'e.g. BTC, ETH, SOL',
   COMMODITY: 'Optional — leave blank for physical gold/silver you value manually',
-  MUTUAL_FUND: "AMFI scheme code, e.g. 120503 — look it up at amfiindia.com or mfapi.in. Quantity = units held.",
+  MUTUAL_FUND:
+    'For Indian funds: the AMFI scheme code, e.g. 120503 (look it up at amfiindia.com or mfapi.in) — ' +
+    'Refresh Prices pulls the daily NAV automatically. Funds outside India have no live-price source yet; ' +
+    'leave the ticker blank and update the value manually.',
 };
 
 export default function AddAssetModal({ legacyPillars, members, onClose, isLiability }: any) {
