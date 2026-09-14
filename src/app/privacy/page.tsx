@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | OmniWealth',
+  title: 'Privacy Policy',
   description:
     'How DreamBee Network LLC collects, uses, shares, and protects your information in OmniWealth and OmniWealth Kadai.',
 };
@@ -27,7 +27,7 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="mx-auto max-w-2xl px-5 py-14 text-[15px] leading-7 text-slate-700 dark:text-slate-300">
+    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-[15px] leading-7 text-slate-700 dark:text-slate-300">
       <p className="text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
         DreamBee Network LLC
       </p>
