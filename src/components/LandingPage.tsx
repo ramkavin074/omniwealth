@@ -72,11 +72,14 @@ export default function LandingPage() {
             <Link href="/help" className="text-slate-400 hover:text-white transition-colors hidden sm:inline">
               Help
             </Link>
+            <Link href="/login" className="text-slate-300 hover:text-white transition-colors hidden sm:inline">
+              Sign In
+            </Link>
             <Link
-              href="/login"
+              href="/login?tab=register"
               className="px-4 py-2 bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-lg transition-colors"
             >
-              Sign In
+              Sign Up
             </Link>
           </nav>
         </div>
@@ -95,7 +98,7 @@ export default function LandingPage() {
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/login"
+            href="/login?tab=register"
             className="inline-flex items-center gap-2 px-6 py-3 bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-teal-900/30"
           >
             Get Started <ArrowRight className="w-4 h-4" />
@@ -153,7 +156,7 @@ export default function LandingPage() {
           trades, custody funds, act as a broker-dealer, or provide licensed financial advice.
         </p>
         <Link
-          href="/login"
+          href="/login?tab=register"
           className="inline-flex items-center gap-2 px-6 py-3 bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-teal-900/30"
         >
           Start Tracking Your Wealth <ArrowRight className="w-4 h-4" />

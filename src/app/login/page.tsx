@@ -46,15 +46,21 @@ const [inviteToken, setInviteToken] = useState<string | null>(null);
 const router = useRouter();
 
 useEffect(() => {
-// One-time read of the ?invite= param, which is not available during SSR.
+// One-time read of the ?invite= / ?tab= params, not available during SSR.
 // Doing this in an effect (rather than a lazy initializer) keeps the
 // server and first client render identical, avoiding a hydration mismatch.
 try {
-const t = new URLSearchParams(window.location.search).get('invite');
+const params = new URLSearchParams(window.location.search);
+const t = params.get('invite');
 // eslint-disable-next-line react-hooks/set-state-in-effect
 if (t) setInviteToken(t);
+const requestedTab = params.get('tab');
+if (requestedTab === 'register' || requestedTab === 'invite') {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  setTab(requestedTab);
+}
 } catch {
-// ignore — no invite param
+// ignore — no query params
 }
 }, []);
 
@@ -232,7 +238,7 @@ return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-cen
             : 'text-slate-400 hover:text-white'
         }`}
       >
-        New Household
+        Sign Up
       </button>
 
       <button
