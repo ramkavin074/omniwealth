@@ -46,7 +46,7 @@ const FEATURES = [
     icon: ShieldCheck,
     title: 'Private by design',
     description:
-      'Face ID app lock, encrypted data at rest, and no ads or data sharing. Informational only — we never touch your money.',
+      'Face ID app lock, encrypted data at rest, and no ads or data sharing. Informational only — we never move money or connect to your accounts.',
   },
 ];
 
