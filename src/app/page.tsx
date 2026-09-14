@@ -4,13 +4,14 @@ import { getSessionUserAction, fetchHouseholdDocumentsAction, fetchLiveExchangeR
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
+import LandingPage from '@/components/LandingPage';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const session = await getSessionUserAction();
   if (!session) {
-    redirect('/login');
+    return <LandingPage />;
   }
   // Store-only accounts (shop staff) have no wealth vault — send them to the
   // stocking app.

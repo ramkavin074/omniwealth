@@ -20,9 +20,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_NAME = "OmniWealth";
+const SITE_URL = "https://www.omniwealth.org";
+const SITE_TITLE = "OmniWealth — Family Wealth & Net Worth Tracker";
+const SITE_DESCRIPTION =
+  "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard. Secure document vault, AI portfolio assistant, and retirement planning built in.";
+
 export const metadata: Metadata = {
-  title: "OmniWealth | Global Family Vault",
-  description: "Global Family Wealth Command Center",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "net worth tracker",
+    "family wealth management",
+    "multi-currency dashboard",
+    "personal finance app",
+    "wealth tracking app",
+    "family office software",
+    "retirement calculator",
+    "secure document vault",
+  ],
   manifest: "/manifest.json",
   icons: {
     icon: { url: "/omniwealth.jpg", type: "image/jpeg" },
@@ -32,6 +52,25 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "OmniWealth",
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: SITE_NAME }],
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/icon-512.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
