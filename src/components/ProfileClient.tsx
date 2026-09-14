@@ -86,7 +86,10 @@ export default function ProfileClient({ session, initialFamilyMembers, household
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col justify-between selection:bg-teal-600 selection:text-white font-sans transition-colors">
       <div className="space-y-6">
-        <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors">
+        <header
+          className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.875rem)' }}
+        >
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             {/* Left side: Sandwich Menu + Logo / Title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">

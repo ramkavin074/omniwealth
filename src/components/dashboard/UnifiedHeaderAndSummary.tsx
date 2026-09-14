@@ -117,7 +117,10 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
 
   return (
     <div className="space-y-4">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-3 md:px-8 py-3.5 shadow-sm transition-colors print:hidden">
+      <header
+        className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-3 md:px-8 py-3.5 shadow-sm transition-colors print:hidden"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 0.875rem)' }}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between w-full gap-2 min-w-0">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <button
