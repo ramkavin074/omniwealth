@@ -18,7 +18,7 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
     <h2
       id={id}
-      className="mt-10 scroll-mt-24 text-lg font-semibold text-slate-900 dark:text-slate-100"
+      className="mt-10 scroll-mt-24 text-lg font-semibold text-slate-900"
     >
       {children}
     </h2>
@@ -27,20 +27,20 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
 
 export default function PrivacyPolicyPage() {
   return (
-    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-[15px] leading-7 text-slate-700 dark:text-slate-300">
+    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-[15px] leading-7 text-slate-700">
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 dark:text-slate-400 dark:hover:text-teal-400 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 transition-colors"
       >
         ← Back to OmniWealth
       </Link>
-      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
+      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700">
         DreamBee Network LLC
       </p>
-      <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-50">
+      <h1 className="mt-2 text-2xl font-bold text-slate-900">
         Privacy Policy
       </h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-1 text-sm text-slate-500">
         Last updated: {UPDATED}
       </p>
 
@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
         DreamBee Network LLC is the data controller for information processed
         through the Services. You can reach us at{' '}
         <a
-          className="text-teal-700 underline dark:text-teal-400"
+          className="text-teal-700 underline"
           href={`mailto:${CONTACT_EMAIL}`}
         >
           {CONTACT_EMAIL}
@@ -70,7 +70,7 @@ export default function PrivacyPolicyPage() {
       </p>
 
       <H2 id="information-we-collect">Information we collect</H2>
-      <p className="mt-2 font-medium text-slate-900 dark:text-slate-200">
+      <p className="mt-2 font-medium text-slate-900">
         Information you provide
       </p>
       <ul className="mt-2 list-disc space-y-1.5 pl-5">
@@ -111,7 +111,7 @@ export default function PrivacyPolicyPage() {
         </li>
       </ul>
 
-      <p className="mt-4 font-medium text-slate-900 dark:text-slate-200">
+      <p className="mt-4 font-medium text-slate-900">
         Information collected automatically
       </p>
       <ul className="mt-2 list-disc space-y-1.5 pl-5">
@@ -231,7 +231,7 @@ export default function PrivacyPolicyPage() {
         <li>
           email{' '}
           <a
-            className="text-teal-700 underline dark:text-teal-400"
+            className="text-teal-700 underline"
             href={`mailto:${CONTACT_EMAIL}?subject=Delete%20my%20account`}
           >
             {CONTACT_EMAIL}
@@ -255,7 +255,7 @@ export default function PrivacyPolicyPage() {
         receive discriminatory treatment for exercising these rights. To make a
         request, contact us at{' '}
         <a
-          className="text-teal-700 underline dark:text-teal-400"
+          className="text-teal-700 underline"
           href={`mailto:${CONTACT_EMAIL}`}
         >
           {CONTACT_EMAIL}
@@ -290,18 +290,18 @@ export default function PrivacyPolicyPage() {
         DreamBee Network LLC
         <br />
         <a
-          className="text-teal-700 underline dark:text-teal-400"
+          className="text-teal-700 underline"
           href={`mailto:${CONTACT_EMAIL}`}
         >
           {CONTACT_EMAIL}
         </a>
       </p>
 
-      <hr className="my-10 border-slate-200 dark:border-slate-800" />
+      <hr className="my-10 border-slate-200" />
       <p className="text-sm">
         <Link
           href="/"
-          className="text-teal-700 underline dark:text-teal-400"
+          className="text-teal-700 underline"
         >
           Return to OmniWealth
         </Link>

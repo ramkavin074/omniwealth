@@ -17,7 +17,7 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
     <h2
       id={id}
-      className="mt-10 scroll-mt-24 text-lg font-semibold text-slate-900 dark:text-slate-100"
+      className="mt-10 scroll-mt-24 text-lg font-semibold text-slate-900"
     >
       {children}
     </h2>
@@ -26,20 +26,20 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
 
 export default function TermsPage() {
   return (
-    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-[15px] leading-7 text-slate-700 dark:text-slate-300">
+    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-[15px] leading-7 text-slate-700">
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 dark:text-slate-400 dark:hover:text-teal-400 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 transition-colors"
       >
         ← Back to OmniWealth
       </Link>
-      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
+      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700">
         DreamBee Network LLC
       </p>
-      <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-50">
+      <h1 className="mt-2 text-2xl font-bold text-slate-900">
         Terms of Service
       </h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-1 text-sm text-slate-500">
         Last updated: {UPDATED}
       </p>
 
@@ -52,7 +52,7 @@ export default function TermsPage() {
         Services, you agree to these Terms and to our{' '}
         <Link
           href="/privacy"
-          className="text-teal-700 underline dark:text-teal-400"
+          className="text-teal-700 underline"
         >
           Privacy Policy
         </Link>
@@ -93,7 +93,7 @@ export default function TermsPage() {
         <li>
           Notify us promptly at{' '}
           <a
-            className="text-teal-700 underline dark:text-teal-400"
+            className="text-teal-700 underline"
             href={`mailto:${CONTACT_EMAIL}`}
           >
             {CONTACT_EMAIL}
@@ -208,16 +208,16 @@ export default function TermsPage() {
         DreamBee Network LLC
         <br />
         <a
-          className="text-teal-700 underline dark:text-teal-400"
+          className="text-teal-700 underline"
           href={`mailto:${CONTACT_EMAIL}`}
         >
           {CONTACT_EMAIL}
         </a>
       </p>
 
-      <hr className="my-10 border-slate-200 dark:border-slate-800" />
+      <hr className="my-10 border-slate-200" />
       <p className="text-sm">
-        <Link href="/" className="text-teal-700 underline dark:text-teal-400">
+        <Link href="/" className="text-teal-700 underline">
           Return to OmniWealth
         </Link>
       </p>

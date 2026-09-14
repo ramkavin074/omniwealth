@@ -22,7 +22,7 @@ function Section({
 }) {
   return (
     <section id={id} className="mt-12 scroll-mt-24">
-      <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h2>
+      <h2 className="text-xl font-bold text-slate-900">{title}</h2>
       <div className="mt-4 space-y-6">{children}</div>
     </section>
   );
@@ -31,8 +31,8 @@ function Section({
 function QA({ q, children }: { q: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="font-semibold text-slate-900 dark:text-slate-100">{q}</h3>
-      <p className="mt-1.5 text-[15px] leading-7 text-slate-600 dark:text-slate-400">{children}</p>
+      <h3 className="font-semibold text-slate-900">{q}</h3>
+      <p className="mt-1.5 text-[15px] leading-7 text-slate-600">{children}</p>
     </div>
   );
 }
@@ -96,18 +96,18 @@ export default function HelpPage() {
   ];
 
   return (
-    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-slate-700 dark:text-slate-300">
+    <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-slate-700">
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 dark:text-slate-400 dark:hover:text-teal-400 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 transition-colors"
       >
         ← Back to OmniWealth
       </Link>
-      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
+      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700">
         OmniWealth
       </p>
-      <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-50">Help &amp; FAQ</h1>
-      <p className="mt-3 text-[15px] leading-7 text-slate-600 dark:text-slate-400">
+      <h1 className="mt-2 text-2xl font-bold text-slate-900">Help &amp; FAQ</h1>
+      <p className="mt-3 text-[15px] leading-7 text-slate-600">
         Everything you need to get started tracking your family&rsquo;s net worth in OmniWealth.
       </p>
 
@@ -116,7 +116,7 @@ export default function HelpPage() {
           <a
             key={id}
             href={`#${id}`}
-            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-slate-600 dark:text-slate-400 hover:text-teal-700 dark:hover:text-teal-400 hover:border-teal-300 dark:hover:border-teal-800 transition-colors"
+            className="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-full text-slate-600 hover:text-teal-700 hover:border-teal-300 transition-colors"
           >
             {label}
           </a>
@@ -159,13 +159,13 @@ export default function HelpPage() {
         <QA q={faqs[10].q}>{faqs[10].a}</QA>
       </Section>
 
-      <p className="mt-14 text-sm text-slate-500 dark:text-slate-500">
+      <p className="mt-14 text-sm text-slate-500">
         Still have a question?{' '}
-        <a href="mailto:admin@omniwealth.org" className="text-teal-700 dark:text-teal-400 hover:underline">
+        <a href="mailto:admin@omniwealth.org" className="text-teal-700 hover:underline">
           admin@omniwealth.org
         </a>
       </p>
-      <p className="mt-2 text-xs text-slate-400 dark:text-slate-600">
+      <p className="mt-2 text-xs text-slate-400">
         <Link href="/" className="hover:underline">Home</Link>
         <span className="mx-2">·</span>
         <Link href="/privacy" className="hover:underline">Privacy</Link>
