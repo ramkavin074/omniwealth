@@ -110,6 +110,10 @@ export default function LandingPage() {
             See How It Works
           </Link>
         </div>
+        <p className="mt-6 text-xs text-slate-500">
+          Not a bank, broker-dealer, or investment adviser — OmniWealth is a private tracking
+          tool only. We never move your money or connect to your financial accounts.
+        </p>
       </section>
 
       {/* Features */}
@@ -175,7 +179,25 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* SoftwareApplication structured data for search rich results */}
+      {/* SoftwareApplication + Organization structured data for search rich
+          results — explicitly disambiguates from unrelated, similarly-named
+          registered investment advisers, and clarifies this is a tracking
+          tool, not a financial institution. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'DreamBee Network LLC',
+            alternateName: 'OmniWealth',
+            url: 'https://www.omniwealth.org',
+            email: 'admin@omniwealth.org',
+            description:
+              'DreamBee Network LLC operates OmniWealth, a personal net-worth tracking application. It is not a bank, broker-dealer, or investment adviser, does not manage or custody funds, and does not provide licensed financial advice.',
+          }),
+        }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -186,7 +208,7 @@ export default function LandingPage() {
             applicationCategory: 'FinanceApplication',
             operatingSystem: 'iOS, Android, Web',
             description:
-              "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard.",
+              "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard. Informational only: not a bank, broker-dealer, or investment adviser, and does not manage, custody, or move your money.",
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
           }),
         }}

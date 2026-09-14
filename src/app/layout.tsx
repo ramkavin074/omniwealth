@@ -24,7 +24,7 @@ const SITE_NAME = "OmniWealth";
 const SITE_URL = "https://www.omniwealth.org";
 const SITE_TITLE = "OmniWealth — Family Wealth & Net Worth Tracker";
 const SITE_DESCRIPTION =
-  "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard. Secure document vault, AI portfolio assistant, and retirement planning built in.";
+  "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard. Secure document vault, AI portfolio assistant, and retirement planning built in. Not a bank, broker-dealer, or investment adviser — a personal tracking tool only.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
