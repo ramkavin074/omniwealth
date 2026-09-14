@@ -97,7 +97,13 @@ export default function HelpPage() {
 
   return (
     <main className="bg-white mx-auto max-w-2xl px-5 py-14 text-slate-700 dark:text-slate-300">
-      <p className="text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-teal-700 dark:text-slate-400 dark:hover:text-teal-400 transition-colors"
+      >
+        ← Back to OmniWealth
+      </Link>
+      <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-teal-700 dark:text-teal-400">
         OmniWealth
       </p>
       <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-50">Help &amp; FAQ</h1>
