@@ -158,15 +158,35 @@ export default function PrivacyPolicyPage() {
 
       <H2 id="ai-processing">AI processing of your content</H2>
       <p>
-        When you use a feature that reads a document or free-text you submit
-        (for example, the statement reader or the in-app assistant), the
-        relevant content is sent to a third-party AI provider solely to return a
-        result to you. By default this provider is <strong>Google (Gemini)</strong>.
-        Other providers (such as OpenAI or Anthropic) are used only if you add
-        your own API key for them, in which case those requests go to the
-        provider you chose under that provider&rsquo;s own terms and privacy
-        policy. Where a provider offers the option, we request that your content
-        not be used to train their models.
+        Two features send your data to a third-party AI provider. Before either
+        is used for the first time, the app shows an in-app notice describing
+        exactly what is sent and to whom, and asks you to allow it &mdash; these
+        features simply do not work until you do.
+      </p>
+      <ul className="mt-2 list-disc space-y-1.5 pl-5">
+        <li>
+          <strong>Ask Wealth AI</strong> (the in-app assistant) sends the
+          question you type, plus a summary of your household&rsquo;s portfolio
+          (asset names, types, and values converted to your base currency &mdash;
+          not account numbers, passwords, or documents).
+        </li>
+        <li>
+          <strong>AI Statement Reader</strong> sends the document (PDF/image) or
+          pasted text you submit for that specific import, and nothing else from
+          your account.
+        </li>
+      </ul>
+      <p className="mt-3">
+        Both are sent solely to generate the response shown to you; we do not
+        use this content for any other purpose. By default the provider is{' '}
+        <strong>Google (Gemini)</strong>. If you add your own API key for a
+        different provider (OpenAI, Anthropic, Groq, Cerebras, or OpenRouter) in
+        Settings, that request goes to the provider you chose instead, under
+        that provider&rsquo;s own terms. We select providers that, like Google
+        here, commit to not using API content submitted this way to train their
+        models, and that apply security and confidentiality protections
+        consistent with our own AES-256/at-rest and in-transit encryption
+        standards.
       </p>
 
       <H2 id="how-we-share">How we share information</H2>

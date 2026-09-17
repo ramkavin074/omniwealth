@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  parseStatementAction, 
-  fetchDraftLineItemsAction, 
-  approveDraftLineItemAction, 
-  approveAllDraftLineItemsAction, 
-  rejectDraftLineItemAction 
+import {
+  parseStatementAction,
+  fetchDraftLineItemsAction,
+  approveDraftLineItemAction,
+  approveAllDraftLineItemsAction,
+  rejectDraftLineItemAction
 } from '@/actions/aiStatement';
+import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
+import AiConsentDialog from '@/components/AiConsentDialog';
 import { Cpu, X, Sparkles, FileUp, ClipboardPaste, CheckCheck, Check, Trash2 } from 'lucide-react';
 import { formatCompact } from '@/lib/format';
 
@@ -17,6 +19,8 @@ export default function StatementUploadModal({ legacyPillars, members, onClose }
   const [bulkUser, setBulkUser] = useState(members[0]?.id);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [showConsent, setShowConsent] = useState(false);
+  const [pendingForm, setPendingForm] = useState<HTMLFormElement | null>(null);
 
   const loadData = async () => {
     try {
@@ -30,30 +34,59 @@ export default function StatementUploadModal({ legacyPillars, members, onClose }
   useEffect(() => { loadData(); }, []);
   useEffect(() => { if (members.length > 0 && !bulkUser) { setBulkUser(members[0].id); } }, [members]);
 
-  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function doUpload(form: HTMLFormElement) {
     setUploading(true);
     setError('');
     setSuccessMsg('');
     try {
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       const res = await parseStatementAction(formData);
       if (res?.success) {
         setSuccessMsg(`Successfully extracted ${res.count} items! Review below.`);
-        (e.target as HTMLFormElement).reset();
+        form.reset();
         await loadData();
       } else { setError(res?.error || 'Failed to parse statements or text.'); }
-    } catch (err: any) { 
+    } catch (err: any) {
       console.error('Statement upload error:', err);
-      setError(err.message || 'An unexpected error occurred.'); 
-    } finally { 
-      setUploading(false); 
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!hasAiConsent()) {
+      setPendingForm(form);
+      setShowConsent(true);
+      return;
+    }
+    await doUpload(form);
+  }
+
+  function handleAllowConsent() {
+    grantAiConsent();
+    setShowConsent(false);
+    if (pendingForm) {
+      const form = pendingForm;
+      setPendingForm(null);
+      void doUpload(form);
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4 print:hidden">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-5xl shadow-xl max-h-[90vh] overflow-y-auto my-auto relative text-slate-900 dark:text-white">
+        {showConsent && (
+          <AiConsentDialog
+            onAllow={handleAllowConsent}
+            onCancel={() => {
+              setShowConsent(false);
+              setPendingForm(null);
+            }}
+          />
+        )}
         {uploading && (
           <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs z-30 rounded-2xl flex flex-col items-center justify-center gap-3 text-center p-6">
             <div className="w-10 h-10 border-4 border-teal-700 border-t-transparent rounded-full animate-spin"></div>
@@ -87,8 +120,11 @@ export default function StatementUploadModal({ legacyPillars, members, onClose }
               <textarea name="pastedText" rows={3} placeholder="Paste account holdings, table rows, or statement text here..." className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-slate-400 resize-none shadow-sm" />
             </div>
           </div>
-          <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
-            <button type="submit" disabled={uploading} className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition-colors flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              Sends the uploaded document or pasted text to Google Gemini (or your configured AI provider).
+            </p>
+            <button type="submit" disabled={uploading} className="self-end sm:self-auto px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs rounded-xl cursor-pointer disabled:opacity-50 shadow-sm transition-colors flex items-center gap-2 shrink-0">
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>{uploading ? 'Analyzing with Gemini...' : 'Extract & Parse with AI'}</span>
             </button>

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { askPortfolioAIAction } from '@/actions/ai-actions';
+import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
+import AiConsentDialog from './AiConsentDialog';
 import { Send, Sparkles, X, Cpu } from 'lucide-react';
 
 export default function PortfolioAIChat() {
@@ -9,16 +11,13 @@ export default function PortfolioAIChat() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('auto');
+  const [showConsent, setShowConsent] = useState(false);
+  const [pendingText, setPendingText] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ sender: 'user' | 'ai'; text: string; provider?: string }[]>([
     { sender: 'ai', text: "Hello! I'm your family wealth assistant. Ask me anything about our net worth, assets, or retirement plans.", provider: 'System' }
   ]);
 
-  async function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    if (!prompt.trim() || loading) return;
-
-    const userText = prompt.trim();
-    setPrompt('');
+  async function sendToAi(userText: string) {
     setMessages(prev => [...prev, { sender: 'user', text: userText }]);
     setLoading(true);
 
@@ -29,6 +28,31 @@ export default function PortfolioAIChat() {
       setMessages(prev => [...prev, { sender: 'ai', text: res.answer || 'No response generated.', provider: res.providerUsed }]);
     } else {
       setMessages(prev => [...prev, { sender: 'ai', text: `Error: ${res.error}`, provider: 'Error' }]);
+    }
+  }
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!prompt.trim() || loading) return;
+
+    const userText = prompt.trim();
+    setPrompt('');
+
+    if (!hasAiConsent()) {
+      setPendingText(userText);
+      setShowConsent(true);
+      return;
+    }
+    await sendToAi(userText);
+  }
+
+  function handleAllowConsent() {
+    grantAiConsent();
+    setShowConsent(false);
+    if (pendingText) {
+      const text = pendingText;
+      setPendingText(null);
+      void sendToAi(text);
     }
   }
 
@@ -44,6 +68,15 @@ export default function PortfolioAIChat() {
 
       {isOpen && (
         <div className="fixed bottom-6 right-6 w-96 max-w-[90vw] h-[520px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
+          {showConsent && (
+            <AiConsentDialog
+              onAllow={handleAllowConsent}
+              onCancel={() => {
+                setShowConsent(false);
+                setPendingText(null);
+              }}
+            />
+          )}
           {/* Header with Model Selector */}
           <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -100,8 +133,11 @@ export default function PortfolioAIChat() {
           </div>
 
           {/* Footer Input */}
-          <form onSubmit={handleSend} className="p-3 bg-slate-950 border-t border-slate-800 flex gap-2">
-            <input 
+          <p className="px-3 pt-2 text-[10px] text-slate-500 bg-slate-950 border-t border-slate-800">
+            Sends your question &amp; portfolio summary to Google Gemini (or your configured AI provider).
+          </p>
+          <form onSubmit={handleSend} className="p-3 bg-slate-950 flex gap-2">
+            <input
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
