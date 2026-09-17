@@ -182,11 +182,12 @@ export default function PrivacyPolicyPage() {
         <strong>Google (Gemini)</strong>. If you add your own API key for a
         different provider (OpenAI, Anthropic, Groq, Cerebras, or OpenRouter) in
         Settings, that request goes to the provider you chose instead, under
-        that provider&rsquo;s own terms. We select providers that, like Google
-        here, commit to not using API content submitted this way to train their
-        models, and that apply security and confidentiality protections
-        consistent with our own AES-256/at-rest and in-transit encryption
-        standards.
+        that provider&rsquo;s own terms. We only use AI providers that commit,
+        in their own API terms, to <strong>not</strong> using content submitted
+        this way to train their models, and that provide the same or equal
+        level of protection for your data as described in this Privacy Policy
+        &mdash; specifically encryption in transit (TLS) and at rest, and no use
+        of your content beyond generating the response returned to you.
       </p>
 
       <H2 id="how-we-share">How we share information</H2>
