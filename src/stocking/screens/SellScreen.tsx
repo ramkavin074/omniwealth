@@ -39,6 +39,8 @@ import {
 } from '../voice';
 import { useBackHandler, useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
+import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
+import AiConsentDialog from '@/components/AiConsentDialog';
 
 interface Props {
   lang: Lang;
@@ -77,6 +79,7 @@ export default function SellScreen({ lang, onClose }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
+  const [showVoiceConsent, setShowVoiceConsent] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const [basketCode, setBasketCode] = useState('');
   const [basketBusy, setBasketBusy] = useState(false);
@@ -328,6 +331,15 @@ export default function SellScreen({ lang, onClose }: Props) {
   };
 
   const hearItem = async () => {
+    if (listening) return;
+    if (!hasAiConsent()) {
+      setShowVoiceConsent(true);
+      return;
+    }
+    await doHearItem();
+  };
+
+  const doHearItem = async () => {
     if (listening) return;
     setListening(true);
     const r = await listenOnce(lang === 'ta' ? 'ta-IN' : 'en-IN');
@@ -1152,7 +1164,17 @@ export default function SellScreen({ lang, onClose }: Props) {
 
   // ---------- CART ----------
   return (
-    <div className={`flex h-full flex-col ${SCREEN_PAD}`}>
+    <div className={`relative flex h-full flex-col ${SCREEN_PAD}`}>
+      {showVoiceConsent && (
+        <AiConsentDialog
+          onAllow={() => {
+            grantAiConsent();
+            setShowVoiceConsent(false);
+            void doHearItem();
+          }}
+          onCancel={() => setShowVoiceConsent(false)}
+        />
+      )}
       <div className="shrink-0 space-y-2 p-4 pb-2">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { t, type Lang } from '../i18n';
 import { API_BASE } from '../config';
 import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
+import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
+import AiConsentDialog from '@/components/AiConsentDialog';
 
 interface Props {
   lang: Lang;
@@ -39,8 +41,10 @@ export default function AskAiSheet({ lang, onClose, initialQuestion }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
 
-  const ask = async (question: string) => {
+  const doAsk = async (question: string) => {
     const text = question.trim();
     if (!text || busy) return;
     setQ('');
@@ -81,6 +85,32 @@ export default function AskAiSheet({ lang, onClose, initialQuestion }: Props) {
     }
   };
 
+  const ask = async (question: string) => {
+    if (!question.trim()) return;
+    if (!hasAiConsent()) {
+      setPendingQuestion(question);
+      setShowConsent(true);
+      return;
+    }
+    await doAsk(question);
+  };
+
+  const handleAllowConsent = () => {
+    grantAiConsent();
+    setShowConsent(false);
+    if (pendingQuestion) {
+      const question = pendingQuestion;
+      setPendingQuestion(null);
+      void doAsk(question);
+    }
+  };
+
+  // Ask for consent the moment this sheet opens, not only once a question
+  // is submitted.
+  useEffect(() => {
+    if (!hasAiConsent()) setShowConsent(true);
+  }, []);
+
   // Fire the seed question once, on open.
   const seeded = useRef(false);
   useEffect(() => {
@@ -94,9 +124,18 @@ export default function AskAiSheet({ lang, onClose, initialQuestion }: Props) {
   return (
     <div className={`${SHEET_OVERLAY} z-30`}>
       <div
-        className={`${SHEET_PANEL} flex max-h-[85vh] flex-col`}
+        className={`${SHEET_PANEL} relative flex max-h-[85vh] flex-col`}
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       >
+        {showConsent && (
+          <AiConsentDialog
+            onAllow={handleAllowConsent}
+            onCancel={() => {
+              setShowConsent(false);
+              setPendingQuestion(null);
+            }}
+          />
+        )}
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">
             {t(lang, 'ai.title')}

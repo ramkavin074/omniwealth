@@ -15,6 +15,8 @@ import {
 import { parseUpiHistory } from '../parseDoc';
 import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
+import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
+import AiConsentDialog from '@/components/AiConsentDialog';
 
 interface Props {
   lang: Lang;
@@ -39,6 +41,8 @@ export default function UpiScreen({ lang, onClose }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [addAmt, setAddAmt] = useState('');
   const [linkFor, setLinkFor] = useState<UpiReceipt | null>(null);
+  const [showConsent, setShowConsent] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const bounds = useMemo(() => {
     const start = new Date();
@@ -66,6 +70,11 @@ export default function UpiScreen({ lang, onClose }: Props) {
   };
 
   const scan = async (file: File) => {
+    if (!hasAiConsent()) {
+      setPendingFile(file);
+      setShowConsent(true);
+      return;
+    }
     setBusy(true);
     try {
       const rows = await parseUpiHistory(file);
@@ -91,6 +100,16 @@ export default function UpiScreen({ lang, onClose }: Props) {
     }
   };
 
+  const handleAllowConsent = () => {
+    grantAiConsent();
+    setShowConsent(false);
+    if (pendingFile) {
+      const f = pendingFile;
+      setPendingFile(null);
+      void scan(f);
+    }
+  };
+
   const addManual = async () => {
     const amt = Number(addAmt);
     if (!(amt > 0)) return;
@@ -112,7 +131,16 @@ export default function UpiScreen({ lang, onClose }: Props) {
       : 'text-rose-600 dark:text-rose-400';
 
   return (
-    <div className={`p-4 space-y-3 ${SCREEN_PAD}`}>
+    <div className={`relative p-4 space-y-3 ${SCREEN_PAD}`}>
+      {showConsent && (
+        <AiConsentDialog
+          onAllow={handleAllowConsent}
+          onCancel={() => {
+            setShowConsent(false);
+            setPendingFile(null);
+          }}
+        />
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">
           {t(lang, 'upi.title')}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import { GST_RATES, UNITS, type Unit } from '../types';
 import {
@@ -13,6 +13,8 @@ import { getGstConfig } from '../settings';
 import { parseInvoice, parsePayment, type InvoiceLine } from '../parseDoc';
 import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
+import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
+import AiConsentDialog from '@/components/AiConsentDialog';
 
 const isoToday = () => new Date().toISOString().slice(0, 10);
 
@@ -44,10 +46,20 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
   const [invNo, setInvNo] = useState('');
   const [invDate, setInvDate] = useState(isoToday());
   const [paid, setPaid] = useState('');
+  const [showConsent, setShowConsent] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const suppliers = useLiveQuery(() => listSuppliers(), [], []);
 
+  // Ask the moment this screen opens, not only once a photo is taken.
+  useEffect(() => { if (!hasAiConsent()) setShowConsent(true); }, []);
+
   const onFile = async (file: File) => {
+    if (!hasAiConsent()) {
+      setPendingFile(file);
+      setShowConsent(true);
+      return;
+    }
     setState({ s: 'reading' });
     try {
       if (kind === 'invoice') {
@@ -76,6 +88,16 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
       }
     } catch (e) {
       setState({ s: 'error', msg: (e as Error).message });
+    }
+  };
+
+  const handleAllowConsent = () => {
+    grantAiConsent();
+    setShowConsent(false);
+    if (pendingFile) {
+      const f = pendingFile;
+      setPendingFile(null);
+      void onFile(f);
     }
   };
 
@@ -148,7 +170,16 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
   };
 
   return (
-    <div className={`p-4 space-y-3 ${SCREEN_PAD}`}>
+    <div className={`relative p-4 space-y-3 ${SCREEN_PAD}`}>
+      {showConsent && (
+        <AiConsentDialog
+          onAllow={handleAllowConsent}
+          onCancel={() => {
+            setShowConsent(false);
+            setPendingFile(null);
+          }}
+        />
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">
           {t(lang, kind === 'invoice' ? 'doc.invoiceTitle' : 'doc.paymentTitle')}
