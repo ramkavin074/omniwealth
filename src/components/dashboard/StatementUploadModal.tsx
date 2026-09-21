@@ -33,6 +33,10 @@ export default function StatementUploadModal({ legacyPillars, members, onClose }
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { if (members.length > 0 && !bulkUser) { setBulkUser(members[0].id); } }, [members]);
+  // Ask for consent the moment this feature is opened, not only once the
+  // user tries to submit — so simply opening it always surfaces the
+  // permission request, regardless of whether they go on to use it.
+  useEffect(() => { if (!hasAiConsent()) setShowConsent(true); }, []);
 
   async function doUpload(form: HTMLFormElement) {
     setUploading(true);

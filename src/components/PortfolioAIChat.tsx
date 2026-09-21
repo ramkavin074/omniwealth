@@ -58,8 +58,11 @@ export default function PortfolioAIChat() {
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpen(true)}
+      <button
+        onClick={() => {
+          setIsOpen(true);
+          if (!hasAiConsent()) setShowConsent(true);
+        }}
         className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 z-50 transition-transform hover:scale-105"
       >
         <Sparkles className="w-5 h-5 text-indigo-200" />
