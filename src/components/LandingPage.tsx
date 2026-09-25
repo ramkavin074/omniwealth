@@ -8,6 +8,7 @@ import {
   Users,
   ShieldCheck,
   ArrowRight,
+  Apple,
   Check,
 } from 'lucide-react';
 
@@ -113,6 +114,18 @@ export default function LandingPage() {
             See How It Works
           </Link>
         </div>
+        <a
+          href="https://apps.apple.com/app/id6810544681"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-flex items-center gap-2.5 px-5 py-2.5 bg-black hover:bg-slate-900 border border-slate-700 text-white rounded-xl transition-colors"
+        >
+          <Apple className="w-6 h-6 fill-white shrink-0" />
+          <span className="text-left leading-tight">
+            <span className="block text-[10px] text-slate-300">Download on the</span>
+            <span className="block text-lg font-semibold -mt-0.5">App Store</span>
+          </span>
+        </a>
         <p className="mt-6 text-xs text-slate-500">
           Not a bank, broker-dealer, or investment adviser — OmniWealth is a private tracking
           tool only. We never move your money or connect to your financial accounts.
