@@ -61,7 +61,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-teal-600 selection:text-white">
       {/* Nav */}
       <header className="border-b border-slate-800/80">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
+        <div
+          className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-4"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}
+        >
           <div className="flex items-center gap-2.5">
             <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-800 shrink-0">
               <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
