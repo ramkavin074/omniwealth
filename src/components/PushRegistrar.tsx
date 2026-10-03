@@ -6,20 +6,38 @@
 
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { registerPushTokenAction } from '@/actions/push';
 
 const ASKED_KEY = 'ow.push.asked.v1';
 
+// First Android build (versionCode) that ships google-services.json. Older
+// Android builds have no Firebase config, and register() there throws
+// "FirebaseApp is not initialized" and crashes the app — and because this app
+// loads the live site, this code reaches those old builds too, so gate on it.
+const ANDROID_MIN_PUSH_BUILD = 23;
+
+async function pushSupported(): Promise<'ios' | 'android' | null> {
+  const platform = Capacitor.getPlatform();
+  if (platform === 'ios') return 'ios';
+  if (platform !== 'android') return null;
+  try {
+    const info = await App.getInfo();
+    return Number(info.build) >= ANDROID_MIN_PUSH_BUILD ? 'android' : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function PushRegistrar({ enabled }: { enabled: boolean }) {
   useEffect(() => {
-    // iOS only: the server sends via APNs, and Android has no Firebase config —
-    // calling register() there throws "FirebaseApp is not initialized" and
-    // crashes the app on launch.
-    if (!enabled || Capacitor.getPlatform() !== 'ios') return;
+    if (!enabled) return;
     let removed = false;
     const handles: Array<{ remove: () => void }> = [];
 
     (async () => {
+      const platform = await pushSupported();
+      if (!platform || removed) return;
       let PushNotifications: typeof import('@capacitor/push-notifications').PushNotifications;
       try {
         ({ PushNotifications } = await import('@capacitor/push-notifications'));
@@ -29,7 +47,6 @@ export default function PushRegistrar({ enabled }: { enabled: boolean }) {
 
       handles.push(
         await PushNotifications.addListener('registration', (token) => {
-          const platform = 'ios';
           void registerPushTokenAction(token.value, platform);
         }),
       );

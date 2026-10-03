@@ -53,6 +53,9 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Android 13+ runtime permission for showing push notifications. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Required by @aparajita/capacitor-biometric-auth (BiometricPrompt).
          USE_FINGERPRINT covers Android 6–8; USE_BIOMETRIC covers 9+.
          Both are install-time permissions (no runtime prompt). Without
