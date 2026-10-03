@@ -41,6 +41,7 @@ interface Props {
   canManage: boolean;
   onAddAsset: () => void;
   onImportStatement: () => void;
+  onImportCsv: () => void;
   onAddLiability: () => void;
   onUploadDocument: () => void;
 }
@@ -65,6 +66,7 @@ export default function GettingStartedCard({
   canManage,
   onAddAsset,
   onImportStatement,
+  onImportCsv,
   onAddLiability,
   onUploadDocument,
 }: Props) {
@@ -90,6 +92,9 @@ export default function GettingStartedCard({
             </button>
             <button type="button" onClick={onImportStatement} className={SECONDARY}>
               Import from a statement
+            </button>
+            <button type="button" onClick={onImportCsv} className={SECONDARY}>
+              Import a CSV
             </button>
           </div>
         ),
@@ -140,7 +145,7 @@ export default function GettingStartedCard({
     ];
     // Don't claim "invite family" is pending while members are still loading.
     return list.filter((s) => s.key !== 'family' || membersReady);
-  }, [assets, documents, members, membersReady, canManage, onAddAsset, onImportStatement, onAddLiability, onUploadDocument]);
+  }, [assets, documents, members, membersReady, canManage, onAddAsset, onImportStatement, onImportCsv, onAddLiability, onUploadDocument]);
 
   if (dismissed || !canAdd) return null;
 

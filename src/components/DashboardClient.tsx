@@ -27,6 +27,7 @@ import EditAssetModal from '@/components/dashboard/EditAssetModal';
 // Import Modals & External Components
 import AddAssetModal from '@/components/dashboard/AddAssetModal';
 import StatementUploadModal from '@/components/dashboard/StatementUploadModal';
+import ImportCsvModal from '@/components/dashboard/ImportCsvModal';
 import RetirementCalculator from '@/components/RetirementCalculator';
 import Footer from '@/components/Footer';
 import VaultUploadModal from '@/components/VaultUploadModal';
@@ -82,6 +83,7 @@ export default function DashboardClient({
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [isAddLiabilityOpen, setIsAddLiabilityOpen] = useState(false);
   const [isAiReaderOpen, setIsAiReaderOpen] = useState(false);
+  const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const [isVaultUploadOpen, setIsVaultUploadOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
@@ -378,6 +380,7 @@ export default function DashboardClient({
                   canManage={canManage}
                   onAddAsset={() => setIsAddAssetOpen(true)}
                   onImportStatement={() => setIsAiReaderOpen(true)}
+                  onImportCsv={() => setIsCsvImportOpen(true)}
                   onAddLiability={() => setIsAddLiabilityOpen(true)}
                   onUploadDocument={() => setIsVaultUploadOpen(true)}
                 />
@@ -478,6 +481,7 @@ export default function DashboardClient({
 
       {isAddAssetOpen && <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddAssetOpen(false)} isLiability={false} />}
       {isAddLiabilityOpen && <AddAssetModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAddLiabilityOpen(false)} isLiability={true} />}
+      {isCsvImportOpen && <ImportCsvModal existingAssets={initialAssets} baseCurrency={baseCurrency} onClose={() => setIsCsvImportOpen(false)} />}
       {isAiReaderOpen && <StatementUploadModal legacyPillars={legacyPillars} members={members} onClose={() => setIsAiReaderOpen(false)} />}
       {isVaultUploadOpen && <VaultUploadModal isOpen={isVaultUploadOpen} onClose={() => setIsVaultUploadOpen(false)} />}
       

@@ -9,7 +9,7 @@ import { ArrowLeft, Coins, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Setting
 import Footer from '@/components/Footer';
 import SessionMenuButton from '@/components/SessionMenuButton';
 import AiSettingsCard from '@/components/AiSettingsCard';
-import { canManageHousehold } from '@/lib/permissions';
+import { canManageHousehold, canWrite } from '@/lib/permissions';
 
 import AccountDetailsCard from '@/components/profile/AccountDetailsCard';
 import LegacyPillarsCard from '@/components/profile/LegacyPillarsCard';
@@ -312,7 +312,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           <NotificationsCard initialEmailDigest={session.user.emailDigest ?? false} />
 
           {/* 7. Data Export Card */}
-          <DataExportCard />
+          <DataExportCard
+            assets={assets}
+            baseCurrency={householdDetails?.baseCurrency || session.household.baseCurrency || 'USD'}
+            canImport={canWrite(session.user.role)}
+          />
 
           {/* 8. Recent activity (compact — 6-row preview) */}
           <ActivityLog />

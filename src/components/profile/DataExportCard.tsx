@@ -1,11 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { exportAssetsCsvAction } from '@/actions/vault';
+import ImportCsvModal from '@/components/dashboard/ImportCsvModal';
 
-export default function DataExportCard() {
+export default function DataExportCard({
+  assets = [],
+  baseCurrency = 'USD',
+  canImport = false,
+}: {
+  assets?: any[];
+  baseCurrency?: string;
+  canImport?: boolean;
+}) {
   const [busy, setBusy] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [msg, setMsg] = useState('');
 
   async function download() {
@@ -57,6 +67,26 @@ export default function DataExportCard() {
           {busy ? 'Preparing…' : 'Download CSV'}
         </button>
       </div>
+      {canImport && (
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+          <div>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Import holdings from CSV</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Add many accounts at once from a spreadsheet. You review everything before it&apos;s added.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl cursor-pointer transition"
+          >
+            <Upload className="w-3.5 h-3.5" /> Import CSV
+          </button>
+        </div>
+      )}
+      {importOpen && (
+        <ImportCsvModal existingAssets={assets} baseCurrency={baseCurrency} onClose={() => setImportOpen(false)} />
+      )}
       {msg && <p className="text-[11px] text-rose-600 dark:text-rose-400">{msg}</p>}
     </div>
   );
