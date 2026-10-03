@@ -64,7 +64,7 @@ export default function LandingPage() {
       <header className="border-b border-slate-800/80">
         <div
           className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-4"
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}
+          style={{ paddingTop: 'max(var(--app-safe-top), 1rem)' }}
         >
           <div className="flex items-center gap-2.5">
             <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-800 shrink-0">

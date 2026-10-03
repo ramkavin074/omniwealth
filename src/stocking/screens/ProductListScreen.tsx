@@ -241,7 +241,7 @@ export default function ProductListScreen({
         <div className={SHEET_OVERLAY}>
           <div
             className={`${SHEET_PANEL} max-h-[90vh] overflow-y-auto`}
-            style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+            style={{ paddingBottom: 'calc(1rem + var(--app-safe-bottom))' }}
           >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700 md:hidden" />
             <NewProductForm
@@ -357,7 +357,7 @@ function EditSheet({
     <div className={SHEET_OVERLAY}>
       <div
         className={`${SHEET_PANEL} space-y-3`}
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(1rem + var(--app-safe-bottom))' }}
       >
         <div className="mx-auto h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700 md:hidden" />
 

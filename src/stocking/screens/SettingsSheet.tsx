@@ -272,7 +272,7 @@ export default function SettingsSheet({
     <div className={`${SHEET_OVERLAY} z-30`}>
       <div
         className={`${SHEET_PANEL} max-h-[92vh] space-y-5 overflow-y-auto md:max-w-2xl`}
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(1rem + var(--app-safe-bottom))' }}
       >
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">

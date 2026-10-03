@@ -45,7 +45,7 @@ function flashExitHint(message: string): void {
     Object.assign(toastEl.style, {
       position: 'fixed',
       left: '50%',
-      bottom: 'calc(2rem + env(safe-area-inset-bottom))',
+      bottom: 'calc(2rem + var(--app-safe-bottom))',
       transform: 'translateX(-50%)',
       zIndex: '2147483647',
       padding: '0.625rem 1rem',

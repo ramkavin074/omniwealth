@@ -54,7 +54,7 @@ export default function OfflineBanner() {
     <div
       role="status"
       className="fixed inset-x-0 top-0 z-[90] flex items-center justify-center gap-2 bg-amber-500 px-3 py-1.5 text-[12px] font-semibold text-amber-950 shadow-md"
-      style={{ paddingTop: 'max(env(safe-area-inset-top), 6px)' }}
+      style={{ paddingTop: 'max(var(--app-safe-top), 6px)' }}
     >
       <WifiOff className="h-3.5 w-3.5" />
       You&rsquo;re offline — showing the last loaded data.

@@ -88,7 +88,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
       <div className="space-y-6">
         <header
           className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 px-3 md:px-8 py-3.5 shadow-sm transition-colors"
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.875rem)' }}
+          style={{ paddingTop: 'max(var(--app-safe-top), 0.875rem)' }}
         >
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             {/* Left side: Sandwich Menu + Logo / Title */}

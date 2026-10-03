@@ -3,7 +3,7 @@
 // only a normal bottom gap is needed. The product list handles its own
 // clearance via VirtualList's footerPad.
 export const SCREEN_PAD =
-  'pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:pb-8';
+  'pb-[calc(5rem_+_var(--app-safe-bottom))] md:pb-8';
 
 /** Overlay that a bottom sheet / modal lives in: slides up from the bottom on
  *  phones, centred dialog on desktop. */

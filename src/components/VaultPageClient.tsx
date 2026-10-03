@@ -30,7 +30,7 @@ export default function VaultPageClient({ initialDocuments, householdTitle }: { 
         {/* Unified Header matching Dashboard & Profile */}
         <header
           className="bg-white dark:bg-slate-900 border-b border-slate-200/85 dark:border-slate-800 sticky top-0 z-40 px-3 md:px-8 py-3.5 shadow-sm transition-colors"
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.875rem)' }}
+          style={{ paddingTop: 'max(var(--app-safe-top), 0.875rem)' }}
         >
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">

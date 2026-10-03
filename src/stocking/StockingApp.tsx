@@ -144,7 +144,7 @@ export default function StockingApp() {
     <div className="kadai mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:max-w-4xl md:border-x md:border-slate-200 md:dark:border-slate-800">
       <header
         className="k-headrule flex items-center justify-between px-4 py-3"
-        style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+        style={{ paddingTop: 'calc(0.75rem + var(--app-safe-top))' }}
       >
         <h1 className="flex items-center gap-2.5 text-xl">
           {/* eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI */}
@@ -205,7 +205,7 @@ export default function StockingApp() {
           desktop (static, sits here between header and content). */}
       <nav
         className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:static md:max-w-none md:border-t-0 md:border-b"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ paddingBottom: 'var(--app-safe-bottom)' }}
       >
         {TABS.map((name) => (
           <button
@@ -334,7 +334,7 @@ export default function StockingApp() {
             type="button"
             onClick={() => setSellOpen(true)}
             className="fixed bottom-20 right-4 z-10 h-14 rounded-full bg-teal-700 px-6 text-base font-bold text-white shadow-lg active:scale-95 md:hidden"
-            style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+            style={{ marginBottom: 'var(--app-safe-bottom)' }}
           >
             {t(lang, 'sell.fab')}
           </button>

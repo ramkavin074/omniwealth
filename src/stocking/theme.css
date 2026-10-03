@@ -12,6 +12,13 @@
  * shell uses, so the two stay in sync when embedded).
  */
 
+:root {
+  /* System-bar insets. Android WebView doesn't reliably expose env(); Capacitor
+     injects --safe-area-inset-* there instead — use whichever is larger. */
+  --app-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+
 .kadai {
   --k-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 20px -12px rgb(15 23 42 / 0.16);
   --k-shadow-sheet: 0 -12px 44px -16px rgb(2 6 23 / 0.28);

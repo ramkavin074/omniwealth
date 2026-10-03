@@ -125,7 +125,7 @@ export default function AskAiSheet({ lang, onClose, initialQuestion }: Props) {
     <div className={`${SHEET_OVERLAY} z-30`}>
       <div
         className={`${SHEET_PANEL} relative flex max-h-[85vh] flex-col`}
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(1rem + var(--app-safe-bottom))' }}
       >
         {showConsent && (
           <AiConsentDialog
