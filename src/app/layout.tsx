@@ -6,6 +6,7 @@ import AppLock from "@/components/AppLock";
 import NativeBootstrap from "@/components/NativeBootstrap";
 import PushRegistrar from "@/components/PushRegistrar";
 import OfflineBanner from "@/components/OfflineBanner";
+import PullToRefresh from "@/components/PullToRefresh";
 import { getSessionUserAction } from "@/actions/vault";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -124,6 +125,7 @@ export default async function RootLayout({
         <NativeBootstrap />
         <PushRegistrar enabled={Boolean(session?.user?.id)} />
         <AppLock />
+        <PullToRefresh />
         {/* Keyed by user id so the chat state is dropped on logout / user switch,
             and only rendered for an authenticated session. */}
         {session?.user?.id && <PortfolioAIChat key={session.user.id} />}
