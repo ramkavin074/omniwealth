@@ -136,6 +136,7 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
           model,
           messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
         }),
+        signal: AbortSignal.timeout(25_000),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -222,7 +223,8 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
           max_tokens: 1024,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }]
-        })
+        }),
+        signal: AbortSignal.timeout(25_000),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -258,30 +260,25 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
     answer = await runClaude(anthropicKey);
     if (answer) providerUsed = `Anthropic · ${AI_MODELS.anthropic} · ${src(anthropicOwn)}`;
   } else {
-    // --- AUTO FREE-FIRST CASCADE ---
-    if (groqKey && !answer) {
-      answer = await runGroq(groqKey);
-      if (answer) providerUsed = `Groq · ${AI_MODELS.groq} · ${src(groqOwn)}`;
-    }
-    if (cerebrasKey && !answer) {
-      answer = await runCerebras(cerebrasKey);
-      if (answer) providerUsed = `Cerebras · ${AI_MODELS.cerebras} · ${src(cerebrasOwn)}`;
-    }
-    if (openrouterKey && !answer) {
-      answer = await runOpenRouter(openrouterKey);
-      if (answer) providerUsed = `OpenRouter · ${AI_MODELS.openrouter} · ${src(openrouterOwn)}`;
-    }
-    if (geminiKey && !answer) {
-      answer = await runGemini(geminiKey);
-      if (answer) providerUsed = `Google Gemini · ${AI_MODELS.gemini} · ${src(geminiOwn)}`;
-    }
-    if (openaiKey && !answer) {
-      answer = await runOpenAI(openaiKey);
-      if (answer) providerUsed = `OpenAI · ${AI_MODELS.openai} · ${src(openaiOwn)}`;
-    }
-    if (anthropicKey && !answer) {
-      answer = await runClaude(anthropicKey);
-      if (answer) providerUsed = `Anthropic · ${AI_MODELS.anthropic} · ${src(anthropicOwn)}`;
+    // --- AUTO CASCADE ---
+    // 1) Providers the user added themselves (an explicit choice), then
+    // 2) the shared server keys, with Gemini first (the default engine) and the
+    //    free-tier providers only as a last-resort fallback. Previously the free
+    //    models ran first, which made answers slower and lower quality.
+    const attempts: { id: string; key: string | undefined; own: boolean; run: (k: string) => Promise<string>; label: string }[] = [
+      { id: 'gemini', key: geminiKey, own: Boolean(geminiOwn), run: runGemini, label: `Google Gemini · ${AI_MODELS.gemini}` },
+      { id: 'anthropic', key: anthropicKey, own: Boolean(anthropicOwn), run: runClaude, label: `Anthropic · ${AI_MODELS.anthropic}` },
+      { id: 'openai', key: openaiKey, own: Boolean(openaiOwn), run: runOpenAI, label: `OpenAI · ${AI_MODELS.openai}` },
+      { id: 'groq', key: groqKey, own: Boolean(groqOwn), run: runGroq, label: `Groq · ${AI_MODELS.groq}` },
+      { id: 'cerebras', key: cerebrasKey, own: Boolean(cerebrasOwn), run: runCerebras, label: `Cerebras · ${AI_MODELS.cerebras}` },
+      { id: 'openrouter', key: openrouterKey, own: Boolean(openrouterOwn), run: runOpenRouter, label: `OpenRouter · ${AI_MODELS.openrouter}` },
+    ];
+    // Array.prototype.sort is stable: own keys first, default order kept within each group.
+    const ordered = attempts.filter((x) => x.key).sort((x, y) => Number(y.own) - Number(x.own));
+    for (const attempt of ordered) {
+      if (answer) break;
+      answer = await attempt.run(attempt.key as string);
+      if (answer) providerUsed = `${attempt.label} · ${src(attempt.own ? 'own' : '')}`;
     }
   }
 
