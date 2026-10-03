@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { PieChart } from 'lucide-react';
 import { formatCompact } from '@/lib/format';
+import ShareTextButton from '@/components/ShareTextButton';
 
 const FX_RATES: { [key: string]: number } = {
   USD: 1, EUR: 0.93, GBP: 0.78, CAD: 1.35, AUD: 1.54, INR: 83.3, JPY: 149.3, CHF: 0.89, CNY: 6.71,
@@ -67,6 +68,20 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
 
   const positiveNetWorth = Math.max(totalNetWorth, 1);
 
+  // Percentages only — no amounts, account names or household name.
+  const allocationShareText = () => {
+    const lines = sortedEntries.slice(0, 6).map(([type, val]: [string, any]) => {
+      const pct = (val / positiveNetWorth) * 100;
+      return `• ${formatAssetTypeName(type)}: ${pct < 1 ? '<1' : Math.round(pct)}%`;
+    });
+    const rest = sortedEntries.slice(6).reduce((sum: number, [, v]: [string, any]) => sum + v, 0);
+    if (rest > 0) {
+      const pct = (rest / positiveNetWorth) * 100;
+      lines.push(`• Other: ${pct < 1 ? '<1' : Math.round(pct)}%`);
+    }
+    return `My asset allocation (OmniWealth)\n${lines.join('\n')}`;
+  };
+
   return (
     <div className={embedded ? 'space-y-4' : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 print:border-slate-300 print:shadow-none'}>
       {!embedded && (
@@ -79,6 +94,13 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
         <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">No assets available for allocation view.</div>
       ) : (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <ShareTextButton
+              getText={allocationShareText}
+              title="OmniWealth allocation"
+              dialogTitle="Share allocation"
+            />
+          </div>
           <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex border border-slate-200 dark:border-slate-700 shadow-inner">
             {sortedEntries.map(([type, val]: [string, any]) => {
               const pct = ((val / positiveNetWorth) * 100).toFixed(1);

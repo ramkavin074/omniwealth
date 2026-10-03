@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp, Calculator, ChevronDown } from 'lucide-react';
 import { updateRetirementPreferencesAction } from '@/actions/vault';
 import { formatCompact } from '@/lib/format';
+import ShareTextButton from '@/components/ShareTextButton';
 
 interface CountryConfig {
   name: string;
@@ -174,6 +175,17 @@ export default function RetirementCalculator({
   const requiredAnnual = requiredMonthly * 12;
   const savingsRateOfNet = netIncome > 0 ? (requiredAnnual / netIncome) * 100 : 0;
   const savingsRateOfGross = grossIncome > 0 ? (requiredAnnual / grossIncome) * 100 : 0;
+  // Status and percentages only — no balances or income figures.
+  const retirementShareText = () => {
+    const status =
+      fundingPercentage >= 100 ? 'On track' : `${Math.max(0, 100 - fundingPercentage)}% short`;
+    return [
+      'My retirement check (OmniWealth)',
+      `• Status: ${status}`,
+      `• Savings plan covers ${fundingPercentage}% of the target at age ${rAge}`,
+      `• Based on a ${(country.swr * 100).toFixed(1)}% withdrawal rate`,
+    ].join('\n');
+  };
   const planFeasible = requiredMonthly <= 0 || (savingsRateOfNet > 0 && savingsRateOfNet <= 50);
 
   // Age-based glidepath rule of thumb for the horizon length.
@@ -195,9 +207,16 @@ export default function RetirementCalculator({
 
       {/* Results Section */}
       <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-5 shadow-sm">
-        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide pb-2 border-b border-slate-200 dark:border-slate-800">
-          Projections
-        </h4>
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+          <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+            Projections
+          </h4>
+          <ShareTextButton
+            getText={retirementShareText}
+            title="OmniWealth retirement check"
+            dialogTitle="Share retirement check"
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
