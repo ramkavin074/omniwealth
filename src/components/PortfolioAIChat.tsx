@@ -103,7 +103,7 @@ export default function PortfolioAIChat() {
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="bg-slate-900 border border-slate-700 text-slate-300 text-[10px] rounded-lg px-2 py-1 focus:outline-none"
               >
-                <option value="auto">Auto (Free-First Cascade)</option>
+                <option value="auto">Auto (Gemini first)</option>
                 <option value="groq">Groq (Llama)</option>
                 <option value="cerebras">Cerebras (Free)</option>
                 <option value="openrouter">OpenRouter (Free)</option>
@@ -139,7 +139,7 @@ export default function PortfolioAIChat() {
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-slate-950 border border-slate-800 text-slate-400 p-3 rounded-2xl animate-pulse text-xs">
-                  Analyzing via {selectedModel === 'auto' ? 'Free-First Cascade' : selectedModel}...
+                  Analyzing via {selectedModel === 'auto' ? 'Gemini' : selectedModel}...
                 </div>
               </div>
             )}
