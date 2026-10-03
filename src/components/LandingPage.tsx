@@ -13,11 +13,13 @@ import {
   Check,
 } from 'lucide-react';
 
-// Flip to true once the Android app is public on Google Play (production
-// access granted). Until then the badge reads "Coming soon" and isn't a link,
-// since the Play listing 404s for anyone who isn't a closed-test member.
-const ANDROID_LIVE = false;
+// Android availability: 'beta' while the app is in Google Play closed testing
+// (join the Google Group -> opt in -> install), 'live' once it's public (the
+// Play listing 404s for anyone who isn't a closed-test member), or 'soon'.
+const ANDROID_STATE: 'live' | 'beta' | 'soon' = 'beta';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.omniwealth.app';
+const BETA_GROUP_URL = 'https://groups.google.com/g/omniwealth-testers';
+const BETA_OPT_IN_URL = 'https://play.google.com/apps/testing/com.omniwealth.app';
 
 const BADGE_CLS =
   'inline-flex items-center gap-2.5 px-5 py-2.5 bg-black border border-slate-700 text-white rounded-xl';
@@ -137,7 +139,7 @@ export default function LandingPage() {
               <span className="block text-lg font-semibold -mt-0.5">App Store</span>
             </span>
           </a>
-          {ANDROID_LIVE ? (
+          {ANDROID_STATE === 'live' ? (
             <a
               href={PLAY_STORE_URL}
               target="_blank"
@@ -150,6 +152,19 @@ export default function LandingPage() {
                 <span className="block text-lg font-semibold -mt-0.5">Google Play</span>
               </span>
             </a>
+          ) : ANDROID_STATE === 'beta' ? (
+            <a
+              href={BETA_GROUP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className={`${BADGE_CLS} hover:bg-slate-900 transition-colors`}
+            >
+              <Play className="w-6 h-6 fill-teal-400 text-teal-400 shrink-0" />
+              <span className="text-left leading-tight">
+                <span className="block text-[10px] text-slate-300">Android beta</span>
+                <span className="block text-lg font-semibold -mt-0.5">Join the beta</span>
+              </span>
+            </a>
           ) : (
             <span className={`${BADGE_CLS} opacity-70`} aria-label="Android app coming soon">
               <Play className="w-6 h-6 fill-teal-400 text-teal-400 shrink-0" />
@@ -160,6 +175,20 @@ export default function LandingPage() {
             </span>
           )}
         </div>
+        {ANDROID_STATE === 'beta' && (
+          <p className="mt-3 text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+            Android is in beta: join the group with your Google account, then{' '}
+            <a
+              href={BETA_OPT_IN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-teal-400 underline underline-offset-2"
+            >
+              become a tester
+            </a>{' '}
+            and install from Google Play.
+          </p>
+        )}
         <p className="mt-6 text-xs text-slate-500">
           Not a bank, broker-dealer, or investment adviser — OmniWealth is a private tracking
           tool only. We never move your money or connect to your financial accounts.
