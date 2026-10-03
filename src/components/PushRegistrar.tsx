@@ -12,7 +12,10 @@ const ASKED_KEY = 'ow.push.asked.v1';
 
 export default function PushRegistrar({ enabled }: { enabled: boolean }) {
   useEffect(() => {
-    if (!enabled || !Capacitor.isNativePlatform()) return;
+    // iOS only: the server sends via APNs, and Android has no Firebase config —
+    // calling register() there throws "FirebaseApp is not initialized" and
+    // crashes the app on launch.
+    if (!enabled || Capacitor.getPlatform() !== 'ios') return;
     let removed = false;
     const handles: Array<{ remove: () => void }> = [];
 
@@ -26,7 +29,7 @@ export default function PushRegistrar({ enabled }: { enabled: boolean }) {
 
       handles.push(
         await PushNotifications.addListener('registration', (token) => {
-          const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
+          const platform = 'ios';
           void registerPushTokenAction(token.value, platform);
         }),
       );
