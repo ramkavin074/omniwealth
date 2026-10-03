@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { updateHouseholdBaseCurrencyAction, updateThemePreferenceAction } from '@/actions/vault';
@@ -51,7 +51,14 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({ session, initialFamilyMembers, householdDetails, assets = [], liveRates = {} }: ProfileClientProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  // `?invite=1` (from the dashboard's getting-started card) opens the Add Family
+  // Member form straight away. useSearchParams is consistent between SSR and
+  // the client, so there's no hydration mismatch.
+  const searchParams = useSearchParams();
+  const profileRouter = useRouter();
+  const [isOpen, setIsOpen] = useState(
+    () => searchParams.get('invite') === '1' && canManageHousehold(session?.user?.role),
+  );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [success, setSuccess] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -313,7 +320,11 @@ export default function ProfileClient({ session, initialFamilyMembers, household
           {/* Add Family Member Modal */}
           <AddFamilyMemberModal 
             isOpen={isOpen} 
-            onClose={() => setIsOpen(false)} 
+            onClose={() => {
+              setIsOpen(false);
+              // Drop ?invite=1 so a refresh doesn't reopen the form.
+              if (searchParams.get('invite')) profileRouter.replace('/profile');
+            }}
             onSuccess={(msg) => setSuccess(msg)} 
           />
         </div>

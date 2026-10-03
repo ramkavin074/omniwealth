@@ -119,8 +119,8 @@ export default function GettingStartedCard({
               title: 'Invite your family',
               hint: 'Optional. Give a partner or relative their own access.',
               action: (
-                <Link href="/profile" className={SECONDARY}>
-                  Open household settings
+                <Link href="/profile?invite=1" className={SECONDARY}>
+                  Invite a family member
                 </Link>
               ),
             },
