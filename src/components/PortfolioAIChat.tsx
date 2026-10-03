@@ -63,14 +63,24 @@ export default function PortfolioAIChat() {
           setIsOpen(true);
           if (!hasAiConsent()) setShowConsent(true);
         }}
-        className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 z-50 transition-transform hover:scale-105"
+        className="fixed right-4 sm:right-6 bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-full shadow-2xl flex items-center gap-2 z-50 transition-transform hover:scale-105"
+        style={{ bottom: 'calc(1.5rem + var(--app-safe-bottom))' }}
       >
         <Sparkles className="w-5 h-5 text-indigo-200" />
         <span className="text-xs font-bold hidden sm:inline">Ask Wealth AI</span>
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 max-w-[90vw] h-[520px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
+        <div
+          className="fixed inset-x-3 sm:inset-x-auto sm:right-6 sm:w-96 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden"
+          style={{
+            bottom: 'calc(0.75rem + var(--app-safe-bottom))',
+            height: 'min(520px, 85vh)',
+            // dvh tracks the visible viewport (keyboard / system bars); older
+            // WebViews drop this declaration and fall back to the 85vh above.
+            maxHeight: 'calc(100dvh - 1.5rem - var(--app-safe-top) - var(--app-safe-bottom))',
+          }}
+        >
           {showConsent && (
             <AiConsentDialog
               onAllow={handleAllowConsent}

@@ -5,6 +5,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* System-bar insets: iOS exposes env(); Android WebView doesn't reliably,
+     so Capacitor injects --safe-area-inset-* instead. Take whichever is larger. */
+  --app-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 }
 
 @theme inline {
