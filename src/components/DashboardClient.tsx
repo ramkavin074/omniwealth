@@ -16,6 +16,7 @@ import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesMana
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
+import GettingStartedCard from '@/components/dashboard/GettingStartedCard';
 import EstateReadinessCard from '@/components/dashboard/EstateReadinessCard';
 import AccountInstructionsCard from '@/components/dashboard/AccountInstructionsCard';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
@@ -84,6 +85,7 @@ export default function DashboardClient({
   const [isVaultUploadOpen, setIsVaultUploadOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
+  const [membersReady, setMembersReady] = useState(false);
   const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
   const [trendEstimated, setTrendEstimated] = useState(true);
   const [timeRange, setTimeRange] = useState('6m');
@@ -141,7 +143,9 @@ export default function DashboardClient({
   };
 
   useEffect(() => {
-    fetchFamilyMembersAction().then(setMembers).catch(err => console.warn('Failed to fetch family members:', err));
+    fetchFamilyMembersAction()
+      .then((m) => { setMembers(m); setMembersReady(true); })
+      .catch(err => console.warn('Failed to fetch family members:', err));
   }, []);
 
   useEffect(() => {
@@ -365,6 +369,19 @@ export default function DashboardClient({
                   </div>
                 </div>
 
+                <GettingStartedCard
+                  assets={initialAssets}
+                  documents={initialDocuments}
+                  members={members}
+                  membersReady={membersReady}
+                  baseCurrency={baseCurrency}
+                  canAdd={canAdd}
+                  canManage={canManage}
+                  onAddAsset={() => setIsAddAssetOpen(true)}
+                  onImportStatement={() => setIsAiReaderOpen(true)}
+                  onAddLiability={() => setIsAddLiabilityOpen(true)}
+                  onUploadDocument={() => setIsVaultUploadOpen(true)}
+                />
                 <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <StaleValueNudge assets={initialAssets} />
 
