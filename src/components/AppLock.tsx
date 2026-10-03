@@ -32,6 +32,26 @@ const MIN_BACKGROUND_MS = 1500;
  */
 let started = false;
 let locked = false;
+
+// A hard reload (e.g. after deleting an asset) wipes the module state above
+// and would re-prompt for biometrics mid-session. sessionStorage survives a
+// reload but not an app relaunch, so it marks "already unlocked this run".
+const UNLOCKED_KEY = 'omniwealth_unlocked_session';
+function wasUnlocked(): boolean {
+  try {
+    return sessionStorage.getItem(UNLOCKED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function markUnlocked(on: boolean) {
+  try {
+    if (on) sessionStorage.setItem(UNLOCKED_KEY, '1');
+    else sessionStorage.removeItem(UNLOCKED_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 let authing = false;
 let backgroundedAt = 0;
 let lastError = '';
@@ -61,6 +81,7 @@ async function runAuth() {
       }),
     );
     locked = false;
+    markUnlocked(true);
     publish();
     void haptic('success');
   } catch (err: any) {
@@ -76,6 +97,7 @@ async function runAuth() {
 
 function engage() {
   if (!lockEnabled() || authing || isInternalAuth()) return;
+  markUnlocked(false);
   locked = true;
   publish();
   void runAuth();
@@ -85,7 +107,7 @@ function startController() {
   if (started || !Capacitor.isNativePlatform()) return;
   started = true;
 
-  if (lockEnabled()) {
+  if (lockEnabled() && !wasUnlocked()) {
     locked = true;
     publish();
     void runAuth();
@@ -111,6 +133,7 @@ export function retryUnlock() {
 export function lockNow() {
   if (!Capacitor.isNativePlatform()) return;
   lastError = '';
+  markUnlocked(false);
   locked = true;
   publish();
 }
