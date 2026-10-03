@@ -374,7 +374,6 @@ export default function DashboardClient({
                   documents={initialDocuments}
                   members={members}
                   membersReady={membersReady}
-                  baseCurrency={baseCurrency}
                   canAdd={canAdd}
                   canManage={canManage}
                   onAddAsset={() => setIsAddAssetOpen(true)}

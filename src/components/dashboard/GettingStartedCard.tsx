@@ -37,7 +37,6 @@ interface Props {
   documents: any[];
   members: any[];
   membersReady: boolean;
-  baseCurrency: string;
   canAdd: boolean;
   canManage: boolean;
   onAddAsset: () => void;
@@ -62,7 +61,6 @@ export default function GettingStartedCard({
   documents,
   members,
   membersReady,
-  baseCurrency,
   canAdd,
   canManage,
   onAddAsset,
@@ -167,14 +165,7 @@ export default function GettingStartedCard({
             Get started with OmniWealth
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {doneCount} of {steps.length} done. Your net worth is shown in {baseCurrency}
-            {canManage && (
-              <>
-                {' '}
-                (<Link href="/profile" className="underline underline-offset-2">change in settings</Link>)
-              </>
-            )}
-            .
+            {doneCount} of {steps.length} done. The optional steps can be skipped.
           </p>
         </div>
         <button
