@@ -240,6 +240,11 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
                 >
                   <Sparkles className="w-3.5 h-3.5" /> {aiBusy ? 'Converting\u2026' : 'Fix with AI'}
                 </button>
+                {aiBusy && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    This can take up to a minute. Please keep this window open.
+                  </p>
+                )}
                 {aiError && <p className="text-xs text-rose-600 dark:text-rose-400">{aiError}</p>}
               </div>
             )}

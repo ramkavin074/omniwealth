@@ -7,6 +7,9 @@ import DashboardClient from '@/components/DashboardClient';
 import LandingPage from '@/components/LandingPage';
 
 export const dynamic = 'force-dynamic';
+// Server actions used from this page (AI statement reader, AI CSV clean-up)
+// can take a while; allow up to a minute instead of the short default.
+export const maxDuration = 60;
 
 export default async function DashboardPage() {
   const session = await getSessionUserAction();

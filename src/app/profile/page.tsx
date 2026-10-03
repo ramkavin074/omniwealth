@@ -6,6 +6,9 @@ import { getSessionUserAction, fetchLiveExchangeRatesAction } from '@/actions/va
 import ProfileClient from '@/components/ProfileClient';
 
 export const dynamic = 'force-dynamic';
+// Server actions used from this page (AI statement reader, AI CSV clean-up)
+// can take a while; allow up to a minute instead of the short default.
+export const maxDuration = 60;
 
 export default async function ProfilePage() {
   const session = await getSessionUserAction();
