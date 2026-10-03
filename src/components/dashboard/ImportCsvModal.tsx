@@ -2,14 +2,17 @@
 
 import { useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Check, Download, FileSpreadsheet, X } from 'lucide-react';
-import { importAssetsCsvAction } from '@/actions/import';
+import { AlertTriangle, Check, Download, FileSpreadsheet, Sparkles, X } from 'lucide-react';
+import { aiNormalizeCsvAction, importAssetsCsvAction } from '@/actions/import';
+import AiConsentDialog from '@/components/AiConsentDialog';
+import { grantAiConsent, hasAiConsent } from '@/lib/aiConsent';
 import {
   MAX_IMPORT_BYTES,
   MAX_IMPORT_ROWS,
   TEMPLATE_CSV,
   dupKey,
   parseAssetCsv,
+  processRawRows,
   type ParseResult,
 } from '@/lib/assetCsv';
 
@@ -41,6 +44,11 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
   const [done, setDone] = useState<{ imported: number; skipped: number } | null>(null);
   const [error, setError] = useState('');
   const [pending, startTransition] = useTransition();
+  const [fileText, setFileText] = useState('');
+  const [aiAssisted, setAiAssisted] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [showConsent, setShowConsent] = useState(false);
 
   const existingKeys = useMemo(
     () => new Set(existingAssets.map((a) => dupKey(a.name || '', a.accountNumber || '', a.nativeCurrency || 'USD'))),
@@ -50,15 +58,24 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
   const onFile = async (file: File | undefined) => {
     setReadError('');
     setError('');
+    setAiError('');
+    setAiAssisted(false);
+    setIncludeDuplicates(false);
     setResult(null);
     if (!file) return;
+    if (/\.xlsx?$/i.test(file.name)) {
+      setReadError('Excel files can\u2019t be read directly. In Excel use File \u2192 Save As \u2192 CSV, then choose that file.');
+      return;
+    }
     if (file.size > MAX_IMPORT_BYTES) {
       setReadError('That file is too large (max 512 KB).');
       return;
     }
     setFileName(file.name);
     try {
-      setResult(parseAssetCsv(await file.text(), baseCurrency, existingKeys));
+      const text = await file.text();
+      setFileText(text);
+      setResult(parseAssetCsv(text, baseCurrency, existingKeys));
     } catch {
       setReadError('Could not read that file.');
     }
@@ -86,11 +103,52 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
     });
   };
 
+  const runAi = async () => {
+    setAiError('');
+    setAiBusy(true);
+    try {
+      const res = await aiNormalizeCsvAction(fileText);
+      if (!res.success) {
+        setAiError(res.error);
+        return;
+      }
+      setResult({ rows: processRawRows(res.rows, baseCurrency, existingKeys) });
+      setAiAssisted(true);
+      setIncludeDuplicates(false);
+    } catch {
+      setAiError('AI clean-up failed. Please try again, or use the template.');
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const askAi = () => {
+    if (!hasAiConsent()) {
+      setShowConsent(true);
+      return;
+    }
+    void runAi();
+  };
+
+  const offerAi = Boolean(fileText) && !aiAssisted && (Boolean(result?.fatal) || invalid.length > 0);
+  const rowLabel = aiAssisted ? 'Item' : 'Row';
+  const rowNo = (line: number) => (aiAssisted ? line - 1 : line);
+
   const problems = rows.filter((r) => r.errors.length > 0 || r.warnings.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs overflow-y-auto flex items-center justify-center p-4 print:hidden">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl my-auto text-slate-900 dark:text-white">
+      <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl my-auto text-slate-900 dark:text-white">
+        {showConsent && (
+          <AiConsentDialog
+            onAllow={() => {
+              grantAiConsent();
+              setShowConsent(false);
+              void runAi();
+            }}
+            onCancel={() => setShowConsent(false)}
+          />
+        )}
         <div className="flex justify-between items-center pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-base font-bold flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-teal-600" /> Import from CSV
@@ -165,6 +223,36 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
               </div>
             )}
 
+            {offerAi && (
+              <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/60 dark:bg-indigo-950/30 p-3 space-y-2">
+                <p className="text-xs text-slate-700 dark:text-slate-300">
+                  {result?.fatal
+                    ? 'This file doesn\u2019t match the template.'
+                    : 'Some rows don\u2019t match the template.'}{' '}
+                  AI can convert it for you, and you check every row before anything is added. This sends the
+                  file&rsquo;s contents to a third-party AI service.
+                </p>
+                <button
+                  type="button"
+                  onClick={askAi}
+                  disabled={aiBusy}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> {aiBusy ? 'Converting\u2026' : 'Fix with AI'}
+                </button>
+                {aiError && <p className="text-xs text-rose-600 dark:text-rose-400">{aiError}</p>}
+              </div>
+            )}
+
+            {aiAssisted && (
+              <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 text-xs text-amber-800 dark:text-amber-300">
+                <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  AI converted your file. It can misread values, so check each item below before importing.
+                </span>
+              </div>
+            )}
+
             {result && !result.fatal && (
               <>
                 <div className="grid grid-cols-3 gap-2 text-center">
@@ -192,7 +280,7 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
                   <ul className="max-h-40 overflow-y-auto space-y-1 rounded-xl border border-slate-200 dark:border-slate-800 p-3 text-[11px]">
                     {problems.slice(0, 25).map((r) => (
                       <li key={r.line} className={r.errors.length ? 'text-rose-700 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'}>
-                        <span className="font-mono">Row {r.line}</span>
+                        <span className="font-mono">{rowLabel} {rowNo(r.line)}</span>
                         {r.raw.name ? ` (${r.raw.name})` : ''}: {[...r.errors, ...r.warnings].join('; ')}
                       </li>
                     ))}
@@ -202,7 +290,7 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
 
                 {toImport.length > 0 && (
                   <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-                    {toImport.slice(0, 8).map((r) => (
+                    {toImport.slice(0, aiAssisted ? toImport.length : 8).map((r) => (
                       <div key={r.line} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
                         <span className="truncate font-medium">{r.clean!.name}</span>
                         <span className="shrink-0 font-mono text-slate-500 dark:text-slate-400">
@@ -210,7 +298,7 @@ export default function ImportCsvModal({ existingAssets, baseCurrency, onClose }
                         </span>
                       </div>
                     ))}
-                    {toImport.length > 8 && (
+                    {!aiAssisted && toImport.length > 8 && (
                       <div className="px-3 py-2 text-[11px] text-slate-500">…and {toImport.length - 8} more</div>
                     )}
                   </div>

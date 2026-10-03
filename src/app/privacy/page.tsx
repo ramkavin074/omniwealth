@@ -175,9 +175,15 @@ export default function PrivacyPolicyPage() {
           pasted text you submit for that specific import, and nothing else from
           your account.
         </li>
+        <li>
+          <strong>CSV import clean-up</strong> (optional, only if you tap
+          &ldquo;Fix with AI&rdquo; on a spreadsheet that doesn&rsquo;t match
+          the template) sends the contents of that file, and nothing else from
+          your account. You review the result before anything is added.
+        </li>
       </ul>
       <p className="mt-3">
-        Both are sent solely to generate the response shown to you; we do not
+        These are sent solely to generate the response shown to you; we do not
         use this content for any other purpose. By default the provider is{' '}
         <strong>Google (Gemini)</strong>. If you add your own API key for a
         different provider (OpenAI, Anthropic, Groq, Cerebras, or OpenRouter) in

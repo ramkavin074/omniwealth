@@ -302,20 +302,25 @@ export function parseAssetCsv(text: string, baseCurrency: string, existing: Set<
   const get = (cells: string[], key: keyof RawRow) =>
     cols[key] === undefined ? '' : (cells[cols[key] as number] ?? '').trim();
 
+  const raws: RawRow[] = table.slice(1).map((cells) => ({
+    name: get(cells, 'name'),
+    type: get(cells, 'type'),
+    category: get(cells, 'category'),
+    accountNumber: get(cells, 'accountNumber'),
+    currency: get(cells, 'currency'),
+    value: get(cells, 'value'),
+    quantity: get(cells, 'quantity'),
+    ticker: get(cells, 'ticker'),
+    pillar: get(cells, 'pillar'),
+    owner: get(cells, 'owner'),
+  }));
+  return { rows: processRawRows(raws, baseCurrency, existing) };
+}
+
+/** Validates already-split rows (from a CSV, or from the AI clean-up) and flags duplicates. */
+export function processRawRows(raws: RawRow[], baseCurrency: string, existing: Set<string>): ParsedRow[] {
   const seen = new Set<string>();
-  const rows: ParsedRow[] = table.slice(1).map((cells, i) => {
-    const raw: RawRow = {
-      name: get(cells, 'name'),
-      type: get(cells, 'type'),
-      category: get(cells, 'category'),
-      accountNumber: get(cells, 'accountNumber'),
-      currency: get(cells, 'currency'),
-      value: get(cells, 'value'),
-      quantity: get(cells, 'quantity'),
-      ticker: get(cells, 'ticker'),
-      pillar: get(cells, 'pillar'),
-      owner: get(cells, 'owner'),
-    };
+  return raws.map((raw, i) => {
     const { clean, errors, warnings } = normalizeRaw(raw, baseCurrency);
     let duplicate = false;
     if (clean) {
@@ -325,6 +330,4 @@ export function parseAssetCsv(text: string, baseCurrency: string, existing: Set<
     }
     return { line: i + 2, raw, clean, errors, warnings, duplicate };
   });
-
-  return { rows };
 }
