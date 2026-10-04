@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Lock, Settings, LogOut, ArrowLeft } from 'lucide-react';
 import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
 import VaultUploadModal from '@/components/VaultUploadModal';
 import Footer from '@/components/Footer';
+import BrandLink from '@/components/BrandLink';
 import { logoutAction } from '@/actions/vault';
 import { clearWidget } from '@/lib/widget';
 
@@ -35,19 +35,7 @@ export default function VaultPageClient({ initialDocuments, householdTitle }: { 
         >
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <Link href="/" className="flex items-center gap-2.5 group cursor-pointer min-w-0">
-                <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                  <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-900 dark:text-white text-xs md:text-base tracking-tight truncate">
-                    {householdTitle}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono">
-                    Secure Storage
-                  </div>
-                </div>
-              </Link>
+              <BrandLink subtitle={householdTitle} />
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">

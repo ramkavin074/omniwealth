@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   updateHouseholdBaseCurrencyAction,
@@ -14,6 +13,7 @@ import {
 import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, Menu, Sun, Moon, Package, Share2 } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
 import { pushNetWorthToWidget, clearWidget } from '@/lib/widget';
+import BrandLink from '@/components/BrandLink';
 import { haptic, nativeShare } from '@/lib/native';
 
 const FX_RATES: { [key: string]: number } = {
@@ -131,21 +131,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
               <Menu className="w-5 h-5" />
             </button>
 
-            <Link href="/" className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                <Image src="/omniwealth.jpg" alt="OmniWealth" width={40} height={40} className="object-cover w-full h-full" />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-slate-900 dark:text-white leading-tight truncate">
-                  OmniWealth
-                </div>
-
-                <div className="text-[10px] sm:text-xs uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono leading-tight truncate">
-                  {householdTitle}
-                </div>
-              </div>
-            </Link>
+            <BrandLink subtitle={householdTitle} className="flex-1" />
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">

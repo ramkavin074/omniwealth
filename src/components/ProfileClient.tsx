@@ -3,10 +3,10 @@
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { updateHouseholdBaseCurrencyAction, updateThemePreferenceAction } from '@/actions/vault';
 import { ArrowLeft, Coins, Moon, Sun, Shield, Lock, Plus, Menu, X, Home, Settings2 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import BrandLink from '@/components/BrandLink';
 import SessionMenuButton from '@/components/SessionMenuButton';
 import AiSettingsCard from '@/components/AiSettingsCard';
 import { canManageHousehold, canWrite } from '@/lib/permissions';
@@ -109,30 +109,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
                 <Menu className="w-5 h-5" />
               </button>
 
-              <Link
-                href="/"
-                className="flex items-center gap-2 group cursor-pointer min-w-0 flex-1"
-              >
-                <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                  <Image
-                    src="/omniwealth.jpg"
-                    alt="OmniWealth"
-                    width={32}
-                    height={32}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1 leading-tight">
-                  <div className="font-extrabold text-xs sm:text-sm md:text-base tracking-tight text-slate-900 dark:text-white truncate">
-                    OmniWealth
-                  </div>
-
-                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
-                    {householdTitle}
-                  </div>
-                </div>
-              </Link>
+              <BrandLink subtitle={householdTitle} className="flex-1" />
             </div>
 
             {/* Right side controls (Currency & Theme visible on desktop, hidden on mobile to keep mobile header clean) */}
@@ -180,19 +157,7 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             <div className="relative w-4/5 max-w-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-white h-full shadow-2xl z-10 flex flex-col justify-between p-6 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
               <div className="space-y-6">
                 <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
-                  <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                      <Image src="/omniwealth.jpg" alt="OmniWealth" width={32} height={32} className="object-cover w-full h-full" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-slate-900 dark:text-white text-xs tracking-tight truncate">
-                        OmniWealth
-                      </div>
-                      <div className="text-[10px] uppercase tracking-wider text-teal-700 dark:text-teal-400 font-semibold font-mono truncate">
-                        {householdTitle}
-                      </div>
-                    </div>
-                  </Link>
+                  <BrandLink size="sm" subtitle={householdTitle} onClick={() => setIsMobileMenuOpen(false)} />
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer shrink-0">
                     <X className="w-5 h-5" />
                   </button>

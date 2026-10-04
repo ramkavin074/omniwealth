@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import BrandLink from '@/components/BrandLink';
 import {
   Wallet,
   Lock,
@@ -78,12 +78,7 @@ export default function LandingPage() {
           className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 pb-4"
           style={{ paddingTop: 'max(var(--app-safe-top), 1rem)' }}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="relative w-9 h-9 rounded-xl overflow-hidden border border-slate-800 shrink-0">
-              <Image src="/omniwealth.jpg" alt="OmniWealth" width={36} height={36} className="object-cover w-full h-full" />
-            </div>
-            <span className="font-extrabold text-lg tracking-tight">OmniWealth</span>
-          </div>
+          <BrandLink tone="dark" />
           <nav className="flex items-center gap-4 text-sm">
             <Link href="/help" className="text-slate-400 hover:text-white transition-colors hidden sm:inline">
               Help
