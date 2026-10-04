@@ -135,7 +135,14 @@ struct RevealNetWorthIntent: AppIntent {
 struct NetWorthWidgetEntryView: View {
     var entry: NetWorthEntry
 
-    var body: some View {
+    /// iOS 17+ can unlock in place, so the whole widget is the unlock button
+    /// and must not also be an "open the app" link.
+    private var unlocksInPlace: Bool {
+        if #available(iOS 17.0, *) { return entry.locked && entry.amount != nil }
+        return false
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("NET WORTH")
                 .font(.system(size: 11, weight: .semibold))
@@ -144,23 +151,14 @@ struct NetWorthWidgetEntryView: View {
 
             if entry.locked && entry.amount != nil {
                 // Locked: dots until the user taps and confirms Face ID / the passcode.
-                if #available(iOS 17.0, *) {
-                    Button(intent: RevealNetWorthIntent()) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("••••••")
-                                .font(.system(size: 28, weight: .heavy, design: .rounded))
-                                .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
-                            Text("Tap to unlock")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.plain)
+                Text("\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}")
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
+                if unlocksInPlace {
+                    Text("Tap to unlock")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 } else {
-                    Text("••••••")
-                        .font(.system(size: 28, weight: .heavy, design: .rounded))
-                        .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
                     Text("Open the app to see it")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
@@ -191,9 +189,26 @@ struct NetWorthWidgetEntryView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .containerBackground(for: .widget) { Color(.systemBackground) }
-        // Tapping the widget opens the app (Universal Link → dashboard).
-        .widgetURL(URL(string: "https://www.omniwealth.org/"))
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var body_: some View {
+        if #available(iOS 17.0, *), unlocksInPlace {
+            // The entire widget is the button: a tap anywhere asks for Face ID / passcode.
+            Button(intent: RevealNetWorthIntent()) { content }
+                .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+
+    var body: some View {
+        body_
+            .containerBackground(for: .widget) { Color(.systemBackground) }
+            // Tapping an unlocked widget opens the app (Universal Link -> dashboard).
+            // While it unlocks in place there is no link, so a tap can't open the app.
+            .widgetURL(unlocksInPlace ? nil : URL(string: "https://www.omniwealth.org/"))
     }
 }
 
