@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SCENARIOS, project, type PlanInputs } from './retirementProjection';
+import { SCENARIOS, project, sensitivity, type PlanInputs } from './retirementProjection';
 
 const flat: PlanInputs = {
   currentAge: 65,
@@ -9,6 +9,7 @@ const flat: PlanInputs = {
   returnPct: 0,
   inflationPct: 0,
   annualSpend: 10_000,
+  endAge: 90,
 };
 
 describe('project', () => {
@@ -52,5 +53,21 @@ describe('project', () => {
     expect(by.crash).toBeLessThan(by.base);
     expect(by.inflation).toBeLessThan(by.base);
     expect(by.later).toBeGreaterThan(by.base);
+  });
+});
+
+describe('sensitivity', () => {
+  const plan: PlanInputs = { currentAge: 40, retirementAge: 62, savings: 300_000, monthlyContribution: 2000, returnPct: 7, inflationPct: 2.5, annualSpend: 70_000, endAge: 95 };
+
+  it('ranks levers by how far they move the safe spend', () => {
+    const levers = sensitivity(plan);
+    expect(levers).toHaveLength(5);
+    for (let i = 1; i < levers.length; i++) expect(levers[i - 1].swing).toBeGreaterThanOrEqual(levers[i].swing);
+    expect(levers.every((l) => Number.isFinite(l.swing) && l.swing >= 0)).toBe(true);
+  });
+
+  it('spending swing equals 20% of planned spend (headroom moves 1:1 with spending)', () => {
+    const spending = sensitivity(plan).find((l) => l.key === 'spending')!;
+    expect(spending.swing).toBeCloseTo(plan.annualSpend * 0.2, 0);
   });
 });

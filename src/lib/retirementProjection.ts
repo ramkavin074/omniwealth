@@ -1,7 +1,8 @@
 // "Will my money last?" engine. Everything is in today's money (real terms),
 // matching RetirementCalculator: growth uses the inflation-adjusted return.
 
-export const LIFE_EXPECTANCY = 90;
+export const LIFE_EXPECTANCY = 95;
+export const HORIZONS = [90, 95, 100] as const;
 
 export interface PlanInputs {
   currentAge: number;
@@ -12,6 +13,8 @@ export interface PlanInputs {
   inflationPct: number;
   /** Yearly spending wanted in retirement, today's money. */
   annualSpend: number;
+  /** Plan until this age (defaults to LIFE_EXPECTANCY). */
+  endAge?: number;
 }
 
 export interface Projection {
@@ -21,7 +24,7 @@ export interface Projection {
   depletedAge: number | null;
   balanceAtRetirement: number;
   balanceAtEnd: number;
-  /** Highest yearly spend that still lasts to LIFE_EXPECTANCY. */
+  /** Highest yearly spend that still lasts to the end age. */
   sustainableAnnual: number;
 }
 
@@ -32,7 +35,7 @@ function run(p: PlanInputs, spend: number, shock: number) {
   const m = Math.pow(1 + real, 1 / 12) - 1;
   const start = Math.round(p.currentAge);
   const retire = Math.max(start, Math.round(p.retirementAge));
-  const end = LIFE_EXPECTANCY;
+  const end = p.endAge ?? LIFE_EXPECTANCY;
 
   let balance = Math.max(0, p.savings);
   let balanceAtRetirement = balance;
@@ -114,3 +117,55 @@ export const SCENARIOS: Scenario[] = [
     apply: (p) => ({ inputs: { ...p, retirementAge: p.retirementAge + 3 }, shock: 0 }),
   },
 ];
+
+export interface Lever {
+  key: string;
+  label: string;
+  /** Plain-English size of the change that was tested. */
+  change: string;
+  /** Change in safe monthly spend between the worse and better case. */
+  swing: number;
+}
+
+/**
+ * Which assumption the verdict is most sensitive to. Each lever is nudged both
+ * ways by a modest, realistic amount; the swing is how far the safe yearly
+ * spend moves between the two.
+ */
+export function sensitivity(p: PlanInputs): Lever[] {
+  const headroom = (x: PlanInputs, shock = 0) => project(x, shock).sustainableAnnual - x.annualSpend;
+  const span = (a: PlanInputs, b: PlanInputs) => Math.abs(headroom(b) - headroom(a));
+  const levers: Lever[] = [
+    {
+      key: 'returns',
+      label: 'Investment returns',
+      change: '1 point higher or lower',
+      swing: span({ ...p, returnPct: p.returnPct - 1 }, { ...p, returnPct: p.returnPct + 1 }),
+    },
+    {
+      key: 'spending',
+      label: 'Spending in retirement',
+      change: '10% more or less',
+      swing: span({ ...p, annualSpend: p.annualSpend * 1.1 }, { ...p, annualSpend: p.annualSpend * 0.9 }),
+    },
+    {
+      key: 'timing',
+      label: 'Retirement age',
+      change: '2 years earlier or later',
+      swing: span({ ...p, retirementAge: p.retirementAge - 2 }, { ...p, retirementAge: p.retirementAge + 2 }),
+    },
+    {
+      key: 'inflation',
+      label: 'Inflation',
+      change: '1 point higher or lower',
+      swing: span({ ...p, inflationPct: p.inflationPct + 1 }, { ...p, inflationPct: p.inflationPct - 1 }),
+    },
+    {
+      key: 'saving',
+      label: 'Monthly saving until retirement',
+      change: '10% more or less',
+      swing: span({ ...p, monthlyContribution: p.monthlyContribution * 0.9 }, { ...p, monthlyContribution: p.monthlyContribution * 1.1 }),
+    },
+  ];
+  return levers.sort((a, b) => b.swing - a.swing);
+}

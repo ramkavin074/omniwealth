@@ -1,9 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatCompact } from '@/lib/format';
-import { LIFE_EXPECTANCY, SCENARIOS, project, type PlanInputs } from '@/lib/retirementProjection';
+import { LIFE_EXPECTANCY, SCENARIOS, project, sensitivity, type PlanInputs } from '@/lib/retirementProjection';
 
 const COLORS = ['#0f766e', '#d97706', '#e11d48', '#7c3aed', '#0284c7', '#64748b'];
 const DEFAULT_ON = ['base', 'lowReturns', 'crash'];
@@ -18,6 +17,7 @@ export default function RetirementScenarios({
   currency: string;
 }) {
   const [on, setOn] = useState<string[]>(DEFAULT_ON);
+  const end = plan.endAge ?? LIFE_EXPECTANCY;
 
   const runs = useMemo(
     () =>
@@ -29,28 +29,24 @@ export default function RetirementScenarios({
   );
 
   const valid =
-    plan.currentAge >= 0 && plan.retirementAge > plan.currentAge - 1 && plan.retirementAge < LIFE_EXPECTANCY && plan.annualSpend > 0;
+    plan.currentAge >= 0 && plan.retirementAge > plan.currentAge - 1 && plan.retirementAge < end && plan.annualSpend > 0;
   if (!valid) return null;
 
-  const base = runs[0];
-  const shown = runs.filter((r) => on.includes(r.s.key));
+    const shown = runs.filter((r) => on.includes(r.s.key));
   const money = (n: number) => `${symbol}${formatCompact(n, currency)}`;
   const monthly = (n: number) => `${money(n / 12)}/mo`;
+  const levers = sensitivity(plan);
+  const topSwing = levers[0]?.swing || 1;
 
   const toggle = (key: string) =>
     setOn((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]));
-
-  const lasts = base.result.depletedAge === null;
-  const verdict = lasts
-    ? `On this plan your money lasts past ${LIFE_EXPECTANCY}. From ${Math.round(plan.retirementAge)} you could spend about ${monthly(base.result.sustainableAnnual)} (today's money) and still reach ${LIFE_EXPECTANCY}.`
-    : `On this plan your money runs out around age ${base.result.depletedAge}. To last to ${LIFE_EXPECTANCY}, spend about ${monthly(base.result.sustainableAnnual)} from ${Math.round(plan.retirementAge)} instead of ${monthly(plan.annualSpend)}, or save more / retire later.`;
 
   // Chart geometry
   const W = 600;
   const H = 220;
   const pad = { l: 8, r: 8, t: 10, b: 22 };
   const startAge = Math.round(plan.currentAge);
-  const span = LIFE_EXPECTANCY - startAge || 1;
+  const span = end - startAge || 1;
   const maxY = Math.max(1, ...shown.flatMap((r) => r.result.points.map((p) => p.balance)));
   const x = (age: number) => pad.l + ((age - startAge) / span) * (W - pad.l - pad.r);
   const y = (v: number) => pad.t + (1 - v / maxY) * (H - pad.t - pad.b);
@@ -62,20 +58,9 @@ export default function RetirementScenarios({
       <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
         <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">Will my money last?</h4>
         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-          Your savings grow until you retire, then fund your spending to age {LIFE_EXPECTANCY}. All figures are in
+          Your savings grow until you retire, then fund your spending to age {end}. All figures are in
           today&rsquo;s money.
         </p>
-      </div>
-
-      <div
-        className={`flex items-start gap-3 rounded-xl border p-3.5 text-sm leading-relaxed ${
-          lasts
-            ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200'
-            : 'border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200'
-        }`}
-      >
-        {lasts ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
-        <p>{verdict}</p>
       </div>
 
       <div>
@@ -118,11 +103,11 @@ export default function RetirementScenarios({
                 <div>
                   <dt className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Money lasts</dt>
                   <dd className={`font-semibold ${ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-                    {ok ? `Past ${LIFE_EXPECTANCY}` : `To age ${r.result.depletedAge}`}
+                    {ok ? `Past ${end}` : `To age ${r.result.depletedAge}`}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Left at {LIFE_EXPECTANCY}</dt>
+                  <dt className="text-[10px] uppercase text-slate-500 dark:text-slate-400">Left at {end}</dt>
                   <dd className="font-mono text-slate-700 dark:text-slate-300">{money(r.result.balanceAtEnd)}</dd>
                 </div>
                 <div>
@@ -139,7 +124,7 @@ export default function RetirementScenarios({
         viewBox={`0 0 ${W} ${H}`}
         className="w-full h-auto"
         role="img"
-        aria-label={`Projected savings balance by age, ${startAge} to ${LIFE_EXPECTANCY}`}
+        aria-label={`Projected savings balance by age, ${startAge} to ${end}`}
       >
         <line x1={pad.l} x2={W - pad.r} y1={y(0)} y2={y(0)} className="stroke-slate-300 dark:stroke-slate-700" />
         {plan.retirementAge > startAge && (
@@ -164,9 +149,32 @@ export default function RetirementScenarios({
           Age {startAge}
         </text>
         <text x={W - pad.r} y={H - 6} fontSize="10" textAnchor="end" className="fill-slate-500 dark:fill-slate-400">
-          Age {LIFE_EXPECTANCY}
+          Age {end}
         </text>
       </svg>
+
+      <div className="space-y-2 pt-1">
+        <p className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">What matters most to your plan</p>
+        <p className="text-xs text-slate-600 dark:text-slate-300">
+          Your verdict is most sensitive to <strong>{levers[0].label.toLowerCase()}</strong>: {levers[0].change} moves
+          your safe spending by about {monthly(levers[0].swing)}.
+        </p>
+        <ul className="space-y-1.5">
+          {levers.map((l) => (
+            <li key={l.key} className="text-[11px]">
+              <div className="flex justify-between gap-2 text-slate-600 dark:text-slate-300">
+                <span>
+                  {l.label} <span className="text-slate-400">({l.change})</span>
+                </span>
+                <span className="font-mono shrink-0">{monthly(l.swing)}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                <div className="h-full rounded-full bg-teal-600" style={{ width: `${Math.max(3, (l.swing / topSwing) * 100)}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
         Simplified, constant-return projection for planning conversations, not a forecast or financial advice. Spending

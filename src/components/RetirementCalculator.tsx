@@ -5,6 +5,8 @@ import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp, Calculator, 
 import { updateRetirementPreferencesAction } from '@/actions/vault';
 import { formatCompact } from '@/lib/format';
 import RetirementScenarios from '@/components/RetirementScenarios';
+import RetirementVerdict from '@/components/RetirementVerdict';
+import { HORIZONS, LIFE_EXPECTANCY } from '@/lib/retirementProjection';
 import ShareTextButton from '@/components/ShareTextButton';
 
 interface CountryConfig {
@@ -87,6 +89,7 @@ export default function RetirementCalculator({
 
   // Required-savings planner (opt-in, collapsed by default).
   const [showPlanner, setShowPlanner] = useState(false);
+  const [endAge, setEndAge] = useState<number>(LIFE_EXPECTANCY);
   const [annualSalary, setAnnualSalary] = useState<number | ''>(country.defaultIncome);
   const [otherIncome, setOtherIncome] = useState<number | ''>(0);
   const [taxRate, setTaxRate] = useState<number | ''>(country.defaultTaxRate);
@@ -190,6 +193,16 @@ export default function RetirementCalculator({
       `• Based on a ${(country.swr * 100).toFixed(1)}% withdrawal rate`,
     ].join('\n');
   };
+  const projectionPlan = {
+    currentAge: cAge,
+    retirementAge: rAge,
+    savings: cSavings,
+    monthlyContribution: mContrib,
+    returnPct: rRate,
+    inflationPct: infl,
+    annualSpend: dIncome,
+    endAge,
+  };
   const planFeasible = requiredMonthly <= 0 || (savingsRateOfNet > 0 && savingsRateOfNet <= 50);
 
   // Age-based glidepath rule of thumb for the horizon length.
@@ -207,6 +220,27 @@ export default function RetirementCalculator({
       <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
         <Target className="w-5 h-5 text-teal-700 dark:text-teal-400" />
         <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase">Retirement</h3>
+      </div>
+
+      <RetirementVerdict plan={projectionPlan} symbol={country.symbol} currency={country.currency} />
+
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <span>Plan until age</span>
+        {HORIZONS.map((h) => (
+          <button
+            key={h}
+            type="button"
+            aria-pressed={endAge === h}
+            onClick={() => setEndAge(h)}
+            className={`px-2.5 py-1 rounded-full border cursor-pointer ${
+              endAge === h
+                ? 'bg-teal-700 border-teal-700 text-white'
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-teal-600'
+            }`}
+          >
+            {h}
+          </button>
+        ))}
       </div>
 
       {/* Results Section */}
@@ -415,19 +449,7 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      <RetirementScenarios
-        plan={{
-          currentAge: cAge,
-          retirementAge: rAge,
-          savings: cSavings,
-          monthlyContribution: mContrib,
-          returnPct: rRate,
-          inflationPct: infl,
-          annualSpend: dIncome,
-        }}
-        symbol={country.symbol}
-        currency={country.currency}
-      />
+      <RetirementScenarios plan={projectionPlan} symbol={country.symbol} currency={country.currency} />
 
       {/* Region + save — parameter-level controls, kept next to the inputs */}
       <div className="flex items-center gap-3 flex-wrap justify-between">
