@@ -6,6 +6,7 @@ import { updateRetirementPreferencesAction } from '@/actions/vault';
 import { formatCompact } from '@/lib/format';
 import RetirementScenarios from '@/components/RetirementScenarios';
 import RetirementVerdict from '@/components/RetirementVerdict';
+import type { SavedScenario } from '@/actions/scenarios';
 import { HORIZONS, LIFE_EXPECTANCY } from '@/lib/retirementProjection';
 import ShareTextButton from '@/components/ShareTextButton';
 
@@ -58,6 +59,8 @@ export default function RetirementCalculator({
   initialDesiredIncome,
   initialCountry = 'US',
   liveRates,
+  savedScenarios = [],
+  canEditScenarios = false,
 }: {
   currentTotalValue?: number;
   baseCurrency?: string;
@@ -69,6 +72,8 @@ export default function RetirementCalculator({
    * from fetchLiveExchangeRatesAction) used elsewhere on the dashboard.
    * Falls back to a static snapshot if omitted. */
   liveRates?: { [key: string]: number };
+  savedScenarios?: SavedScenario[];
+  canEditScenarios?: boolean;
 }) {
   const rates = liveRates || FX_RATES;
   const [selectedCountryKey, setSelectedCountryKey] = useState<string>(initialCountry in COUNTRIES ? initialCountry : 'US');
@@ -449,7 +454,14 @@ export default function RetirementCalculator({
         </div>
       </div>
 
-      <RetirementScenarios plan={projectionPlan} symbol={country.symbol} currency={country.currency} />
+      <RetirementScenarios
+        plan={projectionPlan}
+        symbol={country.symbol}
+        currency={country.currency}
+        saved={savedScenarios}
+        rates={rates}
+        canEdit={canEditScenarios}
+      />
 
       {/* Region + save — parameter-level controls, kept next to the inputs */}
       <div className="flex items-center gap-3 flex-wrap justify-between">

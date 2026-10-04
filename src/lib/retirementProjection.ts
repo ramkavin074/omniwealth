@@ -15,6 +15,18 @@ export interface PlanInputs {
   annualSpend: number;
   /** Plan until this age (defaults to LIFE_EXPECTANCY). */
   endAge?: number;
+  /** Yearly real change in the cost of retirement spending, e.g. from a spending currency drifting vs the assets' (default 0). */
+  spendDriftPct?: number;
+  /** One-off or multi-year costs / inflows pinned to ages, in today's money. */
+  events?: LifeEvent[];
+}
+
+export interface LifeEvent {
+  label: string;
+  fromAge: number;
+  toAge: number;
+  /** Per year, today's money. Positive = cost, negative = money coming in. */
+  amount: number;
 }
 
 export interface Projection {
@@ -36,6 +48,10 @@ function run(p: PlanInputs, spend: number, shock: number) {
   const start = Math.round(p.currentAge);
   const retire = Math.max(start, Math.round(p.retirementAge));
   const end = p.endAge ?? LIFE_EXPECTANCY;
+  const drift = p.spendDriftPct ?? 0;
+  const events = p.events ?? [];
+  const eventNet = (age: number) =>
+    events.reduce((sum, e) => (age >= Math.round(e.fromAge) && age <= Math.round(e.toAge) ? sum + e.amount : sum), 0);
 
   let balance = Math.max(0, p.savings);
   let balanceAtRetirement = balance;
@@ -48,13 +64,23 @@ function run(p: PlanInputs, spend: number, shock: number) {
       balanceAtRetirement = balance;
     }
     points.push({ age, balance });
+    const ev = eventNet(age);
     if (age < retire) {
+      if (ev > 0 && balance + 1e-6 < ev) {
+        if (depletedAge === null) depletedAge = age;
+        balance = 0;
+      } else {
+        balance -= ev;
+      }
       for (let i = 0; i < 12; i++) balance = balance * (1 + m) + p.monthlyContribution;
-    } else if (balance + 1e-6 < spend) {
-      if (depletedAge === null) depletedAge = age;
-      balance = 0;
     } else {
-      balance = (balance - spend) * (1 + real);
+      const need = Math.max(0, spend * Math.pow(1 + drift / 100, age - retire) + ev);
+      if (balance + 1e-6 < need) {
+        if (depletedAge === null) depletedAge = age;
+        balance = 0;
+      } else {
+        balance = (balance - need) * (1 + real);
+      }
     }
   }
   if (retire >= end) balanceAtRetirement = balance;

@@ -20,6 +20,7 @@ import { computeInsights } from '@/lib/insights';
 import RemindersCard from '@/components/dashboard/RemindersCard';
 import ContactsCard from '@/components/dashboard/ContactsCard';
 import type { ContactRow, EventRow, ReminderRow } from '@/actions/familyPlan';
+import type { SavedScenario } from '@/actions/scenarios';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import GettingStartedCard from '@/components/dashboard/GettingStartedCard';
 import GoalsCard from '@/components/dashboard/GoalsCard';
@@ -74,6 +75,7 @@ interface DashboardClientProps {
   reminders?: ReminderRow[];
   contacts?: ContactRow[];
   events?: EventRow[];
+  scenarios?: SavedScenario[];
 }
 
 export default function DashboardClient({ 
@@ -86,6 +88,7 @@ export default function DashboardClient({
   reminders = [],
   contacts = [],
   events = [],
+  scenarios = [],
 }: DashboardClientProps) {
   const role = session?.user?.role;
   const canAdd = canWrite(role);
@@ -509,6 +512,8 @@ export default function DashboardClient({
                   initialDesiredIncome={session.household.desiredIncome ? parseFloat(session.household.desiredIncome) : undefined}
                   initialCountry={session.household.retirementCountry ?? 'US'}
                   liveRates={liveRates}
+                  savedScenarios={scenarios}
+                  canEditScenarios={canAdd}
                 />
               </div>
             )}

@@ -1,34 +1,59 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, Plus, X } from 'lucide-react';
+import ScenarioBuilder from '@/components/ScenarioBuilder';
+import { deleteScenarioAction, type SavedScenario } from '@/actions/scenarios';
+import { applyScenario } from '@/lib/scenarioConfig';
 import { formatCompact } from '@/lib/format';
 import { LIFE_EXPECTANCY, SCENARIOS, project, sensitivity, type PlanInputs } from '@/lib/retirementProjection';
 
-const COLORS = ['#0f766e', '#d97706', '#e11d48', '#7c3aed', '#0284c7', '#64748b'];
+const COLORS = ['#0f766e', '#d97706', '#e11d48', '#7c3aed', '#0284c7', '#64748b', '#16a34a', '#db2777', '#ca8a04', '#0891b2', '#9333ea', '#475569', '#ea580c', '#4d7c0f', '#be123c', '#1d4ed8'];
 const DEFAULT_ON = ['base', 'lowReturns', 'crash'];
 
 export default function RetirementScenarios({
   plan,
   symbol,
   currency,
+  saved = [],
+  rates = {},
+  canEdit = false,
+  defaultOpen = false,
 }: {
   plan: PlanInputs;
   symbol: string;
   currency: string;
+  saved?: SavedScenario[];
+  rates?: Record<string, number>;
+  canEdit?: boolean;
+  defaultOpen?: boolean;
 }) {
+  const router = useRouter();
+  const [building, setBuilding] = useState(false);
+  const [removeError, setRemoveError] = useState('');
   const [on, setOn] = useState<string[]>(DEFAULT_ON);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const end = plan.endAge ?? LIFE_EXPECTANCY;
 
-  const runs = useMemo(
-    () =>
-      SCENARIOS.map((s, i) => {
-        const { inputs, shock } = s.apply(plan);
-        return { s, color: COLORS[i % COLORS.length], inputs, result: project(inputs, shock) };
-      }),
-    [plan],
-  );
+  const runs = useMemo(() => {
+    const year = new Date().getFullYear();
+    const presets = SCENARIOS.map((sc) => ({ key: sc.key, label: sc.label, hint: sc.hint, mine: false, ...sc.apply(plan) }));
+    const mine = saved.map((sv) => ({
+      key: `s:${sv.id}`,
+      label: sv.name,
+      hint: 'Your saved scenario',
+      mine: true,
+      ...applyScenario(plan, sv.config, { planCurrency: currency, rates, year }),
+    }));
+    return [...presets, ...mine].map((r, i) => ({
+      s: { key: r.key, label: r.label, hint: r.hint },
+      mine: r.mine,
+      color: COLORS[i % COLORS.length],
+      inputs: r.inputs,
+      result: project(r.inputs, r.shock),
+    }));
+  }, [plan, saved, rates, currency]);
 
   const valid =
     plan.currentAge >= 0 && plan.retirementAge > plan.currentAge - 1 && plan.retirementAge < end && plan.annualSpend > 0;
@@ -85,24 +110,51 @@ export default function RetirementScenarios({
           {runs.slice(1).map((r) => {
             const active = on.includes(r.s.key);
             return (
-              <button
-                key={r.s.key}
-                type="button"
-                aria-pressed={active}
-                title={r.s.hint}
-                onClick={() => toggle(r.s.key)}
-                className={`text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
-                  active
-                    ? 'bg-teal-700 border-teal-700 text-white'
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-teal-600'
-                }`}
-              >
-                {r.s.label}
-              </button>
+              <span key={r.s.key} className="inline-flex items-center">
+                <button
+                  type="button"
+                  aria-pressed={active}
+                  title={r.s.hint}
+                  onClick={() => toggle(r.s.key)}
+                  className={`text-xs px-3 py-1.5 border cursor-pointer transition-colors ${r.mine && canEdit ? 'rounded-l-full' : 'rounded-full'} ${
+                    active
+                      ? 'bg-teal-700 border-teal-700 text-white'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-teal-600'
+                  }`}
+                >
+                  {r.s.label}
+                </button>
+                {r.mine && canEdit && (
+                  <button
+                    type="button"
+                    aria-label={`Delete ${r.s.label}`}
+                    onClick={async () => {
+                      setRemoveError('');
+                      const res = await deleteScenarioAction(r.s.key.slice(2));
+                      if (!res.success) setRemoveError(res.error);
+                      else {
+                        setOn((cur) => cur.filter((k) => k !== r.s.key));
+                        router.refresh();
+                      }
+                    }}
+                    className="text-xs px-2 py-1.5 rounded-r-full border border-l-0 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-600 cursor-pointer bg-white dark:bg-slate-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </span>
             );
           })}
+          {canEdit && !building && (
+            <button type="button" onClick={() => setBuilding(true)} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full border border-dashed border-teal-600 text-teal-700 dark:text-teal-400 cursor-pointer">
+              <Plus className="w-3 h-3" /> New scenario
+            </button>
+          )}
         </div>
       </div>
+
+      {removeError ? <p role="alert" className="text-xs text-rose-600">{removeError}</p> : null}
+      {building && <ScenarioBuilder planCurrency={currency} onClose={() => setBuilding(false)} />}
 
       <ul className="space-y-2">
         {shown.map((r) => {

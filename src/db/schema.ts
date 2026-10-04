@@ -1276,3 +1276,24 @@ export const timelineEvents = pgTable(
     householdIdx: index('timeline_events_household_idx').on(table.householdId),
   })
 );
+
+/**
+ * Saved retirement what-ifs (name + JSON overrides, see lib/scenarioConfig).
+ * Created by scripts/round50-retirement-scenarios.sql; readers fail soft until then.
+ */
+export const retirementScenarios = pgTable(
+  'retirement_scenarios',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    config: text('config').notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('retirement_scenarios_household_idx').on(table.householdId),
+  })
+);
