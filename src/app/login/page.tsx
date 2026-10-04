@@ -159,7 +159,8 @@ try {
   if (res?.success) {
     // All authenticated users go to the main dashboard.
     // SUPER_ADMIN is no longer automatically redirected to /admin.
-    router.push('/');
+    // New owners get the optional quick-setup prompt on the dashboard.
+    router.push(tab === 'register' ? '/?welcome=1' : '/');
     router.refresh();
     return;
   }

@@ -15,6 +15,7 @@ import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesMana
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
+import SetupWizard from '@/components/dashboard/SetupWizard';
 import GettingStartedCard from '@/components/dashboard/GettingStartedCard';
 import GoalsCard from '@/components/dashboard/GoalsCard';
 import { computeGoals } from '@/lib/goals';
@@ -64,6 +65,7 @@ interface DashboardClientProps {
   baseCurrency: string;
   initialDocuments?: any[];
   initialLiveRates?: { [key: string]: number };
+  showSetup?: boolean;
 }
 
 export default function DashboardClient({ 
@@ -71,7 +73,8 @@ export default function DashboardClient({
   initialAssets, 
   baseCurrency, 
   initialDocuments = [],
-  initialLiveRates = FX_RATES
+  initialLiveRates = FX_RATES,
+  showSetup = false,
 }: DashboardClientProps) {
   const role = session?.user?.role;
   const canAdd = canWrite(role);
@@ -366,6 +369,14 @@ export default function DashboardClient({
                   </div>
                 </div>
 
+                {showSetup && canManage && (
+                  <SetupWizard
+                    baseCurrency={baseCurrency}
+                    initialCountry={session.household.retirementCountry ?? 'US'}
+                    initialCurrentAge={session.household.currentAge ?? 35}
+                    initialRetirementAge={session.household.retirementAge ?? 65}
+                  />
+                )}
                 <GettingStartedCard
                   assets={initialAssets}
                   documents={initialDocuments}

@@ -15,7 +15,11 @@ export const dynamic = 'force-dynamic';
 // can take a while; allow up to a minute instead of the short default.
 export const maxDuration = 60;
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await getSessionUserAction();
   if (!session) {
     return <LandingPage />;
@@ -25,6 +29,9 @@ export default async function DashboardPage() {
   if (session.household?.isStoreShell) {
     redirect('/stocking');
   }
+
+  // Right after owner sign-up the login page sends people to /?welcome=1.
+  const showSetup = (await searchParams).welcome === '1';
 
   const householdId = session.household.id;
 
@@ -74,6 +81,7 @@ export default async function DashboardPage() {
       baseCurrency={baseCurrency} 
       initialDocuments={documents}
       initialLiveRates={initialLiveRates}
+      showSetup={showSetup}
     />
   );
 }
