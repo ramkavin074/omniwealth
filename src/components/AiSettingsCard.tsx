@@ -34,6 +34,7 @@ export default function AiSettingsCard({
 
   const current = PROVIDERS.find((p) => p.field === field)!;
   const anyConfigured = Object.values(configured).some(Boolean);
+  const ownNames = PROVIDERS.filter((p) => configured[p.field]).map((p) => p.label);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +74,28 @@ export default function AiSettingsCard({
         for any provider below if you&rsquo;d rather use your own quota — it&rsquo;s used ahead of the
         shared one.
       </p>
+
+      <div
+        className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs ${
+          anyConfigured
+            ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300'
+            : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300'
+        }`}
+      >
+        <Cpu className="w-4 h-4 shrink-0 mt-0.5" />
+        <span>
+          {anyConfigured ? (
+            <>
+              <strong>Using your own key:</strong> {ownNames.join(', ')}. It&rsquo;s tried before the shared AI.
+            </>
+          ) : (
+            <>
+              <strong>Using OmniWealth&rsquo;s shared AI</strong> (Google Gemini). If it&rsquo;s ever busy, add your own
+              key below for unlimited use.
+            </>
+          )}
+        </span>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-3 text-xs">
         <div className="flex flex-col sm:flex-row gap-3">

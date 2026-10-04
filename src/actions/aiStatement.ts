@@ -10,6 +10,8 @@ import { toNumeric } from '@/lib/num';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { GoogleGenAI, Type } from '@google/genai';
+import { decryptSecret } from '@/lib/crypto';
+import { friendlyAiError } from '@/lib/aiErrors';
 
 async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 3, delay = 2000): Promise<any> {
   try {
@@ -38,8 +40,17 @@ export async function parseStatementAction(formData: FormData) {
     };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return { success: false, error: 'GEMINI_API_KEY is not configured in .env' };
+  // The user's own Gemini key (Settings → AI key) is used ahead of the shared one.
+  const [keyRow] = await db
+    .select({ geminiApiKey: users.geminiApiKey })
+    .from(users)
+    .where(eq(users.id, session.user.id));
+  const ownKey = decryptSecret(keyRow?.geminiApiKey);
+  const usingOwnKey = Boolean(ownKey);
+  const apiKey = ownKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: 'AI is not set up yet. Add your own Gemini key in Settings → AI key.' };
+  }
 
   const ai = new GoogleGenAI({ apiKey });
   const files = formData.getAll('files') as File[];
@@ -101,7 +112,7 @@ export async function parseStatementAction(formData: FormData) {
       }
     } catch (err: any) {
       console.error('Error parsing pasted text:', err);
-      return { success: false, error: err.message || 'Failed to parse pasted text' };
+      return { success: false, error: friendlyAiError(err, usingOwnKey, err.message || 'Failed to parse pasted text') };
     }
   }
 
@@ -176,7 +187,7 @@ export async function parseStatementAction(formData: FormData) {
       const results = await Promise.all(processingPromises);
       totalCount += results.reduce((acc, curr) => acc + curr, 0);
     } catch (err: any) {
-      return { success: false, error: err.message || 'Failed to parse uploaded files' };
+      return { success: false, error: friendlyAiError(err, usingOwnKey, err.message || 'Failed to parse uploaded files') };
     }
   }
 

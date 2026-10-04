@@ -12,6 +12,7 @@ import { logError } from '@/lib/log';
 import { logAudit } from '@/lib/audit';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { decryptSecret } from '@/lib/crypto';
+import { friendlyAiError } from '@/lib/aiErrors';
 import { dupKey, normalizeRaw, MAX_IMPORT_ROWS, type RawRow } from '@/lib/assetCsv';
 
 export type ImportResult =
@@ -211,9 +212,15 @@ export async function aiNormalizeCsvAction(
     .select({ aiApiKey: users.aiApiKey })
     .from(users)
     .where(eq(users.id, session.user.id));
-  const apiKey = decryptSecret(keyRow?.aiApiKey) || process.env.GEMINI_API_KEY;
+  const [geminiRow] = await db
+    .select({ geminiApiKey: users.geminiApiKey })
+    .from(users)
+    .where(eq(users.id, session.user.id));
+  const ownKey = decryptSecret(geminiRow?.geminiApiKey) || decryptSecret(keyRow?.aiApiKey);
+  const usingOwnKey = Boolean(ownKey);
+  const apiKey = ownKey || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return { success: false, error: 'AI is not configured. Add an API key in your profile settings, or use the template.' };
+    return { success: false, error: 'AI is not configured. Add an API key in Settings → AI key, or use the template.' };
   }
 
   const baseCurrency = session.household.baseCurrency || 'USD';
@@ -283,6 +290,9 @@ ${input}
     return { success: true, rows };
   } catch (err) {
     logError('aiNormalizeCsvAction', err);
-    return { success: false, error: 'AI clean-up failed. Please try again, or use the template.' };
+    return {
+      success: false,
+      error: friendlyAiError(err, usingOwnKey, 'AI clean-up failed. Please try again, or use the template.'),
+    };
   }
 }

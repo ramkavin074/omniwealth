@@ -8,6 +8,7 @@ import { GoogleGenAI } from '@google/genai';
 import { revalidatePath } from 'next/cache';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
+import { isBusyError, SHARED_BUSY_MESSAGE, OWN_KEY_BUSY_MESSAGE } from '@/lib/aiErrors';
 
 /**
  * Provider model IDs. Free/hosted model slugs change often (Groq retires
@@ -121,6 +122,7 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
 
   // --- HELPER EXECUTION FUNCTIONS (Guaranteed string return) ---
   const providerErrors: string[] = [];
+  let sawBusy = false;
 
   async function runOpenAICompatible(
     label: string,
@@ -143,6 +145,7 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
         const detail = JSON.stringify(data).slice(0, 400);
         console.error(`[ai] ${label} ${res.status}: ${detail}`);
         providerErrors.push(`${label} ${res.status}`);
+        if (res.status === 429 || res.status === 503) sawBusy = true;
         return '';
       }
       const content = data.choices?.[0]?.message?.content || '';
@@ -200,6 +203,7 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
     } catch (err) {
       console.error('[ai] Gemini request threw:', err);
       providerErrors.push('Gemini threw');
+      if (isBusyError(err)) sawBusy = true;
       return '';
     }
   }
@@ -230,6 +234,7 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
       if (!res.ok) {
         console.error(`[ai] Claude ${res.status}: ${JSON.stringify(data).slice(0, 400)}`);
         providerErrors.push(`Claude ${res.status}`);
+        if (res.status === 429 || res.status === 503 || res.status === 529) sawBusy = true;
         return '';
       }
       return data.content?.[0]?.text || '';
@@ -298,7 +303,11 @@ export async function askPortfolioAIAction(rawPrompt: string, forcedProvider: st
       success: false,
       error: !anyKey
         ? 'No AI provider key is configured. Add one in Profile → AI settings.'
-        : `AI request failed (${providerErrors.join(', ') || 'no response'}). Check your provider keys.`,
+        : sawBusy
+          ? (geminiOwn || groqOwn || cerebrasOwn || openrouterOwn || openaiOwn || anthropicOwn
+              ? OWN_KEY_BUSY_MESSAGE
+              : SHARED_BUSY_MESSAGE)
+          : `AI request failed (${providerErrors.join(', ') || 'no response'}). Check your provider keys.`,
     };
   }
 
