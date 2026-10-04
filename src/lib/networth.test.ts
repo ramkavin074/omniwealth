@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countStaleHoldings, netWorthOf } from './networth';
+import { countStaleHoldings, detectConcentrationFlags, netWorthOf } from './networth';
 
 const d = (daysAgo: number, now: number) => new Date(now - daysAgo * 86400000);
 
@@ -27,5 +27,28 @@ describe('countStaleHoldings', () => {
     expect(countStaleHoldings(rows, { now })).toBe(3);
     expect(countStaleHoldings(rows, { ownerId: 'a', now })).toBe(2);
     expect(countStaleHoldings(rows, { ownerId: 'c', now })).toBe(0);
+  });
+});
+
+describe('detectConcentrationFlags — no double counting', () => {
+  const mk = (name: string, type: string, v: number) =>
+    ({ name, assetType: type, accountCategory: 'INDIVIDUAL', nativeValue: String(v), nativeCurrency: 'USD' }) as any;
+
+  it('does not flag a real-estate class that is just one flagged home', () => {
+    const flags = detectConcentrationFlags(
+      [mk('Austin Home', 'REAL_ESTATE', 700), mk('Brokerage', 'STOCK', 200), mk('Cash', 'CASH', 100)],
+      'USD',
+      { USD: 1 },
+    );
+    expect(flags.map((f) => f.label)).toEqual(['Austin Home']);
+  });
+
+  it('still flags a class spread over several holdings', () => {
+    const flags = detectConcentrationFlags(
+      [mk('Home A', 'REAL_ESTATE', 300), mk('Home B', 'REAL_ESTATE', 300), mk('Cash', 'CASH', 400)],
+      'USD',
+      { USD: 1 },
+    );
+    expect(flags.some((f) => f.label.startsWith('Real estate'))).toBe(true);
   });
 });

@@ -166,8 +166,11 @@ export default function RetirementCalculator({
   const netIncome = Math.max(0, grossIncome * (1 - tax / 100));
 
   const gapToTarget = Math.max(0, targetNestEgg - fvCurrent);
+  // No time left to save (retirement age at/before current age): there is no
+  // meaningful monthly figure, and the formula below would divide by zero.
+  const hasHorizon = totalMonths > 0;
   const requiredMonthly =
-    gapToTarget <= 0
+    gapToTarget <= 0 || !hasHorizon
       ? 0
       : monthlyRate > 0
         ? (gapToTarget * monthlyRate) / (Math.pow(1 + monthlyRate, totalMonths) - 1)
@@ -339,7 +342,11 @@ export default function RetirementCalculator({
                 />
               </div>
 
-              {grossIncome > 0 ? (
+              {!hasHorizon ? (
+                <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                  Set a target retirement age later than your current age to see the required monthly saving.
+                </p>
+              ) : grossIncome > 0 ? (
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3 shadow-sm">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

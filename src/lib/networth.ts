@@ -56,6 +56,7 @@ function classLabel(raw: string): string {
 // (client, dashboard banner) and the weekly-digest cron (server, push).
 const SINGLE_ASSET_PCT = 25;
 const ASSET_CLASS_PCT = 50;
+const CLASS_DOMINATED_BY_ONE = 0.8;
 
 export function detectConcentrationFlags(
   rows: AssetRow[],
@@ -86,10 +87,17 @@ export function detectConcentrationFlags(
   }
 
   const byClass = new Map<string, number>();
-  for (const h of holdings) byClass.set(h.cls, (byClass.get(h.cls) || 0) + h.value);
+  const biggestInClass = new Map<string, number>();
+  for (const h of holdings) {
+    byClass.set(h.cls, (byClass.get(h.cls) || 0) + h.value);
+    biggestInClass.set(h.cls, Math.max(biggestInClass.get(h.cls) || 0, h.value));
+  }
   for (const [cls, value] of byClass) {
     const pct = (value / total) * 100;
-    if (pct >= ASSET_CLASS_PCT && byClass.size > 1) {
+    // A class that is really just one holding would repeat the single-asset
+    // flag above, so only report classes spread over several holdings.
+    const dominatedByOne = (biggestInClass.get(cls) || 0) / value >= CLASS_DOMINATED_BY_ONE;
+    if (pct >= ASSET_CLASS_PCT && byClass.size > 1 && !dominatedByOne) {
       out.push({ key: `class:${cls}`, label: `${classLabel(cls)} (all holdings)`, pct, value });
     }
   }

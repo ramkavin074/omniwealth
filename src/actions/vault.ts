@@ -13,6 +13,7 @@ import { toNumeric } from '@/lib/num';
 import { refreshAssetPrices } from '@/lib/priceRefresh';
 import { revokeWidgetKeysForUser } from '@/lib/widgetKeyRevoke';
 import { logError } from '@/lib/log';
+import { normalizeSnapshots } from '@/lib/snapshots';
 import { logAudit } from '@/lib/audit';
 import { put, del } from '@vercel/blob';
 
@@ -364,10 +365,18 @@ export async function fetchNetWorthSnapshotsAction(): Promise<
       .where(eq(netWorthSnapshots.householdId, session.household.id))
       .orderBy(netWorthSnapshots.snapshotDate);
 
-    return rows.map((r) => ({
-      date: r.snapshotDate,
-      value: Math.round(parseFloat(r.total || '0')),
-    }));
+    // Snapshots keep the currency they were taken in; show them all in the
+    // household's current base currency and drop isolated bad points.
+    const rates = await fetchLiveExchangeRatesAction();
+    return normalizeSnapshots(
+      rows.map((r) => ({
+        date: r.snapshotDate,
+        currency: r.currency,
+        total: parseFloat(r.total || '0'),
+      })),
+      session.household.baseCurrency || 'USD',
+      rates,
+    );
   } catch (err) {
     logError('fetchNetWorthSnapshotsAction', err);
     return [];
