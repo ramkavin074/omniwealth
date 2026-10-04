@@ -77,7 +77,8 @@ async function run() {
     // missed days) so "since yesterday" stays truthful.
     const prev = previousByHousehold.get(h.id);
     const ageDays = prev ? (Date.parse(today) - Date.parse(prev.date)) / 86400000 : Infinity;
-    const move = prev && ageDays <= 2 ? detectNetWorthMove(Number(total), prev.total) : null;
+    // TEMPORARY TEST: threshold 0 so any change alerts. REVERT after the test.
+    const move = prev && ageDays <= 2 ? detectNetWorthMove(Number(total), prev.total, 0) : null;
     if (move) {
       try {
         // At most one alert per household every 48h, with no extra table.
