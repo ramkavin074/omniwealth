@@ -26,7 +26,7 @@ export async function pushNetWorthToWidget(amount: number, currency: string): Pr
   if (!Number.isFinite(amount) || !currency) return;
 
   // With app lock on, keep the balance off the Home Screen (the widget shows
-  // a masked placeholder instead). Android honours this; iOS ignores it for now.
+  // a masked placeholder instead). Both platforms honour this (iOS needs build 1.22+).
   const hidden = lockEnabled();
 
   // Avoid hammering the widget on every re-render.

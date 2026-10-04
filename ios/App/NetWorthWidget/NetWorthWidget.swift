@@ -9,6 +9,7 @@ struct NetWorthEntry: TimelineEntry {
     let amount: Double?
     let currency: String
     let updatedAt: Date?
+    let hidden: Bool
 }
 
 struct Provider: TimelineProvider {
@@ -17,16 +18,18 @@ struct Provider: TimelineProvider {
         let amount = d?.object(forKey: "netWorthAmount") as? Double
         let currency = d?.string(forKey: "netWorthCurrency") ?? "USD"
         let ts = d?.object(forKey: "netWorthUpdatedAt") as? Double
+        let hidden = d?.bool(forKey: "netWorthHidden") ?? false
         return NetWorthEntry(
             date: Date(),
             amount: amount,
             currency: currency,
-            updatedAt: ts.map { Date(timeIntervalSince1970: $0) }
+            updatedAt: ts.map { Date(timeIntervalSince1970: $0) },
+            hidden: hidden
         )
     }
 
     func placeholder(in context: Context) -> NetWorthEntry {
-        NetWorthEntry(date: Date(), amount: 761_900, currency: "USD", updatedAt: Date())
+        NetWorthEntry(date: Date(), amount: 761_900, currency: "USD", updatedAt: Date(), hidden: false)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (NetWorthEntry) -> Void) {
@@ -66,7 +69,15 @@ struct NetWorthWidgetEntryView: View {
                 .tracking(1.2)
                 .foregroundStyle(.secondary)
 
-            if let amount = entry.amount {
+            if entry.hidden && entry.amount != nil {
+                // App lock is on: keep the balance off the Home Screen.
+                Text("••••••")
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
+                Text("Hidden while app lock is on")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            } else if let amount = entry.amount {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(compact(amount))
                         .font(.system(size: 28, weight: .heavy, design: .rounded))
@@ -85,7 +96,7 @@ struct NetWorthWidgetEntryView: View {
 
             Spacer(minLength: 0)
 
-            if let updatedAt = entry.updatedAt {
+            if !entry.hidden, let updatedAt = entry.updatedAt {
                 Text("Updated \(updatedAt.formatted(.relative(presentation: .named)))")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
