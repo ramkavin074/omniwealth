@@ -20,7 +20,7 @@ struct NetWorthIntent: AppIntent {
             return .result(dialog: "Open OmniWealth once so I can read your latest net worth.")
         }
         if defaults?.bool(forKey: "netWorthHidden") == true {
-            return .result(dialog: "Your net worth is hidden while app lock is on. Open OmniWealth to see it.")
+            return .result(dialog: "Your net worth is hidden. Open OmniWealth to see it.")
         }
         return .result(dialog: "Your household net worth is \(Self.format(amount, currency: currency)).")
     }

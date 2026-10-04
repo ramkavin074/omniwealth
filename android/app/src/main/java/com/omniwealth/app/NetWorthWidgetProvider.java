@@ -63,10 +63,10 @@ public class NetWorthWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.widget_currency, "");
             views.setTextViewText(R.id.widget_updated, "Sign in to see your net worth");
         } else if (p.getBoolean(KEY_HIDDEN, false)) {
-            // App lock is on: don't put the balance on the Home Screen.
+            // The user chose to hide the balance on the widget (Settings).
             views.setTextViewText(R.id.widget_amount, "••••••");
             views.setTextViewText(R.id.widget_currency, "");
-            views.setTextViewText(R.id.widget_updated, "Hidden while app lock is on");
+            views.setTextViewText(R.id.widget_updated, "Balance hidden");
         } else {
             double amount = Double.longBitsToDouble(p.getLong(KEY_AMOUNT_BITS, 0L));
             views.setTextViewTextSize(R.id.widget_amount, TypedValue.COMPLEX_UNIT_SP, 26);

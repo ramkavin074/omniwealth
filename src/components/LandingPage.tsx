@@ -89,7 +89,7 @@ const FEATURES = [
     icon: Smartphone,
     title: 'Home Screen widget',
     description:
-      'See your net worth at a glance on Android, hidden automatically while app lock is on. iPhone is on its way.',
+      'See your net worth at a glance on your Home Screen, refreshed in the background. Hide the balance anytime if you prefer. Android now, iPhone on its way.',
   },
   {
     icon: Download,

@@ -113,11 +113,11 @@ struct NetWorthWidgetEntryView: View {
                 .foregroundStyle(.secondary)
 
             if entry.hidden && entry.amount != nil {
-                // App lock is on: keep the balance off the Home Screen.
+                // The user chose to hide the balance on the widget (Settings).
                 Text("••••••")
                     .font(.system(size: 28, weight: .heavy, design: .rounded))
                     .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
-                Text("Hidden while app lock is on")
+                Text("Balance hidden")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             } else if let amount = entry.amount {

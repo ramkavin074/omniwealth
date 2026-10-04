@@ -4,7 +4,6 @@
 // the installed build.
 
 import { Capacitor, registerPlugin } from '@capacitor/core';
-import { lockEnabled } from '@/lib/applock';
 import { reportClientError } from '@/lib/clientErrorReport';
 import { createWidgetKeyAction } from '@/actions/widgetKeys';
 
@@ -20,6 +19,26 @@ interface WidgetBridgePlugin {
 
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge');
 
+const HIDE_KEY = 'omniwealth_widget_hide';
+
+/** True when the user asked the widget to hide the balance (default: show it). */
+export function widgetHidePref(): boolean {
+  try {
+    return localStorage.getItem(HIDE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setWidgetHidePref(hide: boolean): void {
+  try {
+    if (hide) localStorage.setItem(HIDE_KEY, '1');
+    else localStorage.removeItem(HIDE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 const supported = () => {
   if (!Capacitor.isNativePlatform()) return false;
   const p = Capacitor.getPlatform();
@@ -32,9 +51,8 @@ export async function pushNetWorthToWidget(amount: number, currency: string): Pr
   if (!supported()) return;
   if (!Number.isFinite(amount) || !currency) return;
 
-  // With app lock on, keep the balance off the Home Screen (the widget shows
-  // a masked placeholder instead). Both platforms honour this (iOS needs build 1.22+).
-  const hidden = lockEnabled();
+  // The widget shows the balance unless the user chose to hide it (Settings).
+  const hidden = widgetHidePref();
 
   // Avoid hammering the widget on every re-render.
   const sig = `${Math.round(amount)}|${currency}|${hidden ? 1 : 0}`;
@@ -79,7 +97,7 @@ export async function ensureWidgetKey(): Promise<void> {
   }
 }
 
-/** Tell the widget the app-lock state changed (so it hides/shows the balance now). */
+/** Tell the widget to hide/show the balance right away (the Settings switch). */
 export async function setWidgetHidden(hidden: boolean): Promise<void> {
   if (!supported()) return;
   try {
