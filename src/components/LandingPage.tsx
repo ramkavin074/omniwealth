@@ -17,6 +17,9 @@ import {
   Bell,
   Smartphone,
   Download,
+  ClipboardList,
+  BellRing,
+  TrendingUp,
 } from 'lucide-react';
 
 // Android availability: 'beta' while the app is in Google Play closed testing
@@ -51,9 +54,9 @@ const FEATURES = [
   },
   {
     icon: Target,
-    title: 'Retirement planning',
+    title: 'Will my money last?',
     description:
-      'Project your retirement timeline against real inflation and return assumptions, tailored to your own numbers.',
+      'A one-line answer on your retirement plan, then what-ifs to test it: lower returns, a market drop, retiring later, life events, even spending in another currency. Save the ones you want to compare.',
   },
   {
     icon: Users,
@@ -65,13 +68,31 @@ const FEATURES = [
     icon: FileSpreadsheet,
     title: 'Get set up in minutes',
     description:
-      'Import from a statement or a spreadsheet, with optional AI clean-up for messy files. You review everything before anything is added.',
+      'A short guided setup picks sensible defaults for your region. Then import from a statement or a spreadsheet, with optional AI clean-up for messy files. You review everything before anything is added.',
   },
   {
     icon: Flag,
     title: 'Goals and progress',
     description:
       'Set targets for college, a home, an emergency fund or your legacy, and see how close you are, right on your dashboard.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Family action plan',
+    description:
+      'Record who inherits each account, with shares, plus who to call and where everything is. Print one page for your family. No passwords are ever stored in it.',
+  },
+  {
+    icon: BellRing,
+    title: 'Renewals and reminders',
+    description:
+      'Keep insurance renewals, PPF maturities and document expiries in one place. Yearly ones roll forward when you mark them done.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Insights and timeline',
+    description:
+      'A short "worth a look" list of facts from your own data, and life events like buying a home pinned right on your net-worth chart. Facts only, never advice.',
   },
   {
     icon: Share2,
@@ -109,6 +130,7 @@ const STEPS = [
   'Create your household in under a minute',
   'Add your accounts, holdings, and property, by hand, from a statement, or from a spreadsheet',
   'See your true net worth — instantly, in any currency',
+  'Record beneficiaries, renewals and who to call, so your family knows where everything is',
   'Stay on top of it with a weekly digest, goal progress, and daily net-worth change alerts',
 ];
 
@@ -236,7 +258,7 @@ export default function LandingPage() {
       {/* Features */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
-          Everything your family needs to track net worth
+          Everything your family needs to track net worth and plan ahead
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map(({ icon: Icon, title, description }) => (
@@ -345,10 +367,13 @@ export default function LandingPage() {
               'Multi-currency net worth dashboard',
               'Encrypted document vault',
               'AI portfolio assistant',
-              'Retirement planning',
+              'Retirement planning with what-if scenarios',
               'Family access with roles',
               'Import from statements and spreadsheets',
               'Goal tracking',
+              'Beneficiary and estate-readiness tracking',
+              'Printable family action plan',
+              'Renewal and maturity reminders',
               'Read-only shareable reports',
               'Weekly digest and net-worth alerts',
               'Home Screen widget (Android)',
