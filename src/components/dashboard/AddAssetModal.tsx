@@ -1,5 +1,6 @@
 'use client';
 
+import BeneficiaryField from '@/components/dashboard/BeneficiaryField';
 import { useMemo, useState } from 'react';
 import { addAssetAction } from '@/actions/vault';
 import { X } from 'lucide-react';
@@ -170,10 +171,10 @@ export default function AddAssetModal({ legacyPillars, members, onClose, isLiabi
             </div>
           )}
           {!isLiability && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Beneficiary <span className="text-slate-400">(optional)</span></label>
-                <input name="beneficiary" placeholder="e.g. Spouse — Priya" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-3 py-2.5 text-sm text-slate-900 dark:text-white shadow-sm" />
+                <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Beneficiaries <span className="text-slate-400">(optional — add a share % for each)</span></label>
+                <BeneficiaryField />
               </div>
               <div>
                 <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Access notes <span className="text-slate-400">(optional)</span></label>

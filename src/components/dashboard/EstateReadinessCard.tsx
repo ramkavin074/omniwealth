@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
+import { beneficiaryStatus } from '@/lib/beneficiaries';
 
 const SHOWN = 6;
 
@@ -25,11 +26,11 @@ function catLabel(cat: string): string {
 }
 
 export default function EstateReadinessCard({ assets = [] }: any) {
-  const { missing, total } = useMemo(() => {
+  const { missing, shareIssues, total } = useMemo(() => {
     // Beneficiary / access notes belong to an account, not a single
     // holding — so group by (category, account number) and check whether
     // anything in that account carries the info.
-    const accounts = new Map<string, { label: string; covered: boolean }>();
+    const accounts = new Map<string, { label: string; covered: boolean; shareIssue: boolean }>();
     for (const a of assets) {
       const type = (a.assetType || '').toUpperCase();
       const cat = (a.accountCategory || '').toUpperCase();
@@ -43,21 +44,27 @@ export default function EstateReadinessCard({ assets = [] }: any) {
           : catLabel(cat);
 
       const hasInfo = !!(a.beneficiary || '').trim() || !!(a.accessNotes || '').trim();
+      const shareIssue = beneficiaryStatus(a.beneficiary) === 'shares';
       const existing = accounts.get(key);
       if (existing) {
         existing.covered = existing.covered || hasInfo;
+        existing.shareIssue = existing.shareIssue || shareIssue;
       } else {
-        accounts.set(key, { label, covered: hasInfo });
+        accounts.set(key, { label, covered: hasInfo, shareIssue });
       }
     }
 
     const all = [...accounts.values()];
-    return { missing: all.filter((x) => !x.covered), total: all.length };
+    return {
+      missing: all.filter((x) => !x.covered),
+      shareIssues: all.filter((x) => x.shareIssue),
+      total: all.length,
+    };
   }, [assets]);
 
   if (total === 0) return null;
 
-  const allSet = missing.length === 0;
+  const allSet = missing.length === 0 && shareIssues.length === 0;
   const shown = missing.slice(0, SHOWN);
   const rest = missing.length - shown.length;
 
@@ -87,10 +94,18 @@ export default function EstateReadinessCard({ assets = [] }: any) {
             </p>
           ) : (
             <>
+              {shareIssues.length > 0 && (
+                <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+                  {shareIssues.length} account{shareIssues.length === 1 ? ' has' : 's have'} beneficiary shares that
+                  don&rsquo;t add up to 100%: {shareIssues.map((x) => x.label).join(', ')}.
+                </p>
+              )}
+              {missing.length > 0 && (
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                 {missing.length} of {total} account{total === 1 ? '' : 's'} have no beneficiary or
                 access instructions. Add them from any holding in the account&rsquo;s Edit dialog.
               </p>
+              )}
               <ul className="text-sm text-slate-700 dark:text-slate-200 space-y-0.5 pt-0.5">
                 {shown.map((acct) => (
                   <li key={acct.label} className="truncate">

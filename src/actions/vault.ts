@@ -14,6 +14,7 @@ import { refreshAssetPrices } from '@/lib/priceRefresh';
 import { revokeWidgetKeysForUser } from '@/lib/widgetKeyRevoke';
 import { logError } from '@/lib/log';
 import { normalizeSnapshots } from '@/lib/snapshots';
+import { normalizeBeneficiary, formatBeneficiaries } from '@/lib/beneficiaries';
 import { logAudit } from '@/lib/audit';
 import { put, del } from '@vercel/blob';
 
@@ -694,7 +695,7 @@ export async function addAssetAction(formData: FormData) {
   const quantity = toNumeric(formData.get('quantity'), '1');
   const nativeValue = toNumeric(formData.get('nativeValue'), '0');
   const nativeCurrency = formData.get('nativeCurrency') as string;
-  const beneficiary = ((formData.get('beneficiary') as string) || '').trim() || null;
+  const beneficiary = normalizeBeneficiary(formData.get('beneficiary') as string);
   const accessNotes = ((formData.get('accessNotes') as string) || '').trim() || null;
   const requestedUserId = (formData.get('userId') as string) || session.user.id;
 
@@ -779,7 +780,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
     nativeValue: toNumeric(valueVal || existing.nativeValue, existing.nativeValue),
     beneficiary:
       formData.get('beneficiary') !== null
-        ? ((formData.get('beneficiary') as string) || '').trim() || null
+        ? normalizeBeneficiary(formData.get('beneficiary') as string)
         : existing.beneficiary,
     accessNotes:
       formData.get('accessNotes') !== null
@@ -859,7 +860,7 @@ export async function exportAssetsCsvAction(): Promise<
         a.quantity ?? '',
         nameById.get(a.userId) ?? '',
         a.rationale,
-        a.beneficiary ?? '',
+        formatBeneficiaries(a.beneficiary),
         a.accessNotes ?? '',
         a.updatedAt ? new Date(a.updatedAt).toISOString() : '',
       ].map(esc).join(','));

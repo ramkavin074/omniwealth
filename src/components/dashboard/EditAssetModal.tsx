@@ -1,5 +1,6 @@
 'use client';
 
+import BeneficiaryField from '@/components/dashboard/BeneficiaryField';
 import { useState, useEffect, useTransition } from 'react';
 import { X, CheckCircle2, Wallet, CreditCard, Building2, Trash2 } from 'lucide-react';
 import { updateAssetAction, deleteAssetAction } from '@/actions/vault';
@@ -252,17 +253,12 @@ export default function EditAssetModal({ asset, isOpen, onClose, legacyPillars, 
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div>
               <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">
-                Beneficiary <span className="normal-case font-normal text-slate-400">— optional</span>
+                Beneficiaries <span className="normal-case font-normal text-slate-400">— optional, add a share % for each</span>
               </label>
-              <input
-                name="beneficiary"
-                defaultValue={asset.beneficiary || ''}
-                placeholder="e.g. Spouse — Priya"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
-              />
+              <BeneficiaryField key={asset.id} defaultValue={asset.beneficiary} />
             </div>
             <div>
               <label className="block text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold mb-1.5">
