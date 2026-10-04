@@ -234,21 +234,27 @@ export default function SetupWizard({
 
         {step === 2 && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              Goals track progress from the holdings you tag with each one. Amounts are in {currency}; edit, remove or
-              add up to four.
-            </p>
+            <div className="text-sm text-slate-600 dark:text-slate-300 space-y-1.5">
+              <p>
+                These two are just examples to get you started. Make them yours: rename a goal, change the amount (in{' '}
+                {currency}), add a target date, or remove it with the bin icon.
+              </p>
+              <p>
+                Use the buttons below to add another idea or write your own, up to four goals. Later, tag a holding
+                with a goal and its value counts toward that goal&rsquo;s progress.
+              </p>
+            </div>
             <ul className="space-y-3">
               {goals.map((g, i) => (
                 <li key={i} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2">
                   <div className="flex gap-2">
-                    <input aria-label="Goal name" value={g.name} onChange={(e) => setGoal(i, { name: e.target.value })} placeholder="Goal name" className={INPUT} />
+                    <input aria-label="Goal name" value={g.name} onChange={(e) => setGoal(i, { name: e.target.value })} placeholder="e.g. Daughter's college fund" className={INPUT} />
                     <button type="button" aria-label="Remove goal" onClick={() => setGoals((r) => r.filter((_, idx) => idx !== i))} className="p-2 text-slate-400 hover:text-rose-600 cursor-pointer">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <input aria-label="Target amount" type="number" inputMode="numeric" value={g.target} onChange={(e) => setGoal(i, { target: e.target.value })} placeholder="Target" className={`${INPUT} font-mono`} />
+                    <input aria-label="Target amount" type="number" inputMode="numeric" value={g.target} onChange={(e) => setGoal(i, { target: e.target.value })} placeholder="Target amount" className={`${INPUT} font-mono`} />
                     <input aria-label="Target date (optional)" type="date" value={g.date} onChange={(e) => setGoal(i, { date: e.target.value })} className={INPUT} />
                   </div>
                 </li>
