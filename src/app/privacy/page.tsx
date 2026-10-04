@@ -92,6 +92,14 @@ export default function PrivacyPolicyPage() {
           similar files you submit so the app can extract line items for you.
         </li>
         <li>
+          <strong>Error reports</strong> &mdash; if the app hits an error, a short
+          technical report is sent so we can fix it: the error message, the
+          page it happened on, the app version and platform, and your account ID
+          if you are signed in. It never includes the content of your accounts
+          or documents, and secrets in web addresses are removed. Reports are
+          deleted after 30 days.
+        </li>
+        <li>
           <strong>Your own AI provider key</strong>, if you choose to add one.
           It is encrypted at rest (AES-256-GCM) and used only to make requests
           you initiate.

@@ -653,6 +653,31 @@ export const pushTokens = pgTable(
 );
 
 /**
+ * Errors reported by the web app / native apps' WebView (see
+ * src/components/ErrorReporter.tsx). A lightweight, first-party stand-in for a
+ * crash-reporting SDK: message + trimmed stack + where it happened. Pruned
+ * after 30 days by the cleanup cron. Read it in the Neon SQL editor.
+ */
+export const clientErrors = pgTable(
+  'client_errors',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    kind: text('kind').notNull(), // 'error' | 'unhandledrejection' | 'route-error' | 'global-error'
+    message: text('message').notNull(),
+    stack: text('stack'),
+    path: text('path'), // pathname only, never the query string
+    platform: text('platform'), // 'web' | 'ios' | 'android'
+    appVersion: text('app_version'), // native build number, when known
+    userAgent: text('user_agent'),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (table) => ({
+    createdIdx: index('client_errors_created_idx').on(table.createdAt),
+  })
+);
+
+/**
  * Per-user notification preferences that don't live on `users` (kept separate
  * so adding one never touches the users table every query selects from).
  * No row = defaults (alerts on).

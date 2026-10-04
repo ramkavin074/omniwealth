@@ -7,6 +7,7 @@ import NativeBootstrap from "@/components/NativeBootstrap";
 import PushRegistrar from "@/components/PushRegistrar";
 import OfflineBanner from "@/components/OfflineBanner";
 import PullToRefresh from "@/components/PullToRefresh";
+import ErrorReporter from "@/components/ErrorReporter";
 import { getSessionUserAction } from "@/actions/vault";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -123,6 +124,7 @@ export default async function RootLayout({
         {children}
         <OfflineBanner />
         <NativeBootstrap />
+        <ErrorReporter />
         <PushRegistrar enabled={Boolean(session?.user?.id)} />
         <AppLock />
         <PullToRefresh />

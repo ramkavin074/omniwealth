@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lt } from 'drizzle-orm';
 import { db } from '@/db';
-import { passwordResets, rateLimits, sessions } from '@/db/schema';
+import { clientErrors, passwordResets, rateLimits, sessions } from '@/db/schema';
 import { logError } from '@/lib/log';
 
 // Daily housekeeping: drop expired auth rows so these tables don't grow
@@ -34,9 +34,21 @@ export async function GET(req: NextRequest) {
       .delete(rateLimits)
       .where(lt(rateLimits.resetAt, now))
       .returning({ key: rateLimits.key });
+    // Error reports older than 30 days (table may not exist yet).
+    let errorsPruned = 0;
+    try {
+      const old = await db
+        .delete(clientErrors)
+        .where(lt(clientErrors.createdAt, new Date(now.getTime() - 30 * 86400000)))
+        .returning({ id: clientErrors.id });
+      errorsPruned = old.length;
+    } catch {
+      /* client_errors not created yet */
+    }
     return NextResponse.json({
       ok: true,
       deleted: {
+        clientErrors: errorsPruned,
         sessions: s.length,
         passwordResets: p.length,
         rateLimits: r.length,

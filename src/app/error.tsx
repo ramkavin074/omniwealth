@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { reportClientError } from '@/lib/clientErrorReport';
 
 export default function RouteError({
   error,
@@ -11,6 +12,7 @@ export default function RouteError({
 }) {
   useEffect(() => {
     console.error('[route-error]', error?.message, error?.digest, error);
+    reportClientError('route-error', error, { digest: error?.digest });
   }, [error]);
 
   return (
