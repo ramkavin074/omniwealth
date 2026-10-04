@@ -2,8 +2,10 @@
 
 import { useMemo } from 'react';
 import { formatCompact, formatFull } from '@/lib/format';
+import { placeEvents } from '@/lib/eventMarkers';
+import ChartEvents from '@/components/dashboard/ChartEvents';
 
-export default function NetWorthTrendChart({ trendData = [], baseCurrency, estimated = true, embedded = false }: any) {
+export default function NetWorthTrendChart({ trendData = [], baseCurrency, estimated = true, embedded = false, events = [], canEditEvents = false }: any) {
   const rawData = Array.isArray(trendData) ? trendData.filter(d => d && d.value > 0) : [];
   const formatCompactValue = (val: number) => formatCompact(val, baseCurrency);
 
@@ -42,6 +44,14 @@ export default function NetWorthTrendChart({ trendData = [], baseCurrency, estim
       </defs>
       <path d={chart.areaString} fill="url(#areaGradient)" />
       <path d={chart.pathString} fill="none" stroke="#0f766e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      {!estimated &&
+        placeEvents(events, chart.points.map((p: any) => ({ date: p.date, x: p.x }))).map((m) => (
+          <g key={m.id}>
+            <title>{`${m.label} (${m.date})`}</title>
+            <line x1={m.x} x2={m.x} y1={12} y2={chart.height - 18} stroke="#d97706" strokeWidth="1.5" strokeDasharray="3 3" />
+            <path d={`M ${m.x} 3 l 5 5 l -5 5 l -5 -5 Z`} fill="#d97706" />
+          </g>
+        ))}
       {chart.points.map((pt: any, idx: number) => (
         <g key={idx} className="group cursor-pointer">
           {/* Restored tooltips and hover effects */}
@@ -74,6 +84,7 @@ export default function NetWorthTrendChart({ trendData = [], baseCurrency, estim
             <div className="hidden sm:block relative w-full h-52 overflow-hidden rounded-xl">
               {renderChart(desktopChart)}
             </div>
+            <ChartEvents events={events} canEdit={canEditEvents} />
             {estimated ? (
               <p className="text-[10px] text-slate-400 dark:text-slate-500 pt-2">
                 Historical points are estimated from current holdings and recorded transactions, not day-by-day snapshots.

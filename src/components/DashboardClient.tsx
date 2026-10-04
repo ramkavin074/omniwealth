@@ -104,7 +104,7 @@ export default function DashboardClient({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [membersReady, setMembersReady] = useState(false);
-  const [trendData, setTrendData] = useState<{ month: string; value: number }[]>([]);
+  const [trendData, setTrendData] = useState<{ month: string; value: number; date?: string }[]>([]);
   const [trendEstimated, setTrendEstimated] = useState(true);
   const [timeRange, setTimeRange] = useState('6m');
   const [liveRates] = useState<{ [key: string]: number }>(initialLiveRates);
@@ -192,6 +192,7 @@ export default function DashboardClient({
                 ? d.toLocaleString('default', { month: 'short', year: '2-digit' })
                 : d.toLocaleString('default', { month: 'short', day: 'numeric' }),
               value: s.value,
+              date: s.date,
             };
           }),
         );
@@ -480,7 +481,7 @@ export default function DashboardClient({
                 )}
 
                 <CollapsibleSection id="trend" title="Trend" icon={<TrendingUp className="w-5 h-5" />}>
-                  <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} embedded />
+                  <NetWorthTrendChart trendData={trendData} baseCurrency={baseCurrency} timeRange={timeRange} setTimeRange={setTimeRange} estimated={trendEstimated} events={events} canEditEvents={canAdd} embedded />
                 </CollapsibleSection>
 
                 <LiabilitiesManagementSection
