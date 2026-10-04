@@ -96,10 +96,10 @@ export default function NotificationsCard({ initialEmailDigest = false }: { init
 
       <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
         <div>
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Big net-worth move alerts</p>
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Daily net-worth change</p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            A push notification if your household net worth moves 3% or more in a day. Shows the percentage only,
-            never amounts. At most one every two days.
+            A push notification each morning with how much your household net worth changed since yesterday. Shows
+            the percentage only, never amounts. Skipped on days when nothing moved.
           </p>
         </div>
         <button

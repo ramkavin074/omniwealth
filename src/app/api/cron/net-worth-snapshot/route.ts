@@ -72,7 +72,7 @@ async function run() {
       });
     written++;
 
-    // Big day-over-day move -> one push per member (percent only, no amounts).
+    // Daily change -> one push per member (percent only, no amounts).
     // The snapshot is ~1 day old at most; skip if the last one is stale (job
     // missed days) so "since yesterday" stays truthful.
     const prev = previousByHousehold.get(h.id);
@@ -80,8 +80,9 @@ async function run() {
     const move = prev && ageDays <= 2 ? detectNetWorthMove(Number(total), prev.total) : null;
     if (move) {
       try {
-        // At most one alert per household every 48h, with no extra table.
-        const gate = await checkRateLimit(`nw-alert:${h.id}`, 1, 48 * 60);
+        // One per household per day: stops a manual re-run of the job from
+        // sending it twice (no extra table needed).
+        const gate = await checkRateLimit(`nw-alert:${h.id}`, 1, 20 * 60);
         if (gate.allowed) {
           const text = netWorthAlertText(move);
           for (const u of allUsers) {
