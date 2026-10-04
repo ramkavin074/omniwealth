@@ -28,6 +28,7 @@ function formatAssetTypeName(type: string): string {
   if (upper === 'CASH') return 'Cash';
   if (upper === 'CRYPTO') return 'Crypto';
   if (upper === 'PENSION') return 'Pension';
+  if (upper === 'INSURANCE') return 'Insurance / ULIP';
   if (upper === 'COMMODITY') return 'Commodity';
   return upper.replace(/_/g, ' ');
 }
@@ -62,6 +63,7 @@ export default function AssetAllocationVisualizer({ assets, baseCurrency, liveRa
     CRYPTO: 'bg-purple-600 hover:bg-purple-500',
     FIXED_INCOME: 'bg-teal-500 hover:bg-teal-400',
     PENSION: 'bg-rose-600 hover:bg-rose-500',
+    INSURANCE: 'bg-sky-600 hover:bg-sky-500',
     COMMODITY: 'bg-yellow-600 hover:bg-yellow-500',
     OTHER: 'bg-slate-400 hover:bg-slate-300',
   };

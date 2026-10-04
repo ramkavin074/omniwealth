@@ -217,6 +217,7 @@ function DraftItemRow({ item, members, legacyPillars, onRefresh }: any) {
           <option value="PPF">PPF</option>
           <option value="PF">PF / EPF</option>
           <option value="PENSION">Pension</option>
+          <option value="INSURANCE">Insurance / ULIP</option>
           <option value="SOCIAL_SECURITY">Social Security</option>
           <option value="529">529 College</option>
           <option value="TRUST">Trust</option>

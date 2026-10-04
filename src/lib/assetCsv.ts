@@ -8,12 +8,12 @@ export const MAX_IMPORT_BYTES = 512 * 1024;
 
 const ASSET_TYPES = [
   'STOCK', 'ETF', 'MUTUAL_FUND', 'CRYPTO', 'COMMODITY', 'CASH', 'FIXED_INCOME',
-  'PENSION', 'HSA', 'REAL_ESTATE', 'OTHER', 'LIABILITY',
+  'PENSION', 'INSURANCE', 'HSA', 'REAL_ESTATE', 'OTHER', 'LIABILITY',
 ] as const;
 
 const ACCOUNT_CATEGORIES = [
   'INDIVIDUAL', 'IRA', 'ROTH_IRA', '401K', 'HSA', 'PPF', 'PF', 'PENSION',
-  'SOCIAL_SECURITY', '529', 'TRUST', 'REAL_ESTATE', 'LIABILITY',
+  'INSURANCE', 'SOCIAL_SECURITY', '529', 'TRUST', 'REAL_ESTATE', 'LIABILITY',
 ] as const;
 
 /** Raw, still-untrusted field values for one row (what travels to the server). */
@@ -158,6 +158,8 @@ const TYPE_ALIASES: Record<string, string> = {
   fd: 'FIXED_INCOME', 'fixed deposit': 'FIXED_INCOME',
   pension: 'PENSION', retirement: 'PENSION', '401k': 'PENSION', ira: 'PENSION',
   hsa: 'HSA',
+  ulip: 'INSURANCE', insurance: 'INSURANCE', 'insurance policy': 'INSURANCE', 'life insurance': 'INSURANCE',
+  endowment: 'INSURANCE', 'whole life': 'INSURANCE', 'unit linked': 'INSURANCE', 'unit linked insurance plan': 'INSURANCE',
   'real estate': 'REAL_ESTATE', property: 'REAL_ESTATE', house: 'REAL_ESTATE', home: 'REAL_ESTATE', land: 'REAL_ESTATE',
   other: 'OTHER',
   liability: 'LIABILITY', debt: 'LIABILITY', loan: 'LIABILITY', mortgage: 'LIABILITY', 'credit card': 'LIABILITY',

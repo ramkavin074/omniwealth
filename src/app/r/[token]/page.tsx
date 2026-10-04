@@ -33,6 +33,7 @@ const TYPE_NAMES: Record<string, string> = {
   CASH: 'Cash',
   CRYPTO: 'Crypto',
   PENSION: 'Pension',
+  INSURANCE: 'Insurance / ULIP',
   COMMODITY: 'Commodities',
   HSA: 'HSA',
   OTHER: 'Other',

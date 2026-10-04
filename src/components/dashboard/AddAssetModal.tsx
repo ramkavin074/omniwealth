@@ -91,10 +91,16 @@ export default function AddAssetModal({ legacyPillars, members, onClose, isLiabi
                   <option value="CASH">Cash</option>
                   <option value="FIXED_INCOME">Fixed Income / PPF</option>
                   <option value="PENSION">Pension</option>
+                  <option value="INSURANCE">Insurance / ULIP</option>
                   <option value="HSA">HSA</option>
                   <option value="REAL_ESTATE">Real Estate</option>
                   <option value="OTHER">Other</option>
                 </select>
+                {assetType === 'INSURANCE' && (
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Enter the fund value (ULIP) or surrender value (endowment, whole life), not the sum assured. Put the nominee under Beneficiaries. Pure term cover has no value, so add it as a reminder instead.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Account Category</label>
@@ -107,6 +113,7 @@ export default function AddAssetModal({ legacyPillars, members, onClose, isLiabi
                   <option value="PPF">PPF</option>
                   <option value="PF">PF / EPF</option>
                   <option value="PENSION">Pension</option>
+                  <option value="INSURANCE">Insurance / ULIP</option>
                   <option value="SOCIAL_SECURITY">Social Security</option>
                   <option value="529">529 College</option>
                   <option value="TRUST">Trust</option>

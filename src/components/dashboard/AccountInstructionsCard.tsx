@@ -16,6 +16,7 @@ function catLabel(cat: string): string {
     PF: 'PF / EPF',
     HSA: 'HSA',
     PENSION: 'Pension',
+    INSURANCE: 'Insurance / ULIP',
     '529': '529 College',
     TRUST: 'Trust',
     INDIVIDUAL: 'Individual',

@@ -169,7 +169,7 @@ export async function importAssetsCsvAction(rawRows: RawRow[], skipDuplicates: b
 // ---- AI clean-up for files that don't match the template ---------------------
 
 const MAX_AI_CHARS = 80_000;
-const AI_TYPES = 'STOCK, ETF, MUTUAL_FUND, CRYPTO, COMMODITY, CASH, FIXED_INCOME, PENSION, HSA, REAL_ESTATE, OTHER, LIABILITY';
+const AI_TYPES = 'STOCK, ETF, MUTUAL_FUND, CRYPTO, COMMODITY, CASH, FIXED_INCOME, PENSION, INSURANCE, HSA, REAL_ESTATE, OTHER, LIABILITY';
 
 async function generateOnce(ai: GoogleGenAI, params: any, retries = 2): Promise<any> {
   try {

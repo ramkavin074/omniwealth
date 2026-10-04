@@ -91,3 +91,17 @@ describe('parseAssetCsv', () => {
     expect(parseAssetCsv('Name,Value\n', 'USD', new Set()).fatal).toMatch(/no data rows/);
   });
 });
+
+describe('insurance / ULIP', () => {
+  it('maps common insurance words to the INSURANCE type, with no warning', () => {
+    for (const word of ['ULIP', 'Endowment', 'life insurance', 'Whole Life']) {
+      const r = normalizeRaw(raw({ type: word, currency: 'INR' }), 'INR');
+      expect(r.clean?.assetType).toBe('INSURANCE');
+      expect(r.warnings).toEqual([]);
+    }
+  });
+
+  it('accepts INSURANCE as an account category', () => {
+    expect(normalizeRaw(raw({ category: 'Insurance' }), 'USD').clean?.accountCategory).toBe('INSURANCE');
+  });
+});

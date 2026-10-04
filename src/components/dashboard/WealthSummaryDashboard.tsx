@@ -27,6 +27,7 @@ function formatCategoryName(cat: string): string {
   if (upper === 'PPF') return 'PPF';
   if (upper === 'PF') return 'PF / EPF';
   if (upper === 'PENSION') return 'Pension';
+  if (upper === 'INSURANCE') return 'Insurance / ULIP';
   if (upper === '529') return '529 College';
   if (upper === 'TRUST') return 'Trust';
   if (upper === 'INDIVIDUAL') return 'Individual';
