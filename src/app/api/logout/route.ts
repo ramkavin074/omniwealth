@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { sessions } from '@/db/schema';
+import { revokeWidgetKeysForSession } from '@/lib/widgetKeyRevoke';
 
 // Same-origin sign-out for pages that can't call the logoutAction server
 // action (the shared Kadai module, which also builds as a standalone app).
@@ -18,6 +19,7 @@ export async function POST() {
   if (rawToken) {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
+    await revokeWidgetKeysForSession(tokenHash);
   }
   cookieStore.delete(SESSION_COOKIE_NAME);
   return new Response(null, { status: 204 });

@@ -11,6 +11,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
 import { toNumeric } from '@/lib/num';
 import { refreshAssetPrices } from '@/lib/priceRefresh';
+import { revokeWidgetKeysForUser } from '@/lib/widgetKeyRevoke';
 import { logError } from '@/lib/log';
 import { logAudit } from '@/lib/audit';
 import { put, del } from '@vercel/blob';
@@ -110,6 +111,7 @@ export async function updatePasswordAction(formData: FormData) {
 
   const newPasswordHash = await bcrypt.hash(newPassword, 12);
   await db.update(users).set({ passwordHash: newPasswordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+  await revokeWidgetKeysForUser(user.id);
   await audit(session, 'account.password_change');
 
   // Changing the password signs out every other device.

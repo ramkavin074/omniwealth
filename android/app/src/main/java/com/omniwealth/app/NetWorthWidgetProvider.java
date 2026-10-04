@@ -21,6 +21,21 @@ public class NetWorthWidgetProvider extends AppWidgetProvider {
     static final String KEY_HIDDEN = "hidden";
     static final String KEY_UPDATED_AT = "updatedAt";
     static final String KEY_HAS_DATA = "hasData";
+    // Read-only key for background refresh (can fetch the net worth total only).
+    static final String KEY_API_KEY = "apiKey";
+    static final String KEY_API_KEY_AT = "apiKeyAt";
+
+    @Override
+    public void onEnabled(Context context) {
+        if (context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_API_KEY, null) != null) {
+            NetWorthRefreshWorker.schedule(context);
+        }
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        NetWorthRefreshWorker.cancel(context);
+    }
 
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {

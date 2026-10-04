@@ -6,16 +6,19 @@ import { Capacitor } from '@capacitor/core';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { updatePasswordAction, revokeOtherSessionsAction, deleteAccountAction, logoutAction } from '@/actions/auth';
 import { APP_LOCK_KEY, beginInternalAuth, endInternalAuth, withTimeout } from '@/lib/applock';
-import { clearWidget } from '@/lib/widget';
+import { clearWidget, setWidgetHidden } from '@/lib/widget';
+import { countWidgetKeysAction, revokeAllWidgetKeysAction } from '@/actions/widgetKeys';
 
 export default function SecurityCard() {
   const [isNative, setIsNative] = useState(false);
   const [lockOn, setLockOn] = useState(false);
   const [lockMsg, setLockMsg] = useState('');
   const [lockBusy, setLockBusy] = useState(false);
+  const [widgetPhones, setWidgetPhones] = useState(0);
 
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
+    countWidgetKeysAction().then(setWidgetPhones).catch(() => {});
     try {
       setLockOn(localStorage.getItem(APP_LOCK_KEY) === '1');
     } catch {
@@ -30,6 +33,7 @@ export default function SecurityCard() {
     if (lockOn) {
       try { localStorage.removeItem(APP_LOCK_KEY); } catch {}
       setLockOn(false);
+      void setWidgetHidden(false); // widget may show the balance again
       return;
     }
 
@@ -49,6 +53,7 @@ export default function SecurityCard() {
       );
       localStorage.setItem(APP_LOCK_KEY, '1');
       setLockOn(true);
+      void setWidgetHidden(true); // widget hides the balance right away
       if (!bio.isAvailable) setLockMsg('Enabled using your device PIN/pattern.');
     } catch (err: any) {
       const detail = err?.message || err?.code || String(err);
@@ -214,6 +219,28 @@ export default function SecurityCard() {
             </button>
           </div>
           {lockMsg && <p className="text-[11px] text-slate-600 dark:text-slate-300">{lockMsg}</p>}
+          {widgetPhones > 0 && (
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Widget background refresh</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {widgetPhones} {widgetPhones === 1 ? 'phone refreshes' : 'phones refresh'} the Home Screen widget on
+                  its own. The key can only read your net worth total.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm('Turn off background refresh on all phones? The widget will update only when you open the app.')) return;
+                  await revokeAllWidgetKeysAction();
+                  setWidgetPhones(0);
+                }}
+                className="shrink-0 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl cursor-pointer"
+              >
+                Turn off
+              </button>
+            </div>
+          )}
         </div>
       )}
 

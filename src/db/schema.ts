@@ -653,6 +653,43 @@ export const pushTokens = pgTable(
 );
 
 /**
+ * Read-only keys that let a phone's Home Screen widget refresh the household
+ * net worth in the background. A key can fetch ONE number (the total) and
+ * nothing else. Only a SHA-256 hash is stored; keys expire, die with the
+ * session that created them, and are revoked on password change.
+ */
+export const widgetKeys = pgTable(
+  'widget_keys',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+
+    keyHash: text('key_hash').notNull().unique(),
+
+    // Hash of the web-session token that created the key, so signing out of
+    // that session also switches the key off.
+    sessionTokenHash: text('session_token_hash'),
+
+    label: text('label'),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastUsedAt: timestamp('last_used_at'),
+    expiresAt: timestamp('expires_at').notNull(),
+    revokedAt: timestamp('revoked_at'),
+  },
+  (table) => ({
+    userIdx: index('widget_keys_user_idx').on(table.userId),
+  })
+);
+
+/**
  * Errors reported by the web app / native apps' WebView (see
  * src/components/ErrorReporter.tsx). A lightweight, first-party stand-in for a
  * crash-reporting SDK: message + trimmed stack + where it happened. Pruned

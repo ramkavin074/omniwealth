@@ -3,6 +3,19 @@ import SwiftUI
 
 // Reads the values written by WidgetBridgePlugin.setNetWorth() in the host app.
 private let appGroup = "group.com.omniwealth.app"
+// Fixed on purpose: the key is only ever sent to this address.
+private let widgetEndpoint = URL(string: "https://www.omniwealth.org/api/widget/net-worth")!
+
+/// Refuses redirects so the key can never be forwarded to another host.
+private final class NoRedirects: NSObject, URLSessionTaskDelegate {
+    static let shared = NoRedirects()
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest,
+                    completionHandler: @escaping (URLRequest?) -> Void) {
+        completionHandler(nil)
+    }
+}
 
 struct NetWorthEntry: TimelineEntry {
     let date: Date
@@ -37,10 +50,40 @@ struct Provider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<NetWorthEntry>) -> Void) {
-        let entry = read()
-        // The host app refreshes on demand; this is just a slow safety cadence.
-        let next = Calendar.current.date(byAdding: .hour, value: 6, to: Date()) ?? Date().addingTimeInterval(21_600)
-        completion(Timeline(entries: [entry], policy: .after(next)))
+        func finish() {
+            // iOS decides the real cadence; this asks for a refresh in a few hours.
+            let next = Calendar.current.date(byAdding: .hour, value: 3, to: Date()) ?? Date().addingTimeInterval(10_800)
+            completion(Timeline(entries: [read()], policy: .after(next)))
+        }
+
+        let d = UserDefaults(suiteName: appGroup)
+        // No key (older install / background refresh off): show what the app last stored.
+        guard let key = d?.string(forKey: "widgetApiKey") else { finish(); return }
+
+        var request = URLRequest(url: widgetEndpoint)
+        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 15
+
+        let session = URLSession(configuration: .ephemeral, delegate: NoRedirects.shared, delegateQueue: nil)
+        session.dataTask(with: request) { data, response, _ in
+            defer { finish() }
+            guard let http = response as? HTTPURLResponse else { return }
+            if http.statusCode == 401 {
+                // Key revoked or expired (sign-out, password change, "turn off"): forget it all.
+                for k in ["widgetApiKey", "widgetApiKeyAt", "netWorthAmount", "netWorthCurrency", "netWorthUpdatedAt", "netWorthHidden"] {
+                    d?.removeObject(forKey: k)
+                }
+                return
+            }
+            guard http.statusCode == 200, let data,
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let amount = (obj["amount"] as? NSNumber)?.doubleValue,
+                  let currency = obj["currency"] as? String else { return }
+            d?.set(amount, forKey: "netWorthAmount")
+            d?.set(currency, forKey: "netWorthCurrency")
+            d?.set(Date().timeIntervalSince1970, forKey: "netWorthUpdatedAt")
+        }.resume()
     }
 }
 

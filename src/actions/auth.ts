@@ -1,6 +1,7 @@
 'use server';
 
 import { pgCode, safeMessage } from '@/lib/dbErrors';
+import { revokeWidgetKeysForSession, revokeWidgetKeysForUser } from '@/lib/widgetKeyRevoke';
 import {
   db,
 } from '@/db';
@@ -1289,6 +1290,9 @@ export async function logoutAction() {
           tokenHash
         )
       );
+
+    // The Home Screen widget's background-refresh key dies with the session.
+    await revokeWidgetKeysForSession(tokenHash);
   }
 
   cookieStore.delete(
@@ -2108,6 +2112,8 @@ export async function updatePasswordAction(
             session.user.id
           )
         );
+      // A password change switches off every phone's widget key.
+      await revokeWidgetKeysForUser(session.user.id);
 
       await tx
         .delete(sessions)
@@ -2526,6 +2532,7 @@ export async function resetPasswordAction(
               targetUserId
             )
           );
+        await revokeWidgetKeysForUser(targetUserId);
 
         await tx
           .delete(sessions)

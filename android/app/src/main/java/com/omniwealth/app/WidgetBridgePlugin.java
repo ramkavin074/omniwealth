@@ -41,10 +41,53 @@ public class WidgetBridgePlugin extends Plugin {
         call.resolve(new JSObject());
     }
 
-    /** Called on sign-out so a stale balance never lingers on the Home Screen. */
+    /** Background refresh: keep the read-only key in this app's private storage. */
+    @PluginMethod
+    public void setKey(PluginCall call) {
+        String key = call.getString("key");
+        if (key == null || key.length() < 20 || key.length() > 200) {
+            call.reject("a valid key is required");
+            return;
+        }
+        Context ctx = getContext();
+        ctx.getSharedPreferences(NetWorthWidgetProvider.PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(NetWorthWidgetProvider.KEY_API_KEY, key)
+                .putLong(NetWorthWidgetProvider.KEY_API_KEY_AT, System.currentTimeMillis())
+                .apply();
+        NetWorthRefreshWorker.schedule(ctx);
+        call.resolve(new JSObject());
+    }
+
+    @PluginMethod
+    public void getKeyInfo(PluginCall call) {
+        SharedPreferences p =
+                getContext().getSharedPreferences(NetWorthWidgetProvider.PREFS, Context.MODE_PRIVATE);
+        boolean has = p.getString(NetWorthWidgetProvider.KEY_API_KEY, null) != null;
+        long at = p.getLong(NetWorthWidgetProvider.KEY_API_KEY_AT, 0L);
+        JSObject out = new JSObject();
+        out.put("hasKey", has);
+        out.put("ageDays", has && at > 0 ? (System.currentTimeMillis() - at) / 86400000L : 9999);
+        call.resolve(out);
+    }
+
+    /** App lock turned on/off: hide or show the balance right away. */
+    @PluginMethod
+    public void setHidden(PluginCall call) {
+        Context ctx = getContext();
+        ctx.getSharedPreferences(NetWorthWidgetProvider.PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(NetWorthWidgetProvider.KEY_HIDDEN, Boolean.TRUE.equals(call.getBoolean("hidden", false)))
+                .apply();
+        NetWorthWidgetProvider.refreshAll(ctx);
+        call.resolve(new JSObject());
+    }
+
+    /** Called on sign-out so a stale balance, or a key, never lingers on the phone. */
     @PluginMethod
     public void clear(PluginCall call) {
         Context ctx = getContext();
+        NetWorthRefreshWorker.cancel(ctx);
         ctx.getSharedPreferences(NetWorthWidgetProvider.PREFS, Context.MODE_PRIVATE).edit().clear().apply();
         NetWorthWidgetProvider.refreshAll(ctx);
         call.resolve(new JSObject());

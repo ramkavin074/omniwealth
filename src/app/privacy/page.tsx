@@ -101,6 +101,14 @@ export default function PrivacyPolicyPage() {
           deleted after 30 days.
         </li>
         <li>
+          <strong>Widget refresh key</strong> &mdash; if you use the Home Screen
+          widget, the app can store a read-only key on your phone so the widget
+          can update your net worth in the background. The key can read one
+          number (your household net worth) and nothing else. It expires after
+          90 days and is switched off when you sign out or change your password,
+          or when you turn it off in Settings.
+        </li>
+        <li>
           <strong>Your own AI provider key</strong>, if you choose to add one.
           It is encrypted at rest (AES-256-GCM) and used only to make requests
           you initiate.

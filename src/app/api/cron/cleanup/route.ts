@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lt } from 'drizzle-orm';
 import { db } from '@/db';
-import { clientErrors, passwordResets, rateLimits, sessions } from '@/db/schema';
+import { clientErrors, passwordResets, rateLimits, sessions, widgetKeys } from '@/db/schema';
 import { logError } from '@/lib/log';
 
 // Daily housekeeping: drop expired auth rows so these tables don't grow
@@ -45,9 +45,21 @@ export async function GET(req: NextRequest) {
     } catch {
       /* client_errors not created yet */
     }
+    // Widget keys that expired more than 30 days ago (table may not exist yet).
+    let keysPruned = 0;
+    try {
+      const oldKeys = await db
+        .delete(widgetKeys)
+        .where(lt(widgetKeys.expiresAt, new Date(now.getTime() - 30 * 86400000)))
+        .returning({ id: widgetKeys.id });
+      keysPruned = oldKeys.length;
+    } catch {
+      /* widget_keys not created yet */
+    }
     return NextResponse.json({
       ok: true,
       deleted: {
+        widgetKeys: keysPruned,
         clientErrors: errorsPruned,
         sessions: s.length,
         passwordResets: p.length,
