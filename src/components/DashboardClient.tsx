@@ -15,6 +15,8 @@ import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesMana
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
+import InsightsCard from '@/components/dashboard/InsightsCard';
+import { computeInsights } from '@/lib/insights';
 import RemindersCard from '@/components/dashboard/RemindersCard';
 import ContactsCard from '@/components/dashboard/ContactsCard';
 import type { ContactRow, EventRow, ReminderRow } from '@/actions/familyPlan';
@@ -217,6 +219,19 @@ export default function DashboardClient({
     [session?.household?.legacyPillars, initialAssets, baseCurrency, liveRates],
   );
 
+  const insights = useMemo(
+    () =>
+      computeInsights({
+        assets: initialAssets,
+        baseCurrency,
+        rates: liveRates,
+        goals,
+        reminders,
+        accountInstructions: session?.household?.accountInstructions,
+      }),
+    [initialAssets, baseCurrency, liveRates, goals, reminders, session?.household?.accountInstructions],
+  );
+
   const legacyPillars = useMemo(() => {
     try {
       const parsed = JSON.parse(session?.household?.legacyPillars || '[]');
@@ -399,6 +414,7 @@ export default function DashboardClient({
                   onAddLiability={() => setIsAddLiabilityOpen(true)}
                   onUploadDocument={() => setIsVaultUploadOpen(true)}
                 />
+                <InsightsCard insights={insights} onGo={selectTab} />
                 <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
                 <StaleValueNudge assets={initialAssets} />
 
