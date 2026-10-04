@@ -9,6 +9,7 @@ import SecureDocumentsVault from '@/components/dashboard/SecureDocumentsVault';
 import VaultUploadModal from '@/components/VaultUploadModal';
 import Footer from '@/components/Footer';
 import { logoutAction } from '@/actions/vault';
+import { clearWidget } from '@/lib/widget';
 
 export default function VaultPageClient({ initialDocuments, householdTitle }: { initialDocuments: any[]; householdTitle: string }) {
   const [isVaultUploadOpen, setIsVaultUploadOpen] = useState(false);
@@ -62,7 +63,7 @@ export default function VaultPageClient({ initialDocuments, householdTitle }: { 
               <Link href="/profile" title="Household Settings" className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-sm">
                 <Settings className="w-4 h-4" />
               </Link>
-              <form action={logoutAction}>
+              <form action={logoutAction} onSubmit={() => void clearWidget()}>
                 <button type="submit" title="Logout" className="p-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 transition cursor-pointer shadow-sm">
                   <LogOut className="w-4 h-4" />
                 </button>

@@ -42,6 +42,19 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
+        <!-- Home Screen widget: household net worth (see NetWorthWidgetProvider). -->
+        <receiver
+            android:name=".NetWorthWidgetProvider"
+            android:exported="false"
+            android:label="OmniWealth net worth">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/networth_widget_info" />
+        </receiver>
+
         <!-- Pre-download the ML Kit barcode scanner model at install time so
              the first scan (via the embedded /stocking route) doesn't stall
              on a module download. -->

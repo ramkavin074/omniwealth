@@ -13,7 +13,7 @@ import {
 } from '@/actions/vault';
 import { Plus, Sparkles, RefreshCw, Settings, Shield, LogOut, Coins, Wallet, CreditCard, Menu, Sun, Moon, Package, Share2 } from 'lucide-react';
 import { formatCompact, formatFull } from '@/lib/format';
-import { pushNetWorthToWidget } from '@/lib/widget';
+import { pushNetWorthToWidget, clearWidget } from '@/lib/widget';
 import { haptic, nativeShare } from '@/lib/native';
 
 const FX_RATES: { [key: string]: number } = {
@@ -210,7 +210,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
 
               <ThemeToggleButton />
 
-              <form action={logoutAction}>
+              <form action={logoutAction} onSubmit={() => void clearWidget()}>
                 <button type="submit" title="Logout" className="p-2 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-900 transition cursor-pointer shadow-sm">
                   <LogOut className="w-4 h-4" />
                 </button>

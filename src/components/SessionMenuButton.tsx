@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { logoutAction } from '@/actions/auth';
 import { lockNow } from '@/components/AppLock';
 import { APP_LOCK_KEY } from '@/lib/applock';
+import { clearWidget } from '@/lib/widget';
 
 const FULL_CLS =
   'w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-sm font-semibold rounded-xl border border-rose-200 dark:border-rose-900 cursor-pointer transition';
@@ -45,7 +46,7 @@ export default function SessionMenuButton({ iconOnly = false }: { iconOnly?: boo
   }
 
   return (
-    <form action={logoutAction} className={iconOnly ? '' : 'pt-1'}>
+    <form action={logoutAction} onSubmit={() => void clearWidget()} className={iconOnly ? '' : 'pt-1'}>
       <button type="submit" title="Logout" className={iconOnly ? ICON_CLS : FULL_CLS}>
         <LogOut className="w-4 h-4" /> {!iconOnly && 'Logout'}
       </button>

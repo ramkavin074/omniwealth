@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { updatePasswordAction, revokeOtherSessionsAction, deleteAccountAction, logoutAction } from '@/actions/auth';
 import { APP_LOCK_KEY, beginInternalAuth, endInternalAuth, withTimeout } from '@/lib/applock';
+import { clearWidget } from '@/lib/widget';
 
 export default function SecurityCard() {
   const [isNative, setIsNative] = useState(false);
@@ -179,7 +180,7 @@ export default function SecurityCard() {
                 : 'Ends the session on this device.'}
             </p>
           </div>
-          <form action={logoutAction}>
+          <form action={logoutAction} onSubmit={() => void clearWidget()}>
             <button
               type="submit"
               className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 font-semibold text-xs rounded-xl cursor-pointer transition"

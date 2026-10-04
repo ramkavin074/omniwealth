@@ -4,4 +4,5 @@
     <string name="title_activity_main">omniwealth</string>
     <string name="package_name">com.omniwealth.app</string>
     <string name="custom_url_scheme">com.omniwealth.app</string>
+    <string name="widget_description">Your household net worth at a glance</string>
 </resources>
