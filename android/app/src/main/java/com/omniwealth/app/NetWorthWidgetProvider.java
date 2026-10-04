@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.text.format.DateUtils;
+import android.util.TypedValue;
 import android.widget.RemoteViews;
 
 import java.util.Locale;
@@ -57,6 +58,7 @@ public class NetWorthWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_networth);
 
         if (!p.getBoolean(KEY_HAS_DATA, false)) {
+            views.setTextViewTextSize(R.id.widget_amount, TypedValue.COMPLEX_UNIT_SP, 17); // fits narrow widgets
             views.setTextViewText(R.id.widget_amount, "Open OmniWealth");
             views.setTextViewText(R.id.widget_currency, "");
             views.setTextViewText(R.id.widget_updated, "Sign in to see your net worth");
@@ -67,6 +69,7 @@ public class NetWorthWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.widget_updated, "Hidden while app lock is on");
         } else {
             double amount = Double.longBitsToDouble(p.getLong(KEY_AMOUNT_BITS, 0L));
+            views.setTextViewTextSize(R.id.widget_amount, TypedValue.COMPLEX_UNIT_SP, 26);
             views.setTextViewText(R.id.widget_amount, compact(amount));
             views.setTextViewText(R.id.widget_currency, p.getString(KEY_CURRENCY, ""));
             long at = p.getLong(KEY_UPDATED_AT, 0L);
