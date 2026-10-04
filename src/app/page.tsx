@@ -64,6 +64,11 @@ export default async function DashboardPage({
       quantity: assets.quantity,
       nativeValue: assets.nativeValue,
       nativeCurrency: assets.nativeCurrency,
+      // Needed by Estate readiness, the Edit dialog (so saving doesn't blank them) and the stale-value nudge.
+      beneficiary: assets.beneficiary,
+      accessNotes: assets.accessNotes,
+      createdAt: assets.createdAt,
+      updatedAt: assets.updatedAt,
       user: { fullName: users.fullName },
     })
     .from(assets)
