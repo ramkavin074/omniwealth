@@ -763,6 +763,7 @@ export default function SettingsSheet({
           <section className="space-y-2">
             <p className={heading}>{t(lang, 'settings.account')}</p>
             {hostedHasMainApp() && (
+              // eslint-disable-next-line @next/next/no-html-link-for-pages -- shared module also builds under Vite (no next/link); a full page load back to OmniWealth is intended
               <a
                 href="/"
                 className="flex h-11 w-full items-center justify-center rounded-lg bg-slate-200 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-100"

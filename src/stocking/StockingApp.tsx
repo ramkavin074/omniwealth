@@ -164,6 +164,7 @@ export default function StockingApp() {
           {/* Hosted inside OmniWealth: the logo links back to the main app.
               The standalone Kadai app has no "main app" to go back to. */}
           {hostedInOmniWealth ? (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- shared module also builds under Vite (no next/link); a full page load back to OmniWealth is intended
             <a href="/" aria-label="Back to OmniWealth" className="shrink-0">
               {logoImg}
             </a>
