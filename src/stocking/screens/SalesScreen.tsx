@@ -7,6 +7,7 @@ import { daySummary, refundSale, refundsFor, voidSale } from '../db/sales';
 import { useLiveQuery } from '../hooks';
 import { canManage, getGstConfig, getReceiptConfig } from '../settings';
 import { printReceiptSmart } from '../printer';
+import { sendBill } from '../shareBill';
 import { SCREEN_PAD } from '../ui';
 
 interface Props {
@@ -157,6 +158,14 @@ export default function SalesScreen({ lang, onClose }: Props) {
             </p>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => void sendBill(open, lang, getGstConfig())}
+          className="h-11 w-full rounded-xl bg-emerald-600 font-semibold text-white"
+        >
+          {t(lang, 'sell.whatsapp')}
+        </button>
 
         <button
           type="button"

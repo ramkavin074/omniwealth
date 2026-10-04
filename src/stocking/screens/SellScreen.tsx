@@ -17,8 +17,7 @@ import {
   getReceiptConfig,
 } from '../settings';
 import { printReceiptSmart } from '../printer';
-import { shareReceiptImage } from '../receiptImage';
-import { upiPayLine } from '../upiLink';
+import { sendBill } from '../shareBill';
 import { findByBarcode, getProduct, searchProducts } from '../db/products';
 import {
   completeSale,
@@ -575,45 +574,6 @@ export default function SellScreen({ lang, onClose }: Props) {
     setPhase('cart');
   };
 
-  // A "pay by UPI" link, only when money is still owed on this bill.
-  const upiTail = (s: Sale) => {
-    const rc = getReceiptConfig();
-    const owed = q2(
-      s.total - s.cashAmount - s.upiAmount - (s.cardAmount ?? 0),
-    );
-    if (owed <= 0 || !rc.upiId) return '';
-    return upiPayLine(
-      { pa: rc.upiId, pn: rc.shopName || undefined, am: owed, tn: s.billNo },
-      t(lang, 'upi.payBy'),
-    );
-  };
-
-  const receiptText = (s: Sale) =>
-    [
-      s.billNo,
-      new Date(s.createdAt).toLocaleString('en-IN'),
-      ...(gst.gstin ? [`GSTIN: ${gst.gstin}`] : []),
-      ...s.items.map(
-        (i) =>
-          `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice}` +
-          (i.discount > 0
-            ? ` (-${i.discountPct > 0 ? i.discountPct + '%' : i.discount})`
-            : '') +
-          ` = ${saleLineTotal(i)}`,
-      ),
-      ...(s.discount > 0 ? [`${t(lang, 'sell.discount')}: -${s.discount}`] : []),
-      ...s.taxBreakup.map(
-        (r) =>
-          `GST ${r.rate}%  CGST ${r.cgst} + SGST ${r.sgst}`,
-      ),
-      ...(s.roundoff
-        ? [`${t(lang, 'sell.roundoff')}: ${s.roundoff > 0 ? '+' : ''}${s.roundoff}`]
-        : []),
-      `${t(lang, 'sell.total')}: ${money(s.total)}`,
-      `${t(lang, 'sell.paid')}: ${t(lang, `sell.tender.${s.tenderType}`)}`,
-      ...(s.salesman ? [`${t(lang, 'sell.salesman')}: ${s.salesman}`] : []),
-    ].join('\n') + upiTail(s);
-
   // ---------- DONE / receipt ----------
   if (phase === 'done' && saved) {
     return (
@@ -784,19 +744,7 @@ export default function SellScreen({ lang, onClose }: Props) {
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={async () => {
-              const r = await shareReceiptImage(
-                saved,
-                { lang, gst, receipt: getReceiptConfig() },
-                upiTail(saved),
-              );
-              if (r === 'unsupported' || r === 'error') {
-                window.open(
-                  `https://wa.me/?text=${encodeURIComponent(receiptText(saved))}`,
-                  '_blank',
-                );
-              }
-            }}
+            onClick={() => void sendBill(saved, lang, gst)}
             className="h-12 rounded-xl bg-emerald-600 font-semibold text-white"
           >
             {t(lang, 'sell.whatsapp')}

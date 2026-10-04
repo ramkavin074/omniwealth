@@ -203,6 +203,48 @@ export async function receiptPng(sale: Sale, opts: Opts): Promise<Blob | null> {
 
 export type ShareOutcome = 'shared' | 'cancelled' | 'unsupported' | 'error';
 
+const blobToBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(fr.error);
+    fr.onload = () => resolve(String(fr.result).split(',')[1] ?? '');
+    fr.readAsDataURL(blob);
+  });
+
+/**
+ * Native apps (Android WebView has no Web Share with files): write the PNG to
+ * the app's cache and hand it to the system share sheet via Capacitor. Returns
+ * 'unsupported' when not running natively or the plugins aren't in the build,
+ * so the caller can fall back to the Web Share / text paths.
+ */
+async function shareNativeImage(blob: Blob, billNo: string, text?: string): Promise<ShareOutcome> {
+  try {
+    const { Capacitor } = await import('@capacitor/core');
+    if (!Capacitor.isNativePlatform()) return 'unsupported';
+    const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+      import('@capacitor/filesystem'),
+      import('@capacitor/share'),
+    ]);
+    const name = `${billNo.replace(/[^\w-]+/g, '-')}.png`;
+    await Filesystem.writeFile({ path: name, data: await blobToBase64(blob), directory: Directory.Cache });
+    const { uri } = await Filesystem.getUri({ path: name, directory: Directory.Cache });
+    await Share.share({
+      title: billNo,
+      ...(text && text.trim() ? { text: text.trim() } : {}),
+      files: [uri],
+      dialogTitle: billNo,
+    });
+    return 'shared';
+  } catch (e) {
+    const msg = String((e as Error)?.message ?? e);
+    // The plugin reports a dismissed share sheet as an error on some platforms.
+    if (/cancel|dismiss/i.test(msg)) return 'cancelled';
+    // Plugin missing from this build -> let the web paths try.
+    if (/not implemented|unimplemented|not available/i.test(msg)) return 'unsupported';
+    return 'error';
+  }
+}
+
 /** Render the receipt and open the OS share sheet with it as a PNG. `text`
  *  (e.g. a "pay by UPI" line) rides in the message body alongside the image. */
 export async function shareReceiptImage(
@@ -217,6 +259,10 @@ export async function shareReceiptImage(
     return 'error';
   }
   if (!blob) return 'error';
+
+  // Native apps first (reliable on Android and iOS).
+  const native = await shareNativeImage(blob, sale.billNo, text);
+  if (native !== 'unsupported') return native;
 
   const file = new File(
     [blob],
