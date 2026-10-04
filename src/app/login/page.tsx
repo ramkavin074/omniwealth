@@ -8,6 +8,8 @@ loginAction,
 } from '@/actions/auth';
 import { useRouter } from 'next/navigation';
 import AcceptInviteCard from './AcceptInviteCard';
+import ForgotPasswordCard from './ForgotPasswordCard';
+import ResetPasswordCard from './ResetPasswordCard';
 import {
 Cpu,
 Users,
@@ -42,6 +44,8 @@ const [showPassword, setShowPassword] = useState(false);
 const [password, setPassword] = useState('');
 const [capsLockOn, setCapsLockOn] = useState(false);
 const [inviteToken, setInviteToken] = useState<string | null>(null);
+const [resetToken, setResetToken] = useState<string | null>(null);
+const [forgot, setForgot] = useState(false);
 
 const router = useRouter();
 
@@ -54,6 +58,8 @@ const params = new URLSearchParams(window.location.search);
 const t = params.get('invite');
 // eslint-disable-next-line react-hooks/set-state-in-effect
 if (t) setInviteToken(t);
+const rt = params.get('reset-token');
+if (rt) setResetToken(rt);
 const requestedTab = params.get('tab');
 if (requestedTab === 'register' || requestedTab === 'invite') {
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -191,6 +197,21 @@ setCapsLockOn(false);
 // Invitation acceptance is a distinct flow: /login?invite=<token>
 if (inviteToken) {
 return <AcceptInviteCard token={inviteToken} />;
+}
+
+// Password reset: the emailed link is /login?reset-token=<token>
+if (resetToken) {
+return <ResetPasswordCard
+        token={resetToken}
+        onDone={() => {
+          setResetToken(null);
+          router.replace('/login');
+        }}
+      />;
+}
+
+if (forgot) {
+return <ForgotPasswordCard onBack={() => setForgot(false)} />;
 }
 
 return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-teal-600 selection:text-white"> <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
@@ -487,6 +508,19 @@ return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-cen
             )}
           </button>
         </div>
+
+        {tab === 'signin' && (
+          <div className="mt-2 text-right">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setForgot(true)}
+              className="text-[11px] text-teal-400 hover:text-teal-300 underline underline-offset-2 cursor-pointer disabled:opacity-50"
+            >
+              Forgot password?
+            </button>
+          </div>
+        )}
 
         {/* Password Strength */}
         {tab === 'register' && password.length > 0 && (
