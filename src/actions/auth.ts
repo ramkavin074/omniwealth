@@ -1070,6 +1070,9 @@ export async function acceptInviteAction(
               role:
                 invite.role ||
                 'MEMBER',
+              // Notifications are on by default; each person can turn them off
+              // in Household Settings -> Notifications.
+              emailDigest: true,
             })
             .returning({
               id: users.id,
@@ -1633,6 +1636,7 @@ export async function registerOwnerAction(
               passwordHash,
               fullName,
               role: userRole,
+              emailDigest: true,
             })
             .returning({
               id: users.id,
@@ -1859,6 +1863,7 @@ export async function registerMemberWithCodeAction(
               passwordHash,
               fullName,
               role: userRole,
+              emailDigest: true,
             })
             .returning({
               id: users.id,

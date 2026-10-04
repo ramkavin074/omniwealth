@@ -110,7 +110,7 @@ export const users = pgTable(
       .notNull(),
 
     // Opt-in to the periodic net-worth summary email. Off by default.
-    emailDigest: boolean('email_digest').default(false).notNull(),
+    emailDigest: boolean('email_digest').default(true).notNull(),
 
     /**
      * Generic encrypted API key.
