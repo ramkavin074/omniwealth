@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // Reads the values written by WidgetBridgePlugin.setNetWorth() in the host app.
 private let appGroup = "group.com.omniwealth.app"
@@ -23,26 +24,32 @@ struct NetWorthEntry: TimelineEntry {
     let currency: String
     let updatedAt: Date?
     let hidden: Bool
+    // True for the ~30 seconds after the user unlocked the widget with a tap.
+    let revealed: Bool
+
+    var locked: Bool { hidden && !revealed }
 }
 
 struct Provider: TimelineProvider {
-    private func read() -> NetWorthEntry {
+    private func read(at date: Date = Date()) -> NetWorthEntry {
         let d = UserDefaults(suiteName: appGroup)
         let amount = d?.object(forKey: "netWorthAmount") as? Double
         let currency = d?.string(forKey: "netWorthCurrency") ?? "USD"
         let ts = d?.object(forKey: "netWorthUpdatedAt") as? Double
         let hidden = d?.bool(forKey: "netWorthHidden") ?? false
+        let revealUntil = d?.double(forKey: "netWorthRevealUntil") ?? 0
         return NetWorthEntry(
-            date: Date(),
+            date: date,
             amount: amount,
             currency: currency,
             updatedAt: ts.map { Date(timeIntervalSince1970: $0) },
-            hidden: hidden
+            hidden: hidden,
+            revealed: revealUntil > date.timeIntervalSince1970
         )
     }
 
     func placeholder(in context: Context) -> NetWorthEntry {
-        NetWorthEntry(date: Date(), amount: 761_900, currency: "USD", updatedAt: Date(), hidden: false)
+        NetWorthEntry(date: Date(), amount: 761_900, currency: "USD", updatedAt: Date(), hidden: false, revealed: false)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (NetWorthEntry) -> Void) {
@@ -53,7 +60,14 @@ struct Provider: TimelineProvider {
         func finish() {
             // iOS decides the real cadence; this asks for a refresh in a few hours.
             let next = Calendar.current.date(byAdding: .hour, value: 3, to: Date()) ?? Date().addingTimeInterval(10_800)
-            completion(Timeline(entries: [read()], policy: .after(next)))
+            var entries = [read()]
+            // After an unlock, add a second entry that locks the widget again on time.
+            let revealUntil = UserDefaults(suiteName: appGroup)?.double(forKey: "netWorthRevealUntil") ?? 0
+            if revealUntil > Date().timeIntervalSince1970 {
+                let relock = Date(timeIntervalSince1970: revealUntil)
+                entries.append(read(at: relock))
+            }
+            completion(Timeline(entries: entries, policy: .after(next)))
         }
 
         let d = UserDefaults(suiteName: appGroup)
@@ -102,6 +116,22 @@ private func compact(_ value: Double) -> String {
     }
 }
 
+
+/// Tapping the locked widget runs this. iOS asks for Face ID / the passcode first
+/// (authenticationPolicy), then the number shows for about 30 seconds.
+@available(iOS 17.0, *)
+struct RevealNetWorthIntent: AppIntent {
+    static var title: LocalizedStringResource = "Unlock net worth"
+    static var description = IntentDescription("Shows your net worth on the widget for 30 seconds.")
+    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    func perform() async throws -> some IntentResult {
+        UserDefaults(suiteName: appGroup)?.set(Date().timeIntervalSince1970 + 30, forKey: "netWorthRevealUntil")
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
 struct NetWorthWidgetEntryView: View {
     var entry: NetWorthEntry
 
@@ -112,14 +142,29 @@ struct NetWorthWidgetEntryView: View {
                 .tracking(1.2)
                 .foregroundStyle(.secondary)
 
-            if entry.hidden && entry.amount != nil {
-                // The user chose to hide the balance on the widget (Settings).
-                Text("••••••")
-                    .font(.system(size: 28, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
-                Text("Balance hidden")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+            if entry.locked && entry.amount != nil {
+                // Locked: dots until the user taps and confirms Face ID / the passcode.
+                if #available(iOS 17.0, *) {
+                    Button(intent: RevealNetWorthIntent()) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("••••••")
+                                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                                .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
+                            Text("Tap to unlock")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text("••••••")
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Color(red: 0.06, green: 0.5, blue: 0.42))
+                    Text("Open the app to see it")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             } else if let amount = entry.amount {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(compact(amount))
@@ -139,7 +184,7 @@ struct NetWorthWidgetEntryView: View {
 
             Spacer(minLength: 0)
 
-            if !entry.hidden, let updatedAt = entry.updatedAt {
+            if !entry.locked, let updatedAt = entry.updatedAt {
                 Text("Updated \(updatedAt.formatted(.relative(presentation: .named)))")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)

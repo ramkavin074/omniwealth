@@ -19,21 +19,23 @@ interface WidgetBridgePlugin {
 
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge');
 
-const HIDE_KEY = 'omniwealth_widget_hide';
+// Widget privacy: by default the widget shows dots and asks for a fingerprint /
+// face / PIN when tapped, then reveals the number briefly. "Always show" skips that.
+const SHOW_KEY = 'omniwealth_widget_show_always';
 
-/** True when the user asked the widget to hide the balance (default: show it). */
-export function widgetHidePref(): boolean {
+/** True when the user chose to always show the balance on the widget. */
+export function widgetShowAlwaysPref(): boolean {
   try {
-    return localStorage.getItem(HIDE_KEY) === '1';
+    return localStorage.getItem(SHOW_KEY) === '1';
   } catch {
     return false;
   }
 }
 
-export function setWidgetHidePref(hide: boolean): void {
+export function setWidgetShowAlwaysPref(show: boolean): void {
   try {
-    if (hide) localStorage.setItem(HIDE_KEY, '1');
-    else localStorage.removeItem(HIDE_KEY);
+    if (show) localStorage.setItem(SHOW_KEY, '1');
+    else localStorage.removeItem(SHOW_KEY);
   } catch {
     /* ignore */
   }
@@ -51,8 +53,8 @@ export async function pushNetWorthToWidget(amount: number, currency: string): Pr
   if (!supported()) return;
   if (!Number.isFinite(amount) || !currency) return;
 
-  // The widget shows the balance unless the user chose to hide it (Settings).
-  const hidden = widgetHidePref();
+  // "hidden" = locked: dots until the user unlocks it with a tap (unless they chose always-show).
+  const hidden = !widgetShowAlwaysPref();
 
   // Avoid hammering the widget on every re-render.
   const sig = `${Math.round(amount)}|${currency}|${hidden ? 1 : 0}`;
@@ -97,7 +99,7 @@ export async function ensureWidgetKey(): Promise<void> {
   }
 }
 
-/** Tell the widget to hide/show the balance right away (the Settings switch). */
+/** Tell the widget its lock state changed (the Settings switch): hidden = needs unlock. */
 export async function setWidgetHidden(hidden: boolean): Promise<void> {
   if (!supported()) return;
   try {

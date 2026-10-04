@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 import { updatePasswordAction, revokeOtherSessionsAction, deleteAccountAction, logoutAction } from '@/actions/auth';
 import { APP_LOCK_KEY, beginInternalAuth, endInternalAuth, withTimeout } from '@/lib/applock';
-import { clearWidget, setWidgetHidden, setWidgetHidePref, widgetHidePref } from '@/lib/widget';
+import { clearWidget, setWidgetHidden, setWidgetShowAlwaysPref, widgetShowAlwaysPref } from '@/lib/widget';
 import { countWidgetKeysAction, revokeAllWidgetKeysAction } from '@/actions/widgetKeys';
 
 export default function SecurityCard() {
@@ -15,12 +15,12 @@ export default function SecurityCard() {
   const [lockMsg, setLockMsg] = useState('');
   const [lockBusy, setLockBusy] = useState(false);
   const [widgetPhones, setWidgetPhones] = useState(0);
-  const [widgetHide, setWidgetHide] = useState(false);
+  const [widgetShowAlways, setWidgetShowAlways] = useState(false);
 
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
     countWidgetKeysAction().then(setWidgetPhones).catch(() => {});
-    setWidgetHide(widgetHidePref());
+    setWidgetShowAlways(widgetShowAlwaysPref());
     try {
       setLockOn(localStorage.getItem(APP_LOCK_KEY) === '1');
     } catch {
@@ -221,27 +221,28 @@ export default function SecurityCard() {
           {lockMsg && <p className="text-[11px] text-slate-600 dark:text-slate-300">{lockMsg}</p>}
           <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
             <div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Hide balance on the widget</p>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Unlock the widget with a tap</p>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Off by default, so the Home Screen widget shows your net worth. Turn on to show dots instead. Anyone who
-                can see your home screen can see the number while this is off.
+                On: the Home Screen widget shows dots. Tap it, confirm with your fingerprint, face or PIN, and the
+                number shows for about 30 seconds. Off: it always shows your net worth, so anyone who can see your home
+                screen can read it.
               </p>
             </div>
             <button
               type="button"
               onClick={() => {
-                const next = !widgetHide;
-                setWidgetHide(next);
-                setWidgetHidePref(next);
-                void setWidgetHidden(next);
+                const alwaysShow = !widgetShowAlways; // button flips the current mode
+                setWidgetShowAlways(alwaysShow);
+                setWidgetShowAlwaysPref(alwaysShow);
+                void setWidgetHidden(!alwaysShow);
               }}
               className={`shrink-0 px-3 py-2 font-semibold text-xs rounded-xl cursor-pointer ${
-                widgetHide
+                !widgetShowAlways
                   ? 'bg-teal-700 hover:bg-teal-800 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
               }`}
             >
-              {widgetHide ? 'On' : 'Off'}
+              {!widgetShowAlways ? 'On' : 'Off'}
             </button>
           </div>
           {widgetPhones > 0 && (

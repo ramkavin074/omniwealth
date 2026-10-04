@@ -66,6 +66,8 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
     // Background refresh of the Home Screen widget.
     implementation "androidx.work:work-runtime:2.9.1"
+    // Fingerprint / face / PIN prompt for unlocking the widget with a tap.
+    implementation "androidx.biometric:biometric:1.1.0"
 }
 
 apply from: 'capacitor.build.gradle'

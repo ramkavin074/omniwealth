@@ -42,6 +42,15 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
+        <!-- Tap-to-unlock for the Home Screen widget (system biometric / PIN prompt). -->
+        <activity
+            android:name=".UnlockWidgetActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Home Screen widget: household net worth (see NetWorthWidgetProvider). -->
         <receiver
             android:name=".NetWorthWidgetProvider"

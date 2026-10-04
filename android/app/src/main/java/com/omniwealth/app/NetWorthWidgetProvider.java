@@ -23,8 +23,20 @@ public class NetWorthWidgetProvider extends AppWidgetProvider {
     static final String KEY_UPDATED_AT = "updatedAt";
     static final String KEY_HAS_DATA = "hasData";
     // Read-only key for background refresh (can fetch the net worth total only).
+    static final String KEY_REVEAL_UNTIL = "revealUntil";
+    static final String ACTION_REHIDE = "com.omniwealth.app.WIDGET_REHIDE";
+    static final long REVEAL_MS = 30_000L;
     static final String KEY_API_KEY = "apiKey";
     static final String KEY_API_KEY_AT = "apiKeyAt";
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        // Time is up on a tap-to-unlock reveal: draw the locked widget again.
+        if (intent != null && ACTION_REHIDE.equals(intent.getAction())) {
+            refreshAll(context);
+        }
+    }
 
     @Override
     public void onEnabled(Context context) {
@@ -56,36 +68,50 @@ public class NetWorthWidgetProvider extends AppWidgetProvider {
     private static void update(Context context, AppWidgetManager manager, int id) {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_networth);
+        boolean locked = false;
 
         if (!p.getBoolean(KEY_HAS_DATA, false)) {
             views.setTextViewTextSize(R.id.widget_amount, TypedValue.COMPLEX_UNIT_SP, 17); // fits narrow widgets
             views.setTextViewText(R.id.widget_amount, "Open OmniWealth");
             views.setTextViewText(R.id.widget_currency, "");
             views.setTextViewText(R.id.widget_updated, "Sign in to see your net worth");
-        } else if (p.getBoolean(KEY_HIDDEN, false)) {
-            // The user chose to hide the balance on the widget (Settings).
-            views.setTextViewText(R.id.widget_amount, "••••••");
+        } else if (p.getBoolean(KEY_HIDDEN, false) && System.currentTimeMillis() >= p.getLong(KEY_REVEAL_UNTIL, 0L)) {
+            // Locked: dots until the user taps and confirms fingerprint / face / PIN.
+            views.setTextViewTextSize(R.id.widget_amount, TypedValue.COMPLEX_UNIT_SP, 26);
+            views.setTextViewText(R.id.widget_amount, "\u2022\u2022\u2022\u2022\u2022\u2022");
             views.setTextViewText(R.id.widget_currency, "");
-            views.setTextViewText(R.id.widget_updated, "Balance hidden");
+            views.setTextViewText(R.id.widget_updated, "Tap to unlock");
+            locked = true;
         } else {
             double amount = Double.longBitsToDouble(p.getLong(KEY_AMOUNT_BITS, 0L));
             views.setTextViewTextSize(R.id.widget_amount, TypedValue.COMPLEX_UNIT_SP, 26);
             views.setTextViewText(R.id.widget_amount, compact(amount));
             views.setTextViewText(R.id.widget_currency, p.getString(KEY_CURRENCY, ""));
             long at = p.getLong(KEY_UPDATED_AT, 0L);
+            boolean brieflyShown = p.getBoolean(KEY_HIDDEN, false);
             views.setTextViewText(
                     R.id.widget_updated,
-                    at > 0
-                            ? "Updated " + DateUtils.getRelativeTimeSpanString(
-                                    at, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
-                            : "");
+                    brieflyShown
+                            ? "Unlocked \u00b7 hides in a moment"
+                            : at > 0
+                                    ? "Updated " + DateUtils.getRelativeTimeSpanString(
+                                            at, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+                                    : "");
         }
 
-        Intent launch = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-        if (launch != null) {
+        if (locked) {
+            Intent unlock = new Intent(context, UnlockWidgetActivity.class);
+            unlock.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pi = PendingIntent.getActivity(
-                    context, 0, launch, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+                    context, 2, unlock, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             views.setOnClickPendingIntent(R.id.widget_root, pi);
+        } else {
+            Intent launch = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            if (launch != null) {
+                PendingIntent pi = PendingIntent.getActivity(
+                        context, 0, launch, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+                views.setOnClickPendingIntent(R.id.widget_root, pi);
+            }
         }
         manager.updateAppWidget(id, views);
     }
