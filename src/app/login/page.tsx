@@ -1,5 +1,6 @@
 'use client';
 
+import BrandMark from '@/components/BrandMark';
 import React, { useState, useEffect } from 'react';
 import {
 registerOwnerAction,
@@ -11,7 +12,6 @@ import AcceptInviteCard from './AcceptInviteCard';
 import ForgotPasswordCard from './ForgotPasswordCard';
 import ResetPasswordCard from './ResetPasswordCard';
 import {
-Cpu,
 Users,
 Lock,
 Mail,
@@ -220,9 +220,7 @@ return ( <div className="min-h-screen bg-slate-950 text-slate-100 flex items-cen
 
     {/* Header */}
     <div className="flex items-center gap-3 mb-6">
-      <div className="p-2.5 bg-teal-700 rounded-xl shadow-lg shadow-teal-900/40">
-        <Cpu className="w-6 h-6 text-white" />
-      </div>
+      <BrandMark />
 
       <div>
         <h1 className="text-xl font-bold text-white">

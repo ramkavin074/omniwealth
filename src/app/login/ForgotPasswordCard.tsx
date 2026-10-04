@@ -1,8 +1,9 @@
 'use client';
 
+import BrandMark from '@/components/BrandMark';
 import React, { useState } from 'react';
 import { requestPasswordResetAction } from '@/actions/auth';
-import { Cpu, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Loader2, CheckCircle2 } from 'lucide-react';
 
 /** "Forgot password?" step 1: ask for the email; the reply never reveals if an account exists. */
 export default function ForgotPasswordCard({ onBack }: { onBack: () => void }) {
@@ -29,9 +30,7 @@ export default function ForgotPasswordCard({ onBack }: { onBack: () => void }) {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-teal-600 selection:text-white">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-teal-700 rounded-xl shadow-lg shadow-teal-900/40">
-            <Cpu className="w-6 h-6 text-white" />
-          </div>
+          <BrandMark />
           <div>
             <h1 className="text-xl font-bold text-white">Reset your password</h1>
             <p className="text-xs text-slate-400">We&rsquo;ll email you a link</p>

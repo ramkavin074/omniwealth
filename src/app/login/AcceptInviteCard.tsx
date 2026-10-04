@@ -1,9 +1,10 @@
 'use client';
 
+import BrandMark from '@/components/BrandMark';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { verifyInviteTokenAction, acceptInviteAction } from '@/actions/auth';
-import { Cpu, Lock, Users, Mail, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
+import { Lock, Users, Mail, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 
 type InviteInfo = {
   email: string;
@@ -79,9 +80,7 @@ export default function AcceptInviteCard({ token }: { token: string }) {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans selection:bg-teal-600 selection:text-white">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-teal-700 rounded-xl shadow-lg shadow-teal-900/40">
-            <Cpu className="w-6 h-6 text-white" />
-          </div>
+          <BrandMark />
           <div>
             <h1 className="text-xl font-bold text-white">OmniWealth</h1>
             <p className="text-xs text-slate-400">Accept your invitation</p>
