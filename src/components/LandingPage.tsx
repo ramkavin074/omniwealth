@@ -192,6 +192,9 @@ export default function LandingPage() {
 
       {/* Features */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-20">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">
+          Everything your family needs to track net worth
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map(({ icon: Icon, title, description }) => (
             <div
@@ -277,10 +280,25 @@ export default function LandingPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'OmniWealth',
+            alternateName: 'OmniWealth Family Net Worth Tracker',
+            url: 'https://www.omniwealth.org',
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
             name: 'OmniWealth',
             applicationCategory: 'FinanceApplication',
             operatingSystem: 'iOS, Android, Web',
+            url: 'https://www.omniwealth.org',
+            installUrl: 'https://apps.apple.com/app/id6810544681',
+            image: 'https://www.omniwealth.org/og-image.png',
             description:
               "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard. Informational only: not a bank, broker-dealer, or investment adviser, and does not manage, custody, or move your money.",
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },

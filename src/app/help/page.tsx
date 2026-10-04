@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Help & FAQ',
+  alternates: { canonical: '/help' },
   description:
     'How to use OmniWealth: setting up a household, tracking assets across currencies, the secure document vault, Ask Wealth AI, retirement planning, and account security.',
 };

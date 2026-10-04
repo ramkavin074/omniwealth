@@ -5,6 +5,10 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
 import LandingPage from '@/components/LandingPage';
+import type { Metadata } from 'next';
+
+// The home page is the landing page for visitors (the dashboard once signed in).
+export const metadata: Metadata = { alternates: { canonical: '/' } };
 
 export const dynamic = 'force-dynamic';
 // Server actions used from this page (AI statement reader, AI CSV clean-up)

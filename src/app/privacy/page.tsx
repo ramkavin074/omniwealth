@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
+  alternates: { canonical: '/privacy' },
   description:
     'How DreamBee Network LLC collects, uses, shares, and protects your information in OmniWealth and OmniWealth Kadai.',
 };

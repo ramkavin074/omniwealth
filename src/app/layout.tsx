@@ -46,6 +46,8 @@ export const metadata: Metadata = {
     "secure document vault",
   ],
   manifest: "/manifest.json",
+  // iOS Safari shows an "Open in the OmniWealth app" banner for visitors.
+  itunes: { appId: "6810544681" },
   icons: {
     icon: { url: "/omniwealth.jpg", type: "image/jpeg" },
     apple: { url: "/omniwealth.jpg", type: "image/jpeg" },
@@ -61,14 +63,14 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: SITE_NAME }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: `${SITE_NAME} — one private dashboard for your family's net worth` }],
     locale: "en_US",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/icon-512.png"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -81,7 +83,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#4f46e5",
+  themeColor: "#0f766e",
   viewportFit: "cover",
 };
 

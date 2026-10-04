@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
+  alternates: { canonical: '/terms' },
   description:
     'The terms under which DreamBee Network LLC provides OmniWealth and OmniWealth Kadai.',
 };
