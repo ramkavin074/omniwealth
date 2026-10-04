@@ -96,3 +96,22 @@ export function detectConcentrationFlags(
 
   return out.sort((a, b) => b.pct - a.pct);
 }
+
+// Holdings whose value hasn't been touched in `days` days. Same 90-day rule as
+// the dashboard's StaleValueNudge; optionally limited to one owner so a family
+// member isn't nagged about holdings they can't edit.
+export const STALE_DAYS = 90;
+export function countStaleHoldings(
+  rows: AssetRow[],
+  opts: { ownerId?: string; days?: number; now?: number } = {},
+): number {
+  const cutoff = (opts.days ?? STALE_DAYS) * 86400000;
+  const now = opts.now ?? Date.now();
+  let n = 0;
+  for (const a of rows) {
+    if (opts.ownerId && a.userId !== opts.ownerId) continue;
+    const t = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    if (Number.isFinite(t) && t > 0 && now - t > cutoff) n++;
+  }
+  return n;
+}

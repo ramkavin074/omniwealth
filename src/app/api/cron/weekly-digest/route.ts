@@ -4,7 +4,7 @@ import { sendMail } from '@/lib/mailer';
 import { db } from '@/db';
 import { households, assets, users, netWorthSnapshots, pushTokens } from '@/db/schema';
 import { fetchLiveExchangeRatesAction } from '@/actions/vault';
-import { netWorthOf, detectConcentrationFlags } from '@/lib/networth';
+import { netWorthOf, detectConcentrationFlags, countStaleHoldings, STALE_DAYS } from '@/lib/networth';
 import { formatFull } from '@/lib/format';
 import { logError } from '@/lib/log';
 import { sendPushToUser } from '@/lib/push';
@@ -139,6 +139,18 @@ async function run() {
             threadId: 'concentration-risk',
           });
           if (riskDelivered > 0) sentPush++;
+        }
+
+        // A third, optional nudge: the user's own holdings that haven't been
+        // updated in a while. Only sent when there's something to update.
+        const staleCount = countStaleHoldings(rows, { ownerId: u.id });
+        if (staleCount > 0) {
+          const staleDelivered = await sendPushToUser(u.id, {
+            title: 'Time to update your accounts',
+            body: `${staleCount === 1 ? '1 holding has' : `${staleCount} holdings have`} not been updated in over ${STALE_DAYS} days. A quick refresh keeps your net worth accurate.`,
+            threadId: 'stale-values',
+          });
+          if (staleDelivered > 0) sentPush++;
         }
       } catch (err) {
         logError('cron/weekly-digest.push', err, { userId: u.id });
