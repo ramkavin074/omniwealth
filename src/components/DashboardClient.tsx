@@ -515,6 +515,7 @@ export default function DashboardClient({
 
             {activeTab === 'directives' && (
               <div className="space-y-6 animate-fadeIn print:hidden">
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pt-1">Estate</h3>
                 <EstateReadinessCard assets={initialAssets} />
 
                 <div className="rounded-2xl border border-teal-200 dark:border-teal-900/50 bg-teal-50/60 dark:bg-teal-950/20 p-5 flex flex-wrap items-center justify-between gap-3">
@@ -541,6 +542,7 @@ export default function DashboardClient({
                   />
                 </CollapsibleSection>
 
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pt-1">People &amp; deadlines</h3>
                 <CollapsibleSection
                   id="reminders"
                   title="Renewals &amp; reminders"
@@ -558,6 +560,7 @@ export default function DashboardClient({
                   <ContactsCard contacts={contacts} canManage={canManage} />
                 </CollapsibleSection>
 
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pt-1">Records</h3>
                 <CollapsibleSection id="milestones" title="Milestones &amp; directives" icon={<Shield className="w-5 h-5" />}>
                   <FutureMilestonesAndDirectives assets={initialAssets} embedded />
                 </CollapsibleSection>

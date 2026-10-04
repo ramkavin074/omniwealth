@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { formatCompact } from '@/lib/format';
 import { LIFE_EXPECTANCY, SCENARIOS, project, sensitivity, type PlanInputs } from '@/lib/retirementProjection';
 
@@ -17,6 +18,7 @@ export default function RetirementScenarios({
   currency: string;
 }) {
   const [on, setOn] = useState<string[]>(DEFAULT_ON);
+  const [open, setOpen] = useState(false);
   const end = plan.endAge ?? LIFE_EXPECTANCY;
 
   const runs = useMemo(
@@ -55,14 +57,26 @@ export default function RetirementScenarios({
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
-      <div className="pb-2 border-b border-slate-200 dark:border-slate-800">
-        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">Will my money last?</h4>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-          Your savings grow until you retire, then fund your spending to age {end}. All figures are in
-          today&rsquo;s money.
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-start justify-between gap-3 text-left cursor-pointer"
+      >
+        <span>
+          <span className="block text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+            Explore what-ifs
+          </span>
+          <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            Stress-test the plan above: lower returns, a market drop, higher inflation or retiring later. All figures are
+            in today&rsquo;s money, spending to age {end}.
+          </span>
+        </span>
+        <ChevronDown className={`w-4 h-4 mt-0.5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
 
+      {open && (
+        <>
       <div>
         <p className="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 mb-2">
           What if&hellip; (tap to compare)
@@ -180,6 +194,8 @@ export default function RetirementScenarios({
         Simplified, constant-return projection for planning conversations, not a forecast or financial advice. Spending
         is taken at the start of each year; taxes, pensions and one-off costs are not included.
       </p>
+        </>
+      )}
     </div>
   );
 }
