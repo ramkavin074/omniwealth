@@ -18,6 +18,7 @@ export default async function StockingPage() {
     <StockingAppClient
       userId={session.user.id}
       displayName={session.user.fullName}
+      hasMainApp={!session.household?.isStoreShell}
       store={{
         id: store.id,
         name: store.name,

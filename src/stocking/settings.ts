@@ -197,6 +197,17 @@ export function hasStandaloneAuth(): boolean {
   }
 }
 
+/** In the OmniWealth-hosted page: does this account also have the main wealth
+ *  dashboard? Shop-only accounts don't, so there's nothing to go "back" to. */
+export function hostedHasMainApp(): boolean {
+  try {
+    const raw = localStorage.getItem('stocking.auth');
+    return !raw || (JSON.parse(raw) as { hasMainApp?: boolean }).hasMainApp !== false;
+  } catch {
+    return true;
+  }
+}
+
 export type StoreRole = 'owner' | 'manager' | 'staff';
 
 interface AuthBlob {

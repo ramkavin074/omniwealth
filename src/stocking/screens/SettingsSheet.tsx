@@ -19,6 +19,7 @@ import {
   setLoyaltyConfig,
   setReceiptConfig,
   signOut,
+  hostedHasMainApp,
   type LoyaltyConfig,
   type ReceiptConfig,
 } from '../settings';
@@ -266,6 +267,17 @@ export default function SettingsSheet({
   const logout = () => {
     signOut();
     location.reload();
+  };
+
+  // Hosted inside OmniWealth: end the website session, then go to the sign-in page.
+  const hostedLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {
+      /* offline: fall through to the sign-in page, which will show the state */
+    }
+    signOut();
+    location.href = '/login';
   };
 
   return (
@@ -750,12 +762,21 @@ export default function SettingsSheet({
         {!standalone && (
           <section className="space-y-2">
             <p className={heading}>{t(lang, 'settings.account')}</p>
-            <a
-              href="/"
-              className="flex h-11 w-full items-center justify-center rounded-lg bg-slate-200 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            {hostedHasMainApp() && (
+              <a
+                href="/"
+                className="flex h-11 w-full items-center justify-center rounded-lg bg-slate-200 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+              >
+                {t(lang, 'settings.backToMain')}
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={hostedLogout}
+              className="w-full h-11 rounded-lg bg-slate-200 dark:bg-slate-700 font-medium text-slate-700 dark:text-slate-100"
             >
-              {t(lang, 'settings.backToMain')}
-            </a>
+              {t(lang, 'settings.logout')}
+            </button>
           </section>
         )}
 

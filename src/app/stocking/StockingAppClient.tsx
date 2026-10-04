@@ -12,6 +12,8 @@ const StockingApp = dynamic(() => import('@/stocking/StockingApp'), {
 interface Props {
   userId: string;
   displayName: string;
+  /** false for shop-only accounts, which have no wealth dashboard to go back to */
+  hasMainApp: boolean;
   store: { id: string; name: string; role: 'owner' | 'manager' | 'staff' };
 }
 
@@ -21,7 +23,7 @@ interface Props {
  * LoginGate writes — minus the bearer token, since this host syncs on the
  * session cookie.
  */
-export default function StockingAppClient({ userId, displayName, store }: Props) {
+export default function StockingAppClient({ userId, displayName, hasMainApp, store }: Props) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function StockingAppClient({ userId, displayName, store }: Props)
           storeId: store.id,
           role: store.role,
           stores: [store],
+          hasMainApp,
           savedAt: Date.now(),
         }),
       );
@@ -43,7 +46,7 @@ export default function StockingAppClient({ userId, displayName, store }: Props)
       /* storage unavailable — the app still works, just without role gating */
     }
     setReady(true);
-  }, [userId, displayName, store]);
+  }, [userId, displayName, hasMainApp, store]);
 
   if (!ready) return null;
 

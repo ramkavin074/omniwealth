@@ -6,7 +6,7 @@ import { useBackHandler, useLang, useTheme } from './hooks';
 import { initBackButton } from './back';
 import { maybeAutoSync } from './sync';
 import { OMNIWEALTH_LOGO } from './logo';
-import { hasStandaloneAuth } from './settings';
+import { hasStandaloneAuth, hostedHasMainApp } from './settings';
 
 // Hot-path screens — always reachable in a tap or two, kept in the main bundle.
 import HomeScreen from './screens/HomeScreen';
@@ -49,7 +49,7 @@ export default function StockingApp() {
   const { lang, toggle } = useLang();
   const { theme, toggle: toggleTheme } = useTheme();
   const [tab, setTab] = useState<Tab>('home');
-  const hostedInOmniWealth = !hasStandaloneAuth();
+  const hostedInOmniWealth = !hasStandaloneAuth() && hostedHasMainApp();
   const [lowOnly, setLowOnly] = useState(false);
   const [expOnly, setExpOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
