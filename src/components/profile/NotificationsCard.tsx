@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Mail, BellRing } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { updateEmailDigestAction } from '@/actions/vault';
+import { getNetWorthAlertsAction, setNetWorthAlertsAction } from '@/actions/notificationPrefs';
 import { reminderEnabled, setWeeklyReminder } from '@/lib/reminders';
 
 export default function NotificationsCard({ initialEmailDigest = false }: { initialEmailDigest?: boolean }) {
@@ -16,9 +17,14 @@ export default function NotificationsCard({ initialEmailDigest = false }: { init
   const [remBusy, setRemBusy] = useState(false);
   const [remMsg, setRemMsg] = useState('');
 
+  const [alertsOn, setAlertsOn] = useState(true);
+  const [alertsBusy, setAlertsBusy] = useState(false);
+  const [alertsMsg, setAlertsMsg] = useState('');
+
   useEffect(() => {
     setIsNative(Capacitor.isNativePlatform());
     setReminder(reminderEnabled());
+    getNetWorthAlertsAction().then(setAlertsOn).catch(() => {});
   }, []);
 
   async function toggle() {
@@ -31,6 +37,19 @@ export default function NotificationsCard({ initialEmailDigest = false }: { init
     if (!res.success) {
       setOn(!next); // revert
       setMsg(res.error || 'Could not save.');
+    }
+  }
+
+  async function toggleAlerts() {
+    const next = !alertsOn;
+    setAlertsBusy(true);
+    setAlertsMsg('');
+    setAlertsOn(next); // optimistic
+    const res = await setNetWorthAlertsAction(next);
+    setAlertsBusy(false);
+    if (!res.success) {
+      setAlertsOn(!next);
+      setAlertsMsg(res.error || 'Could not save.');
     }
   }
 
@@ -74,6 +93,29 @@ export default function NotificationsCard({ initialEmailDigest = false }: { init
         </button>
       </div>
       {msg && <p className="text-[11px] text-rose-600 dark:text-rose-400">{msg}</p>}
+
+      <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+        <div>
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Big net-worth move alerts</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            A push notification if your household net worth moves 3% or more in a day. Shows the percentage only,
+            never amounts. At most one every two days.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={toggleAlerts}
+          disabled={alertsBusy}
+          className={`shrink-0 px-3 py-2 font-semibold text-xs rounded-xl cursor-pointer transition disabled:opacity-50 ${
+            alertsOn
+              ? 'bg-teal-700 hover:bg-teal-800 text-white'
+              : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+          }`}
+        >
+          {alertsOn ? 'On' : 'Off'}
+        </button>
+      </div>
+      {alertsMsg && <p className="text-[11px] text-rose-600 dark:text-rose-400">{alertsMsg}</p>}
 
       {isNative && (
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">

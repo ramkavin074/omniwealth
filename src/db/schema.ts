@@ -653,6 +653,22 @@ export const pushTokens = pgTable(
 );
 
 /**
+ * Per-user notification preferences that don't live on `users` (kept separate
+ * so adding one never touches the users table every query selects from).
+ * No row = defaults (alerts on).
+ */
+export const notificationPrefs = pgTable('notification_prefs', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+
+  // Push alert when the household net worth moves sharply day-over-day.
+  netWorthAlerts: boolean('net_worth_alerts').default(true).notNull(),
+
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+/**
  * Read-only report links (e.g. for an accountant). Only a SHA-256 hash of the
  * token is stored, so a database leak can't reveal working links; the link
  * itself is shown once at creation. Links expire and can be revoked.
