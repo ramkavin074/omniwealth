@@ -205,24 +205,6 @@ export default function DashboardClient({
     [session?.household?.legacyPillars, initialAssets, baseCurrency, liveRates],
   );
 
-  // "View: Everyone / <person>" filter for the holdings-level sections. The
-  // header total, goals, family breakdown and trend always stay household-wide.
-  const [person, setPerson] = useState('');
-  const owners = useMemo(() => {
-    const names = new Set<string>();
-    for (const a of initialAssets as any[]) {
-      const n = (a.user?.fullName || '').trim();
-      if (n) names.add(n);
-    }
-    return [...names].sort((a, b) => a.localeCompare(b));
-  }, [initialAssets]);
-  const viewAssets = useMemo(
-    () => (person && owners.includes(person)
-      ? (initialAssets as any[]).filter((a) => (a.user?.fullName || '').trim() === person)
-      : initialAssets),
-    [initialAssets, person, owners],
-  );
-
   const legacyPillars = useMemo(() => {
     try {
       const parsed = JSON.parse(session?.household?.legacyPillars || '[]');
@@ -409,32 +391,8 @@ export default function DashboardClient({
                   onAddLiability={() => setIsAddLiabilityOpen(true)}
                   onUploadDocument={() => setIsVaultUploadOpen(true)}
                 />
-                {owners.length >= 2 && (
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 print:hidden">
-                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      View holdings for
-                      <select
-                        value={person}
-                        onChange={(e) => setPerson(e.target.value)}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 cursor-pointer"
-                      >
-                        <option value="">Everyone</option>
-                        {owners.map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    </label>
-                    {person && (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Allocation, currencies, purposes, liabilities and alerts below show {person}&rsquo;s holdings only.
-                        The net worth at the top, goals and the trend stay household-wide.
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                <ConcentrationAlert assets={viewAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
-                <StaleValueNudge assets={viewAssets} />
+                <ConcentrationAlert assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} />
+                <StaleValueNudge assets={initialAssets} />
 
                 {(() => {
                   const editHandler = canManage ? (asset: any) => {
@@ -450,7 +408,7 @@ export default function DashboardClient({
 
                       {hasPurposeSplit && (
                         <CollapsibleSection id="by-purpose" title="Wealth by Purpose" icon={<Target className="w-5 h-5" />}>
-                          <WealthSummaryDashboard only="purposes" assets={viewAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} onDeleteAsset={deleteHandler} />
+                          <WealthSummaryDashboard only="purposes" assets={initialAssets} baseCurrency={baseCurrency} legacyPillars={legacyPillars} liveRates={liveRates} onEditAsset={editHandler} onDeleteAsset={deleteHandler} />
                         </CollapsibleSection>
                       )}
                     </>
@@ -469,12 +427,12 @@ export default function DashboardClient({
                 )}
 
                 <CollapsibleSection id="allocation" title="Allocation" icon={<PieChart className="w-5 h-5" />}>
-                  <AssetAllocationVisualizer assets={viewAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
+                  <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
                 </CollapsibleSection>
 
                 {currencyCount >= 2 && (
                   <CollapsibleSection id="fx" title="Currency Exposure" icon={<Globe className="w-5 h-5" />}>
-                    <CurrencyExposure assets={viewAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
+                    <CurrencyExposure assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
                   </CollapsibleSection>
                 )}
 
@@ -483,7 +441,7 @@ export default function DashboardClient({
                 </CollapsibleSection>
 
                 <LiabilitiesManagementSection
-                  assets={viewAssets}
+                  assets={initialAssets}
                   baseCurrency={baseCurrency}
                   liveRates={liveRates}
                   canAdd={canAdd}
