@@ -61,9 +61,11 @@ async function run() {
   const pushRows = await db.select({ userId: pushTokens.userId }).from(pushTokens);
   const pushUserIds = new Set(pushRows.map((r) => r.userId));
 
-  // Email and push are independent opt-ins (registering a device token is
-  // the push opt-in signal) — process anyone eligible for either channel.
-  const targets = allUsers.filter((u) => (u.emailDigest && u.email) || pushUserIds.has(u.id));
+  // Email needs an address; push needs a registered device. Both need the
+  // Settings switch to be on.
+  // The "Weekly net-worth digest" switch in Settings controls both channels:
+  // someone who turned it off gets neither the email nor the weekly pushes.
+  const targets = allUsers.filter((u) => u.emailDigest && (u.email || pushUserIds.has(u.id)));
   if (targets.length === 0) return { optedIn: 0, sentEmail: 0, sentPush: 0 };
 
   const rates = await fetchLiveExchangeRatesAction();
@@ -112,7 +114,7 @@ async function run() {
       }
     }
 
-    if (pushUserIds.has(u.id)) {
+    if (pushUserIds.has(u.id) && u.emailDigest) {
       try {
         const deltaText =
           delta != null ? ` (${delta >= 0 ? '+' : '-'}${formatFull(Math.abs(delta), base)} ${base} this week)` : '';

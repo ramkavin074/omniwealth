@@ -76,7 +76,8 @@ export default function NotificationsCard({ initialEmailDigest = false }: { init
         <div>
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Weekly net-worth digest</p>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            A short email each week with your household net worth and the change since last time.
+            A short email and push notification each week with your household net worth and the change since last
+            time, plus a heads-up if one holding dominates your assets or some values are out of date.
           </p>
         </div>
         <button
