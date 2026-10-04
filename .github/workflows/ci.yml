@@ -19,5 +19,7 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
+      - name: Unit tests
+        run: npm test
       - name: Build stocking standalone bundle
         run: npm run stocking:build
