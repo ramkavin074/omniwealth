@@ -277,7 +277,9 @@ export default function DashboardClient({
       <div>
         <UnifiedHeaderAndSummary
           session={session}
-          initialAssets={initialAssets}
+          initialAssets={viewAssets}
+          householdAssets={initialAssets}
+          viewLabel={person && owners.includes(person) ? person : ''}
           baseCurrency={baseCurrency}
           liveRates={liveRates}
           canAdd={canAdd}
@@ -426,8 +428,9 @@ export default function DashboardClient({
                     </label>
                     {person && (
                       <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Allocation, currencies, purposes, liabilities and alerts below show {person}&rsquo;s holdings only.
-                        The net worth at the top, goals and the trend stay household-wide.
+                        The net worth, categories, allocation, currencies, purposes, liabilities and alerts show {person}&rsquo;s
+                        holdings only. Goals, the family breakdown and the trend stay household-wide, and the widget and
+                        share button always use the household total.
                       </span>
                     )}
                   </div>

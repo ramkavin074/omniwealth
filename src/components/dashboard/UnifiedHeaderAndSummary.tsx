@@ -45,7 +45,7 @@ function formatCategoryName(cat: string): string {
   return cat.replace(/_/g, ' ');
 }
 
-export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
+export default function UnifiedHeaderAndSummary({ session, initialAssets, householdAssets, viewLabel = '', baseCurrency, liveRates = FX_RATES, canAdd = true, onOpenMenu, onOpenAddAsset, onOpenLiability, onOpenAiReader }: any) {
   const router = useRouter();
   const [isRefreshing, startRefreshTransition] = useTransition();
 
@@ -80,10 +80,26 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
     categorySubtotals[label] = (categorySubtotals[label] || 0) + netVal;
   });
 
-  // Mirror the headline number into the iOS Home Screen widget (no-op elsewhere).
+  // The widget and the share button always report the WHOLE household, even
+  // while the dashboard is filtered to one person (`initialAssets` is then a
+  // subset and `totalNetWorth` above is that person's).
+  const householdTotal = (() => {
+    const list: any[] = householdAssets ?? initialAssets;
+    if (list === initialAssets) return totalNetWorth;
+    let t = 0;
+    for (const a of list) {
+      const baseVal = convertCurrency(parseFloat(a.nativeValue || '0'), a.nativeCurrency || 'USD', baseCurrency, liveRates);
+      const type = (a.assetType || '').toUpperCase();
+      const cat = a.accountCategory || 'INDIVIDUAL';
+      t += type === 'LIABILITY' || type === 'DEBT' || cat === 'LIABILITY' ? -Math.abs(baseVal) : Math.abs(baseVal);
+    }
+    return t;
+  })();
+
+  // Mirror the headline number into the Home Screen widget (no-op on web).
   useEffect(() => {
-    void pushNetWorthToWidget(totalNetWorth, baseCurrency);
-  }, [totalNetWorth, baseCurrency]);
+    void pushNetWorthToWidget(householdTotal, baseCurrency);
+  }, [householdTotal, baseCurrency]);
 
   const [canShare, setCanShare] = useState(false);
   useEffect(() => {
@@ -95,7 +111,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
 
   const shareSummary = async () => {
     void haptic('light');
-    const amount = `${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`;
+    const amount = `${formatFull(householdTotal, baseCurrency)} ${baseCurrency}`;
     await nativeShare({
       title: 'OmniWealth',
       text: `${householdTitle} — net worth ${amount}`,
@@ -223,7 +239,9 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
       <div className="block md:hidden px-4 pt-4 print:hidden">
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">Net worth</span>
+            <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">
+              Net worth{viewLabel ? <span className="normal-case tracking-normal text-teal-700 dark:text-teal-400"> &middot; {viewLabel}</span> : null}
+            </span>
             <div className="text-xl font-black font-mono text-teal-700 dark:text-teal-400 truncate mt-0.5" title={`${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`}>
               {formatCompact(totalNetWorth, baseCurrency)} <span className="text-xs font-sans font-normal text-teal-600">{baseCurrency}</span>
             </div>
@@ -246,6 +264,7 @@ export default function UnifiedHeaderAndSummary({ session, initialAssets, baseCu
           <div className="shrink-0">
             <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1.5">
               <Wallet className="w-4 h-4 text-slate-400 print:hidden" /> Net worth
+              {viewLabel ? <span className="normal-case tracking-normal text-teal-700 dark:text-teal-400">&middot; {viewLabel}</span> : null}
             </span>
             <div className="text-4xl font-extrabold font-mono text-teal-700 dark:text-teal-400 mt-1" title={`${formatFull(totalNetWorth, baseCurrency)} ${baseCurrency}`}>
               {formatCompact(totalNetWorth, baseCurrency)} <span className="text-teal-600 dark:text-teal-500 text-lg font-sans">{baseCurrency}</span>
