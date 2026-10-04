@@ -403,14 +403,33 @@ export default function DashboardClient({
                   );
                 })()}
 
-                {goals.length > 0 && (
+                {(goals.length > 0 || canManage) && (
                   <CollapsibleSection
                     id="goals"
                     title="Goals"
                     icon={<Target className="w-5 h-5" />}
-                    summary={`${goals.filter((g) => g.status === 'reached').length}/${goals.length} reached`}
+                    summary={
+                      goals.length > 0
+                        ? `${goals.filter((g) => g.status === 'reached').length}/${goals.length} reached`
+                        : 'Not set up yet'
+                    }
                   >
-                    <GoalsCard goals={goals} baseCurrency={baseCurrency} canManage={canManage} />
+                    {goals.length > 0 ? (
+                      <GoalsCard goals={goals} baseCurrency={baseCurrency} canManage={canManage} />
+                    ) : (
+                      <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                        <p>
+                          Set a target amount (and an optional date) for things like a home down payment, education or
+                          retirement. Progress is counted from the holdings you tag with that goal.
+                        </p>
+                        <Link
+                          href="/profile"
+                          className="inline-block font-semibold text-teal-700 dark:text-teal-400 underline underline-offset-2"
+                        >
+                          Set your first goal
+                        </Link>
+                      </div>
+                    )}
                   </CollapsibleSection>
                 )}
 
