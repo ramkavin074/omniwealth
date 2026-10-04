@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { encryptSecret, decryptSecret } from '@/lib/crypto';
 import { toNumeric } from '@/lib/num';
+import { refreshAssetPrices } from '@/lib/priceRefresh';
 import { logError } from '@/lib/log';
 import { logAudit } from '@/lib/audit';
 import { put, del } from '@vercel/blob';
@@ -232,93 +233,7 @@ export async function refreshLiveMarketPricesAction() {
     .from(assets)
     .where(eq(assets.householdId, session.household.id));
 
-  let updatedCount = 0;
-  const fiatTickers = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'JPY', 'CHF', 'CNY', 'USDT_FIAT'];
-  // Every currency CoinGecko's simple/price endpoint is queried in below —
-  // matches the household currency list used throughout the app.
-  const SUPPORTED_VS_CURRENCIES = new Set(['usd', 'eur', 'gbp', 'cad', 'aud', 'inr', 'jpy', 'chf', 'cny']);
-
-  for (const asset of householdAssets) {
-    const assetType = (asset.assetType || '').toUpperCase().trim();
-    const ticker = (asset.ticker || '').toUpperCase().trim();
-
-    if (!ticker || assetType === 'CASH' || fiatTickers.includes(ticker)) {
-      continue;
-    }
-
-    let livePrice: number | null = null;
-
-    try {
-      if (assetType === 'CRYPTO' || ['BTC', 'ETH', 'SOL', 'USDT', 'BNB', 'ADA', 'XRP'].includes(ticker)) {
-        // Explicit ticker -> CoinGecko id. Never fall back to a guessed
-        // lowercase id: "doge" is a junk token, not Dogecoin, and a wrong
-        // hit silently overwrites the holding's value.
-        const coinMap: { [key: string]: string } = {
-          BTC: 'bitcoin', ETH: 'ethereum', SOL: 'solana', ADA: 'cardano',
-          XRP: 'ripple', DOGE: 'dogecoin', SHIB: 'shiba-inu', PEPE: 'pepe',
-          AAVE: 'aave', BNB: 'binancecoin', USDT: 'tether', USDC: 'usd-coin',
-          DOT: 'polkadot', LTC: 'litecoin', LINK: 'chainlink', TRX: 'tron',
-          AVAX: 'avalanche-2', BCH: 'bitcoin-cash', XLM: 'stellar', MATIC: 'matic-network',
-        };
-        const coinId = coinMap[ticker];
-        if (coinId) {
-          // Ask CoinGecko for the price in the holding's own currency — it
-          // was previously hardcoded to USD, so a crypto holding valued in
-          // any other currency (INR, GBP, ...) got the raw USD number
-          // written in as if it were that currency, understating it by
-          // roughly the USD exchange rate.
-          const vsCurrency = SUPPORTED_VS_CURRENCIES.has((asset.nativeCurrency || '').toLowerCase())
-            ? asset.nativeCurrency.toLowerCase()
-            : 'usd';
-          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=${vsCurrency}`, { next: { revalidate: 60 } });
-          const data = await res.json();
-          livePrice = data[coinId]?.[vsCurrency] || null;
-        }
-      } else if (assetType === 'MUTUAL_FUND') {
-        // Indian mutual funds: NAV by AMFI scheme code via mfapi.in (a free
-        // wrapper over AMFI's daily NAV feed — no API key). The "ticker"
-        // field holds the scheme code, e.g. 120503. NAV is published once a
-        // day, so this is cached longer than the intraday stock/crypto quotes.
-        const schemeCode = ticker.replace(/\D/g, '');
-        if (schemeCode) {
-          const res = await fetch(`https://api.mfapi.in/mf/${schemeCode}`, { next: { revalidate: 3600 } });
-          const data = await res.json();
-          const nav = data?.data?.[0]?.nav;
-          livePrice = nav ? parseFloat(nav) : null;
-        }
-      } else {
-        // Works for any exchange Yahoo covers by ticker suffix, e.g.
-        // RELIANCE.NS/.BO (India), .L (London), .TO (Toronto), .AX (Sydney),
-        // .T (Tokyo), .SW (Switzerland), .DE/.PA/.MI/.AS (EU), .SS/.SZ (China A-shares).
-        const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-          next: { revalidate: 60 }
-        });
-        const data = await res.json();
-        const meta = data?.chart?.result?.[0]?.meta;
-        livePrice = meta?.regularMarketPrice || null;
-        // London Stock Exchange quotes in pence, not pounds — Yahoo flags
-        // this with currency "GBp" (lowercase p). Left unconverted, a
-        // holding priced in GBP would be overstated 100x.
-        if (livePrice !== null && meta?.currency === 'GBp') {
-          livePrice = livePrice / 100;
-        }
-      }
-
-      if (livePrice !== null && livePrice > 0) {
-        const qty = parseFloat(asset.quantity && asset.quantity.trim() !== '' ? asset.quantity : '1') || 1;
-        const newTotalValue = toNumeric(qty * livePrice, '0');
-
-        await db.update(assets)
-          .set({ nativeValue: newTotalValue, updatedAt: new Date() })
-          .where(eq(assets.id, asset.id));
-
-        updatedCount++;
-      }
-    } catch (err) {
-      console.error(`Failed to fetch live price for ticker ${ticker}:`, err);
-    }
-  }
+  const updatedCount = await refreshAssetPrices(householdAssets);
 
   revalidatePath('/');
   return { success: true, updatedCount };
