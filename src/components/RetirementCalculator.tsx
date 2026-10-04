@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Target, ShieldCheck, AlertCircle, Save, Check, TrendingUp, Calculator, ChevronDown } from 'lucide-react';
 import { updateRetirementPreferencesAction } from '@/actions/vault';
 import { formatCompact } from '@/lib/format';
+import RetirementScenarios from '@/components/RetirementScenarios';
 import ShareTextButton from '@/components/ShareTextButton';
 
 interface CountryConfig {
@@ -413,6 +414,20 @@ export default function RetirementCalculator({
           )}
         </div>
       </div>
+
+      <RetirementScenarios
+        plan={{
+          currentAge: cAge,
+          retirementAge: rAge,
+          savings: cSavings,
+          monthlyContribution: mContrib,
+          returnPct: rRate,
+          inflationPct: infl,
+          annualSpend: dIncome,
+        }}
+        symbol={country.symbol}
+        currency={country.currency}
+      />
 
       {/* Region + save — parameter-level controls, kept next to the inputs */}
       <div className="flex items-center gap-3 flex-wrap justify-between">
