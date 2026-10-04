@@ -1,5 +1,6 @@
 'use server';
 
+import { pgCode, safeMessage } from '@/lib/dbErrors';
 import {
   db,
 } from '@/db';
@@ -293,23 +294,6 @@ function validatePassword(
  * ============================================================
  */
 
-function isPostgresError(
-  error: unknown
-): error is {
-  code: string;
-  message?: string;
-} {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    typeof (
-      error as {
-        code?: unknown;
-      }
-    ).code === 'string'
-  );
-}
 
 /**
  * ============================================================
@@ -772,8 +756,7 @@ export async function addFamilyMemberAction(
       });
   } catch (error: unknown) {
     if (
-      isPostgresError(error) &&
-      error.code === '23505'
+      pgCode(error) === '23505'
     ) {
       return {
         success: false,
@@ -1084,8 +1067,7 @@ export async function acceptInviteAction(
     );
   } catch (error: unknown) {
     if (
-      isPostgresError(error) &&
-      error.code === '23505'
+      pgCode(error) === '23505'
     ) {
       return {
         success: false,
@@ -1097,9 +1079,7 @@ export async function acceptInviteAction(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to accept invitation.',
+        safeMessage(error, 'Failed to accept invitation.'),
     };
   }
 
@@ -1652,8 +1632,7 @@ export async function registerOwnerAction(
     );
 
     if (
-      isPostgresError(error) &&
-      error.code === '23505'
+      pgCode(error) === '23505'
     ) {
       return {
         success: false,
@@ -1670,9 +1649,7 @@ export async function registerOwnerAction(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to register household.',
+        safeMessage(error, 'We could not create your account right now. Please try again in a moment.'),
     };
   }
 
@@ -1879,8 +1856,7 @@ export async function registerMemberWithCodeAction(
     );
 
     if (
-      isPostgresError(error) &&
-      error.code === '23505'
+      pgCode(error) === '23505'
     ) {
       return {
         success: false,
@@ -1897,9 +1873,7 @@ export async function registerMemberWithCodeAction(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to join household.',
+        safeMessage(error, 'We could not add you to this household right now. Please try again in a moment.'),
     };
   }
 
@@ -2567,9 +2541,7 @@ export async function resetPasswordAction(
     return {
       success: false,
       error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to reset password.',
+        safeMessage(error, 'Failed to reset password.'),
     };
   }
 
