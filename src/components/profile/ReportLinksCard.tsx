@@ -74,7 +74,7 @@ export default function ReportLinksCard() {
       </div>
 
       <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-        Create a private, read-only link to a summary of your net worth, allocation and holdings, for example for an
+        Create a private, read-only link to a summary of your net worth, allocation, goals and holdings (with tickers and quantities for stocks), for example for an
         accountant. It expires automatically and you can turn it off at any time. It does{' '}
         <strong>not</strong> include account numbers, beneficiaries, notes or documents. Anyone with the link can view
         it, so share it carefully.

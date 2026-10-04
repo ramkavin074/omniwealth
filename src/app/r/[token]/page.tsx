@@ -4,10 +4,11 @@ import { assets, households, reportLinks, users } from '@/db/schema';
 import { fetchLiveExchangeRatesAction } from '@/actions/vault';
 import { hashReportToken } from '@/lib/reportToken';
 import { formatFull } from '@/lib/format';
+import { computeGoals } from '@/lib/goals';
 import PrintButton from './PrintButton';
 
 // Public, read-only net-worth summary opened from a link the household created
-// in Settings. No login. It deliberately leaves out account numbers, tickers,
+// in Settings. No login. It deliberately leaves out account numbers,
 // beneficiaries, access notes and documents. Links expire and can be revoked;
 // every failure looks the same so a link can't be probed.
 
@@ -85,6 +86,9 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
       category: assets.accountCategory,
       value: assets.nativeValue,
       currency: assets.nativeCurrency,
+      ticker: assets.ticker,
+      quantity: assets.quantity,
+      rationale: assets.rationale,
       owner: users.fullName,
     })
     .from(assets)
@@ -95,13 +99,25 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
   const toBase = (amount: number, cur: string) =>
     cur === base ? amount : (amount * (rates[base] || 1)) / (rates[cur] || 1);
 
-  type Row = { name: string; type: string; owner: string; native: number; cur: string; baseVal: number; liability: boolean };
+  type Row = { name: string; type: string; owner: string; native: number; cur: string; baseVal: number; liability: boolean; ticker: string; qty: number | null };
   const items: Row[] = rows.map((r) => {
     const t = (r.type || 'OTHER').toUpperCase();
     const liability = t === 'LIABILITY' || t === 'DEBT' || (r.category || '').toUpperCase() === 'LIABILITY';
     const native = Math.abs(parseFloat(r.value || '0'));
     const cur = r.currency || 'USD';
-    return { name: r.name, type: liability ? 'LIABILITY' : t, owner: r.owner || '', native, cur, baseVal: Math.abs(toBase(native, cur)), liability };
+    const qty = r.quantity != null && Number.isFinite(parseFloat(r.quantity)) ? parseFloat(r.quantity) : null;
+    return {
+      name: r.name,
+      type: liability ? 'LIABILITY' : t,
+      owner: r.owner || '',
+      native,
+      cur,
+      baseVal: Math.abs(toBase(native, cur)),
+      liability,
+      ticker: liability ? '' : r.ticker || '',
+      // Quantity only means something for priced securities; "1" on cash/property is noise.
+      qty: !liability && r.ticker && qty !== null ? qty : null,
+    };
   });
 
   const assetRows = items.filter((i) => !i.liability).sort((a, b) => b.baseVal - a.baseVal);
@@ -114,98 +130,174 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
   for (const i of assetRows) byType.set(i.type, (byType.get(i.type) || 0) + i.baseVal);
   const allocation = [...byType.entries()].sort((a, b) => b[1] - a[1]);
 
+  // One compact table: holdings grouped by type (largest group first) with a
+  // subtotal per group, then liabilities last.
+  const groups: { key: string; title: string; total: number; list: Row[] }[] = allocation.map(([type, total]) => ({
+    key: type,
+    title: typeName(type),
+    total,
+    list: assetRows.filter((r) => r.type === type),
+  }));
+  if (debtRows.length > 0) groups.push({ key: 'LIABILITY', title: 'Liabilities', total: totalDebts, list: debtRows });
+
+  const goals = computeGoals(
+    hh.legacyPillars,
+    rows.map((r) => ({
+      assetType: r.type,
+      accountCategory: r.category,
+      rationale: r.rationale,
+      nativeValue: r.value,
+      nativeCurrency: r.currency,
+    })),
+    base,
+    rates,
+  );
+
   const fmt = (n: number) => `${formatFull(n, base)} ${base}`;
   const dateFmt = (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const monthFmt = (iso: string) =>
+    new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
 
   return (
-    <main className="mx-auto max-w-3xl bg-white px-5 py-8 font-sans text-slate-800 print:px-0">
-      <header className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+    <main className="mx-auto max-w-4xl bg-white px-5 py-8 font-sans text-slate-800 print:max-w-none print:px-0 print:py-0">
+      <style>{`@page { margin: 12mm; } @media print { tr, li { break-inside: avoid; } }`}</style>
+      <header className="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700">Net worth report</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">{hh.name}</h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <h1 className="mt-0.5 text-xl font-bold text-slate-900">{hh.name}</h1>
+          <p className="mt-0.5 text-[11px] text-slate-500">
             Prepared {dateFmt(new Date())} &middot; amounts in {base} &middot; link expires {dateFmt(link.expiresAt)}
           </p>
         </div>
         <PrintButton />
       </header>
 
-      <section className="mt-6 grid grid-cols-3 gap-3">
+      <section className="mt-4 grid grid-cols-3 gap-2">
         {[
           ['Net worth', netWorth],
           ['Assets', totalAssets],
           ['Liabilities', totalDebts],
         ].map(([label, value]) => (
-          <div key={label as string} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div key={label as string} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label as string}</p>
-            <p className="mt-1 font-mono text-sm font-bold text-slate-900 sm:text-base">{fmt(value as number)}</p>
+            <p className="mt-0.5 font-mono text-sm font-bold text-slate-900">{fmt(value as number)}</p>
           </div>
         ))}
       </section>
 
-      {allocation.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-900">Allocation</h2>
-          <ul className="mt-3 space-y-2">
-            {allocation.map(([type, val]) => {
-              const pct = totalAssets > 0 ? (val / totalAssets) * 100 : 0;
-              return (
-                <li key={type} className="text-sm">
-                  <div className="flex justify-between gap-3">
-                    <span>{typeName(type)}</span>
-                    <span className="font-mono text-slate-600">
-                      {pct.toFixed(1)}% &middot; {fmt(val)}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-teal-600" style={{ width: `${Math.max(pct, 1)}%` }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+      <div className={`mt-5 grid gap-5 ${goals.length > 0 ? 'md:grid-cols-2 print:grid-cols-2' : ''}`}>
+        {allocation.length > 0 && (
+          <section>
+            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-900">Allocation</h2>
+            <table className="mt-2 w-full text-xs">
+              <tbody>
+                {allocation.map(([type, val]) => {
+                  const pct = totalAssets > 0 ? (val / totalAssets) * 100 : 0;
+                  return (
+                    <tr key={type} className="border-b border-slate-100">
+                      <td className="py-1 pr-2">{typeName(type)}</td>
+                      <td className="w-24 py-1 pr-2">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div className="h-full rounded-full bg-teal-600" style={{ width: `${Math.max(pct, 1)}%` }} />
+                        </div>
+                      </td>
+                      <td className="py-1 text-right font-mono text-slate-600">{pct.toFixed(1)}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+        )}
 
-      {[
-        ['Holdings', assetRows],
-        ['Liabilities', debtRows],
-      ].map(([title, list]) =>
-        (list as Row[]).length > 0 ? (
-          <section key={title as string} className="mt-8">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-900">{title as string}</h2>
-            <table className="mt-3 w-full text-left text-sm">
+        {goals.length > 0 && (
+          <section>
+            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-900">Goals</h2>
+            <table className="mt-2 w-full text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wide text-slate-500">
-                  <th className="py-2 pr-2 font-semibold">Name</th>
-                  <th className="py-2 pr-2 font-semibold">Type</th>
-                  <th className="hidden py-2 pr-2 font-semibold sm:table-cell">Owner</th>
-                  <th className="py-2 text-right font-semibold">Value ({base})</th>
+                <tr className="border-b border-slate-200 text-[10px] uppercase tracking-wide text-slate-500">
+                  <th className="py-1 pr-2 text-left font-semibold">Goal</th>
+                  <th className="py-1 pr-2 text-right font-semibold">Now / target</th>
+                  <th className="py-1 text-right font-semibold">Progress</th>
                 </tr>
               </thead>
               <tbody>
-                {(list as Row[]).map((r, i) => (
-                  <tr key={i} className="border-b border-slate-100 align-top">
-                    <td className="py-2 pr-2">
-                      {r.name}
-                      {r.cur !== base && (
-                        <span className="block text-[11px] text-slate-400">
-                          {formatFull(r.native, r.cur)} {r.cur}
+                {goals.map((g) => (
+                  <tr key={g.name} className="border-b border-slate-100 align-top">
+                    <td className="py-1 pr-2">
+                      {g.name}
+                      {g.targetDate && (
+                        <span className="block text-[10px] text-slate-400">
+                          by {monthFmt(g.targetDate)}
+                          {g.status === 'overdue' ? ' (past)' : ''}
                         </span>
                       )}
                     </td>
-                    <td className="py-2 pr-2 text-slate-600">{r.liability ? 'Liability' : typeName(r.type)}</td>
-                    <td className="hidden py-2 pr-2 text-slate-600 sm:table-cell">{r.owner}</td>
-                    <td className="py-2 text-right font-mono">{formatFull(r.baseVal, base)}</td>
+                    <td className="py-1 pr-2 text-right font-mono text-slate-600">
+                      {formatFull(g.current, base)} / {formatFull(g.target, base)}
+                    </td>
+                    <td className={`py-1 text-right font-mono ${g.status === 'reached' ? 'text-emerald-700' : 'text-slate-700'}`}>
+                      {g.status === 'reached' ? 'Reached' : `${Math.floor(g.pct)}%`}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </section>
-        ) : null,
-      )}
+        )}
+      </div>
 
-      <footer className="mt-10 border-t border-slate-200 pt-4 text-[11px] leading-relaxed text-slate-400">
+      <section className="mt-5">
+        <h2 className="text-xs font-bold uppercase tracking-wide text-slate-900">Holdings</h2>
+        <table className="mt-2 w-full text-left text-xs">
+          <thead>
+            <tr className="border-b border-slate-300 text-[10px] uppercase tracking-wide text-slate-500">
+              <th className="py-1 pr-2 font-semibold">Name</th>
+              <th className="hidden py-1 pr-2 font-semibold sm:table-cell print:table-cell">Owner</th>
+              <th className="hidden py-1 pr-2 text-right font-semibold sm:table-cell print:table-cell">Qty</th>
+              <th className="hidden py-1 pr-2 text-right font-semibold sm:table-cell print:table-cell">Original</th>
+              <th className="py-1 pr-2 text-right font-semibold">Value ({base})</th>
+              <th className="py-1 text-right font-semibold">%</th>
+            </tr>
+          </thead>
+          {groups.map((g) => (
+            <tbody key={g.key}>
+              <tr className="bg-slate-50">
+                <td className="py-1 pl-1 pr-2 text-[11px] font-bold text-slate-800">
+                  {g.title} <span className="font-normal text-slate-400">({g.list.length})</span>
+                </td>
+                <td className="hidden sm:table-cell print:table-cell" colSpan={3} />
+                <td className="py-1 pr-2 text-right font-mono text-[11px] font-bold text-slate-800">{formatFull(g.total, base)}</td>
+                <td className="py-1 text-right font-mono text-[11px] text-slate-500">
+                  {g.key === 'LIABILITY' || totalAssets <= 0 ? '' : ((g.total / totalAssets) * 100).toFixed(1)}
+                </td>
+              </tr>
+              {g.list.map((r, i) => (
+                <tr key={i} className="border-b border-slate-100 align-top">
+                  <td className="py-1 pl-1 pr-2">
+                    {r.name}
+                    {r.ticker && <span className="ml-1 font-mono text-[10px] text-slate-400">{r.ticker}</span>}
+                  </td>
+                  <td className="hidden py-1 pr-2 text-slate-600 sm:table-cell print:table-cell">{r.owner}</td>
+                  <td className="hidden py-1 pr-2 text-right font-mono text-slate-600 sm:table-cell print:table-cell">
+                    {r.qty !== null ? r.qty.toLocaleString('en-US', { maximumFractionDigits: 4 }) : ''}
+                  </td>
+                  <td className="hidden py-1 pr-2 text-right font-mono text-slate-400 sm:table-cell print:table-cell">
+                    {r.cur !== base ? `${formatFull(r.native, r.cur)} ${r.cur}` : ''}
+                  </td>
+                  <td className="py-1 pr-2 text-right font-mono">{formatFull(r.baseVal, base)}</td>
+                  <td className="py-1 text-right font-mono text-slate-500">
+                    {r.liability || totalAssets <= 0 ? '' : ((r.baseVal / totalAssets) * 100).toFixed(1)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          ))}
+        </table>
+      </section>
+
+      <footer className="mt-6 border-t border-slate-200 pt-3 text-[10px] leading-relaxed text-slate-400">
         Read-only summary shared by the household. Account numbers, beneficiaries, notes and documents are not included.
         Values are as last entered, converted at current exchange rates. For information only; not financial, tax or legal advice.
         Generated with OmniWealth.
