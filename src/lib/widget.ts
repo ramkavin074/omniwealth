@@ -5,6 +5,7 @@
 
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { lockEnabled } from '@/lib/applock';
+import { reportClientError } from '@/lib/clientErrorReport';
 
 interface WidgetBridgePlugin {
   setNetWorth(options: { amount: number; currency: string; hidden?: boolean }): Promise<void>;
@@ -36,8 +37,15 @@ export async function pushNetWorthToWidget(amount: number, currency: string): Pr
 
   try {
     await WidgetBridge.setNetWorth({ amount, currency, hidden });
-  } catch {
-    /* plugin/app-group not present */
+  } catch (err) {
+    // Expected when the installed app build has no widget plugin (older builds);
+    // anything else is worth knowing about, so it goes to the error log.
+    const msg = String((err as { message?: unknown })?.message ?? err);
+    if (!/not implemented|unimplemented|not available|App Group/i.test(msg)) {
+      reportClientError('error', new Error(`widget setNetWorth failed: ${msg}`));
+    } else {
+      reportClientError('error', new Error(`widget plugin unavailable: ${msg}`));
+    }
   }
 }
 
