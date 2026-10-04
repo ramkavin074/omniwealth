@@ -17,6 +17,7 @@ import FamilyMembersCard from '@/components/profile/FamilyMembersCard';
 import SecurityCard from '@/components/profile/SecurityCard';
 import NotificationsCard from '@/components/profile/NotificationsCard';
 import DataExportCard from '@/components/profile/DataExportCard';
+import ReportLinksCard from '@/components/profile/ReportLinksCard';
 import AddFamilyMemberModal from '@/components/profile/AddFamilyMemberModal';
 import ActivityLog from '@/components/dashboard/ActivityLog';
 
@@ -317,6 +318,8 @@ export default function ProfileClient({ session, initialFamilyMembers, household
             baseCurrency={householdDetails?.baseCurrency || session.household.baseCurrency || 'USD'}
             canImport={canWrite(session.user.role)}
           />
+
+          {canManageHousehold(session.user.role) && <ReportLinksCard />}
 
           {/* 8. Recent activity (compact — 6-row preview) */}
           <ActivityLog />

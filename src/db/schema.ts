@@ -653,6 +653,41 @@ export const pushTokens = pgTable(
 );
 
 /**
+ * Read-only report links (e.g. for an accountant). Only a SHA-256 hash of the
+ * token is stored, so a database leak can't reveal working links; the link
+ * itself is shown once at creation. Links expire and can be revoked.
+ */
+export const reportLinks = pgTable(
+  'report_links',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+
+    tokenHash: text('token_hash').notNull().unique(),
+
+    label: text('label'),
+
+    expiresAt: timestamp('expires_at').notNull(),
+
+    revokedAt: timestamp('revoked_at'),
+
+    viewCount: integer('view_count').default(0).notNull(),
+
+    lastViewedAt: timestamp('last_viewed_at'),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('report_links_household_idx').on(table.householdId),
+  })
+);
+
+/**
  * ============================================================
  * STORE MODULE  (schema: `store`)
  * ============================================================
