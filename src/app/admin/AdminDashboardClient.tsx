@@ -8,6 +8,7 @@ import {
   adminAuditAction,
   adminCreateAccountAction,
   adminCreateStoreAction,
+  adminErrorsAction,
   adminHouseholdsAction,
   adminOverviewAction,
   adminPeopleAction,
@@ -17,12 +18,14 @@ import {
   adminSetStoreStatusAction,
   adminUnlockLoginAction,
   type AdminAuditRow,
+  type AdminErrorGroup,
   type AdminHouseholdRow,
   type AdminPersonRow,
   type AdminStoreRow,
 } from '@/actions/admin';
+import { personStatus, summarize, type PersonStatus } from '@/lib/adminStats';
 
-type Tab = 'households' | 'stores' | 'people' | 'audit';
+type Tab = 'households' | 'stores' | 'people' | 'errors' | 'audit';
 
 const DORMANT_DAYS = 7;
 const STALE_DAYS = 30;
@@ -89,6 +92,7 @@ export default function AdminDashboardClient() {
   const [houses, setHouses] = useState<AdminHouseholdRow[]>([]);
   const [people, setPeople] = useState<AdminPersonRow[]>([]);
   const [audit, setAudit] = useState<AdminAuditRow[]>([]);
+  const [errors, setErrors] = useState<AdminErrorGroup[]>([]);
   const [actFilter, setActFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -108,15 +112,17 @@ export default function AdminDashboardClient() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [ov, hh, pp] = await Promise.all([
+    const [ov, hh, pp, er] = await Promise.all([
       adminOverviewAction(),
       adminHouseholdsAction(),
       adminPeopleAction(),
+      adminErrorsAction(),
     ]);
     if (ov.ok) setStores(ov.stores);
     else flash(ov.error);
     if (hh.ok) setHouses(hh.rows);
     if (pp.ok) setPeople(pp.rows);
+    if (er.ok) setErrors(er.rows);
     setLoading(false);
   }, []);
 
@@ -232,7 +238,7 @@ export default function AdminDashboardClient() {
       </header>
 
       <nav className="mt-6 flex gap-1 rounded-xl bg-slate-900 p-1">
-        {(['households', 'stores', 'people', 'audit'] as Tab[]).map((k) => (
+        {(['households', 'stores', 'people', 'errors', 'audit'] as Tab[]).map((k) => (
           <button
             key={k}
             type="button"
@@ -244,9 +250,16 @@ export default function AdminDashboardClient() {
             }`}
           >
             {k}
+            {k === 'errors' && errors.length > 0 && (
+              <span className="ml-1.5 rounded-full bg-rose-500/20 px-1.5 text-[10px] text-rose-300">
+                {errors.length}
+              </span>
+            )}
           </button>
         ))}
       </nav>
+
+      <AdoptionStrip people={people} now={now} />
 
       {msg && (
         <p className="mt-4 rounded-lg border border-teal-700/40 bg-teal-900/20 px-3 py-2 text-sm text-teal-200 break-all">
@@ -384,6 +397,8 @@ export default function AdminDashboardClient() {
             />
           )}
 
+          {tab === 'errors' && <ErrorsTab now={now} rows={errors} />}
+
           {tab === 'audit' && (
             <div className={`${card} p-4`}>
               <div className="mb-3 flex items-center gap-2">
@@ -477,8 +492,10 @@ function HouseholdsTab({
               <th className="px-4 py-2.5">Household</th>
               <th className="px-3 py-2.5">Members</th>
               <th className="px-3 py-2.5">Wealth</th>
+              <th className="px-3 py-2.5">Holdings</th>
               <th className="px-3 py-2.5">Stocking</th>
               <th className="px-3 py-2.5">Last login</th>
+              <th className="px-3 py-2.5">Last activity</th>
               <th className="px-3 py-2.5"></th>
             </tr>
           </thead>
@@ -514,6 +531,9 @@ function HouseholdsTab({
                       <span className="text-xs text-emerald-400">Vault</span>
                     )}
                   </td>
+                  <td className="px-3 py-3 tabular-nums text-slate-300">
+                    {h.isStoreShell ? <span className="text-slate-600">—</span> : h.holdings}
+                  </td>
                   <td className="px-3 py-3">
                     <div className="flex flex-wrap gap-1">
                       {h.stores.length === 0 && (
@@ -530,6 +550,9 @@ function HouseholdsTab({
                   </td>
                   <td className="px-3 py-3 text-slate-400">
                     {ago(h.lastLogin, now)}
+                  </td>
+                  <td className="px-3 py-3 text-slate-400">
+                    {ago(h.lastActivity, now)}
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex justify-end">
@@ -812,6 +835,10 @@ function StoresTab({
 
 const PEOPLE_FILTERS = [
   'all',
+  'new this week',
+  'active this week',
+  'signed up, no data',
+  'never signed in',
   'dormant',
   'locked',
   'super-admins',
@@ -849,6 +876,7 @@ function PeopleTab({
 
   const ageMs = (iso: string | null) =>
     iso ? now - new Date(iso).getTime() : Infinity;
+  const ageCreated = (iso: string | null) => (iso ? now - new Date(iso).getTime() : Infinity);
   const staleLogin = (iso: string | null) => ageMs(iso) > STALE_DAYS * 864e5;
   const freshLogin = (iso: string | null) => ageMs(iso) < DORMANT_DAYS * 864e5;
 
@@ -859,7 +887,16 @@ function PeopleTab({
       !`${u.name} ${u.email} ${u.household}`.toLowerCase().includes(needle)
     )
       return false;
+    const status = personStatus(u, now);
     switch (filter) {
+      case 'new this week':
+        return !u.isStoreShell && ageCreated(u.accountCreated) <= 7 * 864e5;
+      case 'active this week':
+        return !u.isStoreShell && Math.max(Date.parse(u.lastLogin ?? '') || 0, Date.parse(u.lastActivity ?? '') || 0) > now - 7 * 864e5;
+      case 'signed up, no data':
+        return status === 'no-data';
+      case 'never signed in':
+        return status === 'never-signed-in';
       case 'dormant':
         return staleLogin(u.lastLogin);
       case 'locked':
@@ -963,7 +1000,10 @@ function PeopleTab({
               <th className="px-4 py-2.5">Person</th>
               <th className="px-3 py-2.5">Household</th>
               <th className="px-3 py-2.5">Stores</th>
+              <th className="px-3 py-2.5">Status</th>
+              <th className="px-3 py-2.5">Holdings</th>
               <th className="px-3 py-2.5">Last login</th>
+              <th className="px-3 py-2.5">Last activity</th>
               <th className="px-3 py-2.5">Sessions</th>
               <th className="px-3 py-2.5"></th>
             </tr>
@@ -1012,6 +1052,12 @@ function PeopleTab({
                   </div>
                 </td>
                 <td className="px-3 py-3">
+                  <StatusPill status={personStatus(u, now)} />
+                </td>
+                <td className="px-3 py-3 tabular-nums text-slate-300">
+                  {u.isStoreShell ? <span className="text-slate-600">—</span> : u.holdings}
+                </td>
+                <td className="px-3 py-3">
                   <span
                     className={
                       freshLogin(u.lastLogin)
@@ -1024,6 +1070,7 @@ function PeopleTab({
                     {ago(u.lastLogin, now)}
                   </span>
                 </td>
+                <td className="px-3 py-3 text-slate-400">{ago(u.lastActivity, now)}</td>
                 <td className="px-3 py-3 tabular-nums text-slate-400">
                   {u.activeSessions}
                 </td>
@@ -1078,10 +1125,104 @@ function PeopleTab({
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={9}
                   className="px-4 py-6 text-center text-slate-500"
                 >
                   No matching accounts.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+/* ---------------------------------------------------------------- Adoption + status */
+
+const STATUS_STYLE: Record<PersonStatus, { label: string; cls: string }> = {
+  active: { label: 'Active', cls: 'bg-emerald-500/15 text-emerald-300' },
+  quiet: { label: 'Quiet 30d+', cls: 'bg-slate-700/60 text-slate-300' },
+  'no-data': { label: 'No data yet', cls: 'bg-amber-500/15 text-amber-300' },
+  'never-signed-in': { label: 'Never signed in', cls: 'bg-rose-500/15 text-rose-300' },
+  'store-only': { label: 'Store only', cls: 'bg-slate-800 text-slate-400' },
+};
+
+function StatusPill({ status }: { status: PersonStatus }) {
+  const s = STATUS_STYLE[status];
+  return <span className={`rounded px-1.5 py-0.5 text-[11px] whitespace-nowrap ${s.cls}`}>{s.label}</span>;
+}
+
+function AdoptionStrip({ people, now }: { people: AdminPersonRow[]; now: number }) {
+  if (people.length === 0) return null;
+  const a = summarize(people, now);
+  const cells: [string, number, string?][] = [
+    ['Wealth users', a.total],
+    ['New 7d', a.new7],
+    ['New 30d', a.new30],
+    ['Active 7d', a.active7],
+    ['Active 30d', a.active30],
+    ['With data', a.withData, 'text-emerald-300'],
+    ['No data yet', a.noData, a.noData ? 'text-amber-300' : undefined],
+    ['Never signed in', a.neverSignedIn, a.neverSignedIn ? 'text-rose-300' : undefined],
+  ];
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+      {cells.map(([label, value, cls]) => (
+        <div key={label} className={`${card} px-3 py-2.5`}>
+          <div className={`text-xl font-bold tabular-nums ${cls ?? 'text-white'}`}>{value}</div>
+          <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Errors */
+
+function ErrorsTab({ now, rows }: { now: number; rows: AdminErrorGroup[] }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500">
+        Errors reported by the apps and website in the last 7 days, grouped by message. Reports contain no amounts or
+        personal data; links and tokens are scrubbed.
+      </p>
+      <div className={`${card} overflow-x-auto`}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-2.5">Message</th>
+              <th className="px-3 py-2.5">Where</th>
+              <th className="px-3 py-2.5">Times</th>
+              <th className="px-3 py-2.5">People</th>
+              <th className="px-3 py-2.5">Last seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className="border-b border-slate-800/60 align-top">
+                <td className="px-4 py-3">
+                  <div className="max-w-xl break-words text-slate-100">{r.message}</div>
+                  <div className="text-xs text-slate-500">{r.kind}</div>
+                </td>
+                <td className="px-3 py-3 text-xs text-slate-400">
+                  <div>
+                    {r.platform}
+                    {r.appVersion ? ` · build ${r.appVersion}` : ''}
+                  </div>
+                  <div className="font-mono">{r.path ?? ''}</div>
+                </td>
+                <td className="px-3 py-3 tabular-nums text-slate-200">{r.count}</td>
+                <td className="px-3 py-3 tabular-nums text-slate-400">{r.users}</td>
+                <td className="px-3 py-3 text-slate-400">{ago(r.lastSeen, now)}</td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                  No errors reported in the last 7 days.
                 </td>
               </tr>
             )}

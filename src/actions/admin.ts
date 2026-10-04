@@ -7,6 +7,10 @@ import { sendMail } from '@/lib/mailer';
 import { db } from '@/db';
 import {
   adminAudit,
+  assets,
+  auditLog,
+  clientErrors,
+  documents,
   households,
   passwordResets,
   rateLimits,
@@ -335,6 +339,8 @@ export interface AdminHouseholdRow {
   members: number;
   stores: { id: string; name: string; status: string }[];
   lastLogin: string | null;
+  holdings: number;
+  lastActivity: string | null;
 }
 
 export async function adminHouseholdsAction() {
@@ -360,6 +366,16 @@ export async function adminHouseholdsAction() {
     .from(sessions)
     .groupBy(sessions.userId);
   const loginByUser = new Map(loginRows.map((r) => [r.userId, r.last]));
+
+  const hhHold = await db
+    .select({
+      householdId: assets.householdId,
+      n: sql<number>`count(*)::int`,
+      last: sql<string>`max(${assets.updatedAt})`,
+    })
+    .from(assets)
+    .groupBy(assets.householdId);
+  const holdByHh = new Map(hhHold.map((r) => [r.householdId, r]));
 
   // household → linked stores (via any member's store membership)
   const linkRows = await db
@@ -406,6 +422,8 @@ export async function adminHouseholdsAction() {
       lastLogin: lastMs.length
         ? new Date(Math.max(...lastMs)).toISOString()
         : null,
+      holdings: holdByHh.get(h.id)?.n ?? 0,
+      lastActivity: holdByHh.get(h.id)?.last ? new Date(holdByHh.get(h.id)!.last).toISOString() : null,
     };
   });
 
@@ -425,6 +443,10 @@ export interface AdminPersonRow {
   isStoreShell: boolean;
   accountCreated: string | null;
   lastLogin: string | null;
+  /** Wealth holdings this person owns (a count — never values or names). */
+  holdings: number;
+  /** Latest edit, upload or audited action; unlike sessions it never expires. */
+  lastActivity: string | null;
   activeSessions: number;
   stores: { store: string; role: string }[];
   loginLocked: boolean;
@@ -457,6 +479,33 @@ export async function adminPeopleAction() {
     .groupBy(sessions.userId);
   const sByUser = new Map(sessionAgg.map((r) => [r.userId, r]));
 
+  // Holdings + last activity per person, from the data itself (counts and
+  // dates only). Optional tables are read fail-soft.
+  const holdAgg = await db
+    .select({
+      userId: assets.userId,
+      n: sql<number>`count(*)::int`,
+      last: sql<string>`max(${assets.updatedAt})`,
+    })
+    .from(assets)
+    .groupBy(assets.userId);
+  const holdByUser = new Map(holdAgg.map((r) => [r.userId, r]));
+  const docAgg = await db
+    .select({ userId: documents.userId, last: sql<string>`max(${documents.createdAt})` })
+    .from(documents)
+    .groupBy(documents.userId);
+  const docByUser = new Map(docAgg.map((r) => [r.userId, r.last]));
+  let auditByUser = new Map<string, string>();
+  try {
+    const aa = await db
+      .select({ userId: auditLog.actorUserId, last: sql<string>`max(${auditLog.createdAt})` })
+      .from(auditLog)
+      .groupBy(auditLog.actorUserId);
+    auditByUser = new Map(aa.filter((r) => r.userId).map((r) => [r.userId as string, r.last]));
+  } catch {
+    /* audit_log not created yet */
+  }
+
   const memberRows = await db
     .select({
       userId: storeMembers.userId,
@@ -480,6 +529,10 @@ export async function adminPeopleAction() {
 
   const rows: AdminPersonRow[] = userRows.map((u) => {
     const s = sByUser.get(u.id);
+    const h = holdByUser.get(u.id);
+    const acts = [h?.last, docByUser.get(u.id), auditByUser.get(u.id)]
+      .filter(Boolean)
+      .map((d) => new Date(d as string).getTime());
     return {
       id: u.id,
       name: u.name,
@@ -489,6 +542,8 @@ export async function adminPeopleAction() {
       isStoreShell: u.isStoreShell,
       accountCreated: u.createdAt ? new Date(u.createdAt).toISOString() : null,
       lastLogin: s?.last ? new Date(s.last).toISOString() : null,
+      holdings: h?.n ?? 0,
+      lastActivity: acts.length ? new Date(Math.max(...acts)).toISOString() : null,
       activeSessions: s?.active ?? 0,
       stores: memberRows
         .filter((m) => m.userId === u.id)
@@ -831,4 +886,55 @@ export async function adminRevokeSessionsAction(input: { userId: string }) {
     detail: `${deleted.length} session(s)`,
   });
   return { ok: true as const, count: deleted.length };
+}
+
+
+// ---------------------------------------------------------------- errors
+
+export interface AdminErrorGroup {
+  message: string;
+  kind: string;
+  platform: string;
+  path: string | null;
+  appVersion: string | null;
+  count: number;
+  users: number;
+  lastSeen: string;
+}
+
+/** App errors reported by real users in the last 7 days, grouped by message. */
+export async function adminErrorsAction() {
+  const g = await requireSuperAdmin();
+  if (!g) return FORBIDDEN;
+  try {
+    const rows = await db
+      .select({
+        message: clientErrors.message,
+        kind: clientErrors.kind,
+        platform: clientErrors.platform,
+        path: sql<string | null>`max(${clientErrors.path})`,
+        appVersion: sql<string | null>`max(${clientErrors.appVersion})`,
+        count: sql<number>`count(*)::int`,
+        users: sql<number>`count(distinct ${clientErrors.userId})::int`,
+        lastSeen: sql<string>`max(${clientErrors.createdAt})`,
+      })
+      .from(clientErrors)
+      .where(sql`${clientErrors.createdAt} > now() - interval '7 days'`)
+      .groupBy(clientErrors.message, clientErrors.kind, clientErrors.platform)
+      .orderBy(sql`count(*) desc`)
+      .limit(50);
+    const out: AdminErrorGroup[] = rows.map((r) => ({
+      message: r.message,
+      kind: r.kind,
+      platform: r.platform ?? 'web',
+      path: r.path,
+      appVersion: r.appVersion,
+      count: r.count,
+      users: r.users,
+      lastSeen: new Date(r.lastSeen).toISOString(),
+    }));
+    return { ok: true as const, rows: out };
+  } catch {
+    return { ok: true as const, rows: [] as AdminErrorGroup[] }; // client_errors not created yet
+  }
 }
