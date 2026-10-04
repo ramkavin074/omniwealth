@@ -1211,3 +1211,68 @@ export const storeStockMovements = store.table(
     productIdx: index('store_movements_product_idx').on(t.productId),
   }),
 );
+
+/**
+ * Renewal / maturity reminders (insurance, PPF, documents...). Created by
+ * scripts/round49-family-plan.sql; every reader fails soft until it is run.
+ */
+export const householdReminders = pgTable(
+  'household_reminders',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    kind: text('kind').default('other').notNull(),
+    dueDate: date('due_date', { mode: 'string' }).notNull(),
+    repeatYearly: boolean('repeat_yearly').default(false).notNull(),
+    note: text('note'),
+    doneAt: timestamp('done_at'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('household_reminders_household_idx').on(table.householdId),
+  })
+);
+
+/** People the family should call (lawyer, accountant, executor, legacy contact). */
+export const householdContacts = pgTable(
+  'household_contacts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    role: text('role').default('Other').notNull(),
+    phone: text('phone'),
+    email: text('email'),
+    note: text('note'),
+    isLegacy: boolean('is_legacy').default(false).notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('household_contacts_household_idx').on(table.householdId),
+  })
+);
+
+/** Life events pinned to the net-worth chart ("bought house"). */
+export const timelineEvents = pgTable(
+  'timeline_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    eventDate: date('event_date', { mode: 'string' }).notNull(),
+    label: text('label').notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    householdIdx: index('timeline_events_household_idx').on(table.householdId),
+  })
+);

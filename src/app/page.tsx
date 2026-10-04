@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { assets, users, households } from '@/db/schema';
 import { getSessionUserAction, fetchHouseholdDocumentsAction, fetchLiveExchangeRatesAction } from '@/actions/vault';
+import { listContactsAction, listEventsAction, listRemindersAction } from '@/actions/familyPlan';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
@@ -70,6 +71,12 @@ export default async function DashboardPage({
     .where(eq(assets.householdId, householdId));
 
   const documents = await fetchHouseholdDocumentsAction();
+  // Fail soft (empty) until scripts/round49-family-plan.sql has been run.
+  const [reminders, contacts, events] = await Promise.all([
+    listRemindersAction(),
+    listContactsAction(),
+    listEventsAction(),
+  ]);
 
   // Fetch live rates on the server so the first HTML byte is 100% accurate, eliminating the refresh flash.
   const initialLiveRates = await fetchLiveExchangeRatesAction();
@@ -82,6 +89,9 @@ export default async function DashboardPage({
       initialDocuments={documents}
       initialLiveRates={initialLiveRates}
       showSetup={showSetup}
+      reminders={reminders}
+      contacts={contacts}
+      events={events}
     />
   );
 }

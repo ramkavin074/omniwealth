@@ -15,6 +15,9 @@ import LiabilitiesManagementSection from '@/components/dashboard/LiabilitiesMana
 import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
+import RemindersCard from '@/components/dashboard/RemindersCard';
+import ContactsCard from '@/components/dashboard/ContactsCard';
+import type { ContactRow, EventRow, ReminderRow } from '@/actions/familyPlan';
 import SetupWizard from '@/components/dashboard/SetupWizard';
 import GettingStartedCard from '@/components/dashboard/GettingStartedCard';
 import GoalsCard from '@/components/dashboard/GoalsCard';
@@ -44,7 +47,7 @@ import {
   deleteAssetAction
 } from '@/actions/vault';
 import {
-  Home, Plus, Sparkles, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock
+  Home, Plus, Sparkles, BellRing, Phone, X, CreditCard, Settings, Shield, Wallet, Target, TrendingUp, Sun, Moon, Users, PieChart, Globe, Lock
 } from 'lucide-react';
 import { canWrite, canManageHousehold } from '@/lib/permissions';
 
@@ -66,6 +69,9 @@ interface DashboardClientProps {
   initialDocuments?: any[];
   initialLiveRates?: { [key: string]: number };
   showSetup?: boolean;
+  reminders?: ReminderRow[];
+  contacts?: ContactRow[];
+  events?: EventRow[];
 }
 
 export default function DashboardClient({ 
@@ -75,6 +81,9 @@ export default function DashboardClient({
   initialDocuments = [],
   initialLiveRates = FX_RATES,
   showSetup = false,
+  reminders = [],
+  contacts = [],
+  events = [],
 }: DashboardClientProps) {
   const role = session?.user?.role;
   const canAdd = canWrite(role);
@@ -498,6 +507,23 @@ export default function DashboardClient({
                     canManage={canManage}
                     embedded
                   />
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  id="reminders"
+                  title="Renewals &amp; reminders"
+                  icon={<BellRing className="w-5 h-5" />}
+                  summary={
+                    reminders.filter((r) => !r.doneAt).length > 0
+                      ? `${reminders.filter((r) => !r.doneAt).length} upcoming`
+                      : undefined
+                  }
+                >
+                  <RemindersCard reminders={reminders} canEdit={canAdd} />
+                </CollapsibleSection>
+
+                <CollapsibleSection id="contacts" title="People to call" icon={<Phone className="w-5 h-5" />}>
+                  <ContactsCard contacts={contacts} canManage={canManage} />
                 </CollapsibleSection>
 
                 <CollapsibleSection id="milestones" title="Milestones &amp; directives" icon={<Shield className="w-5 h-5" />}>
