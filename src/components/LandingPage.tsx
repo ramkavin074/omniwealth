@@ -14,6 +14,9 @@ import {
   FileSpreadsheet,
   Flag,
   Share2,
+  Bell,
+  Smartphone,
+  Download,
 } from 'lucide-react';
 
 // Android availability: 'beta' while the app is in Google Play closed testing
@@ -75,6 +78,24 @@ const FEATURES = [
     title: 'Share a read-only report',
     description:
       'Send an accountant a private link to your net worth, allocation and holdings. It expires on its own and leaves out account numbers.',
+  },
+  {
+    icon: Bell,
+    title: 'Digest and alerts',
+    description:
+      'A weekly digest and a daily net-worth change notification, by email and push. Only percentages show on your lock screen, never amounts.',
+  },
+  {
+    icon: Smartphone,
+    title: 'Home Screen widget',
+    description:
+      'See your net worth at a glance on Android, hidden automatically while app lock is on. iPhone is on its way.',
+  },
+  {
+    icon: Download,
+    title: 'Export anytime',
+    description:
+      'Download all your holdings as a spreadsheet whenever you like. Your data stays yours.',
   },
   {
     icon: ShieldCheck,
@@ -330,6 +351,8 @@ export default function LandingPage() {
               'Goal tracking',
               'Read-only shareable reports',
               'Weekly digest and net-worth alerts',
+              'Home Screen widget (Android)',
+              'Spreadsheet export',
             ],
             image: 'https://www.omniwealth.org/og-image.png',
             description:
