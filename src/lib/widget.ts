@@ -4,6 +4,7 @@
 // the installed build.
 
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { reportClientError } from '@/lib/clientErrorReport';
 import { createWidgetKeyAction } from '@/actions/widgetKeys';
 
@@ -47,6 +48,24 @@ const supported = () => {
   return p === 'ios' || p === 'android';
 };
 
+// Tap-to-unlock arrived in Android build 27. Older Android builds can only show
+// "Balance hidden" with no way to reveal it, so they keep showing the number
+// (a tap opens the app) until the user updates. iOS widgets are unaffected.
+const ANDROID_TAP_UNLOCK_BUILD = 27;
+let tapUnlockSupported: boolean | null = null;
+
+async function nativeSupportsTapUnlock(): Promise<boolean> {
+  if (tapUnlockSupported !== null) return tapUnlockSupported;
+  if (Capacitor.getPlatform() !== 'android') return (tapUnlockSupported = true);
+  try {
+    const info = await App.getInfo();
+    tapUnlockSupported = Number(info.build) >= ANDROID_TAP_UNLOCK_BUILD;
+  } catch {
+    tapUnlockSupported = false;
+  }
+  return tapUnlockSupported;
+}
+
 let lastPushed = '';
 
 export async function pushNetWorthToWidget(amount: number, currency: string): Promise<void> {
@@ -54,7 +73,7 @@ export async function pushNetWorthToWidget(amount: number, currency: string): Pr
   if (!Number.isFinite(amount) || !currency) return;
 
   // "hidden" = locked: dots until the user unlocks it with a tap (unless they chose always-show).
-  const hidden = !widgetShowAlwaysPref();
+  const hidden = (await nativeSupportsTapUnlock()) && !widgetShowAlwaysPref();
 
   // Avoid hammering the widget on every re-render.
   const sig = `${Math.round(amount)}|${currency}|${hidden ? 1 : 0}`;
@@ -103,7 +122,7 @@ export async function ensureWidgetKey(): Promise<void> {
 export async function setWidgetHidden(hidden: boolean): Promise<void> {
   if (!supported()) return;
   try {
-    await WidgetBridge.setHidden({ hidden });
+    await WidgetBridge.setHidden({ hidden: hidden && (await nativeSupportsTapUnlock()) });
   } catch {
     /* older build */
   }
