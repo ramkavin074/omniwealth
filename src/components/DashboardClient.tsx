@@ -17,6 +17,8 @@ import ConcentrationAlert from '@/components/dashboard/ConcentrationAlert';
 import CurrencyExposure from '@/components/dashboard/CurrencyExposure';
 import StaleValueNudge from '@/components/dashboard/StaleValueNudge';
 import GettingStartedCard from '@/components/dashboard/GettingStartedCard';
+import GoalsCard from '@/components/dashboard/GoalsCard';
+import { computeGoals } from '@/lib/goals';
 import EstateReadinessCard from '@/components/dashboard/EstateReadinessCard';
 import AccountInstructionsCard from '@/components/dashboard/AccountInstructionsCard';
 import CollapsibleSection from '@/components/dashboard/CollapsibleSection';
@@ -197,6 +199,11 @@ export default function DashboardClient({
     App.addListener('appUrlOpen', handleUrlOpen);
     return () => { App.removeAllListeners(); };
   }, []);
+
+  const goals = useMemo(
+    () => computeGoals(session?.household?.legacyPillars, initialAssets, baseCurrency, liveRates),
+    [session?.household?.legacyPillars, initialAssets, baseCurrency, liveRates],
+  );
 
   const legacyPillars = useMemo(() => {
     try {
@@ -407,6 +414,17 @@ export default function DashboardClient({
                     </>
                   );
                 })()}
+
+                {goals.length > 0 && (
+                  <CollapsibleSection
+                    id="goals"
+                    title="Goals"
+                    icon={<Target className="w-5 h-5" />}
+                    summary={`${goals.filter((g) => g.status === 'reached').length}/${goals.length} reached`}
+                  >
+                    <GoalsCard goals={goals} baseCurrency={baseCurrency} canManage={canManage} />
+                  </CollapsibleSection>
+                )}
 
                 <CollapsibleSection id="allocation" title="Allocation" icon={<PieChart className="w-5 h-5" />}>
                   <AssetAllocationVisualizer assets={initialAssets} baseCurrency={baseCurrency} liveRates={liveRates} embedded />
