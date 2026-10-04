@@ -11,6 +11,9 @@ import {
   Apple,
   Play,
   Check,
+  FileSpreadsheet,
+  Flag,
+  Share2,
 } from 'lucide-react';
 
 // Android availability: 'beta' while the app is in Google Play closed testing
@@ -56,6 +59,24 @@ const FEATURES = [
       'Invite family members with role-based access — see the whole picture together, or keep parts of it private.',
   },
   {
+    icon: FileSpreadsheet,
+    title: 'Get set up in minutes',
+    description:
+      'Import from a statement or a spreadsheet, with optional AI clean-up for messy files. You review everything before anything is added.',
+  },
+  {
+    icon: Flag,
+    title: 'Goals and progress',
+    description:
+      'Set targets for college, a home, an emergency fund or your legacy, and see how close you are, right on your dashboard.',
+  },
+  {
+    icon: Share2,
+    title: 'Share a read-only report',
+    description:
+      'Send an accountant a private link to your net worth, allocation and holdings. It expires on its own and leaves out account numbers.',
+  },
+  {
     icon: ShieldCheck,
     title: 'Private by design',
     description:
@@ -65,8 +86,9 @@ const FEATURES = [
 
 const STEPS = [
   'Create your household in under a minute',
-  'Add your accounts, holdings, and property',
+  'Add your accounts, holdings, and property, by hand, from a statement, or from a spreadsheet',
   'See your true net worth — instantly, in any currency',
+  'Stay on top of it with a weekly digest, goal progress, and daily net-worth change alerts',
 ];
 
 export default function LandingPage() {
@@ -298,6 +320,17 @@ export default function LandingPage() {
             operatingSystem: 'iOS, Android, Web',
             url: 'https://www.omniwealth.org',
             installUrl: 'https://apps.apple.com/app/id6810544681',
+            featureList: [
+              'Multi-currency net worth dashboard',
+              'Encrypted document vault',
+              'AI portfolio assistant',
+              'Retirement planning',
+              'Family access with roles',
+              'Import from statements and spreadsheets',
+              'Goal tracking',
+              'Read-only shareable reports',
+              'Weekly digest and net-worth alerts',
+            ],
             image: 'https://www.omniwealth.org/og-image.png',
             description:
               "Track your family's net worth across bank accounts, investments, property, and more — in one private, multi-currency dashboard. Informational only: not a bank, broker-dealer, or investment adviser, and does not manage, custody, or move your money.",
