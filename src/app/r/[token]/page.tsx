@@ -37,6 +37,13 @@ const TYPE_NAMES: Record<string, string> = {
   HSA: 'HSA',
   OTHER: 'Other',
 };
+// "Kavin Kumar Santhakumari Velu" -> "Kavin V." so the Owner column never wraps.
+const shortOwner = (full: string) => {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
+};
 const typeName = (t: string) => TYPE_NAMES[t] || t.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 
 function Unavailable() {
@@ -109,7 +116,7 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
     return {
       name: r.name,
       type: liability ? 'LIABILITY' : t,
-      owner: r.owner || '',
+      owner: shortOwner(r.owner || ''),
       native,
       cur,
       baseVal: Math.abs(toBase(native, cur)),
@@ -160,9 +167,9 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
 
 
   return (
-    <main className="mx-auto max-w-4xl bg-white px-5 py-8 font-sans text-slate-800 print:max-w-none print:px-0 print:py-0">
+    <main className="mx-auto max-w-4xl bg-white px-5 py-8 font-sans text-slate-800 print:max-w-none print:px-1 print:py-0">
       <style>{`@page { margin: 12mm; } @media print { tr, li { break-inside: avoid; } }`}</style>
-      <header className="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
+      <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-teal-700">Net worth report</p>
           <h1 className="mt-0.5 text-xl font-bold text-slate-900">{hh.name}</h1>
@@ -171,7 +178,7 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
           </p>
         </div>
         <PrintButton />
-      </header>
+      </div>
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[
@@ -250,7 +257,7 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
 
       <section className="mt-5">
         <h2 className="text-xs font-bold uppercase tracking-wide text-slate-900">Holdings</h2>
-        <table className="mt-2 w-full text-left text-xs">
+        <table className="mt-2 w-full text-left text-xs print:text-[10px]">
           <thead>
             <tr className="border-b border-slate-300 text-[10px] uppercase tracking-wide text-slate-500">
               <th className="py-1 pr-2 font-semibold">Name</th>
@@ -275,19 +282,19 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
               </tr>
               {g.list.map((r, i) => (
                 <tr key={i} className="border-b border-slate-100 align-top">
-                  <td className="py-1 pl-1 pr-2">
+                  <td className="py-1 print:py-px pl-1 pr-2">
                     {r.name}
                     {r.ticker && <span className="ml-1 font-mono text-[10px] text-slate-400">{r.ticker}</span>}
                   </td>
-                  <td className="hidden py-1 pr-2 text-slate-600 sm:table-cell print:table-cell">{r.owner}</td>
-                  <td className="hidden py-1 pr-2 text-right font-mono text-slate-600 sm:table-cell print:table-cell">
+                  <td className="hidden py-1 print:py-px pr-2 whitespace-nowrap text-slate-600 sm:table-cell print:table-cell">{r.owner}</td>
+                  <td className="hidden py-1 print:py-px pr-2 text-right font-mono whitespace-nowrap text-slate-600 sm:table-cell print:table-cell">
                     {r.qty !== null ? r.qty.toLocaleString('en-US', { maximumFractionDigits: 4 }) : ''}
                   </td>
-                  <td className="hidden py-1 pr-2 text-right font-mono text-slate-400 sm:table-cell print:table-cell">
+                  <td className="hidden py-1 print:py-px pr-2 text-right font-mono whitespace-nowrap text-slate-400 sm:table-cell print:table-cell">
                     {r.cur !== base ? `${formatFull(r.native, r.cur)} ${r.cur}` : ''}
                   </td>
-                  <td className="py-1 pr-2 text-right font-mono">{formatFull(r.baseVal, base)}</td>
-                  <td className="py-1 text-right font-mono text-slate-500">
+                  <td className="py-1 print:py-px pr-2 text-right font-mono whitespace-nowrap">{formatFull(r.baseVal, base)}</td>
+                  <td className="py-1 print:py-px text-right font-mono text-slate-500">
                     {r.liability || totalAssets <= 0 ? '' : ((r.baseVal / totalAssets) * 100).toFixed(1)}
                   </td>
                 </tr>
@@ -297,11 +304,11 @@ export default async function ReportPage({ params }: { params: Promise<{ token: 
         </table>
       </section>
 
-      <footer className="mt-6 border-t border-slate-200 pt-3 text-[10px] leading-relaxed text-slate-400">
+      <div className="mt-6 border-t border-slate-200 pt-3 text-[10px] leading-relaxed text-slate-400">
         Read-only summary shared by the household. Account numbers, beneficiaries, notes and documents are not included.
         Values are as last entered, converted at current exchange rates. For information only; not financial, tax or legal advice.
         Generated with OmniWealth.
-      </footer>
+      </div>
     </main>
   );
 }
