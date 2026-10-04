@@ -6,6 +6,7 @@ import { useBackHandler, useLang, useTheme } from './hooks';
 import { initBackButton } from './back';
 import { maybeAutoSync } from './sync';
 import { OMNIWEALTH_LOGO } from './logo';
+import { hasStandaloneAuth } from './settings';
 
 // Hot-path screens — always reachable in a tap or two, kept in the main bundle.
 import HomeScreen from './screens/HomeScreen';
@@ -48,6 +49,7 @@ export default function StockingApp() {
   const { lang, toggle } = useLang();
   const { theme, toggle: toggleTheme } = useTheme();
   const [tab, setTab] = useState<Tab>('home');
+  const hostedInOmniWealth = !hasStandaloneAuth();
   const [lowOnly, setLowOnly] = useState(false);
   const [expOnly, setExpOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -140,6 +142,18 @@ export default function StockingApp() {
 
   useBackHandler(true, handleBack);
 
+  // eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI
+  const logoImg = (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={OMNIWEALTH_LOGO}
+      alt="OmniWealth"
+      width={32}
+      height={32}
+      className="h-8 w-8 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"
+    />
+  );
+
   return (
     <div className="kadai mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:max-w-4xl md:border-x md:border-slate-200 md:dark:border-slate-800">
       <header
@@ -147,14 +161,15 @@ export default function StockingApp() {
         style={{ paddingTop: 'calc(0.75rem + var(--app-safe-top))' }}
       >
         <h1 className="flex items-center gap-2.5 text-xl">
-          {/* eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI */}
-          <img
-            src={OMNIWEALTH_LOGO}
-            alt="OmniWealth"
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"
-          />
+          {/* Hosted inside OmniWealth: the logo links back to the main app.
+              The standalone Kadai app has no "main app" to go back to. */}
+          {hostedInOmniWealth ? (
+            <a href="/" aria-label="Back to OmniWealth" className="shrink-0">
+              {logoImg}
+            </a>
+          ) : (
+            logoImg
+          )}
           <span className="k-wordmark">{t(lang, 'app.title')}</span>
         </h1>
         <div className="flex items-center gap-2">

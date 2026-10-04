@@ -327,6 +327,7 @@ const en: Dict = {
     'Delete every product and movement on this device? This cannot be undone.',
   'settings.account': 'Account',
   'settings.logout': 'Log out',
+  'settings.backToMain': '\u2190 Back to OmniWealth',
 
   'sync.title': 'Sync',
   'sync.now': 'Sync now',
@@ -970,6 +971,7 @@ const ta: Dict = {
     'இந்த சாதனத்தில் உள்ள அனைத்து பொருட்களையும் மாற்றங்களையும் அழிக்கவா? மீட்க முடியாது.',
   'settings.account': 'கணக்கு',
   'settings.logout': 'வெளியேறு',
+  'settings.backToMain': '\u2190 OmniWealth-க்குத் திரும்பு',
 
   'sync.title': 'ஒத்திசைவு',
   'sync.now': 'இப்போது ஒத்திசை',

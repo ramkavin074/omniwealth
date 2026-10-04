@@ -747,6 +747,18 @@ export default function SettingsSheet({
           </button>
         </section>
 
+        {!standalone && (
+          <section className="space-y-2">
+            <p className={heading}>{t(lang, 'settings.account')}</p>
+            <a
+              href="/"
+              className="flex h-11 w-full items-center justify-center rounded-lg bg-slate-200 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+            >
+              {t(lang, 'settings.backToMain')}
+            </a>
+          </section>
+        )}
+
         {standalone && (
           <section className="space-y-2">
             <p className={heading}>{t(lang, 'settings.account')}</p>
