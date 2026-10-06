@@ -7,7 +7,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { API_BASE } from '../config';
-import { OMNIWEALTH_LOGO } from '../logo';
+import { KADAI_LOGO } from '../logo';
 
 export type StoreRole = 'owner' | 'manager' | 'staff';
 
@@ -104,8 +104,8 @@ export default function LoginGate({ children }: { children: ReactNode }) {
       <h1 className="flex items-center gap-2.5 text-2xl">
         {/* eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI */}
         <img
-          src={OMNIWEALTH_LOGO}
-          alt="OmniWealth"
+          src={KADAI_LOGO}
+          alt="Kadai"
           width={36}
           height={36}
           className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"

@@ -5,7 +5,7 @@ import { t } from './i18n';
 import { useBackHandler, useLang, useTheme } from './hooks';
 import { initBackButton } from './back';
 import { maybeAutoSync } from './sync';
-import { OMNIWEALTH_LOGO } from './logo';
+import { KADAI_LOGO, OMNIWEALTH_LOGO } from './logo';
 import { hasStandaloneAuth, hostedHasMainApp } from './settings';
 
 // Hot-path screens — always reachable in a tap or two, kept in the main bundle.
@@ -78,6 +78,44 @@ export default function StockingApp() {
     return () => window.removeEventListener('online', onOnline);
   }, []);
 
+  // Every full-screen section (Sell, Sales, Customers...) renders in place of
+  // the tab content, and the tab bar stays visible underneath. A tab tap must
+  // therefore close them all, otherwise "Home" changes state but the open
+  // section keeps covering the screen and the button seems dead.
+  const closeAll = useCallback(() => {
+    setAskAiOpen(false);
+    setAskAiSeed(null);
+    setSettingsOpen(false);
+    setSellOpen(false);
+    setSalesOpen(false);
+    setTaxOpen(false);
+    setUpiOpen(false);
+    setScanDoc(null);
+    setSuppliersOpen(false);
+    setCustomersOpen(false);
+    setOrdersOpen(false);
+    setExpensesOpen(false);
+    setPurchasesOpen(false);
+    setAcctOpen(false);
+    setReportsOpen(false);
+    setCashflowOpen(false);
+    setAuditOpen(false);
+  }, []);
+
+  const goTab = useCallback(
+    (name: Tab) => {
+      closeAll();
+      // Tapping the Products tab itself means "show everything"; the low-stock
+      // and expiring filters are only for the shortcuts on Home.
+      if (name === 'products') {
+        setLowOnly(false);
+        setExpOnly(false);
+      }
+      setTab(name);
+    },
+    [closeAll],
+  );
+
   // Android Back: unwind one layer of UI per press instead of suspending the
   // app. Order mirrors the render precedence below; deeper screens (SellScreen
   // etc.) register their own handlers, which run first. A press with nothing
@@ -142,12 +180,14 @@ export default function StockingApp() {
 
   useBackHandler(true, handleBack);
 
+  // Hosted inside OmniWealth the OmniWealth mark links back to the main app;
+  // the standalone Kadai app shows Kadai's own mark, which goes to Home.
   // eslint-disable-next-line @next/next/no-img-element -- shared module also builds under Vite (no next/image); src is an inlined data URI
   const logoImg = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={OMNIWEALTH_LOGO}
-      alt="OmniWealth"
+      src={hostedInOmniWealth ? OMNIWEALTH_LOGO : KADAI_LOGO}
+      alt={hostedInOmniWealth ? 'OmniWealth' : 'Kadai'}
       width={32}
       height={32}
       className="h-8 w-8 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"
@@ -169,7 +209,14 @@ export default function StockingApp() {
               {logoImg}
             </a>
           ) : (
-            logoImg
+            <button
+              type="button"
+              onClick={() => goTab('home')}
+              aria-label={t(lang, 'tab.home')}
+              className="shrink-0"
+            >
+              {logoImg}
+            </button>
           )}
           <span className="k-wordmark">{t(lang, 'app.title')}</span>
         </h1>
@@ -227,7 +274,7 @@ export default function StockingApp() {
           <button
             key={name}
             type="button"
-            onClick={() => setTab(name)}
+            onClick={() => goTab(name)}
             className={`flex-1 border-t-2 py-3 text-sm font-semibold transition md:flex-none md:border-t-0 md:border-b-2 md:px-5 ${
               tab === name
                 ? 'border-teal-700 bg-teal-50 text-teal-700 dark:border-teal-400 dark:bg-teal-500/10 dark:text-teal-300 md:bg-transparent md:dark:bg-transparent'
