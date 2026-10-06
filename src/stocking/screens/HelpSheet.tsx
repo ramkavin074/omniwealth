@@ -17,7 +17,7 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
     topics: [
       {
         title: 'Make a bill by voice',
-        body: 'On the Sell screen tap "Speak the items" and say the order, for example "two kilo rice, one Colgate, half kilo sugar". You can speak in Tamil, English or both. Check the cart, then take payment. A spoken price such as "rice 60 rupees" helps pick the right product.',
+        body: 'On the Sell screen tap "Speak the items" and say the order, for example "two kilo rice, one Colgate, half kilo sugar". You can speak in Tamil, English or both. Check the cart, then take payment. A spoken price such as "rice 60 rupees" helps pick the right product. When you are online, Kadai sends a short recording of your voice to an AI service (Google Gemini) after you allow it, which understands Tamil much better than the phone\'s own recogniser. Offline it falls back to the phone\'s recogniser.',
       },
       {
         title: 'Add stock and expiry dates',
@@ -71,7 +71,7 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
     topics: [
       {
         title: 'குரலில் பில் போடுங்கள்',
-        body: 'விற்பனை திரையில் "பொருட்களைச் சொல்லுங்கள்" அழுத்தி, எடுத்துக்காட்டாக "இரண்டு கிலோ அரிசி, ஒரு கோல்கேட், அரை கிலோ சர்க்கரை" என்று சொல்லுங்கள். தமிழ், ஆங்கிலம் அல்லது இரண்டும் கலந்தும் சொல்லலாம். கூடையைச் சரிபார்த்து பணம் வாங்குங்கள். "அரிசி அறுபது ரூபாய்" என்று விலையைச் சொன்னால் சரியான பொருளைத் தேர்வு செய்ய உதவும்.',
+        body: 'விற்பனை திரையில் "பொருட்களைச் சொல்லுங்கள்" அழுத்தி, எடுத்துக்காட்டாக "இரண்டு கிலோ அரிசி, ஒரு கோல்கேட், அரை கிலோ சர்க்கரை" என்று சொல்லுங்கள். தமிழ், ஆங்கிலம் அல்லது இரண்டும் கலந்தும் சொல்லலாம். கூடையைச் சரிபார்த்து பணம் வாங்குங்கள். "அரிசி அறுபது ரூபாய்" என்று விலையைச் சொன்னால் சரியான பொருளைத் தேர்வு செய்ய உதவும். இணையம் இருக்கும்போது, நீங்கள் அனுமதித்த பிறகு, உங்கள் குரலின் சிறு பதிவு AI சேவைக்கு (Google Gemini) அனுப்பப்படும்; இது போனின் சொந்த அங்கீகாரியை விட தமிழை நன்றாகப் புரிந்துகொள்ளும். இணையம் இல்லாதபோது போனின் அங்கீகாரி பயன்படுத்தப்படும்.',
       },
       {
         title: 'சரக்கு மற்றும் காலாவதி தேதி சேர்க்க',

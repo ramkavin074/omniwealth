@@ -21,6 +21,7 @@ import { printReceiptSmart } from '../printer';
 import { sendBill } from '../shareBill';
 import { findByBarcode, getProduct, listProducts, searchProducts } from '../db/products';
 import { bestMatch, convertQty } from '@/lib/voiceParse';
+import { recordUtterance, recorderSupported } from '../recorder';
 import { hasWholesale, schemeFreeQty, tierPrice, type PriceMode } from '@/lib/pricing';
 import {
   completeSale,
@@ -38,6 +39,7 @@ import {
   listenOnce,
   parseSpokenItems,
   resolveItemsAI,
+  resolveAudioAI,
 } from '../voice';
 import { useBackHandler, useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
@@ -375,9 +377,52 @@ export default function SellScreen({ lang, onClose }: Props) {
     await doHearItem();
   };
 
+  /** Add the catalogue rows the server matched to the cart and tell the user what happened. */
+  const applyAiItems = async (
+    ai: { items: { productId: string; name: string; qty: number }[]; unmatched: string[] },
+    heard: string,
+  ) => {
+    let added = 0;
+    const unmatched = [...ai.unmatched];
+    for (const it of ai.items) {
+      const p = await getProduct(it.productId);
+      if (p) {
+        addProduct(p, it.qty);
+        added++;
+      } else {
+        unmatched.push(it.name);
+      }
+    }
+    applyVoice(added, unmatched, ai.items[0]?.name ?? heard);
+  };
+
   const doHearItem = async () => {
     if (listening) return;
     setListening(true);
+
+    // Preferred path when online: record the audio and let the server (Gemini) understand it
+    // directly. The phone's own recogniser is weak at Tamil. Falls back to that recogniser
+    // (and then the offline parser) if recording is not possible here.
+    if (recorderSupported() && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
+      const rec = await recordUtterance();
+      if (rec.ok) {
+        const ai = await resolveAudioAI(rec.wav);
+        setListening(false);
+        if (ai) {
+          await applyAiItems(ai, ai.transcript);
+        } else {
+          flash(t(lang, 'sell.voiceFail'));
+        }
+        return;
+      }
+      if (rec.reason === 'no-speech') {
+        setListening(false);
+        flash(t(lang, 'sell.voiceFail'));
+        return;
+      }
+      // permission / unsupported / error: try the phone's recogniser below.
+    }
+
     const r = await listenOnce(lang === 'ta' ? 'ta-IN' : 'en-IN');
     if (!r.ok) {
       setListening(false);
@@ -393,17 +438,7 @@ export default function SellScreen({ lang, onClose }: Props) {
     setListening(false);
 
     if (ai) {
-      let added = 0;
-      for (const it of ai.items) {
-        const p = await getProduct(it.productId);
-        if (p) {
-          addProduct(p, it.qty);
-          added++;
-        } else {
-          ai.unmatched.push(it.name);
-        }
-      }
-      applyVoice(added, ai.unmatched, ai.items[0]?.name ?? r.text);
+      await applyAiItems(ai, r.text);
       return;
     }
 
@@ -1170,6 +1205,7 @@ export default function SellScreen({ lang, onClose }: Props) {
     <div className={`relative flex h-full flex-col ${SCREEN_PAD}`}>
       {showVoiceConsent && (
         <AiConsentDialog
+          kind="voice"
           onAllow={() => {
             grantAiConsent();
             setShowVoiceConsent(false);

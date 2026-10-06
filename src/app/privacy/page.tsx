@@ -209,6 +209,18 @@ export default function PrivacyPolicyPage() {
           not account numbers, passwords, or documents).
         </li>
         <li>
+          <strong>Kadai Ask</strong> sends the question you type together with
+          a summary of your shop: product names, stock and prices, sales
+          totals and, for owners and managers, customer and supplier names with
+          the amounts owed. It is used only to write the answer shown to you.
+        </li>
+        <li>
+          <strong>Kadai voice billing</strong> sends a short audio recording of
+          the items you say, together with the names of the products in your
+          shop, so the AI can match what you said to your catalogue. The
+          recording is used only for that and is not stored by us.
+        </li>
+        <li>
           <strong>AI Statement Reader</strong> sends the document (PDF/image) or
           pasted text you submit for that specific import, and nothing else from
           your account.

@@ -129,6 +129,7 @@ export default function AskAiSheet({ lang, onClose, initialQuestion }: Props) {
       >
         {showConsent && (
           <AiConsentDialog
+            kind="shop"
             onAllow={handleAllowConsent}
             onCancel={() => {
               setShowConsent(false);

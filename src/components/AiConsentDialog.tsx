@@ -10,9 +10,12 @@ import { Sparkles } from 'lucide-react';
 export default function AiConsentDialog({
   onAllow,
   onCancel,
+  kind,
 }: {
   onAllow: () => void;
   onCancel: () => void;
+  /** 'voice': Kadai voice billing (a short audio recording). 'shop': Kadai Ask (a summary of the shop's data). */
+  kind?: 'voice' | 'shop';
 }) {
   return (
     <div className="absolute inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 rounded-2xl">
@@ -21,13 +24,30 @@ export default function AiConsentDialog({
           <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
           <h3 className="font-bold text-sm text-slate-900 dark:text-white">Uses a third-party AI service</h3>
         </div>
-        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
-          To answer a question or read a document, OmniWealth sends the relevant content &mdash; your typed
-          question and a summary of your portfolio (asset names, types, and values), or the document/text
-          you upload &mdash; to a third-party AI provider. By default this is <strong>Google (Gemini)</strong>;
-          if you add your own API key for a different provider in Settings, your data goes to that provider
-          instead.
-        </p>
+        {kind === 'shop' ? (
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+            To answer your question, Kadai sends the question together with a summary of your shop &mdash;
+            product names, stock and prices, sales totals and, for owners and managers, customer and
+            supplier names with the amounts owed &mdash; to a third-party AI provider. By default this is{' '}
+            <strong>Google (Gemini)</strong>. It is used only to write the answer shown to you. If you
+            prefer, decline and use the reports instead.
+          </p>
+        ) : kind === 'voice' ? (
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+            To understand a spoken bill, Kadai sends a <strong>short recording of your voice</strong>, together
+            with the names of the products in your shop, to a third-party AI provider. By default this is{' '}
+            <strong>Google (Gemini)</strong>. The recording is used only to work out the items you said and
+            is not kept. If you prefer, decline: you can still type or scan items.
+          </p>
+        ) : (
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+            To answer a question or read a document, OmniWealth sends the relevant content &mdash; your typed
+            question and a summary of your portfolio (asset names, types, and values), or the document/text
+            you upload &mdash; to a third-party AI provider. By default this is <strong>Google (Gemini)</strong>;
+            if you add your own API key for a different provider in Settings, your data goes to that provider
+            instead.
+          </p>
+        )}
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
           See{' '}
           <a

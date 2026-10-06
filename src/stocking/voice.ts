@@ -16,6 +16,7 @@
 // on it. Nothing is auto-billed; the cart is the review step.
 
 import { API_BASE } from './config';
+import { bytesToBase64 } from '@/lib/wav';
 
 type SpeechMod = typeof import('@capacitor-community/speech-recognition');
 
@@ -114,6 +115,40 @@ export async function resolveItemsAI(
         (i) => i && typeof i.productId === 'string' && Number(i.qty) > 0,
       ),
       unmatched: Array.isArray(data.unmatched) ? data.unmatched : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface ResolvedAudio extends ResolvedItems {
+  /** What the server heard (for showing back to the user). */
+  transcript: string;
+}
+
+/** Cloud voice: send a short recording to the server (Gemini hears Tamil far better than the
+ *  phone's recogniser) and get catalogue rows back. null on any failure. */
+export async function resolveAudioAI(wav: Uint8Array): Promise<ResolvedAudio | null> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+  try {
+    const { token, storeId } = auth();
+    const res = await fetch(`${API_BASE}/api/stocking/resolve-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(storeId ? { 'x-store-id': storeId } : {}),
+      },
+      credentials: token ? 'omit' : 'include',
+      body: JSON.stringify({ audio: bytesToBase64(wav), mime: 'audio/wav' }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<ResolvedAudio>;
+    if (!Array.isArray(data.items)) return null;
+    return {
+      items: data.items.filter((i) => i && typeof i.productId === 'string' && Number(i.qty) > 0),
+      unmatched: Array.isArray(data.unmatched) ? data.unmatched : [],
+      transcript: typeof data.transcript === 'string' ? data.transcript : '',
     };
   } catch {
     return null;
