@@ -28,7 +28,7 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
         body: 'When a batch is close to expiring, the Sell screen shows a hint to sell it first and offers a one-tap markdown. Home and the product list show only what is really on your shelf.',
       },
       {
-        title: 'Credit (udhaar)',
+        title: 'Credit',
         body: 'Choose Credit when taking payment and pick the customer. Open Customers from Settings to see who owes you, and record a payment when they pay back.',
       },
       {
@@ -82,7 +82,7 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
         body: 'ஒரு தொகுதி விரைவில் காலாவதியாகும் என்றால், விற்பனை திரை முதலில் அதை விற்கச் சொல்லும்; ஒரே தொடுதலில் விலைக் குறைப்பும் செய்யலாம். முகப்பு மற்றும் பொருள் பட்டியல் உண்மையில் அலமாரியில் உள்ளதை மட்டுமே காட்டும்.',
       },
       {
-        title: 'கடன் (உதார்)',
+        title: 'கடன்',
         body: 'பணம் வாங்கும்போது கடன் என்பதைத் தேர்ந்தெடுத்து வாடிக்கையாளரைத் தேர்வு செய்யுங்கள். அமைப்புகளில் வாடிக்கையாளர்கள் பகுதியில் யார் எவ்வளவு தர வேண்டும் என்று பார்க்கலாம்; திருப்பிக் கொடுக்கும்போது பதிவு செய்யுங்கள்.',
       },
       {

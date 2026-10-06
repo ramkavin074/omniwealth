@@ -8,9 +8,9 @@ Everything below only claims features that are in the app today.
 
 **Title (Play and App Store name):** Kadai: Shop Billing & Stock
 **Short description (Play):** Fast billing, stock and expiry for kirana shops. Tamil voice. Works offline.
-**Subtitle (App Store):** Billing, stock, udhaar, UPI
-**Promotional text (App Store):** Bill by voice in Tamil or English, know which batch to sell first, track udhaar and check your UPI money. Works without internet.
-**Keywords (App Store):** kirana,billing,pos,inventory,stock,udhaar,gst,invoice,grocery,shop,tamil,upi,expiry,retail
+**Subtitle (App Store):** Billing, stock, credit, UPI
+**Promotional text (App Store):** Bill by voice in Tamil or English, know which batch to sell first, track credit and check your UPI money. Works without internet.
+**Keywords (App Store):** kirana,billing,pos,inventory,stock,kadan,credit,gst,invoice,grocery,shop,tamil,upi,expiry,retail
 
 **Full description:**
 Kadai is a simple billing and stock app for kirana, grocery, medical and general stores.
@@ -27,7 +27,7 @@ Billing, stock and voice keep working offline. Everything saves on your phone an
 CHECK YOUR UPI MONEY
 Paste a bank SMS or a PhonePe, GPay or Paytm notification and Kadai records the money received and matches it to your UPI bills. Bills with no matching payment are flagged. On Android you can switch on automatic matching, which reads only the PhonePe, Google Pay, Paytm and BHIM notifications on that phone, and only if you allow it. On iPhone, a Shortcut you set up can forward your bank's credit SMS. Kadai never reads your SMS itself.
 
-CREDIT (UDHAAR) AND CUSTOMERS
+CREDIT AND CUSTOMERS
 Keep track of who owes you what, record payments and send reminders.
 
 WHOLESALE AND RETAIL
@@ -54,8 +54,8 @@ More than one phone can use the same shop, with owner and staff roles.
 
 **தலைப்பு:** கடை: பில்லிங் & சரக்கு
 **குறுகிய விளக்கம் (Play):** மளிகைக் கடைக்கு வேகமான பில், சரக்கு, காலாவதி. தமிழ் குரல். இணையம் வேண்டாம்.
-**துணைத்தலைப்பு (App Store):** பில், சரக்கு, உதார், UPI
-**விளம்பர உரை (App Store):** குரலில் பில் போடுங்கள், எதை முதலில் விற்பது என்று அறியுங்கள், உதார் மற்றும் UPI பணத்தைச் சரிபாருங்கள். இணையம் இல்லாமலும் வேலை செய்யும்.
+**துணைத்தலைப்பு (App Store):** பில், சரக்கு, கடன், UPI
+**விளம்பர உரை (App Store):** குரலில் பில் போடுங்கள், எதை முதலில் விற்பது என்று அறியுங்கள், கடன் மற்றும் UPI பணத்தைச் சரிபாருங்கள். இணையம் இல்லாமலும் வேலை செய்யும்.
 
 **முழு விளக்கம்:**
 கடை என்பது மளிகை, பலசரக்கு, மருந்து மற்றும் பொதுக் கடைகளுக்கான எளிய பில்லிங் மற்றும் சரக்கு செயலி.
@@ -72,7 +72,7 @@ More than one phone can use the same shop, with owner and staff roles.
 UPI பணத்தைச் சரிபாருங்கள்
 வங்கி SMS அல்லது PhonePe, GPay, Paytm அறிவிப்பை ஒட்டினால், வந்த பணத்தை கடை பதிவு செய்து உங்கள் UPI பில்களுடன் பொருத்தும். பணம் பொருந்தாத பில்கள் குறிக்கப்படும். உங்கள் செய்திகளை கடை தானாகப் படிக்காது.
 
-உதார் மற்றும் வாடிக்கையாளர்கள்
+கடன் மற்றும் வாடிக்கையாளர்கள்
 யார் எவ்வளவு தர வேண்டும் என்பதைக் கண்காணித்து, பணம் வந்ததைப் பதிவு செய்து, நினைவூட்டல் அனுப்புங்கள்.
 
 மொத்தம் மற்றும் சில்லறை
