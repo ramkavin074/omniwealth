@@ -218,26 +218,44 @@ export interface DailySale {
   value: number;
 }
 
-/** Units + value sold per day for the last `days` (oldest first). */
+/** Local calendar day as yyyy-mm-dd (not UTC: in India a bill at 1 am belongs to that day). */
+const localDay = (ms: number): string => {
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+/** Units + value sold per day for the last `days` (oldest first). Value comes from the
+ *  recorded bills (refunds subtract); stock scanned out without a bill counts at today's
+ *  selling price. */
 export async function dailySales(days = 7): Promise<DailySale[]> {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
-  const [products, movements] = await Promise.all([
+  const [products, movements, sales] = await Promise.all([
     listProducts(),
     db().movements.where('createdAt').above(start.getTime()).toArray(),
+    db().sales.where('createdAt').aboveOrEqual(start.getTime()).toArray(),
   ]);
   const price = new Map(products.map((p) => [p.id, p.price]));
   const rows: DailySale[] = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    rows.push({ date: d.toISOString().slice(0, 10), units: 0, value: 0 });
+    rows.push({ date: localDay(d.getTime()), units: 0, value: 0 });
+  }
+  const byDate = new Map(rows.map((r) => [r.date, r]));
+  for (const sale of sales) {
+    if (sale.deletedAt !== null) continue;
+    const row = byDate.get(localDay(sale.createdAt));
+    if (!row) continue;
+    row.value += sale.total; // refunds carry a negative total
+    for (const it of sale.items) row.units += it.qty; // refund lines are negative
   }
   for (const m of movements) {
     if (m.reason !== 'scan-out' || m.delta >= 0) continue;
-    const key = new Date(m.createdAt).toISOString().slice(0, 10);
-    const row = rows.find((r) => r.date === key);
+    if (m.note?.startsWith('bill ')) continue; // already counted through its bill
+    const row = byDate.get(localDay(m.createdAt));
     if (!row) continue;
     row.units += -m.delta;
     row.value += -m.delta * (price.get(m.productId) ?? 0);

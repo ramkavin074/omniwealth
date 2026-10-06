@@ -381,6 +381,7 @@ const en: Dict = {
   'lot.older': 'Older stock',
   'lot.left': '{n} left',
   'lot.days': '{n} days',
+  'lot.day': '{n} day',
   'lot.today': 'today',
   'err.screenLoad': "This screen couldn't load. Check your connection, then reload.",
   'err.reload': 'Reload',
@@ -534,7 +535,7 @@ const en: Dict = {
   'rep.noSales': 'No sales recorded yet',
   'rep.noDead': 'Nothing sitting idle',
   'rep.noSaleIn': 'No sale in {d} days',
-  'rep.note': 'Sales = scanned sell-outs. Exact once billing is added.',
+  'rep.note': 'Sales are your recorded bills (refunds taken off). Stock scanned out without a bill counts at today\'s selling price.',
 
   'audit.title': 'Activity log',
   'audit.all': 'All',
@@ -1139,6 +1140,7 @@ const ta: Dict = {
   'lot.older': 'பழைய இருப்பு',
   'lot.left': '{n} மீதம்',
   'lot.days': '{n} நாள்',
+  'lot.day': '{n} நாள்',
   'lot.today': 'இன்று',
   'err.screenLoad': 'இந்தத் திரை ஏற்றப்படவில்லை. இணைப்பைச் சரிபார்த்து மீண்டும் ஏற்றவும்.',
   'err.reload': 'மீண்டும் ஏற்று',
@@ -1292,7 +1294,7 @@ const ta: Dict = {
   'rep.noSales': 'இன்னும் விற்பனை பதிவு இல்லை',
   'rep.noDead': 'எதுவும் தேங்கவில்லை',
   'rep.noSaleIn': '{d} நாட்களில் விற்பனை இல்லை',
-  'rep.note': 'விற்பனை = ஸ்கேன் செய்யப்பட்ட வெளியேற்றம். பில்லிங் வந்ததும் இது துல்லியமாகும்.',
+  'rep.note': 'விற்பனை என்பது பதிவு செய்த பில்கள் (திருப்பங்கள் கழிக்கப்பட்டவை). பில் இல்லாமல் ஸ்கேன் செய்து வெளியேற்றிய சரக்கு இன்றைய விற்பனை விலையில் கணக்கிடப்படும்.',
 
   'audit.title': 'செயல்பாட்டு பதிவு',
   'audit.all': 'அனைத்தும்',

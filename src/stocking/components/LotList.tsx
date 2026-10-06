@@ -42,7 +42,7 @@ export default function LotList({
                 {r.key === 'older' && r.date ? `${r.label} · ${fmt(r.date)}` : r.label}
                 {d !== null ? (
                   <span className={`ml-2 text-xs ${d < 0 ? 'text-rose-600' : d <= 7 ? 'text-amber-600' : 'text-slate-400'}`}>
-                    {d === 0 ? t(lang, 'lot.today') : d < 0 ? `${Math.abs(d)}d ago` : t(lang, 'lot.days').replace('{n}', String(d))}
+                    {d === 0 ? t(lang, 'lot.today') : d < 0 ? `${Math.abs(d)}d ago` : t(lang, d === 1 ? 'lot.day' : 'lot.days').replace('{n}', String(d))}
                     {pct > 0 ? ` · −${pct}%` : ''}
                   </span>
                 ) : null}

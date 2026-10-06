@@ -113,7 +113,7 @@ export default function ReportsScreen({ lang, onClose }: Props) {
               )}
             </div>
           )}
-          <div className="flex items-end gap-2 h-40">
+          <div className="flex gap-2 h-40">
             {week.map((d) => (
               <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                 <div className="flex-1 flex w-full items-end">
