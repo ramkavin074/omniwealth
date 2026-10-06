@@ -79,6 +79,21 @@ export default function HomeScreen({
 
   const now = useNow();
   const [showCost] = useState(canSeeCost);
+  const [syncing, setSyncing] = useState(false);
+  const [syncErr, setSyncErr] = useState<string | null>(null);
+  const runSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncErr(null);
+    try {
+      const r = await syncNow();
+      if (!r.ok) setSyncErr(t(lang, `sync.err.${r.error ?? 'server'}`));
+    } catch {
+      setSyncErr(t(lang, 'sync.err.server'));
+    } finally {
+      setSyncing(false);
+    }
+  };
   const sync = useLiveQuery(() => db().syncState.get('default'), []);
   const syncAgo = () => {
     if (!sync?.lastSyncAt || !now) return t(lang, 'sync.never');
@@ -222,14 +237,21 @@ export default function HomeScreen({
 
       <button
         type="button"
-        onClick={() => syncNow()}
+        onClick={runSync}
+        disabled={syncing}
         className="w-full flex items-center justify-between rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-2 text-sm"
       >
-        <span className="text-slate-500 dark:text-slate-400">
-          {t(lang, 'sync.last')}: {syncAgo()}
+        <span
+          className={
+            syncErr
+              ? 'text-rose-600 dark:text-rose-400'
+              : 'text-slate-500 dark:text-slate-400'
+          }
+        >
+          {syncErr ?? `${t(lang, 'sync.last')}: ${syncAgo()}`}
         </span>
         <span className="font-semibold text-teal-700 dark:text-teal-400">
-          {t(lang, 'sync.now')}
+          {syncing ? t(lang, 'sync.syncing') : t(lang, 'sync.now')}
         </span>
       </button>
 
