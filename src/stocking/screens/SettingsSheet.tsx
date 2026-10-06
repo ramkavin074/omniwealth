@@ -10,6 +10,7 @@ import {
   canManage,
   cleanBillSeries,
   clearAllData,
+  getAccountInfo,
   getDefaults,
   getLoyaltyConfig,
   getReceiptConfig,
@@ -39,6 +40,7 @@ import {
   saveAlertPhone,
   saveStoreSettings,
 } from '../storeSettings';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -259,7 +261,7 @@ export default function SettingsSheet({
     setDefaults({ unit: u, lowStockThreshold: Number(thr) || 0 });
 
   const wipe = async () => {
-    if (!confirm(t(lang, 'settings.clearConfirm'))) return;
+    if (!(await askConfirm(t(lang, 'settings.clearConfirm')))) return;
     await clearAllData();
     location.reload();
   };
@@ -298,6 +300,25 @@ export default function SettingsSheet({
             {t(lang, 'settings.close')}
           </button>
         </div>
+
+        {(() => {
+          const acct = getAccountInfo();
+          if (!acct.name && !acct.email) return null;
+          return (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {t(lang, 'settings.signedInAs')}
+              </p>
+              <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-50">{acct.name || acct.email}</p>
+              {acct.name && acct.email ? (
+                <p className="break-all text-sm text-slate-600 dark:text-slate-300">{acct.email}</p>
+              ) : null}
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {[acct.shop, t(lang, `role.${acct.role}`)].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+          );
+        })()}
 
         <section className="space-y-2">
           <p className={heading}>{t(lang, 'sync.title')}</p>

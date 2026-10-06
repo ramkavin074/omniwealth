@@ -40,6 +40,7 @@ import { useBackHandler, useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
 import AiConsentDialog from '@/components/AiConsentDialog';
+import { askText } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -510,7 +511,7 @@ export default function SellScreen({ lang, onClose }: Props) {
 
   const hold = async () => {
     if (cart.length === 0) return;
-    const label = window.prompt(t(lang, 'sell.holdLabel')) ?? '';
+    const label = (await askText(t(lang, 'sell.holdLabel'))) ?? '';
     await holdSale(
       cart.map((l) => ({
         productId: l.productId,

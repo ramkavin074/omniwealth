@@ -18,6 +18,7 @@ import {
 import { useLiveQuery } from '../hooks';
 import { getGstConfig } from '../settings';
 import { SCREEN_PAD } from '../ui';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -234,7 +235,7 @@ export default function ExpensesScreen({ lang, onClose }: Props) {
           <button
             type="button"
             onClick={async () => {
-              if (window.confirm(t(lang, 'exp.deleteConfirm'))) {
+              if (await askConfirm(t(lang, 'exp.deleteConfirm'))) {
                 await softDeleteExpense(editId);
                 resetForm();
                 setMode('list');

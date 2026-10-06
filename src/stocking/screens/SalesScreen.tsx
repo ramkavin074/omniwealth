@@ -9,6 +9,7 @@ import { canManage, getGstConfig, getReceiptConfig } from '../settings';
 import { printReceiptSmart } from '../printer';
 import { sendBill } from '../shareBill';
 import { SCREEN_PAD } from '../ui';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -193,7 +194,7 @@ export default function SalesScreen({ lang, onClose }: Props) {
             <button
               type="button"
               onClick={async () => {
-                if (confirm(t(lang, 'sales.voidConfirm'))) {
+                if (await askConfirm(t(lang, 'sales.voidConfirm'))) {
                   await voidSale(open.id);
                   setOpen(null);
                 }

@@ -215,6 +215,7 @@ interface AuthBlob {
   displayName?: string;
   storeId?: string;
   role?: StoreRole;
+  email?: string;
   stores?: { id?: string; name?: string }[];
 }
 
@@ -244,6 +245,17 @@ export function getUserId(): string | null {
 /** The active store's id (both hosts write this into stocking.auth). */
 export function getStoreId(): string | null {
   return readAuthBlob().storeId ?? null;
+}
+
+/** Who is signed in, for the Settings screen — so an owner can confirm they are in the right account. */
+export function getAccountInfo(): { name: string; email: string; shop: string; role: StoreRole } {
+  const b = readAuthBlob();
+  return {
+    name: (b.displayName ?? '').trim(),
+    email: (b.email ?? '').trim(),
+    shop: storeNameFromBlob(b),
+    role: b.role ?? 'staff',
+  };
 }
 
 /** The active shop's name, shown under "Kadai" in the header. */

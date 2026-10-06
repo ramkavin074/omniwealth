@@ -326,7 +326,15 @@ const en: Dict = {
   'settings.clearConfirm':
     'Delete every product and movement on this device? This cannot be undone.',
   'settings.account': 'Account',
+  'settings.signedInAs': 'Signed in as',
+  'role.owner': 'Owner',
+  'role.manager': 'Manager',
+  'role.staff': 'Staff',
   'settings.logout': 'Log out',
+  'dlg.ok': 'OK',
+  'dlg.cancel': 'Cancel',
+  'err.screenLoad': "This screen couldn't load. Check your connection, then reload.",
+  'err.reload': 'Reload',
   'settings.backToMain': '\u2190 Back to OmniWealth',
 
   'sync.title': 'Sync',
@@ -970,7 +978,15 @@ const ta: Dict = {
   'settings.clearConfirm':
     'இந்த சாதனத்தில் உள்ள அனைத்து பொருட்களையும் மாற்றங்களையும் அழிக்கவா? மீட்க முடியாது.',
   'settings.account': 'கணக்கு',
+  'settings.signedInAs': 'உள்நுழைந்தவர்',
+  'role.owner': 'உரிமையாளர்',
+  'role.manager': 'மேலாளர்',
+  'role.staff': 'ஊழியர்',
   'settings.logout': 'வெளியேறு',
+  'dlg.ok': 'சரி',
+  'dlg.cancel': 'ரத்து',
+  'err.screenLoad': 'இந்தத் திரை ஏற்றப்படவில்லை. இணைப்பைச் சரிபார்த்து மீண்டும் ஏற்றவும்.',
+  'err.reload': 'மீண்டும் ஏற்று',
   'settings.backToMain': '\u2190 OmniWealth-க்குத் திரும்பு',
 
   'sync.title': 'ஒத்திசைவு',

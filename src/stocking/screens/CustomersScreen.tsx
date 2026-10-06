@@ -17,6 +17,7 @@ import { useLiveQuery } from '../hooks';
 import { canManage, getReceiptConfig } from '../settings';
 import { upiPayLine } from '../upiLink';
 import { SCREEN_PAD } from '../ui';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -433,10 +434,10 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
             onClick={async () => {
               if (
                 current.balance !== 0 &&
-                !window.confirm(t(lang, 'cust.deleteWithBalance'))
+                !(await askConfirm(t(lang, 'cust.deleteWithBalance')))
               )
                 return;
-              if (window.confirm(t(lang, 'cust.deleteConfirm'))) {
+              if (await askConfirm(t(lang, 'cust.deleteConfirm'))) {
                 await softDeleteCustomer(c.id);
                 setSel(null);
               }

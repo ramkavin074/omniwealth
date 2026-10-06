@@ -7,6 +7,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { API_BASE } from '../config';
+import { guardStore } from '../sync';
 import { KADAI_LOGO } from '../logo';
 
 export type StoreRole = 'owner' | 'manager' | 'staff';
@@ -21,6 +22,7 @@ interface StoredAuth {
   token: string;
   userId: string;
   displayName: string;
+  email?: string;
   stores: StoreRef[];
   storeId: string; // the active store
   role: StoreRole; // role in the active store
@@ -49,8 +51,14 @@ export default function LoginGate({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setAuth(readAuth());
-    setReady(true);
+    const saved = readAuth();
+    // Clear another shop's leftover data before showing anything.
+    (saved ? guardStore(saved.storeId) : Promise.resolve())
+      .catch(() => {})
+      .finally(() => {
+        setAuth(saved);
+        setReady(true);
+      });
   }, []);
 
   const signIn = async (e: React.FormEvent) => {
@@ -79,12 +87,14 @@ export default function LoginGate({ children }: { children: ReactNode }) {
         token: data.token,
         userId: data.userId,
         displayName: data.displayName,
+        email: email.trim().toLowerCase(),
         stores,
         storeId: active.id,
         role: active.role,
         savedAt: Date.now(),
       };
       localStorage.setItem(KEY, JSON.stringify(next));
+      await guardStore(next.storeId).catch(() => {});
       setAuth(next);
     } catch {
       setError('No connection. Connect once to sign in, then it works offline.');

@@ -39,12 +39,17 @@ function authBlob(): { token?: string; storeId?: string; role?: string } {
 }
 
 /** If this device's data belongs to a different store than the signed-in
- *  one (account switch, store switch), wipe it before syncing. */
-async function guardStore(storeId: string | undefined): Promise<void> {
+ *  one (account switch, store switch), wipe it. Call this BEFORE the app shows
+ *  anything (and again before syncing), so the previous account's shop data
+ *  never flashes on screen. */
+export async function guardStore(storeId: string | undefined): Promise<void> {
   if (!storeId) return;
   const prev = localStorage.getItem('stocking.storeId');
   if (prev && prev !== storeId) {
     await db().delete();
+    // Dexie leaves the database closed after delete(); every later query would
+    // fail until it is opened again (the app would sit on dashes).
+    await db().open();
   }
   if (prev !== storeId) localStorage.setItem('stocking.storeId', storeId);
 }

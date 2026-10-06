@@ -24,6 +24,7 @@ import {
 } from '../types';
 import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -649,7 +650,7 @@ export default function OrdersScreen({ lang, onClose, onOpenBill }: Props) {
         <button
           type="button"
           onClick={async () => {
-            if (window.confirm(t(lang, 'order.deleteConfirm'))) {
+            if (await askConfirm(t(lang, 'order.deleteConfirm'))) {
               await softDeleteOrder(o.id);
               setSel(null);
             }

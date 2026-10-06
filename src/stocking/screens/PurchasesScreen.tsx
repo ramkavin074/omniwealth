@@ -20,6 +20,7 @@ import {
 import { useLiveQuery } from '../hooks';
 import { getGstConfig } from '../settings';
 import { SCREEN_PAD } from '../ui';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -466,7 +467,7 @@ export default function PurchasesScreen({ lang, onClose }: Props) {
         <button
           type="button"
           onClick={async () => {
-            if (window.confirm(t(lang, 'pur.deleteConfirm'))) {
+            if (await askConfirm(t(lang, 'pur.deleteConfirm'))) {
               await softDeletePurchase(p.id);
               setSel(null);
             }

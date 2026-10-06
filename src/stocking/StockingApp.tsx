@@ -1,9 +1,11 @@
 'use client';
 
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { t } from './i18n';
 import { useBackHandler, useLang, useTheme } from './hooks';
 import { initBackButton } from './back';
+import { DialogHost } from './dialogs';
+import { ScreenBoundary, lazyRetry } from './lazyScreens';
 import { maybeAutoSync } from './sync';
 import { KADAI_LOGO, OMNIWEALTH_LOGO } from './logo';
 import { getStoreName, hasStandaloneAuth, hostedHasMainApp } from './settings';
@@ -19,19 +21,19 @@ import SellScreen from './screens/SellScreen';
 
 // Occasional / owner-only screens — split into their own chunks so they don't
 // weigh down first paint. Bundled into the APK, so import() loads from disk.
-const SuppliersScreen = lazy(() => import('./screens/SuppliersScreen'));
-const OrdersScreen = lazy(() => import('./screens/OrdersScreen'));
-const ExpensesScreen = lazy(() => import('./screens/ExpensesScreen'));
-const PurchasesScreen = lazy(() => import('./screens/PurchasesScreen'));
-const AccountantScreen = lazy(() => import('./screens/AccountantScreen'));
-const ReportsScreen = lazy(() => import('./screens/ReportsScreen'));
-const CashflowScreen = lazy(() => import('./screens/CashflowScreen'));
-const AuditScreen = lazy(() => import('./screens/AuditScreen'));
-const AskAiSheet = lazy(() => import('./screens/AskAiSheet'));
-const ScanDocScreen = lazy(() => import('./screens/ScanDocScreen'));
-const SalesScreen = lazy(() => import('./screens/SalesScreen'));
-const TaxScreen = lazy(() => import('./screens/TaxScreen'));
-const UpiScreen = lazy(() => import('./screens/UpiScreen'));
+const SuppliersScreen = lazyRetry(() => import('./screens/SuppliersScreen'));
+const OrdersScreen = lazyRetry(() => import('./screens/OrdersScreen'));
+const ExpensesScreen = lazyRetry(() => import('./screens/ExpensesScreen'));
+const PurchasesScreen = lazyRetry(() => import('./screens/PurchasesScreen'));
+const AccountantScreen = lazyRetry(() => import('./screens/AccountantScreen'));
+const ReportsScreen = lazyRetry(() => import('./screens/ReportsScreen'));
+const CashflowScreen = lazyRetry(() => import('./screens/CashflowScreen'));
+const AuditScreen = lazyRetry(() => import('./screens/AuditScreen'));
+const AskAiSheet = lazyRetry(() => import('./screens/AskAiSheet'));
+const ScanDocScreen = lazyRetry(() => import('./screens/ScanDocScreen'));
+const SalesScreen = lazyRetry(() => import('./screens/SalesScreen'));
+const TaxScreen = lazyRetry(() => import('./screens/TaxScreen'));
+const UpiScreen = lazyRetry(() => import('./screens/UpiScreen'));
 
 type Tab = 'home' | 'scan' | 'adjust' | 'products';
 
@@ -295,6 +297,7 @@ export default function StockingApp() {
       </nav>
 
       <main className="flex-1 min-h-0 overflow-y-auto">
+        <ScreenBoundary onHome={() => goTab('home')}>
         <Suspense fallback={<ScreenFallback />}>
         {sellOpen ? (
           <SellScreen lang={lang} onClose={() => setSellOpen(false)} />
@@ -383,6 +386,7 @@ export default function StockingApp() {
           </>
         )}
         </Suspense>
+        </ScreenBoundary>
       </main>
 
       {/* Sell is one tap from anywhere. Hidden only while a sale is in progress
@@ -478,6 +482,7 @@ export default function StockingApp() {
           />
         </Suspense>
       )}
+      <DialogHost />
     </div>
   );
 }

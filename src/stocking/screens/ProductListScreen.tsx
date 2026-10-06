@@ -30,6 +30,7 @@ import LowStockBadge from '../components/LowStockBadge';
 import VirtualList from '../components/VirtualList';
 import ImportScreen from './ImportScreen';
 import NewProductForm from './NewProductForm';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -347,7 +348,7 @@ function EditSheet({
   };
 
   const remove = async () => {
-    if (confirm(t(lang, 'product.deleteConfirm'))) {
+    if (await askConfirm(t(lang, 'product.deleteConfirm'))) {
       await softDeleteProduct(product.id);
       onDone();
     }

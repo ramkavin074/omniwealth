@@ -16,6 +16,7 @@ import { scanBarcode } from '../scanner/barcode';
 import QtyStepper from '../components/QtyStepper';
 import NewProductForm from './NewProductForm';
 import BulkScan from './BulkScan';
+import { askConfirm } from '../dialogs';
 
 type View =
   | { kind: 'idle'; message?: string }
@@ -84,7 +85,7 @@ export default function ScanScreen({ lang }: Props) {
     } catch (e) {
       if (e instanceof NegativeStockError && !allowNegative) {
         if (
-          window.confirm(
+          await askConfirm(
             t(lang, 'scan.negConfirm').replace('{n}', String(e.available)),
           )
         ) {

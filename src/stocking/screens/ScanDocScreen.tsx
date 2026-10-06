@@ -15,6 +15,7 @@ import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
 import AiConsentDialog from '@/components/AiConsentDialog';
+import { askText } from '../dialogs';
 
 const isoToday = () => new Date().toISOString().slice(0, 10);
 
@@ -116,7 +117,7 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
     let sup = supplierId;
     let supName = suppliers.find((x) => x.id === supplierId)?.name ?? '';
     if (!sup || sup === '__new') {
-      const n = window.prompt(t(lang, 'sup.name'))?.trim();
+      const n = (await askText(t(lang, 'sup.name')))?.trim();
       if (!n) return;
       const created = await createSupplier({ name: n });
       sup = created.id;
@@ -154,7 +155,7 @@ export default function ScanDocScreen({ lang, kind, onClose }: Props) {
     if (state.s !== 'payment') return;
     let sup = supplierId;
     if (!sup || sup === '__new') {
-      const n = (sup === '__new' ? window.prompt(t(lang, 'sup.name')) : state.name)?.trim();
+      const n = (sup === '__new' ? await askText(t(lang, 'sup.name')) : state.name)?.trim();
       if (!n) return;
       sup = (await createSupplier({ name: n })).id;
     }

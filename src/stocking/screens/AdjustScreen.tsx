@@ -16,6 +16,7 @@ import { createSupplier, listSuppliers } from '../db/suppliers';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { canSeeCost } from '../settings';
 import QtyStepper from '../components/QtyStepper';
+import { askConfirm, askText } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -65,7 +66,7 @@ export default function AdjustScreen({ lang }: Props) {
     if (!current) return;
     let sup = supplierId;
     if (isStockIn && supplierId === '__new') {
-      const name = window.prompt(t(lang, 'sup.name'))?.trim();
+      const name = (await askText(t(lang, 'sup.name')))?.trim();
       if (!name) return;
       sup = (await createSupplier({ name })).id;
     }
@@ -100,7 +101,7 @@ export default function AdjustScreen({ lang }: Props) {
     } catch (e) {
       if (e instanceof NegativeStockError && !allowNegative) {
         if (
-          window.confirm(
+          await askConfirm(
             t(lang, 'scan.negConfirm').replace('{n}', String(e.available)),
           )
         ) {

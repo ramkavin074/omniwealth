@@ -1,4 +1,5 @@
 // Barcode input with two backends:
+import { askText } from '../dialogs';
 //   - Native (Capacitor + @capacitor-mlkit/barcode-scanning): full-screen
 //     ML Kit camera scanner. No extra hardware.
 //   - Web / dev: a plain prompt() so every screen is testable in a browser
@@ -57,13 +58,14 @@ async function ensureModule(): Promise<void> {
   }
 }
 
-function promptFallback(message: string): ScanResult {
-  if (typeof window === 'undefined' || !window.prompt) {
+async function promptFallback(message: string): Promise<ScanResult> {
+  if (typeof window === 'undefined') {
     return { ok: false, reason: 'unsupported' };
   }
   try {
-    // Some embedded WebViews throw here instead of returning null.
-    const value = window.prompt(message)?.trim();
+    // An in-app dialog (the browser's own prompt() is blocked or throws in
+    // several embedded WebViews).
+    const value = (await askText(message))?.trim();
     if (!value) return { ok: false, reason: 'cancelled' };
     return { ok: true, barcode: value };
   } catch {
@@ -74,7 +76,7 @@ function promptFallback(message: string): ScanResult {
 /** Scan a barcode. `manualPrompt` is the message shown by the web fallback. */
 export async function scanBarcode(manualPrompt: string): Promise<ScanResult> {
   if (!(await isNativeScanAvailable())) {
-    return promptFallback(manualPrompt);
+    return await promptFallback(manualPrompt);
   }
 
   try {

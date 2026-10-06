@@ -19,6 +19,7 @@ import {
 import type { Product, SupplierPayment } from '../types';
 import { useDebounced, useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
+import { askConfirm } from '../dialogs';
 
 interface Props {
   lang: Lang;
@@ -102,7 +103,7 @@ export default function SuppliersScreen({
     } catch (e) {
       if (e instanceof NegativeStockError && !allowNegative) {
         if (
-          window.confirm(
+          await askConfirm(
             t(lang, 'sup.returnNegative').replace('{n}', String(e.available)),
           )
         ) {
@@ -406,7 +407,7 @@ export default function SuppliersScreen({
         <button
           type="button"
           onClick={async () => {
-            if (confirm(t(lang, 'sup.deleteConfirm'))) {
+            if (await askConfirm(t(lang, 'sup.deleteConfirm'))) {
               await softDeleteSupplier(current.supplier.id);
               setSel(null);
             }
