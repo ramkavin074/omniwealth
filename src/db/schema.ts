@@ -1199,6 +1199,8 @@ export const storeStockMovements = store.table(
     qtyAfter: numeric('qty_after').notNull(),
     unitCost: numeric('unit_cost'),
     note: text('note'),
+    // Lot expiry (YYYY-MM-DD) carried by a stock-in; null for everything else.
+    expiryDate: text('expiry_date'),
 
     createdAt: numeric('created_at').notNull(),
     syncedAt: timestamp('synced_at').defaultNow().notNull(),

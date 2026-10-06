@@ -63,6 +63,7 @@ interface InMovement {
   unitCost: number | null;
   supplierId: string | null;
   note: string | null;
+  expiryDate?: string | null;
   createdAt: number;
 }
 
@@ -350,14 +351,27 @@ export async function POST(request: Request) {
         qtyAfter: String(num(m.qtyAfter)),
         unitCost: m.unitCost == null ? null : String(num(m.unitCost)),
         note: m.note ?? null,
+        expiryDate:
+          typeof m.expiryDate === 'string' &&
+          /^\d{4}-\d{2}-\d{2}$/.test(m.expiryDate)
+            ? m.expiryDate
+            : null,
         createdAt: String(num(m.createdAt)),
         syncedAt,
       }));
-    if (rows.length) {
+    // One row per id: an upsert may not touch the same row twice in a batch.
+    const uniqueRows = [...new Map(rows.map((r) => [r.id, r])).values()];
+    if (uniqueRows.length) {
+      // Movements are append-only, except that a movement first saved by an
+      // older app version (no expiry) may later arrive carrying its lot date.
       await db
         .insert(storeStockMovements)
-        .values(rows)
-        .onConflictDoNothing({ target: storeStockMovements.id });
+        .values(uniqueRows)
+        .onConflictDoUpdate({
+          target: storeStockMovements.id,
+          set: { expiryDate: sql`excluded.expiry_date` },
+          setWhere: sql`${storeStockMovements.expiryDate} is null and excluded.expiry_date is not null`,
+        });
     }
   }
 
@@ -985,6 +999,7 @@ export async function POST(request: Request) {
         qtyAfter: num(m.qtyAfter),
         unitCost: m.unitCost == null ? null : num(m.unitCost),
         note: m.note,
+        expiryDate: m.expiryDate ?? null,
         createdAt: num(m.createdAt),
       })),
       suppliers: within(pulledSuppliers).map((s) => ({
