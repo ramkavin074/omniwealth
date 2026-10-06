@@ -38,11 +38,26 @@ export async function addReceipt(input: AddReceiptInput): Promise<UpiReceipt> {
   return r;
 }
 
+/** Adds receipts, skipping any that are already recorded (same reference, or
+ *  same amount + payer within a minute) so re-pasting a message is harmless. */
 export async function addReceipts(rows: AddReceiptInput[]): Promise<number> {
+  const existing = (await db().upiReceipts.toArray()).filter((r) => r.deletedAt === null);
   let added = 0;
   for (const row of rows) {
     if (!(Number(row.amount) > 0)) continue;
-    await addReceipt(row);
+    const ref = row.ref?.trim() || null;
+    const payer = (row.payerName?.trim() || '').toLowerCase();
+    const at = row.receivedAt ?? Date.now();
+    const dup = existing.some(
+      (r) =>
+        (ref && r.ref === ref) ||
+        (!ref &&
+          Math.abs(r.amount - q2(row.amount)) < 0.01 &&
+          Math.abs(r.receivedAt - at) < 60_000 &&
+          (r.payerName ?? '').toLowerCase() === payer),
+    );
+    if (dup) continue;
+    existing.push(await addReceipt(row));
     added++;
   }
   return added;

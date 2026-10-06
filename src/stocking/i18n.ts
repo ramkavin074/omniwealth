@@ -213,6 +213,11 @@ const en: Dict = {
   'upi.unmatchedBills': 'Bills with no matching payment',
   'upi.unmatchedReceipts': 'Payments with no bill',
   'upi.addBtn': 'Add',
+  'upi.pasteBtn': 'Paste payment messages',
+  'upi.pastePh': 'Copy your bank SMS or PhonePe / GPay / Paytm notification and paste it here. You can paste many at once.',
+  'upi.pasteAdd': 'Add received payments',
+  'upi.pasteNone': 'No received payments found in that text.',
+  'upi.pasteAdded': 'Added {n} received. Already had {dup}. Ignored {skip} that were not money in.',
   'upi.link': 'Link',
   'upi.linkTo': 'Link',
 
@@ -874,6 +879,11 @@ const ta: Dict = {
   'upi.unmatchedBills': 'பணம் பொருந்தாத பில்கள்',
   'upi.unmatchedReceipts': 'பில் இல்லாத பணம்',
   'upi.addBtn': 'சேர்',
+  'upi.pasteBtn': 'பணம் வந்த செய்திகளை ஒட்டவும்',
+  'upi.pastePh': 'வங்கி SMS அல்லது PhonePe / GPay / Paytm அறிவிப்பை நகலெடுத்து இங்கே ஒட்டவும். பலவற்றை ஒரே நேரத்தில் ஒட்டலாம்.',
+  'upi.pasteAdd': 'வந்த பணத்தைச் சேர்',
+  'upi.pasteNone': 'அந்த உரையில் வந்த பணம் எதுவும் இல்லை.',
+  'upi.pasteAdded': '{n} சேர்க்கப்பட்டது. ஏற்கனவே இருந்தவை {dup}. பணம் வராத {skip} தவிர்க்கப்பட்டன.',
   'upi.link': 'இணை',
   'upi.linkTo': 'இணை',
 
