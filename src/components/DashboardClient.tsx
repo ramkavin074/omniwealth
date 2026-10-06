@@ -22,6 +22,7 @@ import ContactsCard from '@/components/dashboard/ContactsCard';
 import type { ContactRow, EventRow, ReminderRow } from '@/actions/familyPlan';
 import type { SavedScenario } from '@/actions/scenarios';
 import SetupWizard from '@/components/dashboard/SetupWizard';
+import FirstAccountPrompt from '@/components/dashboard/FirstAccountPrompt';
 import GettingStartedCard from '@/components/dashboard/GettingStartedCard';
 import GoalsCard from '@/components/dashboard/GoalsCard';
 import { computeGoals } from '@/lib/goals';
@@ -403,6 +404,15 @@ export default function DashboardClient({
                     initialCountry={session.household.retirementCountry ?? 'US'}
                     initialCurrentAge={session.household.currentAge ?? 35}
                     initialRetirementAge={session.household.retirementAge ?? 65}
+                  />
+                )}
+                {!showSetup && (
+                  <FirstAccountPrompt
+                    assets={initialAssets}
+                    canAdd={canAdd}
+                    onAddAsset={() => setIsAddAssetOpen(true)}
+                    onImportStatement={() => setIsAiReaderOpen(true)}
+                    onImportCsv={() => setIsCsvImportOpen(true)}
                   />
                 )}
                 <GettingStartedCard
