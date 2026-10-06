@@ -42,6 +42,9 @@ import {
 } from '../storeSettings';
 import { askConfirm } from '../dialogs';
 import HelpSheet from './HelpSheet';
+import StockCountScreen from './StockCountScreen';
+import DayCloseScreen from './DayCloseScreen';
+import LabelsScreen from './LabelsScreen';
 
 interface Props {
   lang: Lang;
@@ -84,6 +87,7 @@ export default function SettingsSheet({
   const initial = getDefaults();
   const [manage] = useState(canManage);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [tool, setTool] = useState<'count' | 'dayclose' | 'labels' | null>(null);
   const [unit, setUnit] = useState<Unit>(initial.unit);
   const [threshold, setThreshold] = useState(String(initial.lowStockThreshold));
   const [rc, setRc] = useState<ReceiptConfig>(getReceiptConfig);
@@ -287,6 +291,9 @@ export default function SettingsSheet({
   return (
     <div className={`${SHEET_OVERLAY} z-30`}>
       {helpOpen && <HelpSheet lang={lang} onClose={() => setHelpOpen(false)} />}
+      {tool === 'count' && <StockCountScreen lang={lang} onClose={() => setTool(null)} />}
+      {tool === 'dayclose' && <DayCloseScreen lang={lang} onClose={() => setTool(null)} />}
+      {tool === 'labels' && <LabelsScreen lang={lang} onClose={() => setTool(null)} />}
       <div
         className={`${SHEET_PANEL} max-h-[92vh] space-y-5 overflow-y-auto md:max-w-2xl`}
         style={{ paddingBottom: 'calc(1rem + var(--app-safe-bottom))' }}
@@ -351,6 +358,9 @@ export default function SettingsSheet({
                 ['sup.manage', onOpenSuppliers, manage],
                 ['tax.title', onOpenTax, manage],
                 ['upi.title', onOpenUpi, manage],
+                ['cnt.title', () => setTool('count'), manage],
+                ['dc.title', () => setTool('dayclose'), manage],
+                ['lbl.title', () => setTool('labels'), manage],
                 ['rep.title', onOpenReports, manage],
                 ['cf.title', onOpenCashflow, manage],
                 ['acct.title', onOpenAccountant, manage],

@@ -42,7 +42,9 @@ export function receiptHtml(sale: Sale, opts: PrintOpts): string {
         i.qty
       } ${esc(unitLabel(lang, i.unit))} × ${rupee(
         i.unitPrice,
-      )}</span></td><td class="amt">${rupee(line)}</td></tr>`;
+      )}${
+        i.freeQty ? ' ' + esc(t(lang, 'sell.free').replace('{n}', String(i.freeQty))) : ''
+      }</span></td><td class="amt">${rupee(line)}</td></tr>`;
     })
     .join('');
 

@@ -47,6 +47,11 @@ export interface Product {
   expiryDate: string | null; // 'YYYY-MM-DD' local date of the current batch; null = not tracked
   gstRate: number; // GST %, e.g. 0 / 5 / 12 / 18 / 28
   hsn: string | null; // HSN code (optional, shown on a tax invoice)
+  /** Rate for wholesale buyers, INR (0 / missing = same as `price`). */
+  wholesalePrice?: number;
+  /** Scheme "buy `schemeBuy`, get `schemeFree` free" (0 / missing = none). */
+  schemeBuy?: number;
+  schemeFree?: number;
   updatedAt: number; // epoch ms
   deletedAt: number | null; // tombstone for sync; null = live
 }
@@ -135,6 +140,8 @@ export interface Customer {
   openingBalance: number; // ₹ they already owed when added (+ve = owes the shop)
   loyaltyPoints: number; // earned on billing, redeemable as a bill discount
   note: string | null;
+  /** Bill this customer at wholesale rates by default. */
+  wholesale?: boolean;
   updatedAt: number;
   deletedAt: number | null;
 }
@@ -239,6 +246,8 @@ export interface SaleItem {
   discount: number; // ₹ off this line (0 = none); applied before bill discount
   discountPct: number; // % it was entered as (0 = entered in ₹ / none) — a display hint; `discount` is authoritative
   gstRate: number; // GST % snapshot (0 when the store isn't charging GST)
+  /** Units given free under a "buy N get M" scheme: they leave stock but cost the customer nothing. */
+  freeQty?: number;
 }
 
 /** One GST-rate group on a bill's tax summary. cgst === sgst (intra-state). */
@@ -492,4 +501,25 @@ export interface BarcodeCacheEntry {
 
 export function isLowStock(p: Product): boolean {
   return p.deletedAt === null && p.stockQty <= p.lowStockThreshold;
+}
+
+// ---- day close (cash book) ----
+
+/** End-of-day cash reconciliation: what the drawer should hold vs what was counted. */
+export interface DayClose {
+  id: string;
+  date: string; // 'YYYY-MM-DD' business day (local)
+  openingCash: number;
+  cashSales: number; // cash taken on bills, net of refunds
+  cashReceived: number; // cash customers paid against their credit
+  cashExpenses: number;
+  otherPaidOut: number; // typed at close: supplier payments in cash, withdrawals
+  expectedCash: number; // opening + sales + received − expenses − other
+  countedCash: number;
+  difference: number; // counted − expected (negative = short)
+  note: string | null;
+  userId: string | null;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
 }

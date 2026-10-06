@@ -32,6 +32,7 @@ export function billText(s: Sale, lang: Lang, gst: Pick<GstConfig, 'gstin'>): st
       ...s.items.map(
         (i) =>
           `${i.name}  ${i.qty} ${unitLabel(lang, i.unit)} x ${i.unitPrice}` +
+          (i.freeQty ? ` ${t(lang, 'sell.free').replace('{n}', String(i.freeQty))}` : '') +
           (i.discount > 0 ? ` (-${i.discountPct > 0 ? i.discountPct + '%' : i.discount})` : '') +
           ` = ${saleLineTotal(i)}`,
       ),

@@ -155,6 +155,9 @@ export async function updateProduct(
       | 'expiryDate'
       | 'gstRate'
       | 'hsn'
+      | 'wholesalePrice'
+      | 'schemeBuy'
+      | 'schemeFree'
     >
   >,
 ): Promise<void> {
@@ -175,6 +178,9 @@ export async function updateProduct(
   }
   if (patch.gstRate !== undefined) clean.gstRate = Number(patch.gstRate) || 0;
   if (patch.hsn !== undefined) clean.hsn = patch.hsn?.trim() || null;
+  if (patch.wholesalePrice !== undefined) clean.wholesalePrice = q(Math.max(0, patch.wholesalePrice || 0));
+  if (patch.schemeBuy !== undefined) clean.schemeBuy = Math.max(0, Number(patch.schemeBuy) || 0);
+  if (patch.schemeFree !== undefined) clean.schemeFree = Math.max(0, Number(patch.schemeFree) || 0);
   await db().products.update(id, clean);
 }
 

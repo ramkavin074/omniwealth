@@ -35,6 +35,7 @@ export interface CustomerDraft {
   creditLimit?: number;
   openingBalance?: number;
   note?: string;
+  wholesale?: boolean;
 }
 
 /** Create (no id) or update (id). Returns the stored row. */
@@ -52,6 +53,7 @@ export async function upsertCustomer(draft: CustomerDraft): Promise<Customer> {
     if (draft.openingBalance !== undefined)
       patch.openingBalance = q(draft.openingBalance);
     if (draft.note !== undefined) patch.note = draft.note.trim() || null;
+    if (draft.wholesale !== undefined) patch.wholesale = draft.wholesale;
     await db().customers.update(draft.id, patch);
     return (await db().customers.get(draft.id)) as Customer;
   }
@@ -65,6 +67,7 @@ export async function upsertCustomer(draft: CustomerDraft): Promise<Customer> {
     openingBalance: q(draft.openingBalance ?? 0),
     loyaltyPoints: 0,
     note: draft.note?.trim() || null,
+    wholesale: !!draft.wholesale,
     updatedAt: now,
     deletedAt: null,
   };

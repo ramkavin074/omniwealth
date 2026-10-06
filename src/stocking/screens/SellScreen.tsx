@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { t, unitLabel, type Lang } from '../i18n';
 import {
   computeSaleTax,
   saleLineTotal,
   todayISO,
+  type Product,
   type Sale,
   type TenderType,
   type Unit,
@@ -20,6 +21,7 @@ import { printReceiptSmart } from '../printer';
 import { sendBill } from '../shareBill';
 import { findByBarcode, getProduct, listProducts, searchProducts } from '../db/products';
 import { bestMatch, convertQty } from '@/lib/voiceParse';
+import { hasWholesale, schemeFreeQty, tierPrice, type PriceMode } from '@/lib/pricing';
 import {
   completeSale,
   discardHeld,
@@ -138,8 +140,36 @@ export default function SellScreen({ lang, onClose }: Props) {
     rows: [],
   });
 
-  // Which lot to sell first for each product in the cart (oldest expiry on the shelf).
+  // Retail / wholesale rates. Wholesale applies per bill and only matters for products
+  // that have a wholesale rate; hand-edited line prices are left alone when it flips.
+  const [priceMode, setPriceMode] = useState<PriceMode>('retail');
+  const priceModeRef = useRef<PriceMode>('retail');
   const cartIds = cart.map((l) => l.productId).join(',');
+  const cartProducts = useLiveQuery(
+    async () => {
+      const ids = cartIds ? cartIds.split(',') : [];
+      const found = await db().products.bulkGet(ids);
+      return new Map(found.filter((p): p is NonNullable<typeof p> => !!p).map((p) => [p.id, p]));
+    },
+    [cartIds],
+    new Map<string, Product>(),
+  );
+  const showTierToggle = cart.length > 0 && [...cartProducts.values()].some(hasWholesale);
+  const switchMode = (mode: PriceMode) => {
+    const old = priceModeRef.current;
+    if (old === mode) return;
+    priceModeRef.current = mode;
+    setPriceMode(mode);
+    setCart((c) =>
+      c.map((l) => {
+        const prod = cartProducts.get(l.productId);
+        if (!prod || l.unitPrice !== tierPrice(prod, old)) return l;
+        return syncPct({ ...l, unitPrice: tierPrice(prod, mode) });
+      }),
+    );
+  };
+
+  // Which lot to sell first for each product in the cart (oldest expiry on the shelf).
   const lotInfo = useLiveQuery(
     async () => {
       const ids = cartIds ? cartIds.split(',') : [];
@@ -207,6 +237,7 @@ export default function SellScreen({ lang, onClose }: Props) {
       price: number;
       mrp: number;
       gstRate?: number;
+      wholesalePrice?: number;
     },
     qty = 1,
   ) => {
@@ -228,7 +259,7 @@ export default function SellScreen({ lang, onClose }: Props) {
           name: p.name,
           unit: p.unit as Unit,
           qty: add,
-          unitPrice: p.price || p.mrp || 0,
+          unitPrice: tierPrice(p, priceModeRef.current),
           discount: 0,
           discPct: 0,
           discMode: 'amt',
@@ -568,6 +599,8 @@ export default function SellScreen({ lang, onClose }: Props) {
   };
 
   const reset = () => {
+    priceModeRef.current = 'retail';
+    setPriceMode('retail');
     setCart([]);
     setTerm('');
     setDiscount('');
@@ -911,7 +944,12 @@ export default function SellScreen({ lang, onClose }: Props) {
               <>
                 <select
                   value={custId}
-                  onChange={(e) => setCustId(e.target.value)}
+                  onChange={(e) => {
+                    setCustId(e.target.value);
+                    if (recv.rows.find((r) => r.customer.id === e.target.value)?.customer.wholesale) {
+                      switchMode('wholesale');
+                    }
+                  }}
                   className={`${inputCls} w-full`}
                 >
                   <option value="">{t(lang, 'sell.pickCustomer')}</option>
@@ -1310,6 +1348,25 @@ export default function SellScreen({ lang, onClose }: Props) {
             </div>
           </div>
         ) : (
+          <>
+          {showTierToggle && (
+            <div className="mb-1 mt-1 flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              {(['retail', 'wholesale'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => switchMode(m)}
+                  className={`h-8 flex-1 rounded-lg text-sm font-semibold transition ${
+                    priceMode === m
+                      ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-50'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  {t(lang, `sell.mode.${m}`)}
+                </button>
+              ))}
+            </div>
+          )}
           <ul className="divide-y divide-slate-200 dark:divide-slate-800">
             {cart.map((l) => (
               <li key={l.productId} className="py-2.5">
@@ -1331,6 +1388,15 @@ export default function SellScreen({ lang, onClose }: Props) {
                   info={lotInfo.get(l.productId)}
                   onApplyMarkdown={(pct) => applyMarkdown(l.productId, pct)}
                 />
+                {(() => {
+                  const cp = cartProducts.get(l.productId);
+                  const free = cp ? schemeFreeQty(l.qty, cp.schemeBuy, cp.schemeFree) : 0;
+                  return free > 0 ? (
+                    <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      {t(lang, 'sell.free').replace('{n}', String(free))}
+                    </p>
+                  ) : null;
+                })()}
                 <div className="mt-1 flex items-center gap-2">
                   <button
                     type="button"
@@ -1416,6 +1482,7 @@ export default function SellScreen({ lang, onClose }: Props) {
               </li>
             ))}
           </ul>
+          </>
         )}
       </div>
 

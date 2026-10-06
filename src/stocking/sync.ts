@@ -20,6 +20,7 @@ import type {
   Supplier,
   SupplierPayment,
   UpiReceipt,
+  DayClose,
 } from './types';
 
 export interface SyncOutcome {
@@ -85,6 +86,7 @@ const PUSH_ORDER = [
   'expenses',
   'purchases',
   'upiReceipts',
+  'dayCloses',
   'movements',
   'sales',
 ] as const;
@@ -106,6 +108,7 @@ interface SyncResponse {
   payments?: SupplierPayment[];
   sales?: Sale[];
   upiReceipts?: UpiReceipt[];
+  dayCloses?: DayClose[];
   customers?: Customer[];
   receipts?: Receipt[];
   orders?: Order[];
@@ -202,6 +205,7 @@ async function applyPulled(data: SyncResponse): Promise<number> {
   const pulledPayments = data.payments ?? [];
   const pulledSales = data.sales ?? [];
   const pulledUpi = data.upiReceipts ?? [];
+  const pulledDayCloses = data.dayCloses ?? [];
   const pulledCustomers = data.customers ?? [];
   const pulledReceipts = data.receipts ?? [];
   const pulledOrders = data.orders ?? [];
@@ -217,6 +221,7 @@ async function applyPulled(data: SyncResponse): Promise<number> {
       db().supplierPayments,
       db().sales,
       db().upiReceipts,
+      db().dayCloses,
       db().customers,
       db().receipts,
       db().orders,
@@ -324,6 +329,12 @@ async function applyPulled(data: SyncResponse): Promise<number> {
         note: r.note ?? null,
         deletedAt: r.deletedAt ?? null,
       }));
+      await mergeLww(db().dayCloses, pulledDayCloses, (d) => ({
+        ...d,
+        note: d.note ?? null,
+        userId: d.userId ?? null,
+        deletedAt: d.deletedAt ?? null,
+      }));
     },
   );
 
@@ -334,6 +345,7 @@ async function applyPulled(data: SyncResponse): Promise<number> {
     pulledPayments.length +
     pulledSales.length +
     pulledUpi.length +
+    pulledDayCloses.length +
     pulledCustomers.length +
     pulledReceipts.length +
     pulledOrders.length +
@@ -361,6 +373,7 @@ async function runSync(): Promise<SyncOutcome> {
     expenses: await changed(db().expenses, 'updatedAt'),
     purchases: await changed(db().purchases, 'updatedAt'),
     upiReceipts: await changed(db().upiReceipts, 'updatedAt'),
+    dayCloses: await changed(db().dayCloses, 'updatedAt'),
     movements: await changed(db().movements, 'createdAt'),
     sales: await changed(db().sales, 'updatedAt'),
   };

@@ -56,6 +56,7 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
   const [limit, setLimit] = useState('');
   const [opening, setOpening] = useState('');
   const [note, setNote] = useState('');
+  const [wholesale, setWholesale] = useState(false);
   // receipt form
   const [amount, setAmount] = useState('');
   const [rTender, setRTender] = useState<ReceiptTender>('cash');
@@ -82,6 +83,7 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
     setLimit('');
     setOpening('');
     setNote('');
+    setWholesale(false);
     setAmount('');
     setRNote('');
     setRTender('cash');
@@ -120,6 +122,7 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
             }
           : {}),
         note,
+        wholesale,
       });
       resetForm();
       setMode('list');
@@ -180,6 +183,15 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
           placeholder={t(lang, 'adjust.note')}
           className={field}
         />
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input
+            type="checkbox"
+            checked={wholesale}
+            onChange={(e) => setWholesale(e.target.checked)}
+            className="h-5 w-5"
+          />
+          {t(lang, 'cust.wholesale')}
+        </label>
         <button
           type="button"
           onClick={submit}
@@ -367,6 +379,7 @@ export default function CustomersScreen({ lang, onClose, onOpenBill }: Props) {
             setLimit(c.creditLimit ? String(c.creditLimit) : '');
             setOpening(c.openingBalance ? String(c.openingBalance) : '');
             setNote(c.note ?? '');
+            setWholesale(!!c.wholesale);
             setMode('edit');
           }}
           className="h-11 w-full rounded-xl bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"

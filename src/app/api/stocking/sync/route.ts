@@ -2,6 +2,7 @@ import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   storeCustomers,
+  storeDayCloses,
   storeExpenses,
   storeOrders,
   storeProducts,
@@ -50,6 +51,9 @@ interface InProduct {
   expiryDate: string | null;
   gstRate: number;
   hsn: string | null;
+  wholesalePrice?: number;
+  schemeBuy?: number;
+  schemeFree?: number;
   updatedAt: number;
   deletedAt: number | null;
 }
@@ -99,6 +103,23 @@ interface InUpiReceipt {
   deletedAt: number | null;
 }
 
+interface InDayClose {
+  id: string;
+  date: string;
+  openingCash: number;
+  cashSales: number;
+  cashReceived: number;
+  cashExpenses: number;
+  otherPaidOut: number;
+  expectedCash: number;
+  countedCash: number;
+  difference: number;
+  note: string | null;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+}
+
 interface InSale {
   id: string;
   billNo: string;
@@ -133,6 +154,7 @@ interface InCustomer {
   note: string | null;
   updatedAt: number;
   deletedAt: number | null;
+  wholesale?: boolean;
 }
 
 interface InReceipt {
@@ -219,6 +241,7 @@ export async function POST(request: Request) {
   let inPayments: InPayment[] = [];
   let inSales: InSale[] = [];
   let inUpiReceipts: InUpiReceipt[] = [];
+  let inDayCloses: InDayClose[] = [];
   let inCustomers: InCustomer[] = [];
   let inReceipts: InReceipt[] = [];
   let inOrders: InOrder[] = [];
@@ -233,6 +256,7 @@ export async function POST(request: Request) {
     inPayments = Array.isArray(body?.payments) ? body.payments : [];
     inSales = Array.isArray(body?.sales) ? body.sales : [];
     inUpiReceipts = Array.isArray(body?.upiReceipts) ? body.upiReceipts : [];
+    inDayCloses = Array.isArray(body?.dayCloses) ? body.dayCloses : [];
     inCustomers = Array.isArray(body?.customers) ? body.customers : [];
     inReceipts = Array.isArray(body?.receipts) ? body.receipts : [];
     inOrders = Array.isArray(body?.orders) ? body.orders : [];
@@ -249,6 +273,7 @@ export async function POST(request: Request) {
     inPayments.length +
     inSales.length +
     inUpiReceipts.length +
+    inDayCloses.length +
     inCustomers.length +
     inReceipts.length +
     inOrders.length +
@@ -264,6 +289,7 @@ export async function POST(request: Request) {
     inSuppliers = [];
     inPayments = [];
     inUpiReceipts = [];
+    inDayCloses = [];
     inPurchases = [];
   }
 
@@ -288,6 +314,9 @@ export async function POST(request: Request) {
         expiryDate: p.expiryDate || null,
         gstRate: String(num(p.gstRate)),
         hsn: p.hsn || null,
+        wholesalePrice: String(num(p.wholesalePrice)),
+        schemeBuy: String(num(p.schemeBuy)),
+        schemeFree: String(num(p.schemeFree)),
         updatedAt: String(num(p.updatedAt)),
         deletedAt: p.deletedAt == null ? null : String(num(p.deletedAt)),
         syncedAt,
@@ -310,6 +339,9 @@ export async function POST(request: Request) {
             expiryDate: sql`excluded.expiry_date`,
             gstRate: sql`excluded.gst_rate`,
             hsn: sql`excluded.hsn`,
+            wholesalePrice: sql`excluded.wholesale_price`,
+            schemeBuy: sql`excluded.scheme_buy`,
+            schemeFree: sql`excluded.scheme_free`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
             syncedAt: sql`excluded.synced_at`,
@@ -514,6 +546,7 @@ export async function POST(request: Request) {
         creditLimit: String(num(c.creditLimit)),
         openingBalance: String(num(c.openingBalance)),
         loyaltyPoints: String(num(c.loyaltyPoints)),
+        wholesale: c.wholesale === true,
         note: c.note ?? null,
         updatedAt: String(num(c.updatedAt)),
         deletedAt: c.deletedAt == null ? null : String(num(c.deletedAt)),
@@ -533,6 +566,7 @@ export async function POST(request: Request) {
             creditLimit: sql`excluded.credit_limit`,
             openingBalance: sql`excluded.opening_balance`,
             loyaltyPoints: sql`excluded.loyalty_points`,
+            wholesale: sql`excluded.wholesale`,
             note: sql`excluded.note`,
             updatedAt: sql`excluded.updated_at`,
             deletedAt: sql`excluded.deleted_at`,
@@ -780,6 +814,55 @@ export async function POST(request: Request) {
     }
   }
 
+  // ---- push: day closes (upsert, LWW) — owner/manager only ----
+  if (inDayCloses.length) {
+    const rows = inDayCloses
+      .filter((d) => d && typeof d.id === 'string' && typeof d.date === 'string')
+      .map((d) => ({
+        id: d.id,
+        storeId,
+        userId: auth.userId, // server-authoritative
+        date: d.date,
+        openingCash: String(num(d.openingCash)),
+        cashSales: String(num(d.cashSales)),
+        cashReceived: String(num(d.cashReceived)),
+        cashExpenses: String(num(d.cashExpenses)),
+        otherPaidOut: String(num(d.otherPaidOut)),
+        expectedCash: String(num(d.expectedCash)),
+        countedCash: String(num(d.countedCash)),
+        difference: String(num(d.difference)),
+        note: d.note ?? null,
+        createdAt: String(num(d.createdAt)),
+        updatedAt: String(num(d.updatedAt)),
+        deletedAt: d.deletedAt == null ? null : String(num(d.deletedAt)),
+        syncedAt,
+      }));
+    if (rows.length) {
+      await db
+        .insert(storeDayCloses)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: storeDayCloses.id,
+          set: {
+            date: sql`excluded.date`,
+            openingCash: sql`excluded.opening_cash`,
+            cashSales: sql`excluded.cash_sales`,
+            cashReceived: sql`excluded.cash_received`,
+            cashExpenses: sql`excluded.cash_expenses`,
+            otherPaidOut: sql`excluded.other_paid_out`,
+            expectedCash: sql`excluded.expected_cash`,
+            countedCash: sql`excluded.counted_cash`,
+            difference: sql`excluded.difference`,
+            note: sql`excluded.note`,
+            updatedAt: sql`excluded.updated_at`,
+            deletedAt: sql`excluded.deleted_at`,
+            syncedAt: sql`excluded.synced_at`,
+          },
+          setWhere: sql`${storeDayCloses.storeId} = ${storeId} AND ${storeDayCloses.updatedAt} < excluded.updated_at`,
+        });
+    }
+  }
+
   // ---- pull: everything newer than the client cursor ----
   const sinceDate = new Date(since);
   const [
@@ -789,6 +872,7 @@ export async function POST(request: Request) {
     pulledPayments,
     pulledSales,
     pulledUpi,
+    pulledDayCloses,
     pulledCustomers,
     pulledReceipts,
     pulledOrders,
@@ -858,6 +942,17 @@ export async function POST(request: Request) {
           ),
         )
         .orderBy(storeUpiReceipts.syncedAt)
+        .limit(MAX_ROWS),
+      db
+        .select()
+        .from(storeDayCloses)
+        .where(
+          and(
+            eq(storeDayCloses.storeId, storeId),
+            gt(storeDayCloses.syncedAt, sinceDate),
+          ),
+        )
+        .orderBy(storeDayCloses.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -944,6 +1039,7 @@ export async function POST(request: Request) {
       pulledPayments,
       pulledSales,
       pulledUpi,
+      pulledDayCloses,
       pulledCustomers,
       pulledReceipts,
       pulledOrders,
@@ -986,6 +1082,9 @@ export async function POST(request: Request) {
         expiryDate: p.expiryDate ?? null,
         gstRate: num(p.gstRate),
         hsn: p.hsn ?? null,
+        wholesalePrice: num(p.wholesalePrice),
+        schemeBuy: num(p.schemeBuy),
+        schemeFree: num(p.schemeFree),
         updatedAt: num(p.updatedAt),
         deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),
@@ -1053,6 +1152,23 @@ export async function POST(request: Request) {
         updatedAt: num(r.updatedAt),
         deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
       })),
+      dayCloses: within(pulledDayCloses).map((d) => ({
+        id: d.id,
+        date: d.date,
+        openingCash: num(d.openingCash),
+        cashSales: num(d.cashSales),
+        cashReceived: num(d.cashReceived),
+        cashExpenses: num(d.cashExpenses),
+        otherPaidOut: num(d.otherPaidOut),
+        expectedCash: num(d.expectedCash),
+        countedCash: num(d.countedCash),
+        difference: num(d.difference),
+        note: d.note,
+        userId: d.userId ?? null,
+        createdAt: num(d.createdAt),
+        updatedAt: num(d.updatedAt),
+        deletedAt: d.deletedAt == null ? null : num(d.deletedAt),
+      })),
       customers: within(pulledCustomers).map((c) => ({
         id: c.id,
         name: c.name,
@@ -1062,6 +1178,7 @@ export async function POST(request: Request) {
         creditLimit: num(c.creditLimit),
         openingBalance: num(c.openingBalance),
         loyaltyPoints: num(c.loyaltyPoints),
+        wholesale: c.wholesale === true,
         note: c.note,
         updatedAt: num(c.updatedAt),
         deletedAt: c.deletedAt == null ? null : num(c.deletedAt),

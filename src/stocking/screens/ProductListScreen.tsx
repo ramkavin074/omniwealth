@@ -323,6 +323,9 @@ function EditSheet({
   const [gst] = useState(getGstConfig);
   const [gstRate, setGstRate] = useState(String(product.gstRate ?? 0));
   const [hsn, setHsn] = useState(product.hsn ?? '');
+  const [wprice, setWprice] = useState(product.wholesalePrice ? String(product.wholesalePrice) : '');
+  const [schemeBuy, setSchemeBuy] = useState(product.schemeBuy ? String(product.schemeBuy) : '');
+  const [schemeFree, setSchemeFree] = useState(product.schemeFree ? String(product.schemeFree) : '');
 
   const m = marginPct({ price: Number(price) || 0, costPrice: Number(cost) || 0 });
   const ro = !manage; // catalogue fields read-only for staff
@@ -343,6 +346,9 @@ function EditSheet({
         unit,
         lowStockThreshold: Number(threshold) || 0,
         expiryDate: expiry || null,
+        wholesalePrice: Number(wprice) || 0,
+        schemeBuy: Number(schemeBuy) || 0,
+        schemeFree: Number(schemeFree) || 0,
         ...(gst.enabled
           ? { gstRate: Number(gstRate) || 0, hsn: hsn.trim() || null }
           : {}),
@@ -419,6 +425,41 @@ function EditSheet({
             </select>
           </label>
         </div>
+
+        {manage && (
+          <div className="grid grid-cols-3 gap-2">
+            <label>
+              <span className={sheetLabel}>{t(lang, 'product.wholesale')}</span>
+              <input
+                inputMode="decimal"
+                value={wprice}
+                onChange={(e) => setWprice(e.target.value)}
+                placeholder="—"
+                className={`${field} w-full`}
+              />
+            </label>
+            <label>
+              <span className={sheetLabel}>{t(lang, 'product.schemeBuy')}</span>
+              <input
+                inputMode="decimal"
+                value={schemeBuy}
+                onChange={(e) => setSchemeBuy(e.target.value)}
+                placeholder="—"
+                className={`${field} w-full`}
+              />
+            </label>
+            <label>
+              <span className={sheetLabel}>{t(lang, 'product.schemeFree')}</span>
+              <input
+                inputMode="decimal"
+                value={schemeFree}
+                onChange={(e) => setSchemeFree(e.target.value)}
+                placeholder="—"
+                className={`${field} w-full`}
+              />
+            </label>
+          </div>
+        )}
 
         {showCost && (
           <div className="grid grid-cols-2 gap-2">

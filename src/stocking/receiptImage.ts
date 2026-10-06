@@ -54,7 +54,9 @@ function build(sale: Sale, opts: Opts): DrawOp[] {
     push({ k: 'row', left: i.name + dtag, right: rupee(saleLineTotal(i)) });
     push({
       k: 'line',
-      text: `  ${i.qty} ${unitLabel(lang, i.unit)} × ${rupee(i.unitPrice)}`,
+      text: `  ${i.qty} ${unitLabel(lang, i.unit)} × ${rupee(i.unitPrice)}${
+        i.freeQty ? '  ' + t(lang, 'sell.free').replace('{n}', String(i.freeQty)) : ''
+      }`,
       align: 'l',
       dim: true,
       size: 12,

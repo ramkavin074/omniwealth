@@ -40,6 +40,22 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
         body: 'Billing, stock and voice work offline. Everything saves on your phone and syncs by itself when the internet is back. Keep the app updated on every phone that uses the same shop.',
       },
       {
+        title: 'Wholesale rates and free-item schemes',
+        body: 'Open a product and fill "Wholesale rate" to sell it cheaper to wholesale buyers. On the bill a Retail / Wholesale switch appears; tick "Wholesale customer" on a customer to switch automatically. Fill "Scheme: buy 10, get 1 free" and the bill shows the free units; they leave your stock but cost the customer nothing.',
+      },
+      {
+        title: 'Stock count',
+        body: 'Settings, then Stock count. Search or scan a product and type what is on the shelf. Nothing changes until you tap Apply counts; then each difference is recorded as a stock-take, and you see the shortage or extra in rupees. Your counts are kept if you leave and come back.',
+      },
+      {
+        title: 'Day close',
+        body: 'Settings, then Day close. Enter the cash you started with and the cash you counted at night. Kadai adds the day\'s cash sales and cash received and subtracts cash expenses, then tells you if the drawer is short or over.',
+      },
+      {
+        title: 'Print barcode labels',
+        body: 'Settings, then Print labels. Pick products and how many stickers, choose an A4 sheet or a label roll, and print. Items with no barcode get a new code saved on the product so the sticker can be scanned at billing.',
+      },
+      {
         title: 'Reports and your accountant',
         body: 'Reports shows sales and profit. Accountant export makes a file your accountant can open. Figures come from your own entries and are not a tax filing.',
       },
@@ -76,6 +92,22 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
       {
         title: 'இணையம் இல்லாமலும் வேலை செய்யும்',
         body: 'பில், சரக்கு, குரல் ஆகியவை இணையம் இல்லாமலும் வேலை செய்யும். அனைத்தும் உங்கள் போனில் சேமிக்கப்பட்டு, இணையம் வந்ததும் தானாக ஒத்திசைக்கும். ஒரே கடையைப் பயன்படுத்தும் அனைத்து போன்களிலும் செயலியைப் புதுப்பித்து வைத்திருங்கள்.',
+      },
+      {
+        title: 'மொத்த விலை மற்றும் இலவசத் திட்டங்கள்',
+        body: 'பொருளைத் திறந்து "மொத்த விலை" நிரப்பினால் மொத்த வாங்குபவர்களுக்கு குறைந்த விலையில் விற்கலாம். பில்லில் சில்லறை / மொத்தம் மாற்றுப் பொத்தான் தோன்றும்; வாடிக்கையாளரில் "மொத்த வாடிக்கையாளர்" குறித்தால் தானாக மாறும். "திட்டம்: 10 வாங்கினால் 1 இலவசம்" நிரப்பினால் பில்லில் இலவச எண்ணிக்கை காட்டப்படும்; அவை சரக்கிலிருந்து குறையும், வாடிக்கையாளர் பணம் தர வேண்டியதில்லை.',
+      },
+      {
+        title: 'சரக்கு எண்ணிக்கை',
+        body: 'அமைப்புகள், பிறகு சரக்கு எண்ணிக்கை. பொருளைத் தேடி அல்லது ஸ்கேன் செய்து அலமாரியில் உள்ளதை உள்ளிடுங்கள். "எண்ணிக்கையைப் பயன்படுத்து" அழுத்தும் வரை எதுவும் மாறாது; பின்னர் ஒவ்வொரு வித்தியாசமும் சரக்கு எண்ணிக்கையாகப் பதிவாகும், குறைவு அல்லது கூடுதல் ரூபாயில் காட்டப்படும். வெளியே சென்று திரும்பினாலும் உங்கள் எண்ணிக்கைகள் இருக்கும்.',
+      },
+      {
+        title: 'நாள் முடிவு',
+        body: 'அமைப்புகள், பிறகு நாள் முடிவு. தொடங்கிய பணத்தையும் இரவில் எண்ணிய பணத்தையும் உள்ளிடுங்கள். அன்றைய பண விற்பனை, பணமாகப் பெற்றதைக் கூட்டி, பணச் செலவுகளைக் கழித்து, கல்லா குறைவா கூடுதலா என்று கடை சொல்லும்.',
+      },
+      {
+        title: 'பார்கோடு லேபிள் அச்சிடுதல்',
+        body: 'அமைப்புகள், பிறகு லேபிள் அச்சிடு. பொருட்களையும் எத்தனை ஸ்டிக்கர் என்பதையும் தேர்ந்தெடுத்து, A4 தாள் அல்லது லேபிள் ரோல் தேர்வு செய்து அச்சிடுங்கள். பார்கோடு இல்லாத பொருளுக்கு புதிய குறியீடு பொருளில் சேமிக்கப்படும்; பில் போடும்போது ஸ்டிக்கரை ஸ்கேன் செய்யலாம்.',
       },
       {
         title: 'அறிக்கைகள் மற்றும் கணக்காளர்',

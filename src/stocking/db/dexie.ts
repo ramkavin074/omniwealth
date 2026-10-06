@@ -18,6 +18,7 @@ import type {
   Supplier,
   SupplierPayment,
   UpiReceipt,
+  DayClose,
 } from '../types';
 
 export interface SyncStateRow {
@@ -44,6 +45,7 @@ export class StockingDB extends Dexie {
   orders!: Table<Order, string>;
   expenses!: Table<Expense, string>;
   purchases!: Table<Purchase, string>;
+  dayCloses!: Table<DayClose, string>;
 
   constructor() {
     super('stocking');
@@ -443,6 +445,10 @@ export class StockingDB extends Dexie {
     // a lot date are simply not in the index.
     this.version(20).stores({
       movements: 'id, productId, createdAt, expiryDate',
+    });
+    // v21: day close (cash book), one row per business day.
+    this.version(21).stores({
+      dayCloses: 'id, date, updatedAt, deletedAt',
     });
   }
 }

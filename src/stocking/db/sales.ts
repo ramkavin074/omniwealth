@@ -6,6 +6,7 @@
 import { db } from './dexie';
 import { addLoyaltyPoints } from './customers';
 import { applyMovement, uuid } from './products';
+import { schemeFreeQty } from '@/lib/pricing';
 import {
   getGstConfig,
   getLoyaltyConfig,
@@ -131,8 +132,15 @@ export function resolveBillTime(billDate: string | undefined, now: number): numb
 export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
   const now = Date.now();
   const billTime = resolveBillTime(input.billDate, now);
-  const items: SaleItem[] = input.items
-    .filter((l) => l.qty > 0)
+  const lines = input.items.filter((l) => l.qty > 0);
+  // "Buy N get M free" schemes are looked up here, so every way of billing
+  // (cart, held bill, voice) honours them the same way.
+  const schemeOf = new Map(
+    (await db().products.bulkGet(lines.map((l) => l.productId)))
+      .filter((p): p is NonNullable<typeof p> => !!p)
+      .map((p) => [p.id, p]),
+  );
+  const items: SaleItem[] = lines
     .map((l) => {
       const unitPrice = q2(l.unitPrice);
       const qty = q2(l.qty);
@@ -143,6 +151,8 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
         pct > 0
           ? q2((gross * pct) / 100)
           : q2(Math.max(0, l.discount ?? 0));
+      const sp = schemeOf.get(l.productId);
+      const freeQty = sp ? schemeFreeQty(qty, sp.schemeBuy, sp.schemeFree) : 0;
       return {
         productId: l.productId,
         name: l.name,
@@ -152,6 +162,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
         discount: Math.min(disc, gross),
         discountPct: pct,
         gstRate: Number(l.gstRate) || 0,
+        ...(freeQty > 0 ? { freeQty } : {}),
       };
     });
 
@@ -235,7 +246,7 @@ export async function completeSale(input: CompleteSaleInput): Promise<Sale> {
         await applyMovement({
           productId: i.productId,
           reason: 'scan-out',
-          delta: -i.qty,
+          delta: -q2(i.qty + (i.freeQty ?? 0)),
           note: `bill ${sale.billNo}`,
           allowNegative: true,
           createdAt: billTime,
@@ -276,7 +287,7 @@ export async function voidSale(id: string): Promise<void> {
         await applyMovement({
           productId: i.productId,
           reason: 'correction',
-          delta: i.qty,
+          delta: q2(i.qty + (i.freeQty ?? 0)),
           note: `void ${sale.billNo}`,
           allowNegative: true,
         });

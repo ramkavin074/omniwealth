@@ -1008,6 +1008,7 @@ export const storeCustomers = store.table(
     creditLimit: numeric('credit_limit').notNull().default('0'),
     openingBalance: numeric('opening_balance').notNull().default('0'),
     loyaltyPoints: numeric('loyalty_points').notNull().default('0'),
+    wholesale: boolean('wholesale').notNull().default(false),
     note: text('note'),
     updatedAt: numeric('updated_at').notNull(),
     deletedAt: numeric('deleted_at'),
@@ -1165,6 +1166,9 @@ export const storeProducts = store.table(
     expiryDate: text('expiry_date'), // 'YYYY-MM-DD' of the current batch; null = untracked
     gstRate: numeric('gst_rate').notNull().default('0'), // GST %
     hsn: text('hsn'),
+    wholesalePrice: numeric('wholesale_price').notNull().default('0'),
+    schemeBuy: numeric('scheme_buy').notNull().default('0'),
+    schemeFree: numeric('scheme_free').notNull().default('0'),
 
     updatedAt: numeric('updated_at').notNull(),
     deletedAt: numeric('deleted_at'),
@@ -1298,4 +1302,36 @@ export const retirementScenarios = pgTable(
   (table) => ({
     householdIdx: index('retirement_scenarios_household_idx').on(table.householdId),
   })
+);
+
+/** End-of-day cash reconciliation (Kadai day close), one row per business day. */
+export const storeDayCloses = store.table(
+  'day_closes',
+  {
+    id: uuid('id').primaryKey(), // client-generated
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id), // server-stamped
+    date: text('date').notNull(), // 'YYYY-MM-DD'
+    openingCash: numeric('opening_cash').notNull().default('0'),
+    cashSales: numeric('cash_sales').notNull().default('0'),
+    cashReceived: numeric('cash_received').notNull().default('0'),
+    cashExpenses: numeric('cash_expenses').notNull().default('0'),
+    otherPaidOut: numeric('other_paid_out').notNull().default('0'),
+    expectedCash: numeric('expected_cash').notNull().default('0'),
+    countedCash: numeric('counted_cash').notNull().default('0'),
+    difference: numeric('difference').notNull().default('0'),
+    note: text('note'),
+    createdAt: numeric('created_at').notNull(),
+    updatedAt: numeric('updated_at').notNull(),
+    deletedAt: numeric('deleted_at'),
+    syncedAt: timestamp('synced_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    storeSyncedIdx: index('store_day_closes_store_synced_idx').on(
+      t.storeId,
+      t.syncedAt,
+    ),
+  }),
 );

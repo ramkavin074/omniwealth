@@ -30,6 +30,15 @@ Paste a bank SMS or a PhonePe, GPay or Paytm notification and Kadai records the 
 CREDIT (UDHAAR) AND CUSTOMERS
 Keep track of who owes you what, record payments and send reminders.
 
+WHOLESALE AND RETAIL
+Give products a wholesale rate and switch a bill between retail and wholesale, or mark a customer as wholesale. Run "buy 10, get 1 free" schemes; free items leave stock automatically.
+
+STOCK COUNT AND DAY CLOSE
+Count the shelf, see the shortage or extra in rupees, and apply it in one tap. At night, reconcile the cash drawer against the day's cash sales and expenses.
+
+BARCODE LABELS
+Print price and barcode stickers on an A4 sheet or a label roll.
+
 STOCK AND PURCHASES
 Scan barcodes, add products quickly, get low-stock and expiry alerts, and record purchases and suppliers.
 
@@ -65,6 +74,15 @@ UPI பணத்தைச் சரிபாருங்கள்
 
 உதார் மற்றும் வாடிக்கையாளர்கள்
 யார் எவ்வளவு தர வேண்டும் என்பதைக் கண்காணித்து, பணம் வந்ததைப் பதிவு செய்து, நினைவூட்டல் அனுப்புங்கள்.
+
+மொத்தம் மற்றும் சில்லறை
+பொருளுக்கு மொத்த விலை வைத்து, பில்லை சில்லறை அல்லது மொத்தம் என மாற்றலாம்; வாடிக்கையாளரையும் மொத்தமாகக் குறிக்கலாம். "10 வாங்கினால் 1 இலவசம்" திட்டங்கள் நடத்தலாம்; இலவசப் பொருட்கள் தானாக சரக்கிலிருந்து குறையும்.
+
+சரக்கு எண்ணிக்கை மற்றும் நாள் முடிவு
+அலமாரியை எண்ணி, குறைவு அல்லது கூடுதலை ரூபாயில் பார்த்து ஒரே தொடுதலில் பயன்படுத்துங்கள். இரவில் கல்லாப் பணத்தை அன்றைய பண விற்பனை, செலவுகளுடன் சரிபாருங்கள்.
+
+பார்கோடு லேபிள்கள்
+விலை மற்றும் பார்கோடு ஸ்டிக்கர்களை A4 தாளிலோ லேபிள் ரோலிலோ அச்சிடுங்கள்.
 
 சரக்கு மற்றும் கொள்முதல்
 பார்கோடு ஸ்கேன், விரைவாக பொருள் சேர்த்தல், குறைந்த சரக்கு மற்றும் காலாவதி எச்சரிக்கைகள், கொள்முதல் மற்றும் சப்ளையர் பதிவு.

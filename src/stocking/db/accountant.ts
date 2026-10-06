@@ -335,7 +335,9 @@ export async function buildAccountantExport(
   for (const s of liveSales) {
     for (const i of s.items) {
       const c = costOf(i.productId);
-      cogs += i.qty * c;
+      // Free scheme units leave stock too, so their cost counts against profit.
+      const out = i.qty + (i.freeQty ?? 0);
+      cogs += out * c;
       const p = prodOf(i.productId);
       const cur =
         byItem.get(i.productId) ??
@@ -350,7 +352,7 @@ export async function buildAccountantExport(
       cur.qty += i.qty;
       // saleLineTotal handles the sign for refund (negative-qty) lines.
       cur.sale += saleLineTotal(i);
-      cur.cost += i.qty * c;
+      cur.cost += out * c;
       byItem.set(i.productId, cur);
     }
   }
