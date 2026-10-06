@@ -25,7 +25,7 @@ WORKS WITHOUT INTERNET
 Billing, stock and voice keep working offline. Everything saves on your phone and syncs by itself when the internet returns.
 
 CHECK YOUR UPI MONEY
-Paste a bank SMS or a PhonePe, GPay or Paytm notification and Kadai records the money received and matches it to your UPI bills. Bills with no matching payment are flagged. Kadai never reads your messages by itself.
+Paste a bank SMS or a PhonePe, GPay or Paytm notification and Kadai records the money received and matches it to your UPI bills. Bills with no matching payment are flagged. On Android you can switch on automatic matching, which reads only the PhonePe, Google Pay, Paytm and BHIM notifications on that phone, and only if you allow it. Kadai never reads your SMS.
 
 CREDIT (UDHAAR) AND CUSTOMERS
 Keep track of who owes you what, record payments and send reminders.

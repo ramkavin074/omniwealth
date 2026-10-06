@@ -33,7 +33,7 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
       },
       {
         title: 'Check your UPI money',
-        body: 'Settings, then UPI. Copy the payment SMS or the PhonePe, GPay or Paytm notification and paste it with "Paste payment messages". Kadai records money received and matches it to your UPI bills. Bills with no matching money are shown in red so you can check them. Kadai never reads your messages by itself.',
+        body: 'Settings, then UPI. Copy the payment SMS or the PhonePe, GPay or Paytm notification and paste it with "Paste payment messages". Kadai records money received and matches it to your UPI bills. Bills with no matching money are shown in red so you can check them. On Android you can also switch on "Automatic (this phone)": Kadai then reads only the PhonePe, Google Pay, Paytm and BHIM notifications on that phone to find money received. It never reads your SMS or other apps, and you can turn it off any time in Android Settings, Notification access. On iPhone, use paste.',
       },
       {
         title: 'Works without internet',
@@ -87,7 +87,7 @@ const HELP: Record<Lang, { heading: string; close: string; topics: Topic[] }> = 
       },
       {
         title: 'UPI பணத்தைச் சரிபார்க்க',
-        body: 'அமைப்புகள், பிறகு UPI. பணம் வந்த SMS அல்லது PhonePe, GPay, Paytm அறிவிப்பை நகலெடுத்து "பணம் வந்த செய்திகளை ஒட்டவும்" மூலம் ஒட்டுங்கள். வந்த பணத்தை கடை பதிவு செய்து உங்கள் UPI பில்களுடன் பொருத்தும். பணம் பொருந்தாத பில்கள் சிவப்பில் காட்டப்படும். உங்கள் செய்திகளை கடை தானாகப் படிக்காது.',
+        body: 'அமைப்புகள், பிறகு UPI. பணம் வந்த SMS அல்லது PhonePe, GPay, Paytm அறிவிப்பை நகலெடுத்து "பணம் வந்த செய்திகளை ஒட்டவும்" மூலம் ஒட்டுங்கள். வந்த பணத்தை கடை பதிவு செய்து உங்கள் UPI பில்களுடன் பொருத்தும். பணம் பொருந்தாத பில்கள் சிவப்பில் காட்டப்படும். ஆண்ட்ராய்டில் "தானியங்கி (இந்த போன்)" என்பதையும் இயக்கலாம்: அப்போது PhonePe, Google Pay, Paytm, BHIM அறிவிப்புகளை மட்டும் கடை படித்து வந்த பணத்தைக் கண்டறியும். உங்கள் SMS அல்லது வேறு செயலிகளை ஒருபோதும் படிக்காது; ஆண்ட்ராய்டு அமைப்புகளில் அறிவிப்பு அணுகலில் எப்போது வேண்டுமானாலும் அணைக்கலாம். ஐபோனில் ஒட்டுதலைப் பயன்படுத்துங்கள்.',
       },
       {
         title: 'இணையம் இல்லாமலும் வேலை செய்யும்',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { t, type Lang } from '../i18n';
 import type { Sale, UpiReceipt } from '../types';
 import {
@@ -16,6 +16,13 @@ import { parseUpiHistory } from '../parseDoc';
 import { useLiveQuery } from '../hooks';
 import { SCREEN_PAD } from '../ui';
 import { parseUpiMessages } from '@/lib/upiMessage';
+import {
+  importPendingPayments,
+  openPaymentNotificationSettings,
+  paymentNotificationsEnabled,
+  paymentNotificationsSupported,
+} from '../paymentNotifications';
+import { askConfirm } from '../dialogs';
 import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
 import AiConsentDialog from '@/components/AiConsentDialog';
 
@@ -43,6 +50,34 @@ export default function UpiScreen({ lang, onClose }: Props) {
   const [addAmt, setAddAmt] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
+  const [autoOn, setAutoOn] = useState<boolean | null>(null); // null = not available here
+  const autoSupported = paymentNotificationsSupported();
+
+  // Android: is the notification listener on? Re-check when the owner returns from Settings.
+  useEffect(() => {
+    if (!autoSupported) return;
+    let alive = true;
+    const check = () => {
+      void paymentNotificationsEnabled().then((on) => {
+        if (!alive) return;
+        setAutoOn(on);
+        if (on) void importPendingPayments();
+      });
+    };
+    check();
+    const onVisible = () => document.visibilityState === 'visible' && check();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      alive = false;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [autoSupported]);
+
+  const turnOnAuto = async () => {
+    // Prominent disclosure first: say exactly what is read and why, before Android's own screen.
+    if (!(await askConfirm(t(lang, 'upi.autoDisclosure')))) return;
+    await openPaymentNotificationSettings();
+  };
   const [linkFor, setLinkFor] = useState<UpiReceipt | null>(null);
   const [showConsent, setShowConsent] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -268,6 +303,29 @@ export default function UpiScreen({ lang, onClose }: Props) {
           {t(lang, 'upi.addBtn')}
         </button>
       </div>
+
+      {autoSupported && (
+        <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {t(lang, 'upi.autoTitle')}
+            <span
+              className={`ml-2 text-xs font-semibold ${
+                autoOn ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
+              }`}
+            >
+              {autoOn ? t(lang, 'upi.autoOn') : t(lang, 'upi.autoOff')}
+            </span>
+          </p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t(lang, 'upi.autoHelp')}</p>
+          <button
+            type="button"
+            onClick={autoOn ? () => void openPaymentNotificationSettings() : turnOnAuto}
+            className="mt-2 h-10 w-full rounded-lg bg-slate-200 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+          >
+            {autoOn ? t(lang, 'upi.autoManage') : t(lang, 'upi.autoTurnOn')}
+          </button>
+        </div>
+      )}
 
       <button
         type="button"

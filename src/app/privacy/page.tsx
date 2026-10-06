@@ -123,6 +123,18 @@ export default function PrivacyPolicyPage() {
           payments, and GST/tax settings you enter for your shop.
         </li>
         <li>
+          <strong>UPI payment notifications (Kadai on Android, optional)</strong>{' '}
+          &mdash; if you switch on &ldquo;Notification access&rdquo; for Kadai,
+          the app reads the text of notifications from PhonePe, Google Pay,
+          Paytm and BHIM on your phone, only to find &ldquo;money
+          received&rdquo; messages and record them as receipts matched to your
+          bills. Notifications from every other app are ignored, and Kadai
+          never reads your SMS. The notification text is processed on your
+          phone; only the receipts you would otherwise enter by hand (amount,
+          time, payer name) sync with your shop data. You can turn this off at
+          any time in Android Settings.
+        </li>
+        <li>
           <strong>Messages you send us</strong> &mdash; for example, support
           requests.
         </li>

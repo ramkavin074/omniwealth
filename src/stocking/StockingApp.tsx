@@ -7,6 +7,8 @@ import { initBackButton } from './back';
 import { DialogHost } from './dialogs';
 import { ScreenBoundary, lazyRetry } from './lazyScreens';
 import { maybeAutoSync } from './sync';
+import { startPaymentWatcher } from './paymentNotifications';
+import { canManage } from './settings';
 import { KADAI_LOGO, OMNIWEALTH_LOGO } from './logo';
 import { getStoreName, hasStandaloneAuth, hostedHasMainApp } from './settings';
 
@@ -80,6 +82,9 @@ export default function StockingApp() {
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
   }, []);
+
+  // Android: record UPI "money received" notifications (if the owner switched that on).
+  useEffect(() => (canManage() ? startPaymentWatcher() : undefined), []);
 
   // Every full-screen section (Sell, Sales, Customers...) renders in place of
   // the tab content, and the tab bar stays visible underneath. A tab tap must
