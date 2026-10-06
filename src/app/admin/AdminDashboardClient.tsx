@@ -105,9 +105,12 @@ export default function AdminDashboardClient() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const flash = (s: string) => {
+  // Failures stay up longer and scroll into view: the message sits at the top
+  // of the page while the forms are further down, and a 6s toast was easy to miss.
+  const flash = (s: string, opts: { error?: boolean } = {}) => {
     setMsg(s);
-    setTimeout(() => setMsg(null), 6000);
+    if (opts.error && typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => setMsg(null), opts.error ? 20000 : 6000);
   };
 
   const load = useCallback(async () => {
@@ -189,12 +192,20 @@ export default function AdminDashboardClient() {
           sent: r.sent,
         });
         setCopied(false);
+        if (r.linkFailed) {
+          flash(
+            'Account created, but the set-password link could not be made. Find the person in the list and press "Send reset".',
+            { error: true },
+          );
+        }
         await load();
       } else {
-        flash(r.error ?? 'Failed.');
+        flash(r.error ?? 'Failed.', { error: true });
       }
     } catch {
-      flash('Something went wrong.');
+      flash('Something went wrong creating the account. Check the People list before trying again.', {
+        error: true,
+      });
     } finally {
       setBusy(null);
     }
@@ -286,7 +297,12 @@ export default function AdminDashboardClient() {
               ✕
             </button>
           </div>
-          <div className="mt-2 flex items-center gap-2">
+          {!created.link ? (
+            <p className="mt-2 text-xs text-amber-200">
+              No link was made. Press &ldquo;Send reset&rdquo; on this person&rsquo;s row below.
+            </p>
+          ) : null}
+          <div className={`mt-2 flex items-center gap-2 ${created.link ? '' : 'hidden'}`}>
             <code className="min-w-0 flex-1 truncate rounded bg-slate-950 px-2 py-1.5 text-xs text-slate-200">
               {created.link}
             </code>

@@ -864,13 +864,24 @@ export async function adminCreateAccountAction(input: {
     detail: storeName ? `${email} · store "${storeName}"` : email,
   });
 
-  const { link, sent } = await issueSetPasswordLink(made.userId, fullName, email);
+  // The account now exists. If minting the link fails, say so instead of
+  // pretending nothing happened — the operator can use "Send reset" on the row.
+  let link = '';
+  let sent = false;
+  let linkFailed = false;
+  try {
+    ({ link, sent } = await issueSetPasswordLink(made.userId, fullName, email));
+  } catch (e) {
+    console.error('[admin] set-password link failed after account create', e);
+    linkFailed = true;
+  }
   return {
     ok: true as const,
     user: { id: made.userId, email, fullName },
     store: made.store,
     link,
     sent,
+    linkFailed,
   };
 }
 
