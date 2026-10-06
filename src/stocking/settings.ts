@@ -215,6 +215,15 @@ interface AuthBlob {
   displayName?: string;
   storeId?: string;
   role?: StoreRole;
+  stores?: { id?: string; name?: string }[];
+}
+
+/** The active shop's display name from the saved sign-in (the shop matching
+ *  `storeId`, else the first one). Empty string when unknown. */
+export function storeNameFromBlob(blob: Pick<AuthBlob, 'storeId' | 'stores'>): string {
+  const stores = Array.isArray(blob.stores) ? blob.stores : [];
+  const match = stores.find((s) => s?.id && s.id === blob.storeId) ?? stores[0];
+  return typeof match?.name === 'string' ? match.name.trim() : '';
 }
 
 function readAuthBlob(): AuthBlob {
@@ -235,6 +244,11 @@ export function getUserId(): string | null {
 /** The active store's id (both hosts write this into stocking.auth). */
 export function getStoreId(): string | null {
   return readAuthBlob().storeId ?? null;
+}
+
+/** The active shop's name, shown under "Kadai" in the header. */
+export function getStoreName(): string {
+  return storeNameFromBlob(readAuthBlob());
 }
 
 /** The user's role in the active store. Defaults to the most restrictive. */

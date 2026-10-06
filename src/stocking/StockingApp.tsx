@@ -6,7 +6,7 @@ import { useBackHandler, useLang, useTheme } from './hooks';
 import { initBackButton } from './back';
 import { maybeAutoSync } from './sync';
 import { KADAI_LOGO, OMNIWEALTH_LOGO } from './logo';
-import { hasStandaloneAuth, hostedHasMainApp } from './settings';
+import { getStoreName, hasStandaloneAuth, hostedHasMainApp } from './settings';
 
 // Hot-path screens — always reachable in a tap or two, kept in the main bundle.
 import HomeScreen from './screens/HomeScreen';
@@ -50,6 +50,7 @@ export default function StockingApp() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [tab, setTab] = useState<Tab>('home');
   const hostedInOmniWealth = !hasStandaloneAuth() && hostedHasMainApp();
+  const [storeName] = useState(() => getStoreName());
   const [lowOnly, setLowOnly] = useState(false);
   const [expOnly, setExpOnly] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -200,7 +201,7 @@ export default function StockingApp() {
         className="k-headrule flex items-center justify-between px-4 py-3"
         style={{ paddingTop: 'calc(0.75rem + var(--app-safe-top))' }}
       >
-        <h1 className="flex items-center gap-2.5 text-xl">
+        <h1 className="flex min-w-0 items-center gap-2.5 text-xl">
           {/* Hosted inside OmniWealth: the logo links back to the main app.
               The standalone Kadai app has no "main app" to go back to. */}
           {hostedInOmniWealth ? (
@@ -218,7 +219,14 @@ export default function StockingApp() {
               {logoImg}
             </button>
           )}
-          <span className="k-wordmark">{t(lang, 'app.title')}</span>
+          <span className="min-w-0 leading-tight">
+            <span className="k-wordmark block">{t(lang, 'app.title')}</span>
+            {storeName ? (
+              <span className="block max-w-[10rem] truncate text-[11px] font-medium text-slate-500 dark:text-slate-400 sm:max-w-xs">
+                {storeName}
+              </span>
+            ) : null}
+          </span>
         </h1>
         <div className="flex items-center gap-2">
           {/* Desktop: Sell lives in the header (the mobile FAB would collide
