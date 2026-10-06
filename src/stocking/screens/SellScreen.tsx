@@ -18,7 +18,8 @@ import {
 } from '../settings';
 import { printReceiptSmart } from '../printer';
 import { sendBill } from '../shareBill';
-import { findByBarcode, getProduct, searchProducts } from '../db/products';
+import { findByBarcode, getProduct, listProducts, searchProducts } from '../db/products';
+import { bestMatch, convertQty } from '@/lib/voiceParse';
 import {
   completeSale,
   discardHeld,
@@ -251,21 +252,10 @@ export default function SellScreen({ lang, onClose }: Props) {
     addProduct(p);
   };
 
-  /** Best catalogue match for a spoken name: exact, then prefix, then
-   *  substring, then shortest — good enough for a confirm-in-cart flow. */
-  const pickBest = <T extends { name: string }>(list: T[], q: string): T | null => {
-    if (!list.length) return null;
-    const n = q.toLowerCase().trim();
-    return (
-      list.find((p) => p.name.toLowerCase() === n) ??
-      list.find((p) => p.name.toLowerCase().startsWith(n)) ??
-      list.find((p) => p.name.toLowerCase().includes(n)) ??
-      [...list].sort((a, b) => a.name.length - b.name.length)[0]
-    );
-  };
-
-  const applyVoice = (added: number, missing: string[], firstName?: string) => {
-    if (added && missing.length) {
+  const applyVoice = (added: number, missing: string[], firstName?: string, approx = 0) => {
+    if (added && approx > 0) {
+      flash(t(lang, 'sell.voiceApprox').replace('{n}', String(approx)));
+    } else if (added && missing.length) {
       flash(
         t(lang, 'sell.voicePartial')
           .replace('{n}', String(added))
@@ -391,18 +381,25 @@ export default function SellScreen({ lang, onClose }: Props) {
       setTerm(r.text);
       return;
     }
+    // Match spoken Tamil / Tanglish / English names against the catalogue offline
+    // (Tamil kirana words, brands heard in Tamil, a spoken price as a tie-break), and
+    // express "250 grams" in the product's own unit.
+    const catalogue = await listProducts();
     const missing: string[] = [];
     let added = 0;
+    let approx = 0;
     for (const ln of lines) {
-      const best = pickBest(await searchProducts(ln.name), ln.name);
+      const best = bestMatch(catalogue, ln.name, ln.price);
       if (best) {
-        addProduct(best, ln.qty);
+        const cq = convertQty(ln, best.unit);
+        addProduct(best, cq.qty);
         added++;
+        if (!cq.exact) approx++;
       } else {
         missing.push(ln.name);
       }
     }
-    applyVoice(added, missing, lines[0]?.name);
+    applyVoice(added, missing, lines[0]?.name, approx);
   };
 
   // Keep the ₹ discount in sync when the line is priced by %.
