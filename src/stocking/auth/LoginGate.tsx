@@ -49,6 +49,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<'signin' | 'forgot' | 'sent'>('signin');
 
   useEffect(() => {
     const saved = readAuth();
@@ -60,6 +61,29 @@ export default function LoginGate({ children }: { children: ReactNode }) {
         setReady(true);
       });
   }, []);
+
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/stocking/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        setError('Could not send the email. Try again in a moment.');
+        return;
+      }
+      setView('sent');
+    } catch {
+      setError('No connection. Connect to the internet and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,36 +146,99 @@ export default function LoginGate({ children }: { children: ReactNode }) {
         />
         <span className="k-wordmark">Kadai</span>
       </h1>
-      <form onSubmit={signIn} className="space-y-3">
-        <input
-          type="email"
-          autoComplete="username"
-          placeholder="Email"
-          value={email}
-          onChange={(ev) => setEmail(ev.target.value)}
-          className={field}
-          required
-        />
-        <input
-          type="password"
-          autoComplete="current-password"
-          placeholder="Password"
-          value={password}
-          onChange={(ev) => setPassword(ev.target.value)}
-          className={field}
-          required
-        />
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
-        <button
-          type="submit"
-          disabled={busy}
-          className="h-12 w-full rounded-xl bg-teal-700 text-lg font-bold text-white disabled:opacity-50"
-        >
-          {busy ? '…' : 'Sign in'}
-        </button>
-      </form>
+      {view === 'signin' && (
+        <form onSubmit={signIn} className="space-y-3">
+          <input
+            type="email"
+            autoComplete="username"
+            placeholder="Email"
+            value={email}
+            onChange={(ev) => setEmail(ev.target.value)}
+            className={field}
+            required
+          />
+          <input
+            type="password"
+            autoComplete="current-password"
+            placeholder="Password"
+            value={password}
+            onChange={(ev) => setPassword(ev.target.value)}
+            className={field}
+            required
+          />
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="h-12 w-full rounded-xl bg-teal-700 text-lg font-bold text-white disabled:opacity-50"
+          >
+            {busy ? '…' : 'Sign in'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setView('forgot');
+            }}
+            className="w-full py-1 text-center text-sm font-medium text-teal-700 dark:text-teal-300"
+          >
+            Forgot password?
+          </button>
+        </form>
+      )}
+      {view === 'forgot' && (
+        <form onSubmit={sendReset} className="space-y-3">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Enter your account email. We will send you a link to choose a new password.
+          </p>
+          <input
+            type="email"
+            autoComplete="username"
+            placeholder="Email"
+            value={email}
+            onChange={(ev) => setEmail(ev.target.value)}
+            className={field}
+            required
+          />
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="h-12 w-full rounded-xl bg-teal-700 text-lg font-bold text-white disabled:opacity-50"
+          >
+            {busy ? '…' : 'Send reset link'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setView('signin');
+            }}
+            className="w-full py-1 text-center text-sm font-medium text-slate-500 dark:text-slate-400"
+          >
+            Back to sign in
+          </button>
+        </form>
+      )}
+      {view === 'sent' && (
+        <div className="space-y-3">
+          <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+            If a shop account exists for that email, we have sent a reset link. It works for 20 minutes.
+            Check your spam folder too. After choosing a new password, come back here and sign in.
+          </p>
+          <button
+            type="button"
+            onClick={() => setView('signin')}
+            className="h-12 w-full rounded-xl bg-teal-700 text-lg font-bold text-white"
+          >
+            Back to sign in
+          </button>
+        </div>
+      )}
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Sign in once with an internet connection. After that the app works
         fully offline.
