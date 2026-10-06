@@ -371,7 +371,7 @@ export async function adminHouseholdsAction() {
     .select({
       householdId: assets.householdId,
       n: sql<number>`count(*)::int`,
-      last: sql<string>`max(${assets.updatedAt})`,
+      last: sql<string>`max(${assets.createdAt})`,
     })
     .from(assets)
     .groupBy(assets.householdId);
@@ -445,7 +445,7 @@ export interface AdminPersonRow {
   lastLogin: string | null;
   /** Wealth holdings this person owns (a count — never values or names). */
   holdings: number;
-  /** Latest edit, upload or audited action; unlike sessions it never expires. */
+  /** Latest holding added, upload or audited action (edits are audited). Automatic price refreshes are ignored; unlike sessions this never expires. */
   lastActivity: string | null;
   activeSessions: number;
   stores: { store: string; role: string }[];
@@ -485,7 +485,7 @@ export async function adminPeopleAction() {
     .select({
       userId: assets.userId,
       n: sql<number>`count(*)::int`,
-      last: sql<string>`max(${assets.updatedAt})`,
+      last: sql<string>`max(${assets.createdAt})`,
     })
     .from(assets)
     .groupBy(assets.userId);

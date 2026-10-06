@@ -657,6 +657,7 @@ export async function approveDraftLineItemAction(draftId: string, selectedCatego
   });
 
   await db.delete(draftLineItems).where(eq(draftLineItems.id, draftId));
+  await audit(session, 'asset.create', 'asset', newAsset.id);
   revalidatePath('/');
   return { success: true };
 }
@@ -789,6 +790,7 @@ export async function updateAssetAction(id: string, formData: FormData) {
     updatedAt: new Date(),
   }).where(eq(assets.id, id));
 
+  await audit(session, 'asset.update', 'asset', id);
   revalidatePath('/');
   return { success: true };
 }
