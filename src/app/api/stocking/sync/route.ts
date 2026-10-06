@@ -27,6 +27,8 @@ import { corsHeaders, corsPreflight } from '@/lib/stockingCors';
 //   pull: rows whose server-assigned `synced_at` is newer than the cursor.
 // The response `now` is the client's next cursor.
 
+import { nextPullCursor, withinPage, type TablePage } from '@/lib/syncPaging';
+
 export const dynamic = 'force-dynamic';
 
 const MAX_ROWS = 10000;
@@ -789,6 +791,7 @@ export async function POST(request: Request) {
             gt(storeProducts.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeProducts.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -799,6 +802,7 @@ export async function POST(request: Request) {
             gt(storeStockMovements.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeStockMovements.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -809,6 +813,7 @@ export async function POST(request: Request) {
             gt(suppliers.syncedAt, sinceDate),
           ),
         )
+        .orderBy(suppliers.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -819,6 +824,7 @@ export async function POST(request: Request) {
             gt(supplierPayments.syncedAt, sinceDate),
           ),
         )
+        .orderBy(supplierPayments.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -826,6 +832,7 @@ export async function POST(request: Request) {
         .where(
           and(eq(storeSales.storeId, storeId), gt(storeSales.syncedAt, sinceDate)),
         )
+        .orderBy(storeSales.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -836,6 +843,7 @@ export async function POST(request: Request) {
             gt(storeUpiReceipts.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeUpiReceipts.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -846,6 +854,7 @@ export async function POST(request: Request) {
             gt(storeCustomers.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeCustomers.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -856,6 +865,7 @@ export async function POST(request: Request) {
             gt(storeReceipts.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeReceipts.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -866,6 +876,7 @@ export async function POST(request: Request) {
             gt(storeOrders.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeOrders.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -876,6 +887,7 @@ export async function POST(request: Request) {
             gt(storeExpenses.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storeExpenses.syncedAt)
         .limit(MAX_ROWS),
       db
         .select()
@@ -886,6 +898,7 @@ export async function POST(request: Request) {
             gt(storePurchases.syncedAt, sinceDate),
           ),
         )
+        .orderBy(storePurchases.syncedAt)
         .limit(MAX_ROWS),
       db
         .select({
@@ -902,9 +915,38 @@ export async function POST(request: Request) {
         .then((r) => r[0]),
     ]);
 
+  // Page the pull: each table is capped at MAX_ROWS (oldest first). When any table
+  // filled its page, tell the client to ask again from `now` (an earlier cursor)
+  // instead of silently skipping the rest.
+  const pageOf = (rows: { syncedAt: Date | null }[]): TablePage => ({
+    count: rows.length,
+    lastSyncedAtMs: rows.length ? (rows[rows.length - 1].syncedAt?.getTime() ?? null) : null,
+  });
+  const paging = nextPullCursor(
+    [
+      pulledProducts,
+      pulledMovements,
+      pulledSuppliers,
+      pulledPayments,
+      pulledSales,
+      pulledUpi,
+      pulledCustomers,
+      pulledReceipts,
+      pulledOrders,
+      pulledExpenses,
+      pulledPurchases,
+    ].map((r) => pageOf(r as { syncedAt: Date | null }[])),
+    now,
+    MAX_ROWS,
+  );
+
+  const within = <T extends { syncedAt: Date | null }>(rows: T[]) =>
+    withinPage(rows, paging);
+
   return json(
     {
-      now,
+      now: paging.cursor,
+      more: paging.more,
       role: auth.role,
       store: storeRow
         ? {
@@ -917,7 +959,7 @@ export async function POST(request: Request) {
             upiId: storeRow.upiId,
           }
         : null,
-      products: pulledProducts.map((p) => ({
+      products: within(pulledProducts).map((p) => ({
         id: p.id,
         barcode: p.barcode,
         name: p.name,
@@ -933,7 +975,7 @@ export async function POST(request: Request) {
         updatedAt: num(p.updatedAt),
         deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),
-      movements: pulledMovements.map((m) => ({
+      movements: within(pulledMovements).map((m) => ({
         id: m.id,
         productId: m.productId,
         userId: m.userId,
@@ -945,7 +987,7 @@ export async function POST(request: Request) {
         note: m.note,
         createdAt: num(m.createdAt),
       })),
-      suppliers: pulledSuppliers.map((s) => ({
+      suppliers: within(pulledSuppliers).map((s) => ({
         id: s.id,
         name: s.name,
         phone: s.phone,
@@ -953,7 +995,7 @@ export async function POST(request: Request) {
         updatedAt: num(s.updatedAt),
         deletedAt: s.deletedAt == null ? null : num(s.deletedAt),
       })),
-      payments: pulledPayments.map((p) => ({
+      payments: within(pulledPayments).map((p) => ({
         id: p.id,
         supplierId: p.supplierId,
         amount: num(p.amount),
@@ -962,7 +1004,7 @@ export async function POST(request: Request) {
         updatedAt: num(p.updatedAt),
         deletedAt: p.deletedAt == null ? null : num(p.deletedAt),
       })),
-      sales: pulledSales.map((s) => ({
+      sales: within(pulledSales).map((s) => ({
         id: s.id,
         billNo: s.billNo,
         userId: s.userId,
@@ -984,7 +1026,7 @@ export async function POST(request: Request) {
         updatedAt: num(s.updatedAt),
         deletedAt: s.deletedAt == null ? null : num(s.deletedAt),
       })),
-      upiReceipts: pulledUpi.map((r) => ({
+      upiReceipts: within(pulledUpi).map((r) => ({
         id: r.id,
         amount: num(r.amount),
         receivedAt: num(r.receivedAt),
@@ -996,7 +1038,7 @@ export async function POST(request: Request) {
         updatedAt: num(r.updatedAt),
         deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
       })),
-      customers: pulledCustomers.map((c) => ({
+      customers: within(pulledCustomers).map((c) => ({
         id: c.id,
         name: c.name,
         phone: c.phone,
@@ -1009,7 +1051,7 @@ export async function POST(request: Request) {
         updatedAt: num(c.updatedAt),
         deletedAt: c.deletedAt == null ? null : num(c.deletedAt),
       })),
-      receipts: pulledReceipts.map((r) => ({
+      receipts: within(pulledReceipts).map((r) => ({
         id: r.id,
         customerId: r.customerId,
         amount: num(r.amount),
@@ -1021,7 +1063,7 @@ export async function POST(request: Request) {
         updatedAt: num(r.updatedAt),
         deletedAt: r.deletedAt == null ? null : num(r.deletedAt),
       })),
-      orders: pulledOrders.map((o) => ({
+      orders: within(pulledOrders).map((o) => ({
         id: o.id,
         orderNo: o.orderNo,
         customerId: o.customerId,
@@ -1037,7 +1079,7 @@ export async function POST(request: Request) {
         updatedAt: num(o.updatedAt),
         deletedAt: o.deletedAt == null ? null : num(o.deletedAt),
       })),
-      expenses: pulledExpenses.map((e) => ({
+      expenses: within(pulledExpenses).map((e) => ({
         id: e.id,
         category: e.category,
         amount: num(e.amount),
@@ -1050,7 +1092,7 @@ export async function POST(request: Request) {
         updatedAt: num(e.updatedAt),
         deletedAt: e.deletedAt == null ? null : num(e.deletedAt),
       })),
-      purchases: pulledPurchases.map((p) => ({
+      purchases: within(pulledPurchases).map((p) => ({
         id: p.id,
         invoiceNo: p.invoiceNo,
         supplierId: p.supplierId,
