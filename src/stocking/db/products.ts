@@ -217,6 +217,8 @@ interface MovementInput {
   /** Override the movement timestamp (epoch ms) — used when a bill is
    *  back-dated so the ledger lands on the bill's date, not "now". */
   createdAt?: number;
+  /** Expiry date ('YYYY-MM-DD') of the lot being received. Only kept on a stock-in. */
+  expiryDate?: string | null;
 }
 
 export interface MovementResult {
@@ -262,6 +264,11 @@ export async function applyMovement(
         ? q(input.unitCost)
         : null;
 
+    const lotExpiry =
+      delta > 0 && /^\d{4}-\d{2}-\d{2}$/.test(input.expiryDate ?? '')
+        ? (input.expiryDate as string)
+        : null;
+
     const movement: Movement = {
       id: movementId,
       productId: product.id,
@@ -269,6 +276,7 @@ export async function applyMovement(
       reason: input.reason,
       qtyAfter,
       unitCost,
+      expiryDate: lotExpiry,
       supplierId: input.supplierId ?? null,
       userId: getUserId(),
       note: input.note?.trim() ? input.note.trim() : null,
@@ -282,6 +290,9 @@ export async function applyMovement(
     const patch: Partial<Product> = { stockQty: qtyAfter, updatedAt: now };
     // A stock-in with a cost becomes the product's current cost.
     if (unitCost !== null && delta > 0) patch.costPrice = unitCost;
+    // First stock for an item with no date yet: the lot date is also its date.
+    // (Never overwrite an existing date: older stock may still be on the shelf.)
+    if (lotExpiry && product.stockQty <= 0 && !product.expiryDate) patch.expiryDate = lotExpiry;
     await db().products.update(product.id, patch);
   });
 
@@ -311,7 +322,9 @@ export async function undoMovement(movementId: string): Promise<void> {
       supplierId: orig.supplierId,
       userId: getUserId(),
       note: `undo ${orig.reason}`,
-      createdAt: now,
+      expiryDate: orig.expiryDate ?? null, // cancels the lot it came from
+      // Never earlier than the receipt it undoes, even if another phone's clock is ahead.
+      createdAt: Math.max(now, orig.createdAt + 1),
     });
     await db().products.update(product.id, { stockQty: qtyAfter, updatedAt: now });
   });

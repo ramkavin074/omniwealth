@@ -41,6 +41,9 @@ import { SCREEN_PAD } from '../ui';
 import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
 import AiConsentDialog from '@/components/AiConsentDialog';
 import { askText } from '../dialogs';
+import { db } from '../db/dexie';
+import { lotInfoFor, type ProductLotInfo } from '../db/lots';
+import LotHint from '../components/LotHint';
 
 interface Props {
   lang: Lang;
@@ -133,6 +136,18 @@ export default function SellScreen({ lang, onClose }: Props) {
     overLimitCount: 0,
     rows: [],
   });
+
+  // Which lot to sell first for each product in the cart (oldest expiry on the shelf).
+  const cartIds = cart.map((l) => l.productId).join(',');
+  const lotInfo = useLiveQuery(
+    async () => {
+      const ids = cartIds ? cartIds.split(',') : [];
+      const found = (await db().products.bulkGet(ids)).filter((p): p is NonNullable<typeof p> => !!p);
+      return lotInfoFor(found);
+    },
+    [cartIds],
+    new Map<string, ProductLotInfo>(),
+  );
 
   const results = useLiveQuery(
     () => (term.trim() ? searchProducts(debounced) : Promise.resolve([])),
@@ -427,6 +442,10 @@ export default function SellScreen({ lang, onClose }: Props) {
         }
         return { ...l, discMode: 'amt' }; // discount is already in sync
       }),
+    );
+  const applyMarkdown = (id: string, pct: number) =>
+    setCart((c) =>
+      c.map((l) => (l.productId === id ? syncPct({ ...l, discMode: 'pct', discPct: pct }) : l)),
     );
   const removeLine = (id: string) =>
     setCart((c) => c.filter((l) => l.productId !== id));
@@ -1310,6 +1329,11 @@ export default function SellScreen({ lang, onClose }: Props) {
                     ✕
                   </button>
                 </div>
+                <LotHint
+                  lang={lang}
+                  info={lotInfo.get(l.productId)}
+                  onApplyMarkdown={(pct) => applyMarkdown(l.productId, pct)}
+                />
                 <div className="mt-1 flex items-center gap-2">
                   <button
                     type="button"

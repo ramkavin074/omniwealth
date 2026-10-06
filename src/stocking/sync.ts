@@ -233,12 +233,16 @@ async function applyPulled(data: SyncResponse): Promise<number> {
         deletedAt: p.deletedAt ?? null,
       }));
       if (data.movements.length) {
+        // A server that predates lot dates sends no `expiryDate` at all; in that case
+        // keep the one this phone already has instead of wiping it.
+        const locals = await db().movements.bulkGet(data.movements.map((m) => m.id));
         await db().movements.bulkPut(
-          data.movements.map((m) => ({
+          data.movements.map((m, i) => ({
             ...m,
             unitCost: m.unitCost ?? null,
             supplierId: m.supplierId ?? null,
             userId: m.userId ?? null,
+            expiryDate: m.expiryDate !== undefined ? m.expiryDate : (locals[i]?.expiryDate ?? null),
           })),
         );
       }
@@ -360,6 +364,12 @@ async function runSync(): Promise<SyncOutcome> {
     movements: await changed(db().movements, 'createdAt'),
     sales: await changed(db().sales, 'updatedAt'),
   };
+  // Lot-tagged stock-ins are few; send them every time so a server that learns about
+  // lot dates later is filled in for older receipts too (it keeps an existing date).
+  const tagged = await db().movements.where('expiryDate').above('').toArray();
+  const movementRows = dirty.movements as Movement[];
+  const seen = new Set(movementRows.map((m) => m.id));
+  for (const m of tagged) if (!seen.has(m.id)) movementRows.push(m);
   const pushed = PUSH_ORDER.reduce((n, k) => n + dirty[k].length, 0);
   const fail = (error: NonNullable<SyncOutcome['error']>): SyncOutcome => ({
     ok: false,

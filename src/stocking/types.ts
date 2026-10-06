@@ -99,6 +99,8 @@ export interface Movement {
   supplierId: string | null; // set on a stock-in from a known supplier
   userId: string | null; // who made the change (the audit "who")
   note: string | null;
+  /** Lot expiry ('YYYY-MM-DD') on a stock-in (and on the movement that undid it); null = no lot date. */
+  expiryDate?: string | null;
   createdAt: number; // epoch ms
 }
 

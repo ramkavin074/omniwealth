@@ -31,6 +31,8 @@ import VirtualList from '../components/VirtualList';
 import ImportScreen from './ImportScreen';
 import NewProductForm from './NewProductForm';
 import { askConfirm } from '../dialogs';
+import { lotInfoFor, type ProductLotInfo } from '../db/lots';
+import LotList from '../components/LotList';
 
 interface Props {
   lang: Lang;
@@ -67,18 +69,25 @@ export default function ProductListScreen({
 
   // One live snapshot of the whole catalogue; filter/sort happen in memory.
   const all = useLiveQuery(() => listProducts(), [], [] as Product[]);
+  // Lots on the shelf, so the expiry chip and filter use the earliest date that is
+  // actually still in stock (not just the last date typed in).
+  const lotInfo = useLiveQuery(
+    () => lotInfoFor(all),
+    [all],
+    new Map<string, ProductLotInfo>(),
+  );
 
   const visible = useMemo(() => {
     let rows = filterProducts(all, debounced);
     if (lowOnly) rows = rows.filter(isLowStock);
     if (expOnly) {
       rows = rows.filter((p) => {
-        const s = expiryStatus(p);
+        const s = expiryStatus({ expiryDate: lotInfo.get(p.id)?.next ?? null });
         return s === 'soon' || s === 'expired';
       });
     }
     return sortProducts(rows, sort);
-  }, [all, debounced, lowOnly, expOnly, sort]);
+  }, [all, debounced, lowOnly, expOnly, sort, lotInfo]);
 
   const exportCsv = () => {
     const date = new Date().toISOString().slice(0, 10);
@@ -217,7 +226,7 @@ export default function ProductListScreen({
                 {isLowStock(p) && (
                   <LowStockBadge label={t(lang, 'list.lowBadge')} />
                 )}
-                <ExpiryChip lang={lang} product={p} />
+                <ExpiryChip lang={lang} product={{ ...p, expiryDate: lotInfo.get(p.id)?.next ?? null }} />
                 <span className="tabular-nums font-semibold text-slate-800 dark:text-slate-100">
                   {p.stockQty}
                 </span>
@@ -234,6 +243,7 @@ export default function ProductListScreen({
         <EditSheet
           lang={lang}
           product={editing}
+          lotInfo={lotInfo.get(editing.id)}
           onDone={() => setEditing(null)}
         />
       )}
@@ -272,7 +282,7 @@ function ExpiryChip({ lang, product }: { lang: Lang; product: Product }) {
     s === 'expired'
       ? t(lang, 'list.expired')
       : `${t(lang, 'list.expShort')} ${new Date(
-          product.expiryDate as string,
+          `${product.expiryDate as string}T00:00:00`, // local midnight, so the date doesn't slip a day
         ).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
   return (
     <span
@@ -290,10 +300,12 @@ function ExpiryChip({ lang, product }: { lang: Lang; product: Product }) {
 function EditSheet({
   lang,
   product,
+  lotInfo,
   onDone,
 }: {
   lang: Lang;
   product: Product;
+  lotInfo?: ProductLotInfo;
   onDone: () => void;
 }) {
   const [manage] = useState(canManage);
@@ -452,6 +464,8 @@ function EditSheet({
             />
           </label>
         </div>
+
+        <LotList lang={lang} info={lotInfo} legacyDate={product.expiryDate} />
 
         <label className="block">
           <span className={sheetLabel}>{t(lang, 'product.expiry')}</span>

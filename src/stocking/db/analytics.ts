@@ -4,7 +4,8 @@
 import { db } from './dexie';
 import { listProducts } from './products';
 import { listSuppliers } from './suppliers';
-import { daysUntil, type Product } from '../types';
+import { lotInfoFor } from './lots';
+import type { Product } from '../types';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -15,11 +16,13 @@ export interface ExpirySoon {
   urgent: number;
 }
 
-/** Products with stock on hand whose (single) batch date is past or near. */
+/** Products with stock on hand whose earliest lot on the shelf is past or near. */
 export async function expiringSoon(): Promise<ExpirySoon> {
-  const rows = (await listProducts())
-    .filter((p) => p.expiryDate && p.stockQty > 0)
-    .map((p) => ({ p, d: daysUntil(p.expiryDate as string) }))
+  const products = await listProducts();
+  const info = await lotInfoFor(products);
+  const rows = products
+    .filter((p) => p.stockQty > 0)
+    .map((p) => ({ p, d: info.get(p.id)?.daysLeft ?? null }))
     .filter((x): x is { p: Product; d: number } => x.d !== null)
     .sort((a, b) => a.d - b.d);
   const pick = (lo: number, hi: number) =>

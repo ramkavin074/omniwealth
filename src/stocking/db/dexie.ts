@@ -438,6 +438,12 @@ export class StockingDB extends Dexie {
             if (c.loyaltyPoints === undefined) c.loyaltyPoints = 0;
           });
       });
+    // v20: lot expiry on stock-in movements. Indexed so the (few) lot-tagged
+    // movements can be found without scanning the whole ledger; movements without
+    // a lot date are simply not in the index.
+    this.version(20).stores({
+      movements: 'id, productId, createdAt, expiryDate',
+    });
   }
 }
 

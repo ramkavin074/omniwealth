@@ -86,11 +86,11 @@ export default function AdjustScreen({ lang }: Props) {
           ? { unitCost: Number(unitCost) }
           : {}),
         ...(isStockIn && sup && sup !== '__new' ? { supplierId: sup } : {}),
+        // The date belongs to the lot being received; it no longer replaces the
+        // date of older stock still on the shelf.
+        ...(isStockIn && expiry ? { expiryDate: expiry } : {}),
         ...change,
       });
-      if (isStockIn && expiry) {
-        await updateProduct(current.id, { expiryDate: expiry });
-      }
       setFlash(`${t(lang, 'adjust.applied')} · ${qtyAfter}`);
       setSupplierId('');
       setAmount(0);
