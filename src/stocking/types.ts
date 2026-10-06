@@ -260,7 +260,7 @@ export interface TaxRow {
 
 export interface GstConfig {
   enabled: boolean; // charge / show GST on bills
-  inclusive: boolean; // true = prices already include GST (kirana norm)
+  inclusive: boolean; // true = prices already include GST (the usual practice in shops)
   gstin: string | null; // the shop's GSTIN; presence ⇒ "TAX INVOICE" header
   defaultRate: number; // fallback slab for items with no rate set
 }

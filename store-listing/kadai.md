@@ -7,16 +7,16 @@ Everything below only claims features that are in the app today.
 ## English
 
 **Title (Play and App Store name):** Kadai: Shop Billing & Stock
-**Short description (Play):** Fast billing, stock and expiry for kirana shops. Tamil voice. Works offline.
+**Short description (Play):** Fast billing, stock and expiry for grocery shops. Tamil voice. Works offline.
 **Subtitle (App Store):** Billing, stock, credit, UPI
 **Promotional text (App Store):** Bill by voice in Tamil or English, know which batch to sell first, track credit and check your UPI money. Works without internet.
-**Keywords (App Store):** kirana,billing,pos,inventory,stock,kadan,credit,gst,invoice,grocery,shop,tamil,upi,expiry,retail
+**Keywords (App Store):** maligai,provision,billing,pos,inventory,stock,kadan,credit,gst,grocery,shop,tamil,upi,expiry
 
 **Full description:**
-Kadai is a simple billing and stock app for kirana, grocery, medical and general stores.
+Kadai is a simple billing and stock app for grocery, provision, medical and general stores.
 
 BILL BY VOICE, IN TAMIL OR ENGLISH
-Say "two kilo rice, one Colgate, half kilo sugar" and the bill is ready. Kadai understands Tamil, English and the mix people actually speak, including Tamil kirana words and brand names.
+Say "two kilo rice, one Colgate, half kilo sugar" and the bill is ready. Kadai understands Tamil, English and the mix people actually speak, including Tamil grocery words and brand names.
 
 SELL THE OLDEST STOCK FIRST
 Add the expiry date when stock comes in. Each batch keeps its own date, so a new delivery never hides an older one. At billing Kadai tells you which batch to sell first and offers a one-tap markdown for items close to expiry. Home shows what is really on your shelf.

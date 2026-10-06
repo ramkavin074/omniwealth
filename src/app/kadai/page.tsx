@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: { absolute: 'Kadai: shop billing, stock and UPI app in Tamil and English' },
   alternates: { canonical: '/kadai' },
   description:
-    'Kadai is a billing and stock app for kirana, grocery, medical and general stores. Bill by voice in Tamil or English, sell the oldest stock first, track credit, check UPI payments and close the day. Works offline.',
+    'Kadai is a billing and stock app for grocery, provision, medical and general stores. Bill by voice in Tamil or English, sell the oldest stock first, track credit, check UPI payments and close the day. Works offline.',
   openGraph: {
     title: 'Kadai: shop billing, stock and UPI app',
     description:
@@ -127,7 +127,7 @@ export default function KadaiLandingPage() {
         <div className="mx-auto grid max-w-5xl items-center gap-10 px-5 py-14 md:grid-cols-[1.15fr_1fr] md:py-20">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-teal-400">
-              For kirana, grocery, medical and general stores
+              For grocery, provision, medical and general stores
             </p>
             <h1 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
               Bill in Tamil or English.

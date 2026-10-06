@@ -8,10 +8,10 @@ Images are in this folder: `app-icon-512.png`, `feature-graphic-1024x500.png`, `
 Kadai: Shop Billing & Stock
 
 **Short description** (max 80)
-Fast billing, stock and expiry for kirana shops. Tamil voice. Works offline.
+Fast billing, stock and expiry for grocery shops. Tamil voice. Works offline.
 
 **Full description** (max 4000)
-Kadai is a simple billing and stock app for kirana, grocery, medical and general stores.
+Kadai is a simple billing and stock app for grocery, provision, medical and general stores.
 
 BILL IN SECONDS
 Scan barcodes, search, or speak the items in Tamil, English or a mix. Hold a bill while you serve the next customer. Pay by cash, UPI, card, credit or a split, and send the bill on WhatsApp.

@@ -448,7 +448,7 @@ export default function SellScreen({ lang, onClose }: Props) {
       return;
     }
     // Match spoken Tamil / Tanglish / English names against the catalogue offline
-    // (Tamil kirana words, brands heard in Tamil, a spoken price as a tie-break), and
+    // (Tamil grocery words, brands heard in Tamil, a spoken price as a tie-break), and
     // express "250 grams" in the product's own unit.
     const catalogue = await listProducts();
     const missing: string[] = [];
