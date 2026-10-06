@@ -12,6 +12,8 @@ const LEGAL_UPDATED = new Date('2026-09-04');
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${BASE_URL}/`, lastModified: HOME_UPDATED, changeFrequency: 'weekly', priority: 1 },
+    { url: `${BASE_URL}/kadai`, lastModified: new Date('2026-10-06'), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/delete-account`, lastModified: new Date('2026-10-06'), changeFrequency: 'yearly', priority: 0.2 },
     { url: `${BASE_URL}/help`, lastModified: HELP_UPDATED, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/privacy`, lastModified: LEGAL_UPDATED, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${BASE_URL}/terms`, lastModified: LEGAL_UPDATED, changeFrequency: 'yearly', priority: 0.3 },
