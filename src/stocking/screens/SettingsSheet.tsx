@@ -41,6 +41,7 @@ import {
   saveStoreSettings,
 } from '../storeSettings';
 import { askConfirm } from '../dialogs';
+import HelpSheet from './HelpSheet';
 
 interface Props {
   lang: Lang;
@@ -82,6 +83,7 @@ export default function SettingsSheet({
 }: Props) {
   const initial = getDefaults();
   const [manage] = useState(canManage);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [unit, setUnit] = useState<Unit>(initial.unit);
   const [threshold, setThreshold] = useState(String(initial.lowStockThreshold));
   const [rc, setRc] = useState<ReceiptConfig>(getReceiptConfig);
@@ -284,6 +286,7 @@ export default function SettingsSheet({
 
   return (
     <div className={`${SHEET_OVERLAY} z-30`}>
+      {helpOpen && <HelpSheet lang={lang} onClose={() => setHelpOpen(false)} />}
       <div
         className={`${SHEET_PANEL} max-h-[92vh] space-y-5 overflow-y-auto md:max-w-2xl`}
         style={{ paddingBottom: 'calc(1rem + var(--app-safe-bottom))' }}
@@ -352,6 +355,7 @@ export default function SettingsSheet({
                 ['cf.title', onOpenCashflow, manage],
                 ['acct.title', onOpenAccountant, manage],
                 ['audit.title', onOpenAudit, true],
+                ['help.title', () => setHelpOpen(true), true],
               ] as const
             )
               .filter(([, , show]) => show)

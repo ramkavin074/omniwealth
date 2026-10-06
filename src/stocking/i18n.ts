@@ -410,6 +410,7 @@ const en: Dict = {
   'lang.toggle': 'தமிழ்',
 
   'settings.tools': 'Tools',
+  'help.title': 'Help',
   'ai.ask': 'Ask',
   'ai.title': 'Ask about your stock',
   'ai.intro': 'Ask anything about your stock, sales or suppliers.',
@@ -1077,6 +1078,7 @@ const ta: Dict = {
   'lang.toggle': 'EN',
 
   'settings.tools': 'கருவிகள்',
+  'help.title': 'உதவி',
   'ai.ask': 'கேள்',
   'ai.title': 'உங்கள் இருப்பு பற்றி கேள்',
   'ai.intro': 'இருப்பு, விற்பனை அல்லது சப்ளையர்கள் பற்றி எதுவும் கேளுங்கள்.',
