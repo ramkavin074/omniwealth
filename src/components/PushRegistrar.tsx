@@ -74,7 +74,13 @@ export default function PushRegistrar({ enabled }: { enabled: boolean }) {
       } catch (e) {
         console.warn('[push] setup failed', e);
       }
-    })();
+    })().catch((e) => {
+      // Older iPhone builds ship without the push plugin ("not implemented"):
+      // push simply isn't available there, so stay quiet. Anything else is logged.
+      if (!/not implemented|unimplemented|not available/i.test(String(e?.message ?? e))) {
+        console.warn('[push] setup failed', e);
+      }
+    });
 
     return () => {
       removed = true;
