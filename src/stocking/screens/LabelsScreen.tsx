@@ -14,6 +14,7 @@ import {
   type LabelLayout,
   type LabelPrice,
 } from '../labels';
+import { labelsPdf, shareLabelsPdf } from '../labelPdf';
 import type { Product } from '../types';
 
 const field =
@@ -91,7 +92,12 @@ export default function LabelsScreen({ lang, onClose }: { lang: Lang; onClose: (
         flash(t(lang, 'lbl.nothing'));
         return;
       }
-      printHtml(labelsHtml(items, { layout, price, shopName: getReceiptConfig().shopName || undefined }));
+      const opts = { layout, price, shopName: getReceiptConfig().shopName || undefined };
+      // On the phone there is no print dialog inside the app, so share a PDF (Print, Save,
+      // a printer app). In a browser, open the print dialog directly.
+      const shared = await shareLabelsPdf(await labelsPdf(items, opts), t(lang, 'lbl.title'));
+      if (shared === 'unsupported') printHtml(labelsHtml(items, opts));
+      else if (shared === 'error') flash(t(lang, 'lbl.failed'));
       const parts: string[] = [];
       if (assigned) parts.push(t(lang, 'lbl.assigned').replace('{n}', String(assigned)));
       if (skipped) parts.push(t(lang, 'lbl.skipped').replace('{n}', String(skipped)));
