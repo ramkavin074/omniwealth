@@ -435,51 +435,51 @@ export default function StockingApp() {
           lang={lang}
           onClose={() => setSettingsOpen(false)}
           onOpenSuppliers={() => {
-            setSettingsOpen(false);
+            closeAll();
             setSuppliersOpen(true);
           }}
           onOpenCustomers={() => {
-            setSettingsOpen(false);
+            closeAll();
             setCustomersOpen(true);
           }}
           onOpenOrders={() => {
-            setSettingsOpen(false);
+            closeAll();
             setOrdersOpen(true);
           }}
           onOpenExpenses={() => {
-            setSettingsOpen(false);
+            closeAll();
             setExpensesOpen(true);
           }}
           onOpenPurchases={() => {
-            setSettingsOpen(false);
+            closeAll();
             setPurchasesOpen(true);
           }}
           onOpenAccountant={() => {
-            setSettingsOpen(false);
+            closeAll();
             setAcctOpen(true);
           }}
           onOpenReports={() => {
-            setSettingsOpen(false);
+            closeAll();
             setReportsOpen(true);
           }}
           onOpenCashflow={() => {
-            setSettingsOpen(false);
+            closeAll();
             setCashflowOpen(true);
           }}
           onOpenAudit={() => {
-            setSettingsOpen(false);
+            closeAll();
             setAuditOpen(true);
           }}
           onOpenSales={() => {
-            setSettingsOpen(false);
+            closeAll();
             setSalesOpen(true);
           }}
           onOpenTax={() => {
-            setSettingsOpen(false);
+            closeAll();
             setTaxOpen(true);
           }}
           onOpenUpi={() => {
-            setSettingsOpen(false);
+            closeAll();
             setUpiOpen(true);
           }}
         />

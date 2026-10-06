@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { SHEET_OVERLAY, SHEET_PANEL } from '../ui';
+import { padPress, padStart, type PadState } from '@/lib/numpadInput';
 
 interface Props {
   initial: number;
@@ -29,26 +30,11 @@ export default function Numpad({
   onSubmit,
   onCancel,
 }: Props) {
-  const [str, setStr] = useState(
-    initial === 0 ? '' : String(initial),
-  );
+  const [pad, setPad] = useState<PadState>(() => padStart(initial));
+  const str = pad.str;
   const [neg, setNeg] = useState(initial < 0);
 
-  const press = (k: string) => {
-    if (k === '⌫') {
-      setStr((s) => s.slice(0, -1));
-      return;
-    }
-    if (k === '.') {
-      setStr((s) => (s.includes('.') ? s : (s === '' ? '0.' : s + '.')));
-      return;
-    }
-    setStr((s) => {
-      // avoid leading zeros like "007"
-      if (s === '0') return k;
-      return s + k;
-    });
-  };
+  const press = (k: string) => setPad((p) => padPress(p, k));
 
   const value = () => {
     const n = Number((neg ? '-' : '') + (str === '' ? '0' : str));
