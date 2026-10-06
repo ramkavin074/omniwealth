@@ -6,7 +6,8 @@ import { useBackHandler, useLang, useTheme } from './hooks';
 import { initBackButton } from './back';
 import { DialogHost } from './dialogs';
 import { ScreenBoundary, lazyRetry } from './lazyScreens';
-import { maybeAutoSync } from './sync';
+import { maybeAutoSync, pollSync } from './sync';
+import { liveUpiEnabled } from './smsLink';
 import { startPaymentWatcher } from './paymentNotifications';
 import { canManage } from './settings';
 import { KADAI_LOGO, OMNIWEALTH_LOGO } from './logo';
@@ -85,6 +86,15 @@ export default function StockingApp() {
 
   // Android: record UPI "money received" notifications (if the owner switched that on).
   useEffect(() => (canManage() ? startPaymentWatcher() : undefined), []);
+
+  // Phones connected to the iPhone-SMS link: look for newly posted receipts every 30 seconds.
+  useEffect(() => {
+    if (!canManage()) return;
+    const id = window.setInterval(() => {
+      if (liveUpiEnabled()) void pollSync();
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Every full-screen section (Sell, Sales, Customers...) renders in place of
   // the tab content, and the tab bar stays visible underneath. A tab tap must

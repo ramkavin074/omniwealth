@@ -135,6 +135,15 @@ export default function PrivacyPolicyPage() {
           any time in Android Settings.
         </li>
         <li>
+          <strong>Bank SMS text sent by your iPhone Shortcut (Kadai, optional)</strong>{' '}
+          &mdash; if you set up the Shortcut, the text of the bank SMS you
+          choose to forward is sent to your shop&rsquo;s private link. We read
+          it only to record the &ldquo;money received&rdquo; receipt (amount,
+          time, payer name, reference) and match it to your bills, and we do
+          not keep the full message text. Kadai never has access to your
+          messages itself.
+        </li>
+        <li>
           <strong>Messages you send us</strong> &mdash; for example, support
           requests.
         </li>

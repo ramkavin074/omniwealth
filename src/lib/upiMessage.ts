@@ -88,14 +88,17 @@ function cleanName(raw: string): string | null {
 
 function parsePayer(msg: string): string | null {
   // "UPI/P2A/123456789012/RAVI KUMAR" (bank SMS)
-  const path = msg.match(/UPI\/(?:P2[AMP]\/)?\d{9,18}\/([A-Za-z][A-Za-z ]{1,30})/i);
+  const path = msg.match(/UPI\/(?:[A-Za-z0-9]{2,3}\/)?\d{9,18}\/([A-Za-z][A-Za-z ]{1,30})/i);
   if (path) return cleanName(path[1]);
+  // "... linked to VPA ravi@okaxis" (HDFC style)
+  const vpa = msg.match(/\bVPA\s+([A-Za-z0-9._\-]+@[A-Za-z0-9]+)/i);
+  if (vpa) return cleanName(vpa[1]);
   // "Ravi Kumar paid you ₹250" / "Ravi sent you Rs 250"
   const lead = msg.match(/^(?:[^A-Za-z]*)([A-Za-z][A-Za-z .'\-]{1,38}?)\s+(?:paid|sent) you\b/i);
   if (lead) return cleanName(lead[1]);
   // "received ₹250 from Ravi Kumar" / "credited ... from ravi@okaxis"
   const from = msg.match(
-    /\bfrom\s+([A-Za-z0-9][A-Za-z0-9 .'\-@_]{1,40}?)(?=\s*(?:\(|\bon\b|\bvia\b|\bto\b|\bin\b|\bUPI\b|\bref\b|\butr\b|\bat\b|\bhas\b|\bis\b|[,;]|\.\s|\.$|$|₹|\brs\b))/i,
+    /\bfrom\s+([A-Za-z0-9][A-Za-z0-9 .'\-@_]{1,40}?)(?=\s*(?:\(|\bon\b|\bvia\b|\bto\b|\bin\b|\bUPI\b|\bref\b|\butr\b|\bwith\b|\bat\b|\bhas\b|\bis\b|[,;]|\.\s|\.$|$|₹|\brs\b))/i,
   );
   if (from) return cleanName(from[1]);
   const by = msg.match(/\bby\s+([A-Z][A-Za-z .]{2,30}?)(?=\s*(?:\bon\b|\bref\b|[,;]|\.\s|\.$|$))/);

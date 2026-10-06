@@ -85,4 +85,23 @@ describe('parseUpiMessages', () => {
     const r = parseUpiMessages('hello there\nthanks', NOW);
     expect(r).toEqual({ receipts: [], skipped: 0 });
   });
+
+  it('reads common Indian bank credit SMS formats', () => {
+    const cases: [string, string | null][] = [
+      ['Rs. 250.00 credited to a/c **1234 on 05-10-26 by a/c linked to VPA ravi@okaxis (UPI Ref No 628812345678).', 'ravi@okaxis'],
+      ['Your a/c no. XXXXX1234 is credited by Rs.250.00 on 05Oct26 by transfer from RAVI KUMAR with UTR 628812345678 -SBI', 'RAVI KUMAR'],
+      ['ICICI Bank Acct XX123 credited with Rs. 250.00 on 05-Oct-26 from RAVI KUMAR. UPI:628812345678', 'RAVI KUMAR'],
+      ['Received Rs.250.00 in your Kotak Bank AC X1234 from ravi@okaxis on 05-10-26.UPI Ref:628812345678.', 'ravi@okaxis'],
+      ['Rs.250.00 credited to A/c XX1234 on 05/10/26 by UPI/CR/628812345678/RAVI KUMAR', 'RAVI KUMAR'],
+      ['INR 250.00 credited to A/c no. XX1234 on 05-10-2026 at 14:21:05 IST. Info- UPI/P2A/628812345678/RAVI KUMAR. Axis Bank', 'RAVI KUMAR'],
+    ];
+    for (const [sms, payer] of cases) {
+      const r = parseUpiMessages(sms, NOW);
+      expect(r.receipts, sms).toHaveLength(1);
+      expect(r.receipts[0].amount).toBe(250);
+      expect(r.receipts[0].ref).toBe('628812345678');
+      expect(r.receipts[0].payer, sms).toBe(payer);
+    }
+    expect(parseUpiMessages('Rs 300.00 debited from A/c XX1234 on 05-10-26 to VPA raja@ybl (UPI Ref No 628812345679)', NOW).receipts).toHaveLength(0);
+  });
 });

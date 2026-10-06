@@ -1335,3 +1335,19 @@ export const storeDayCloses = store.table(
     ),
   }),
 );
+
+/** One private "post SMS here" link per shop (iPhone Shortcuts). Only a hash of the secret is kept. */
+export const storeSmsIngest = store.table(
+  'sms_ingest',
+  {
+    storeId: uuid('store_id')
+      .primaryKey()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    lastReceivedAt: numeric('last_received_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    tokenIdx: uniqueIndex('sms_ingest_token_hash_idx').on(t.tokenHash),
+  }),
+);

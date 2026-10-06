@@ -7,6 +7,7 @@ import type { Table } from 'dexie';
 import { chunkRows } from '@/lib/syncPaging';
 import { API_BASE } from './config';
 import { db } from './db/dexie';
+import { autoMatch } from './db/upi';
 import { cacheGst, cacheTax, cacheUpiId } from './storeSettings';
 import type {
   Customer,
@@ -338,6 +339,17 @@ async function applyPulled(data: SyncResponse): Promise<number> {
     },
   );
 
+  // Receipts that arrived from elsewhere (an iPhone Shortcut posting a bank SMS, another phone):
+  // try to match them to bills right away.
+  if (pulledUpi.some((r) => !r.matchedSaleId && r.deletedAt === null)) {
+    try {
+      const times = pulledUpi.map((r) => r.receivedAt);
+      await autoMatch(Math.min(...times) - 1, Math.max(...times) + 1);
+    } catch {
+      /* matching is a convenience; the UPI screen can always re-run it */
+    }
+  }
+
   return (
     data.products.length +
     data.movements.length +
@@ -418,6 +430,18 @@ async function runSync(): Promise<SyncOutcome> {
 
   await db().syncState.put({ id: 'default', cursor: finalNow, lastSyncAt: Date.now() });
   return { ok: true, pushed, pulled };
+}
+
+/** While the app is in front, pick up new server data (e.g. a bank SMS an iPhone Shortcut just
+ *  posted). Cheap: only rows changed since the last sync come down. Never throws. */
+export async function pollSync(): Promise<void> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+  try {
+    await syncNow();
+  } catch {
+    /* opportunistic */
+  }
 }
 
 /** Fire a sync on app open if online and it's been a while. Never throws. */

@@ -23,6 +23,8 @@ import {
   paymentNotificationsSupported,
 } from '../paymentNotifications';
 import { askConfirm } from '../dialogs';
+import SmsLinkSheet from './SmsLinkSheet';
+import { pollSync } from '../sync';
 import { hasAiConsent, grantAiConsent } from '@/lib/aiConsent';
 import AiConsentDialog from '@/components/AiConsentDialog';
 
@@ -52,6 +54,13 @@ export default function UpiScreen({ lang, onClose }: Props) {
   const [pasteText, setPasteText] = useState('');
   const [autoOn, setAutoOn] = useState<boolean | null>(null); // null = not available here
   const autoSupported = paymentNotificationsSupported();
+  const [smsOpen, setSmsOpen] = useState(false);
+
+  // New receipts may be posted from an iPhone Shortcut while this screen is open: keep checking.
+  useEffect(() => {
+    const id = window.setInterval(() => void pollSync(), 20_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Android: is the notification listener on? Re-check when the owner returns from Settings.
   useEffect(() => {
@@ -326,6 +335,21 @@ export default function UpiScreen({ lang, onClose }: Props) {
           </button>
         </div>
       )}
+
+      {!autoSupported && (
+        <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t(lang, 'sms.cardTitle')}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t(lang, 'sms.cardHelp')}</p>
+          <button
+            type="button"
+            onClick={() => setSmsOpen(true)}
+            className="mt-2 h-10 w-full rounded-lg bg-slate-200 text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100"
+          >
+            {t(lang, 'sms.cardButton')}
+          </button>
+        </div>
+      )}
+      {smsOpen && <SmsLinkSheet lang={lang} onClose={() => setSmsOpen(false)} />}
 
       <button
         type="button"
