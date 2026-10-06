@@ -120,7 +120,7 @@ export default function LoginGate({ children }: { children: ReactNode }) {
           height={36}
           className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm dark:border-slate-700"
         />
-        <span className="k-wordmark">OmniWealth Kadai</span>
+        <span className="k-wordmark">Kadai</span>
       </h1>
       <form onSubmit={signIn} className="space-y-3">
         <input
