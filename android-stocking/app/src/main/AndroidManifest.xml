@@ -85,6 +85,9 @@
 
     <!-- Voice item entry (@capacitor-community/speech-recognition). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Capacitor's WebView asks for this together with RECORD_AUDIO when a page opens the
+         microphone (cloud voice billing). A normal permission: granted at install, no prompt. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService" />
