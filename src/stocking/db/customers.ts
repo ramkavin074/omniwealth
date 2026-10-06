@@ -259,9 +259,12 @@ export interface Receivables {
 }
 
 export async function allReceivables(): Promise<Receivables> {
+  // Only bills attributed to a customer matter here. `customerId` is indexed
+  // (bills without one aren't in the index), so this reads the few credit bills
+  // instead of every bill the shop has ever rung up.
   const [customers, allSales, allReceipts] = await Promise.all([
     listCustomers(),
-    db().sales.toArray(),
+    db().sales.where('customerId').above('').toArray(),
     db().receipts.toArray(),
   ]);
 

@@ -4,7 +4,6 @@ import { useState, type ReactNode } from 'react';
 import { reasonLabel, t, unitLabel, type Lang } from '../i18n';
 import {
   catalogueStats,
-  listProducts,
   recentMovements,
   type MovementWithName,
 } from '../db/products';
@@ -12,7 +11,7 @@ import { expiringSoon } from '../db/analytics';
 import { daySummary } from '../db/sales';
 import { allReceivables } from '../db/customers';
 import { ordersSummary } from '../db/orders';
-import type { Product } from '../types';
+import type { Unit } from '../types';
 import { db } from '../db/dexie';
 import { useLiveQuery, useNow, useOnline } from '../hooks';
 import { canSeeCost } from '../settings';
@@ -62,10 +61,21 @@ export default function HomeScreen({
     [],
     [] as MovementWithName[],
   );
-  // Live handle on products so the unit label per movement stays correct.
-  const products = useLiveQuery(() => listProducts(), [], [] as Product[]);
-  const unitOf = (id: string) =>
-    products.find((p) => p.id === id)?.unit ?? 'piece';
+  // Units for the few products in the activity list (so each movement's unit
+  // label stays correct) — not the whole catalogue.
+  const unitKey = [...new Set(activity.map((m) => m.productId))].join(',');
+  const units = useLiveQuery(
+    async () => {
+      const ids = unitKey ? unitKey.split(',') : [];
+      const found = await db().products.bulkGet(ids);
+      const map: Record<string, Unit> = {};
+      for (const p of found) if (p) map[p.id] = p.unit;
+      return map;
+    },
+    [unitKey],
+    {} as Record<string, Unit>,
+  );
+  const unitOf = (id: string): Unit => units[id] ?? 'piece';
 
   const now = useNow();
   const [showCost] = useState(canSeeCost);

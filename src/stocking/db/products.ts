@@ -341,8 +341,11 @@ export async function recentMovements(
     .reverse()
     .limit(limit)
     .toArray();
+  // Only the handful of products these rows refer to, not the whole catalogue.
+  const ids = [...new Set(rows.map((m) => m.productId))];
+  const found = await db().products.bulkGet(ids);
   const names = new Map<string, string>();
-  for (const p of await db().products.toArray()) names.set(p.id, p.name);
+  for (const p of found) if (p) names.set(p.id, p.name);
   return rows.map((m) => ({
     ...m,
     productName: names.get(m.productId) ?? '—',
