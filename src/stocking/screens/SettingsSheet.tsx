@@ -40,7 +40,7 @@ import {
   saveAlertPhone,
   saveStoreSettings,
 } from '../storeSettings';
-import { askConfirm } from '../dialogs';
+import { askConfirm, askText } from '../dialogs';
 import HelpSheet from './HelpSheet';
 import StockCountScreen from './StockCountScreen';
 import DayCloseScreen from './DayCloseScreen';
@@ -87,6 +87,8 @@ export default function SettingsSheet({
   const initial = getDefaults();
   const [manage] = useState(canManage);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
+  const [delMsg, setDelMsg] = useState<string | null>(null);
   const [tool, setTool] = useState<'count' | 'dayclose' | 'labels' | null>(null);
   const [unit, setUnit] = useState<Unit>(initial.unit);
   const [threshold, setThreshold] = useState(String(initial.lowStockThreshold));
@@ -275,6 +277,40 @@ export default function SettingsSheet({
   const logout = () => {
     signOut();
     location.reload();
+  };
+
+  // Delete my account (standalone app). Required by the App Store for apps that let people sign up.
+  const deleteAccount = async () => {
+    if (!(await askConfirm(t(lang, 'acctdel.warn')))) return;
+    const pw = await askText(t(lang, 'acctdel.password'), '', { password: true });
+    if (!pw) return;
+    setDelBusy(true);
+    setDelMsg(null);
+    try {
+      const raw = localStorage.getItem('stocking.auth');
+      const blob = raw ? (JSON.parse(raw) as { token?: string; storeId?: string }) : {};
+      const res = await fetch(`${API_BASE}/api/stocking/account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(blob.token ? { Authorization: `Bearer ${blob.token}` } : {}),
+          ...(blob.storeId ? { 'x-store-id': blob.storeId } : {}),
+        },
+        body: JSON.stringify({ action: 'delete', password: pw }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDelMsg(data?.error || t(lang, 'acctdel.failed'));
+        return;
+      }
+      await clearAllData();
+      signOut();
+      location.reload();
+    } catch {
+      setDelMsg(t(lang, 'acctdel.offline'));
+    } finally {
+      setDelBusy(false);
+    }
   };
 
   // Hosted inside OmniWealth: end the website session, then go to the sign-in page.
@@ -826,6 +862,15 @@ export default function SettingsSheet({
             >
               {t(lang, 'settings.logout')}
             </button>
+            <button
+              type="button"
+              onClick={deleteAccount}
+              disabled={delBusy}
+              className="w-full h-11 rounded-lg text-sm font-semibold text-rose-600 disabled:opacity-50 dark:text-rose-400"
+            >
+              {t(lang, 'acctdel.btn')}
+            </button>
+            {delMsg && <p className="text-sm text-rose-600 dark:text-rose-400">{delMsg}</p>}
           </section>
         )}
 

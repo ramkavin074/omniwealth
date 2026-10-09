@@ -10,7 +10,7 @@ import {
   type Unit,
 } from './types';
 
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '1.21';
 
 interface Defaults {
   unit: Unit;

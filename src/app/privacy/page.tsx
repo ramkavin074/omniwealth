@@ -118,6 +118,13 @@ export default function PrivacyPolicyPage() {
           notification settings.
         </li>
         <li>
+          <strong>Kadai sign-up</strong> &mdash; when you create a shop account
+          in Kadai we collect your name, shop name, email address and a
+          password (stored only as a one-way hash), and we email you a one-time
+          6-digit code to confirm the address. You can delete the account in
+          the app under Settings, then Account.
+        </li>
+        <li>
           <strong>OmniWealth Kadai shop data</strong> &mdash; products, prices,
           stock counts and movements, sales and bills, refunds, suppliers,
           payments, and GST/tax settings you enter for your shop.

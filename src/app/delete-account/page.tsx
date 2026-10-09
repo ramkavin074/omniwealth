@@ -41,7 +41,14 @@ export default function DeleteAccountPage() {
         billing and stock app) or <strong>OmniWealth</strong> account and the data linked to it.
       </p>
 
-      <H2>OmniWealth Kadai</H2>
+      <H2>OmniWealth Kadai: delete it yourself, in the app</H2>
+      <p className="mt-3">
+        Open the Kadai app, go to <strong>Settings, then Account, then Delete my account</strong>,
+        and enter your password to confirm. The account is deleted straight away. If you are the
+        only owner of the shop, the shop and all its data are deleted with it. This cannot be undone.
+      </p>
+
+      <H2>Or ask us to do it</H2>
       <ol className="mt-3 list-decimal space-y-2 pl-6">
         <li>
           Email{' '}

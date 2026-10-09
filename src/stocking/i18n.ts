@@ -446,6 +446,11 @@ const en: Dict = {
 
   'settings.tools': 'Tools',
   'help.title': 'Help',
+  'acctdel.btn': 'Delete my account',
+  'acctdel.warn': 'Delete your account? If you are the only owner of the shop, the shop and all its data (products, bills, customers, stock) are deleted for good. This cannot be undone.',
+  'acctdel.password': 'Enter your password to confirm',
+  'acctdel.failed': 'Could not delete the account. Try again, or email admin@omniwealth.org.',
+  'acctdel.offline': 'No connection. Connect to the internet and try again.',
   'lbl.title': 'Print labels',
   'lbl.search': 'Search a product to add',
   'lbl.empty': 'Add the products you want labels for.',
@@ -1205,6 +1210,11 @@ const ta: Dict = {
 
   'settings.tools': 'கருவிகள்',
   'help.title': 'உதவி',
+  'acctdel.btn': 'என் கணக்கை நீக்கு',
+  'acctdel.warn': 'உங்கள் கணக்கை நீக்கவா? கடையின் ஒரே உரிமையாளர் நீங்கள் என்றால், கடையும் அதன் எல்லா தரவும் (பொருட்கள், பில்கள், வாடிக்கையாளர்கள், சரக்கு) நிரந்தரமாக நீக்கப்படும். இதைத் திரும்பப் பெற முடியாது.',
+  'acctdel.password': 'உறுதிப்படுத்த உங்கள் கடவுச்சொல்லை உள்ளிடுங்கள்',
+  'acctdel.failed': 'கணக்கை நீக்க முடியவில்லை. மீண்டும் முயலுங்கள் அல்லது admin@omniwealth.org க்கு மின்னஞ்சல் அனுப்புங்கள்.',
+  'acctdel.offline': 'இணைப்பு இல்லை. இணையத்துடன் இணைந்து மீண்டும் முயலவும்.',
   'lbl.title': 'லேபிள் அச்சிடு',
   'lbl.search': 'சேர்க்க ஒரு பொருளைத் தேடுங்கள்',
   'lbl.empty': 'லேபிள் வேண்டிய பொருட்களைச் சேருங்கள்.',

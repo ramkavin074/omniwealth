@@ -15,7 +15,7 @@ import { useBackHandler } from './hooks';
 
 type Request =
   | { id: number; kind: 'confirm'; message: string; resolve: (v: boolean) => void }
-  | { id: number; kind: 'text'; message: string; initial: string; resolve: (v: string | null) => void };
+  | { id: number; kind: 'text'; message: string; initial: string; password?: boolean; resolve: (v: string | null) => void };
 
 let nextId = 0;
 let enqueue: ((r: Request) => void) | null = null;
@@ -34,11 +34,11 @@ export function askConfirm(message: string): Promise<boolean> {
   });
 }
 
-/** Resolves to the entered text, or null if the person cancelled. */
-export function askText(message: string, initial = ''): Promise<string | null> {
+/** Resolves to the entered text, or null if the person cancelled. `password` hides what is typed. */
+export function askText(message: string, initial = '', opts?: { password?: boolean }): Promise<string | null> {
   return new Promise((resolve) => {
     if (enqueue) {
-      enqueue({ id: ++nextId, kind: 'text', message, initial, resolve });
+      enqueue({ id: ++nextId, kind: 'text', message, initial, password: opts?.password, resolve });
       return;
     }
     try {
@@ -110,6 +110,8 @@ export function DialogHost() {
         {cur.kind === 'text' && (
           <input
             autoFocus
+            type={cur.password ? 'password' : 'text'}
+            autoComplete={cur.password ? 'current-password' : 'off'}
             value={text}
             onChange={(e) => setText(e.target.value)}
             className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
