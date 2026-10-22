@@ -25,7 +25,8 @@ import {
 // Android availability: 'beta' while the app is in Google Play closed testing
 // (join the Google Group -> opt in -> install), 'live' once it's public (the
 // Play listing 404s for anyone who isn't a closed-test member), or 'soon'.
-const ANDROID_STATE: 'live' | 'beta' | 'soon' = 'beta';
+// Live on Google Play since 2026-10-22.
+const ANDROID_STATE: 'live' | 'beta' | 'soon' = 'live';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.omniwealth.app';
 const BETA_GROUP_URL = 'https://groups.google.com/g/omniwealth-testers';
 const BETA_OPT_IN_URL = 'https://play.google.com/apps/testing/com.omniwealth.app';
