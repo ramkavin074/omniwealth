@@ -3,26 +3,26 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: { absolute: 'SchoolOS: school attendance, homework, notices, fees and canteen app' },
-  alternates: { canonical: '/schoolos' },
+  title: { absolute: 'OmniKalvi: school attendance, homework, notices, fees and canteen app' },
+  alternates: { canonical: '/omnikalvi' },
   description:
-    'SchoolOS puts the school day on the phones teachers and parents already have: attendance in seconds, homework with photos and PDFs, notices parents confirm, fees, marks, bus and a canteen with allergy checks. In English and Tamil.',
+    'OmniKalvi puts the school day on the phones teachers and parents already have: attendance in seconds, homework with photos and PDFs, notices parents confirm, fees, marks, bus and a canteen with allergy checks. In English and Tamil.',
   openGraph: {
-    title: 'SchoolOS: your school, running in one app',
+    title: 'OmniKalvi: your school, running in one app',
     description:
       'Attendance, homework, notices, fees, bus and canteen for schools of every size. In English and Tamil.',
-    url: '/schoolos',
-    images: [{ url: '/schoolos-og.png', width: 1200, height: 630 }],
+    url: '/omnikalvi',
+    images: [{ url: '/omnikalvi-og.png', width: 1200, height: 630 }],
   },
-  icons: { icon: [{ url: '/schoolos-favicon.png', sizes: '48x48', type: 'image/png' }] },
+  icons: { icon: [{ url: '/omnikalvi-favicon.png', sizes: '48x48', type: 'image/png' }] },
 };
 
-// Public marketing page for the SchoolOS app. The app itself lives at schoolos.omniwealth.org (behind a sign-in).
+// Public marketing page for the OmniKalvi app. The app itself lives at schoolos.omniwealth.org (behind a sign-in; its address keeps the old product name for now).
 // Keep every claim here true of the shipped app. Screens below are from a demo school with fictional data.
 
 const CONTACT_EMAIL = 'admin@omniwealth.org';
 const APP_URL = 'https://schoolos.omniwealth.org';
-const DEMO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('SchoolOS live demo')}&body=${encodeURIComponent('Hello, I would like a live demo of SchoolOS for our school.\n\nSchool name:\nPlace:\nNumber of students (approx.):\nYour role:\nPhone (optional):\n')}`;
+const DEMO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('OmniKalvi live demo')}&body=${encodeURIComponent('Hello, I would like a live demo of OmniKalvi for our school.\n\nSchool name:\nPlace:\nNumber of students (approx.):\nYour role:\nPhone (optional):\n')}`;
 
 function Phone({ src, alt }: { src: string; alt: string }) {
   return (
@@ -81,7 +81,7 @@ const MORE: [string, string][] = [
 
 const FAQ: [string, string][] = [
   [
-    'Who uses SchoolOS?',
+    'Who uses OmniKalvi?',
     'Principals, teachers, accountants, canteen staff and parents. Children do not sign in. Each person sees only what their role allows, and a parent sees only their own children.',
   ],
   [
@@ -90,7 +90,7 @@ const FAQ: [string, string][] = [
   ],
   [
     'Where is our data kept?',
-    'Your school\'s data is hosted in Mumbai. SchoolOS is built to keep each school\'s information separate, and it is never sold or used for advertising. We are preparing for India\'s DPDP Act, and a legal review is under way.',
+    'Your school\'s data is hosted in Mumbai. OmniKalvi is built to keep each school\'s information separate, and it is never sold or used for advertising. We are preparing for India\'s DPDP Act, and a legal review is under way.',
   ],
   [
     'Can parents pay online?',
@@ -98,7 +98,7 @@ const FAQ: [string, string][] = [
   ],
   [
     'How does the canteen allergy check work?',
-    'A parent records a child\'s food allergy. At the counter, SchoolOS refuses to sell an item that contains it, or whose allergen list the canteen has not confirmed. Only a principal or accountant can override, with a written reason that is recorded. It is a safety aid, and the school stays responsible for what it serves.',
+    'A parent records a child\'s food allergy. At the counter, OmniKalvi refuses to sell an item that contains it, or whose allergen list the canteen has not confirmed. Only a principal or accountant can override, with a written reason that is recorded. It is a safety aid, and the school stays responsible for what it serves.',
   ],
   [
     'Does it work in Tamil?',
@@ -106,18 +106,18 @@ const FAQ: [string, string][] = [
   ],
   [
     'Is there an app?',
-    'SchoolOS works in the browser and as Android and iPhone apps. The apps are in testing, so write to us for a live demo.',
+    'OmniKalvi works in the browser and as Android and iPhone apps. The apps are in testing, so write to us for a live demo.',
   ],
 ];
 
-export default function SchoolOSLandingPage() {
+export default function OmniKalviLandingPage() {
   return (
     <main className="bg-white text-slate-700">
       {/* header */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <div className="flex items-center gap-2.5">
-          <Image src="/schoolos-icon-192.png" alt="SchoolOS" width={36} height={36} className="rounded-lg" />
-          <span className="text-lg font-extrabold text-slate-900">SchoolOS</span>
+          <Image src="/omnikalvi-icon-192.png" alt="OmniKalvi" width={36} height={36} className="rounded-lg" />
+          <span className="text-lg font-extrabold text-slate-900">OmniKalvi</span>
         </div>
         <nav className="flex items-center gap-5 text-sm font-medium text-slate-600">
           <a href="#features" className="hidden hover:text-teal-700 sm:inline">Features</a>
@@ -140,7 +140,7 @@ export default function SchoolOSLandingPage() {
               Your school, running in one app: attendance, homework, notices and canteen.
             </h1>
             <p className="mt-5 max-w-xl text-[15px] leading-7 text-slate-300">
-              No more paper registers, lost diary notes and lunch-money cash. SchoolOS puts the whole
+              No more paper registers, lost diary notes and lunch-money cash. OmniKalvi puts the whole
               school day on the phones your staff and parents already have, in English and Tamil.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -160,10 +160,10 @@ export default function SchoolOSLandingPage() {
           </div>
           <div className="mx-auto flex w-full max-w-sm items-start justify-center gap-4">
             <div className="w-1/2">
-              <Phone src="/schoolos/parent-home.jpg" alt="SchoolOS parent home: the child's day on one screen" />
+              <Phone src="/omnikalvi/parent-home.jpg" alt="OmniKalvi parent home: the child's day on one screen" />
             </div>
             <div className="mt-8 w-1/2">
-              <Phone src="/schoolos/principal.jpg" alt="SchoolOS principal overview of the whole school" />
+              <Phone src="/omnikalvi/principal.jpg" alt="OmniKalvi principal overview of the whole school" />
             </div>
           </div>
         </div>
@@ -184,46 +184,46 @@ export default function SchoolOSLandingPage() {
       {/* features */}
       <section id="features" className="mx-auto max-w-5xl scroll-mt-6 space-y-16 px-5 py-16">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900">What SchoolOS does for your school</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900">What OmniKalvi does for your school</h2>
           <p className="mt-2 text-slate-600">Screens below are from a demo school with fictional data.</p>
         </div>
         <Feature
           title="Parents see their child's day on one screen"
           body="Attendance, homework, notices, fees and messages sit on one home screen, with a short list of what needs the parent's attention: a form to answer, a meeting to book, a notice to confirm."
-          img="/schoolos/parent-home.jpg"
+          img="/omnikalvi/parent-home.jpg"
           alt="Parent home screen with tiles and a needs-attention list"
         />
         <Feature
           flip
           title="Homework that parents actually see"
           body="Teachers post homework and class work with photos and PDFs, class by class. Parents see exactly what was assigned and when it is due, in Tamil or English. No lost diary notes."
-          img="/schoolos/homework.jpg"
+          img="/omnikalvi/homework.jpg"
           alt="Homework list with subjects and due dates, including a Tamil entry"
         />
         <Feature
           title="Notices that land"
           body="Choose who gets a notice, confirm the audience before it goes out, mark it urgent, see who has read and acknowledged it, and withdraw it within the hour if you need to."
-          img="/schoolos/notices.jpg"
+          img="/omnikalvi/notices.jpg"
           alt="Notices list with an urgent notice and acknowledge buttons"
         />
         <Feature
           flip
           title="A canteen that shows what is in the food"
           body="The menu lists portions and allergens. Parents top up in advance (online where the school enables it, or at the office), set a daily limit, freeze spending in one tap and see every purchase. If a child has a recorded allergy, the counter will not sell them an item that contains it."
-          img="/schoolos/canteen.jpg"
+          img="/omnikalvi/canteen.jpg"
           alt="Canteen menu item opened to show its allergens"
         />
         <Feature
           title="Teachers: attendance in seconds"
           body="Mark the class from your phone, post homework or mark a no-homework day, send a notice, enter marks and reply to parents. The home screen shows what is still to do today."
-          img="/schoolos/teacher.jpg"
+          img="/omnikalvi/teacher.jpg"
           alt="Teacher home with a to-do list and a Mark attendance button"
         />
         <Feature
           flip
           title="Principals: the whole school at a glance"
           body="See which classes have not marked attendance, who has acknowledged important notices, fees overdue, staff attendance, admissions and buses, all on one screen."
-          img="/schoolos/principal.jpg"
+          img="/omnikalvi/principal.jpg"
           alt="Principal overview with attendance, needs-attention items and tools"
         />
         <div>
@@ -306,7 +306,7 @@ export default function SchoolOSLandingPage() {
       {/* CTA + footer */}
       <section className="bg-slate-950 text-white">
         <div className="mx-auto max-w-5xl px-5 py-14 text-center">
-          <h2 className="text-2xl font-extrabold">See SchoolOS with your own classes</h2>
+          <h2 className="text-2xl font-extrabold">See OmniKalvi with your own classes</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-300">
             Write to us with your school name, place and roughly how many students you have, and we will arrange a live demo.
           </p>
@@ -320,7 +320,7 @@ export default function SchoolOSLandingPage() {
         </div>
         <div className="border-t border-slate-800">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-5 text-xs text-slate-400">
-            <span>SchoolOS, an OmniWealth product. Data hosted in Mumbai. DPDP review under way.</span>
+            <span>OmniKalvi, an OmniWealth product. Data hosted in Mumbai. DPDP review under way.</span>
             <span className="flex flex-wrap gap-4">
               <a href={APP_URL} className="hover:text-white">Open the app</a>
               <a href={`${APP_URL}/privacy`} className="hover:text-white">Privacy</a>
