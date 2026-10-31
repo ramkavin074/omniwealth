@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: "..",
   },
+  async redirects() {
+    // The page was first published as /schoolos before the product was renamed OmniKalvi.
+    return [{ source: "/schoolos", destination: "/omnikalvi", permanent: true }];
+  },
   async headers() {
     return [
       {
