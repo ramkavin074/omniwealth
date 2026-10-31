@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import EarlyAccess from '@/components/EarlyAccess';
 
 export const metadata: Metadata = {
   title: { absolute: 'Kadai: shop billing, stock and UPI app in Tamil and English' },
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
 
 const CONTACT_EMAIL = 'admin@omniwealth.org';
 const EARLY_ACCESS = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Kadai early access')}&body=${encodeURIComponent('Hello, I would like to try Kadai for my shop.\n\nShop name:\nPlace:\nPhone (Android or iPhone):\n')}`;
+
+const PLAY_TEST_URL = 'https://play.google.com/apps/testing/com.omniwealth.kadai';
+const ANDROID_TEST = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Kadai Android early access')}&body=${encodeURIComponent('Hello, please add me to the Kadai Android test.\n\nMy Google account email:\nShop name and place:\n')}`;
 
 function Phone({ src, alt, w, h }: { src: string; alt: string; w: number; h: number }) {
   return (
@@ -69,7 +73,7 @@ function Feature({
 const QUICK = [
   ['Works offline', 'Billing never waits for the internet.'],
   ['Tamil and English', 'Every screen, and voice billing.'],
-  ['Android and iPhone', 'Plus a web version.'],
+  ['Android and web', 'Android in testing, iPhone coming soon.'],
   ['Many phones, one shop', 'Owner, manager and staff roles.'],
 ];
 
@@ -112,6 +116,7 @@ export default function KadaiLandingPage() {
         <nav className="flex items-center gap-5 text-sm font-medium text-slate-600">
           <a href="#features" className="hover:text-teal-700">Features</a>
           <a href="#tamil" className="hover:text-teal-700">தமிழில்</a>
+          <a href="#early" className="hidden hover:text-teal-700 sm:inline">Early access</a>
           <a href="#faq" className="hover:text-teal-700">FAQ</a>
           <a
             href={EARLY_ACCESS}
@@ -155,7 +160,7 @@ export default function KadaiLandingPage() {
               </a>
             </div>
             <p className="mt-4 text-xs text-slate-400">
-              Android and iPhone apps are rolling out. Write to us for early access.
+              The Android app is in closed testing and the iPhone app is coming soon. Write to us for early access.
             </p>
           </div>
           <div className="mx-auto flex w-full max-w-sm items-start justify-center gap-4">
@@ -288,6 +293,8 @@ export default function KadaiLandingPage() {
           </div>
         </div>
       </section>
+
+      <EarlyAccess app="Kadai" testUrl={PLAY_TEST_URL} requestHref={ANDROID_TEST} />
 
       {/* start */}
       <section className="mx-auto max-w-5xl px-5 py-16">

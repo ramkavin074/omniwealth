@@ -16,6 +16,7 @@ type App = {
   status: string;
   more: string;
   open?: { href: string; label: string };
+  test?: string; // Google Play closed-testing join link
 };
 
 const APPS: App[] = [
@@ -35,8 +36,9 @@ const APPS: App[] = [
     line: 'Bill, stock and UPI for your shop, in Tamil or English.',
     body: 'For grocery, provision, medical and general stores: fast billing, expiry-aware stock, credit accounts and UPI checking. Keeps working without internet.',
     points: ['Voice billing in Tamil', 'Sell the oldest stock first', 'Works offline'],
-    status: 'Android app on Google Play, iPhone rolling out',
+    status: 'Android in closed testing, iPhone coming soon',
     more: '/kadai',
+    test: 'https://play.google.com/apps/testing/com.omniwealth.kadai',
   },
   {
     name: 'OmniKalvi',
@@ -44,8 +46,9 @@ const APPS: App[] = [
     line: 'Every school, in one app.',
     body: 'Attendance, homework, notices, fees, bus and a canteen with allergy checks, on the phones teachers and parents already have. In English and Tamil.',
     points: ['Attendance in seconds', 'Notices parents confirm', 'Cashless canteen'],
-    status: 'In testing. Ask for a live demo',
+    status: 'Android in closed testing, iPhone coming soon',
     more: '/omnikalvi',
+    test: 'https://play.google.com/apps/testing/com.omniwealth.schoolos',
   },
 ];
 
@@ -96,6 +99,11 @@ export default function CompanyLanding() {
               <p className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">{a.status}</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href={a.more} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Learn more</Link>
+                {a.test && (
+                  <a href={`${a.more}#early`} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400">
+                    Early access
+                  </a>
+                )}
                 {a.open && (
                   <Link href={a.open.href} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400">
                     {a.open.label}
@@ -115,7 +123,7 @@ export default function CompanyLanding() {
             Each is built around a single job, keeps its screens simple, and respects your privacy. Kadai and OmniKalvi work in Tamil and English.
           </p>
           <p className="mt-3 text-[15px] leading-7 text-slate-600">
-            Questions, or want a live demo of Kadai or OmniKalvi? Write to us.
+            Questions, a live demo of Kadai or OmniKalvi, or early access to the Android tests? Write to us.
           </p>
           <a href={CONTACT} className="mt-5 inline-block rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white hover:bg-teal-600">
             Email {CONTACT_EMAIL}
