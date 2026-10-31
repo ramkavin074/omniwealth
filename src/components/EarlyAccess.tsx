@@ -4,10 +4,12 @@ export default function EarlyAccess({
   app,
   testUrl,
   requestHref,
+  groupUrl,
 }: {
   app: string;
   testUrl: string;
   requestHref: string;
+  groupUrl: string;
 }) {
   return (
     <section id="early" className="scroll-mt-6 border-y border-slate-200 bg-slate-50">
@@ -18,9 +20,9 @@ export default function EarlyAccess({
         </p>
         <ol className="mt-6 grid gap-5 md:grid-cols-3">
           {[
-            ['Ask to be added', 'Send us the email address of the Google account you use on your Android phone.'],
-            ['We add you to the test', 'We will reply when you are on the list. Only people on the list can join.'],
-            ['Join and install', 'Open the join link below on your phone, accept, and install the app from Google Play.'],
+            ['Join the testers group', 'Use the Google account you have on your Android phone. Joining the group adds you to the test straight away.'],
+            ['Accept the test', 'Open the join link on your phone and tap to become a tester.'],
+            ['Install from Google Play', 'Then install the app from Google Play. Updates arrive there too.'],
           ].map(([t, b], i) => (
             <li key={t} className="rounded-2xl bg-white p-5 shadow-sm">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700 text-sm font-bold text-white">{i + 1}</span>
@@ -30,8 +32,13 @@ export default function EarlyAccess({
           ))}
         </ol>
         <div className="mt-7 flex flex-wrap items-center gap-3">
-          <a href={requestHref} className="rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white hover:bg-teal-600">
-            Ask to join the Android test
+          <a
+            href={groupUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl bg-teal-700 px-5 py-3 text-sm font-bold text-white hover:bg-teal-600"
+          >
+            1. Join the testers group
           </a>
           <a
             href={testUrl}
@@ -39,10 +46,17 @@ export default function EarlyAccess({
             rel="noreferrer"
             className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:border-slate-400"
           >
-            I am already on the list: join the test
+            2. Join the test on Google Play
           </a>
           <span className="rounded-xl bg-slate-200 px-4 py-3 text-sm font-medium text-slate-600">iPhone: coming soon to the App Store</span>
         </div>
+        <p className="mt-4 text-sm text-slate-600">
+          Group not working for you?{' '}
+          <a href={requestHref} className="font-semibold text-teal-700 underline">
+            Email us your Google account
+          </a>{' '}
+          and we will add you by hand.
+        </p>
       </div>
     </section>
   );

@@ -25,6 +25,7 @@ const CONTACT_EMAIL = 'admin@omniwealth.org';
 const APP_URL = 'https://omnikalvi.omniwealth.org';
 const DEMO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('OmniKalvi live demo')}&body=${encodeURIComponent('Hello, I would like a live demo of OmniKalvi for our school.\n\nSchool name:\nPlace:\nNumber of students (approx.):\nYour role:\nPhone (optional):\n')}`;
 
+const TESTERS_GROUP_URL = 'https://groups.google.com/g/omniwealth-testers';
 const PLAY_TEST_URL = 'https://play.google.com/apps/testing/com.omniwealth.schoolos';
 const EARLY = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('OmniKalvi Android early access')}&body=${encodeURIComponent('Hello, please add me to the OmniKalvi Android test.\n\nMy Google account email:\nMy role (parent, teacher, school owner):\nSchool name and place:\n')}`;
 
@@ -269,7 +270,7 @@ export default function OmniKalviLandingPage() {
         </div>
       </section>
 
-      <EarlyAccess app="OmniKalvi" testUrl={PLAY_TEST_URL} requestHref={EARLY} />
+      <EarlyAccess app="OmniKalvi" testUrl={PLAY_TEST_URL} requestHref={EARLY} groupUrl={TESTERS_GROUP_URL} />
 
       {/* start */}
       <section className="mx-auto max-w-5xl px-5 py-16">
