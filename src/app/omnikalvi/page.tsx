@@ -17,11 +17,11 @@ export const metadata: Metadata = {
   icons: { icon: [{ url: '/omnikalvi-favicon.png', sizes: '48x48', type: 'image/png' }] },
 };
 
-// Public marketing page for the OmniKalvi app. The app itself lives at schoolos.omniwealth.org (behind a sign-in; its address keeps the old product name for now).
+// Public marketing page for the OmniKalvi app. The app itself lives at omnikalvi.omniwealth.org (behind a sign-in).
 // Keep every claim here true of the shipped app. Screens below are from a demo school with fictional data.
 
 const CONTACT_EMAIL = 'admin@omniwealth.org';
-const APP_URL = 'https://schoolos.omniwealth.org';
+const APP_URL = 'https://omnikalvi.omniwealth.org';
 const DEMO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('OmniKalvi live demo')}&body=${encodeURIComponent('Hello, I would like a live demo of OmniKalvi for our school.\n\nSchool name:\nPlace:\nNumber of students (approx.):\nYour role:\nPhone (optional):\n')}`;
 
 function Phone({ src, alt }: { src: string; alt: string }) {
