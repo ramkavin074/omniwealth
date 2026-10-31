@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import EarlyAccess from '@/components/EarlyAccess';
 
 export const metadata: Metadata = {
   title: { absolute: 'OmniKalvi: school attendance, homework, notices, fees and canteen app' },
@@ -23,6 +24,9 @@ export const metadata: Metadata = {
 const CONTACT_EMAIL = 'admin@omniwealth.org';
 const APP_URL = 'https://omnikalvi.omniwealth.org';
 const DEMO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('OmniKalvi live demo')}&body=${encodeURIComponent('Hello, I would like a live demo of OmniKalvi for our school.\n\nSchool name:\nPlace:\nNumber of students (approx.):\nYour role:\nPhone (optional):\n')}`;
+
+const PLAY_TEST_URL = 'https://play.google.com/apps/testing/com.omniwealth.schoolos';
+const EARLY = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('OmniKalvi Android early access')}&body=${encodeURIComponent('Hello, please add me to the OmniKalvi Android test.\n\nMy Google account email:\nMy role (parent, teacher, school owner):\nSchool name and place:\n')}`;
 
 function Phone({ src, alt }: { src: string; alt: string }) {
   return (
@@ -106,7 +110,7 @@ const FAQ: [string, string][] = [
   ],
   [
     'Is there an app?',
-    'OmniKalvi works in the browser and as Android and iPhone apps. The apps are in testing, so write to us for a live demo.',
+    'OmniKalvi works in the browser. The Android app is in closed testing on Google Play (ask to join the early-access test below), and the iPhone app is coming soon to the App Store.',
   ],
 ];
 
@@ -122,6 +126,7 @@ export default function OmniKalviLandingPage() {
         <nav className="flex items-center gap-5 text-sm font-medium text-slate-600">
           <a href="#features" className="hidden hover:text-teal-700 sm:inline">Features</a>
           <a href="#tamil" className="hover:text-teal-700">தமிழில்</a>
+          <a href="#early" className="hidden hover:text-teal-700 sm:inline">Early access</a>
           <a href="#faq" className="hover:text-teal-700">FAQ</a>
           <a href={DEMO} className="rounded-lg bg-teal-700 px-3.5 py-2 text-white hover:bg-teal-600">
             Ask for a demo
@@ -155,7 +160,7 @@ export default function OmniKalviLandingPage() {
               </a>
             </div>
             <p className="mt-4 text-xs text-slate-400">
-              Android and iPhone apps are in testing. Write to us for a live demo.
+              The Android app is in closed testing and the iPhone app is coming soon. Ask for a live demo or join the early-access test.
             </p>
           </div>
           <div className="mx-auto flex w-full max-w-sm items-start justify-center gap-4">
@@ -263,6 +268,8 @@ export default function OmniKalviLandingPage() {
           </div>
         </div>
       </section>
+
+      <EarlyAccess app="OmniKalvi" testUrl={PLAY_TEST_URL} requestHref={EARLY} />
 
       {/* start */}
       <section className="mx-auto max-w-5xl px-5 py-16">
