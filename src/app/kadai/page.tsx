@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 const CONTACT_EMAIL = 'admin@omniwealth.org';
 const EARLY_ACCESS = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Kadai early access')}&body=${encodeURIComponent('Hello, I would like to try Kadai for my shop.\n\nShop name:\nPlace:\nPhone (Android or iPhone):\n')}`;
 
+const TESTERS_GROUP_URL = 'https://groups.google.com/g/omniwealth-testers';
 const PLAY_TEST_URL = 'https://play.google.com/apps/testing/com.omniwealth.kadai';
 const ANDROID_TEST = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Kadai Android early access')}&body=${encodeURIComponent('Hello, please add me to the Kadai Android test.\n\nMy Google account email:\nShop name and place:\n')}`;
 
@@ -294,7 +295,7 @@ export default function KadaiLandingPage() {
         </div>
       </section>
 
-      <EarlyAccess app="Kadai" testUrl={PLAY_TEST_URL} requestHref={ANDROID_TEST} />
+      <EarlyAccess app="Kadai" testUrl={PLAY_TEST_URL} requestHref={ANDROID_TEST} groupUrl={TESTERS_GROUP_URL} />
 
       {/* start */}
       <section className="mx-auto max-w-5xl px-5 py-16">
