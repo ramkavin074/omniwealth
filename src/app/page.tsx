@@ -6,11 +6,24 @@ import { listContactsAction, listEventsAction, listRemindersAction } from '@/act
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import DashboardClient from '@/components/DashboardClient';
-import LandingPage from '@/components/LandingPage';
+import CompanyLanding from '@/components/CompanyLanding';
+import NativeRootRedirect from '@/components/NativeRootRedirect';
 import type { Metadata } from 'next';
 
-// The home page is the landing page for visitors (the dashboard once signed in).
-export const metadata: Metadata = { alternates: { canonical: '/' } };
+// The home page is the landing page for all the apps for visitors (the OmniWealth dashboard once signed in). The OmniWealth product page
+// that used to be here is now /wealth; the OmniWealth phone app, which opens this address, is sent there by NativeRootRedirect.
+export const metadata: Metadata = {
+  title: { absolute: 'OmniWealth, Kadai and OmniKalvi: simple apps for your money, your shop and your school' },
+  description:
+    'Focused apps for everyday life: OmniWealth for family wealth, Kadai for shop billing and stock in Tamil and English, and OmniKalvi for school attendance, homework, notices and canteen.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'OmniWealth, Kadai and OmniKalvi',
+    description: 'One app for your money, one for your shop, one for your school.',
+    url: '/',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+  },
+};
 
 export const dynamic = 'force-dynamic';
 // Server actions used from this page (AI statement reader, AI CSV clean-up)
@@ -24,7 +37,12 @@ export default async function DashboardPage({
 }) {
   const session = await getSessionUserAction();
   if (!session) {
-    return <LandingPage />;
+    return (
+      <>
+        <NativeRootRedirect />
+        <CompanyLanding />
+      </>
+    );
   }
   // Store-only accounts (shop staff) have no wealth vault — send them to the
   // stocking app.
