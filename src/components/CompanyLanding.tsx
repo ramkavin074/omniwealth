@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 // The home page for visitors: one landing page for all the apps. Keep every claim true of the shipped apps.
 // Change PARENT_NAME to rename the maker line; each product keeps its own page (/wealth, /kadai, /omnikalvi).
-const PARENT_NAME = 'DreamBee Network';
+const PARENT_NAME = 'OmniWealth';
 const CONTACT_EMAIL = 'admin@omniwealth.org';
 const CONTACT = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Hello from the website')}`;
 
@@ -119,7 +119,7 @@ export default function CompanyLanding() {
         <div className="mx-auto max-w-3xl px-5 py-16">
           <h2 className="text-2xl font-extrabold text-slate-900">About</h2>
           <p className="mt-4 text-[15px] leading-7 text-slate-600">
-            {PARENT_NAME} makes small, focused apps: one for families and their money, one for shops, and one for schools.
+            OmniWealth makes small, focused apps: one for families and their money (OmniWealth), one for shops (Kadai), and one for schools (OmniKalvi).
             Each is built around a single job, keeps its screens simple, and respects your privacy. Kadai and OmniKalvi work in Tamil and English.
           </p>
           <p className="mt-3 text-[15px] leading-7 text-slate-600">
@@ -133,7 +133,7 @@ export default function CompanyLanding() {
 
       <footer className="bg-slate-950 text-slate-400">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-5 text-xs">
-          <span>{PARENT_NAME}. OmniWealth, Kadai and OmniKalvi.</span>
+          <span>OmniWealth. Money, shops and schools. A DreamBee Network LLC company.</span>
           <span className="flex flex-wrap gap-4">
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
