@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import AllAppsBar from '@/components/AllAppsBar';
 import EarlyAccess from '@/components/EarlyAccess';
 
 export const metadata: Metadata = {
@@ -118,6 +119,7 @@ const FAQ: [string, string][] = [
 export default function OmniKalviLandingPage() {
   return (
     <main className="bg-white text-slate-700">
+      <AllAppsBar />
       {/* header */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <div className="flex shrink-0 items-center gap-2.5">
