@@ -315,6 +315,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
           <span>&copy; {new Date().getFullYear()} OmniWealth. All rights reserved.</span>
           <div className="flex items-center gap-4">
+            <Link href="/" className="hover:text-slate-300 transition-colors">All our apps</Link>
             <Link href="/help" className="hover:text-slate-300 transition-colors">Help</Link>
             <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms</Link>
