@@ -110,17 +110,17 @@ export default function KadaiLandingPage() {
     <main className="bg-white text-slate-700">
       {/* header */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
-        <div className="flex items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2.5">
           <Image src="/kadai-icon-192.png" alt="Kadai" width={36} height={36} className="rounded-lg" />
           <span className="text-lg font-extrabold text-slate-900">Kadai</span>
         </div>
-        <nav className="flex items-center gap-5 text-sm font-medium text-slate-600">
-          <a href="#features" className="hover:text-teal-700">Features</a>
-          <a href="#tamil" className="hover:text-teal-700">தமிழில்</a>
+        <nav className="flex items-center gap-3 whitespace-nowrap text-sm font-medium text-slate-600 sm:gap-5">
+          <a href="#features" className="hidden hover:text-teal-700 sm:inline">Features</a>
+          <a href="#tamil" className="hidden hover:text-teal-700 sm:inline">தமிழில்</a>
           <a href="#early" className="hidden hover:text-teal-700 sm:inline">Early access</a>
-          <a href="#faq" className="hover:text-teal-700">FAQ</a>
+          <a href="#faq" className="hidden hover:text-teal-700 sm:inline">FAQ</a>
           <a
-            href={EARLY_ACCESS}
+            href="#early"
             className="rounded-lg bg-teal-700 px-3.5 py-2 text-white hover:bg-teal-600"
           >
             Early access
@@ -148,7 +148,7 @@ export default function KadaiLandingPage() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a
-                href={EARLY_ACCESS}
+                href="#early"
                 className="rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white hover:bg-teal-500"
               >
                 Get early access
