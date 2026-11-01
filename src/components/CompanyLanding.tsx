@@ -23,7 +23,7 @@ type App = {
 const APPS: App[] = [
   {
     name: 'OmniWealth',
-    icon: '/icon-192.png',
+    icon: '/omniwealth-icon-192.png',
     line: 'Your family\'s wealth, in one private place.',
     body: 'See bank accounts, investments, property and other assets together, in your own currency, with a secure vault for the papers that matter.',
     points: ['Net worth across currencies', 'Encrypted document vault', 'Retirement what-ifs'],
