@@ -70,7 +70,7 @@ function Feature({
 
 const QUICK = [
   ['English and Tamil', 'Every screen, for staff and parents.'],
-  ['Ordinary phones', 'No special equipment to buy.'],
+  ['Nothing new to buy', 'An app for every phone, a website for every computer.'],
   ['One app, five roles', 'Principal, teacher, accountant, canteen and parent.'],
   ['Parents see only their own', 'Each parent sees only their own children.'],
 ];
