@@ -16,6 +16,7 @@ type App = {
   status: string;
   more: string;
   open?: { href: string; label: string };
+  store?: string; // live Google Play listing
   test?: string; // Google Play closed-testing join link
 };
 
@@ -29,6 +30,7 @@ const APPS: App[] = [
     status: 'On the web, Android and iPhone',
     more: '/wealth',
     open: { href: '/login', label: 'Sign in' },
+    store: 'https://play.google.com/store/apps/details?id=com.omniwealth.app',
   },
   {
     name: 'Kadai',
@@ -71,7 +73,7 @@ export default function CompanyLanding() {
             One app for your money. One for your shop. One for your school.
           </h1>
           <p className="mt-5 max-w-2xl text-[15px] leading-7 text-slate-300">
-            We build focused apps, each around one job and made to work on ordinary phones. Choose the one that fits, or all three.
+            Nothing new to buy — an app for every phone, a website for every computer. Choose the app that fits, or all three.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a href="#apps" className="rounded-xl bg-teal-600 px-5 py-3 text-sm font-bold text-white hover:bg-teal-500">See our apps</a>
@@ -102,6 +104,11 @@ export default function CompanyLanding() {
                 {a.test && (
                   <a href={`${a.more}#early`} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400">
                     Early access
+                  </a>
+                )}
+                {a.store && (
+                  <a href={a.store} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400">
+                    Google Play
                   </a>
                 )}
                 {a.open && (
